@@ -109,25 +109,29 @@ security definer
 set search_path = public
 as $$
 declare
-  jwt_email text := lower(coalesce(auth.jwt() ->> 'email', ''));
-  jwt_display_name text := nullif(
-    btrim(coalesce(auth.jwt() -> 'user_metadata' ->> 'display_name', '')),
-    ''
-  );
+  current_email text;
+  current_display_name text;
 begin
   new.author_user_id = auth.uid();
 
-  if jwt_email = 'info@atlasforentrepreneurs.com' then
+  select
+    lower(coalesce(users.email, '')),
+    nullif(btrim(coalesce(users.raw_user_meta_data ->> 'display_name', '')), '')
+  into current_email, current_display_name
+  from auth.users users
+  where users.id = auth.uid();
+
+  if current_email = 'info@atlasforentrepreneurs.com' then
     new.author_kind = 'atlas_admin';
     new.author_display_name = 'Atlas Admin';
   else
     new.author_kind = 'client';
     new.author_display_name = coalesce(
       case
-        when lower(jwt_display_name) = 'atlas admin' then null
-        else jwt_display_name
+        when lower(current_display_name) = 'atlas admin' then null
+        else current_display_name
       end,
-      nullif(split_part(jwt_email, '@', 1), ''),
+      nullif(split_part(current_email, '@', 1), ''),
       'Client member'
     );
   end if;

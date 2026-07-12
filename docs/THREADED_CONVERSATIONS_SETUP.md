@@ -29,3 +29,14 @@ first message in its note thread.
 No email, realtime subscription, AI, or third-party notification service is
 introduced.
 
+## Display-name correction
+
+Projects that applied the original conversations migration on July 12, 2026
+must also apply:
+
+```text
+supabase/migrations/20260712007000_note_message_author_fix.sql
+```
+
+This ensures new and existing client messages use the current saved display
+name rather than older session metadata.
