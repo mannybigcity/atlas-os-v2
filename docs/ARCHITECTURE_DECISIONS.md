@@ -8,27 +8,36 @@ The first product wedge remains narrow: an AI chief of staff and command center 
 
 ## Role of the Next.js application
 
-The Next.js app is the primary web application for Atlas. It should eventually serve three related surfaces:
+The Next.js app is the primary web application for Atlas. During the initial build, it will serve three related surfaces:
 
 - Public website
 - Client dashboard
 - The Lion's Den admin/operator area
 
+The public website, client dashboard, and The Lion's Den will stay inside the same Next.js application for now. The code should still keep The Lion's Den modular enough that it could become a separate internal application later without rebuilding the entire system.
+
 For now, the app is only a minimal scaffold. It should stay lightweight until the product flow is clearer.
 
 ## Planned role of Supabase
 
-Supabase is the planned backend foundation when persistence is introduced.
+Supabase is the approved backend foundation when persistence is introduced.
 
 Expected responsibilities:
 
 - PostgreSQL database
-- Auth, if we choose Supabase Auth after review
+- Supabase Auth
 - Row-level security for tenant isolation
-- File/object storage for uploaded documents, if it fits cost and security needs
+- Supabase Storage for uploaded and generated documents
+- `pgvector` for initial AI retrieval
 - Edge functions only when they clearly simplify backend workflows
 
 Supabase should not be added until we are ready for the SaaS foundation milestone.
+
+## Authentication
+
+Approved decision: use Supabase Auth.
+
+Authentication should be implemented as part of the SaaS foundation milestone, not before. The app should support a shared login entry at `/login`.
 
 ## Access model: Super Admin and Client
 
@@ -50,12 +59,23 @@ These surfaces should be separated by route, permission, and purpose:
 Initial route direction:
 
 ```text
-/                  Public website
-/dashboard         Client dashboard
-/lion              The Lion's Den
+/                  Public Atlas website
+/login             Shared login entry
+/client            Client dashboard
+/lions-den         Super Admin dashboard
 ```
 
-This route plan is provisional. The important decision is separation of concerns, not final URL naming.
+Approved decision: use these routes for the initial build.
+
+The important architectural principle is separation by route, permission, and purpose, even while all surfaces live in the same Next.js app.
+
+## Billing
+
+Billing should not be implemented yet.
+
+When billing is introduced, design around a provider abstraction so PayPal, Stripe, or another provider can be connected without spreading billing logic throughout the application.
+
+The initial Atlas pricing model is not approved yet.
 
 ## Where things should live
 
@@ -71,12 +91,12 @@ C:/Users/User/Documents/Codex/2026-06-28/do/atlas-os-v2
 
 ### Business data
 
-Business data should eventually live in Supabase Postgres. Every customer-owned record should be scoped to a workspace.
+Business data should live in Supabase Postgres once persistence is introduced. Every client-owned record should be scoped to an organization/workspace.
 
 Examples:
 
 - Users
-- Workspaces
+- Organizations/workspaces
 - Memberships
 - Business profiles
 - Activity events
@@ -84,21 +104,31 @@ Examples:
 
 ### Documents
 
-Uploaded or generated documents should eventually live in object storage, likely Supabase Storage unless a better cost/security tradeoff appears.
+Uploaded or generated documents should live in Supabase Storage initially.
 
 Document metadata should live in Postgres. Raw files should not be stored directly in database tables.
+
+Required document metadata:
+
+- Ownership
+- Access level
+- Document type
+- Upload date
+- Retention metadata
+
+Retention automation should not be created yet.
 
 ### AI-retrieval knowledge
 
 AI-retrieval knowledge should be derived from approved workspace data and documents.
 
-The likely future direction:
+Approved initial direction:
 
 - Source records in Postgres
 - Source files in object storage
-- Retrieval index in Postgres with vector support or a separate vector service if scale requires it
+- Retrieval index in Supabase Postgres with `pgvector`
 
-We should avoid adding a separate vector database until Postgres cannot meet the need.
+Do not introduce a separate vector database until there is measurable evidence that Supabase cannot meet Atlas's retrieval needs.
 
 ## Proposed folder structure
 
@@ -123,17 +153,42 @@ Proposed structure as the app grows:
 ```text
 src/
   app/
-    (public)/
-    (client)/
-    lion/
+    page.tsx
+    login/
+    client/
+    lions-den/
   components/
   features/
+    public-site/
+    client/
+    lions-den/
   lib/
   server/
+    auth/
+    billing/
+    db/
+    documents/
+    retrieval/
   styles/
 ```
 
 Do not create these folders until there is a real implementation need.
+
+## Minimum security and compliance posture
+
+Before storing real client data, Atlas must have:
+
+- Real authentication
+- Role-based access control
+- Row Level Security on all client-owned data
+- Separation of client records by organization
+- No secrets committed to Git
+- Server-side handling of privileged operations
+- Audit fields on important records
+- Basic access and activity logging
+- Secure environment-variable management
+- Production HTTPS
+- Backup and recovery planning
 
 ## First three implementation milestones
 
@@ -143,23 +198,21 @@ Maintain a clean scaffold, planning documents, working lint/build, and clear arc
 
 ### 2. Clickable product shell
 
-Create a non-functional shell that shows the public website, client dashboard direction, and admin separation. No auth, database, AI, billing, or real workflows yet.
+Create a non-functional shell that shows `/`, `/login`, `/client`, and `/lions-den` with clear separation of public, client, and Super Admin surfaces. No auth, database, AI, billing, or real workflows yet.
 
 ### 3. SaaS foundation
 
-Add the first real backend layer: authentication decision, Supabase project, workspace model, role model, and tenant-safe data access.
+Add the first real backend layer: Supabase Auth, Supabase Postgres, organization/workspace model, role model, Row Level Security, and tenant-safe data access.
 
-## Unresolved architecture decisions
+## Deferred Decisions
 
-These require approval before implementation:
+These remain intentionally deferred:
 
-- Whether Supabase Auth is the auth provider or whether we use another provider.
-- Final route names for The Lion's Den and client dashboard.
-- Whether The Lion's Den lives in the same app long-term or becomes a separate internal app later.
-- Initial billing provider and pricing model.
-- Whether AI retrieval starts with Postgres vector support or a separate vector database.
-- Document storage provider and retention rules.
-- Required compliance posture before storing real customer data.
+- Final pricing model
+- Initial billing provider
+- Exact document retention periods
+- Whether The Lion's Den becomes a separate application
+- Whether Atlas eventually needs a separate vector database
 
 ## Risk: building too much too early
 
