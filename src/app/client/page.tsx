@@ -6,6 +6,7 @@ import { getBusinessProfile } from "@/server/business-profile/queries";
 import { saveBusinessProfile } from "@/server/business-profile/actions";
 import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
+import { formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,8 @@ type BusinessProfileField = {
     | "currentGoals"
     | "constraints";
   label: string;
+  description: string;
+  placeholder: string;
   value: string | null | undefined;
 };
 
@@ -71,29 +74,45 @@ export default async function ClientDashboardPage({
     {
       name: "offer",
       label: "Offer",
+      description: "What does this business sell, and what result does it create?",
+      placeholder:
+        "Example: AI-powered operating system for entrepreneurs and small businesses.",
       value: businessProfile?.data?.offer,
     },
     {
       name: "targetCustomer",
       label: "Target customer",
+      description: "Who is the business built to serve first?",
+      placeholder:
+        "Example: Solo founders and service businesses doing $5k-$100k/month.",
       value: businessProfile?.data?.targetCustomer,
     },
     {
       name: "positioning",
       label: "Positioning",
+      description: "How should customers understand why this business is different?",
+      placeholder:
+        "Example: A practical AI chief of staff that helps owners focus and execute.",
       value: businessProfile?.data?.positioning,
     },
     {
       name: "currentGoals",
       label: "Current goals",
+      description: "What outcomes matter most right now?",
+      placeholder:
+        "Example: Validate the command center, onboard first users, and protect costs.",
       value: businessProfile?.data?.currentGoals,
     },
     {
       name: "constraints",
       label: "Constraints",
+      description: "What limits should Atlas respect?",
+      placeholder:
+        "Example: Minimal budget, no uncontrolled AI spend, and no premature complexity.",
       value: businessProfile?.data?.constraints,
     },
   ];
+  const completedProfileFields = businessProfileFields.filter((field) => field.value);
 
   return (
     <SurfaceShell
@@ -212,6 +231,10 @@ export default async function ClientDashboardPage({
                   <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
                     Business profile
                   </h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    This is the structured business memory Atlas will use before
+                    any AI features are allowed.
+                  </p>
                 </div>
                 <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                   {canEditBusinessProfile ? "Editable" : "Read only"}
@@ -226,36 +249,78 @@ export default async function ClientDashboardPage({
               ) : null}
 
               {!businessProfile?.setupRequired && canEditBusinessProfile ? (
-                <form action={saveBusinessProfile} className="mt-5 space-y-4">
-                  <input
-                    name="organizationId"
-                    type="hidden"
-                    value={primaryOrganization?.id ?? ""}
-                  />
-                  {businessProfileFields.map((field) => (
-                    <label className="block" key={field.name}>
-                      <span className="text-sm font-medium text-slate-700">
-                        {field.label}
-                      </span>
-                      <textarea
-                        className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                        defaultValue={field.value ?? ""}
-                        name={field.name}
-                      />
-                    </label>
-                  ))}
+                <div className="mt-5 grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+                  <form action={saveBusinessProfile} className="space-y-4">
+                    <input
+                      name="organizationId"
+                      type="hidden"
+                      value={primaryOrganization?.id ?? ""}
+                    />
+                    {businessProfileFields.map((field) => (
+                      <label className="block" key={field.name}>
+                        <span className="text-sm font-medium text-slate-700">
+                          {field.label}
+                        </span>
+                        <span className="mt-1 block text-sm leading-6 text-slate-500">
+                          {field.description}
+                        </span>
+                        <textarea
+                          className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                          defaultValue={field.value ?? ""}
+                          name={field.name}
+                          placeholder={field.placeholder}
+                        />
+                      </label>
+                    ))}
 
-                  <button
-                    className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                    type="submit"
-                  >
-                    Save business context
-                  </button>
-                </form>
+                    <button
+                      className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      type="submit"
+                    >
+                      Save business context
+                    </button>
+                  </form>
+
+                  <aside className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Context preview
+                    </p>
+                    <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-950">
+                      {completedProfileFields.length}/5 fields filled
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      Last updated: {formatDateTime(businessProfile?.data?.updatedAt)}
+                    </p>
+                    <div className="mt-5 space-y-4">
+                      {businessProfileFields.map((field) => (
+                        <div key={field.name}>
+                          <p className="text-sm font-semibold text-slate-950">
+                            {field.label}
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            {field.value || "Not filled in yet."}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </aside>
+                </div>
               ) : null}
 
               {!businessProfile?.setupRequired && !canEditBusinessProfile ? (
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <div className="mt-5">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Context preview
+                    </p>
+                    <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-950">
+                      {completedProfileFields.length}/5 fields filled
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      Last updated: {formatDateTime(businessProfile?.data?.updatedAt)}
+                    </p>
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
                   {businessProfileFields.map((field) => (
                     <div
                       className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
@@ -269,6 +334,7 @@ export default async function ClientDashboardPage({
                       </p>
                     </div>
                   ))}
+                  </div>
                 </div>
               ) : null}
             </section>
