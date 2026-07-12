@@ -68,6 +68,10 @@ server-verifiable recovery link:
 <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/reset-password">Reset password</a>
 ```
 
+The link opens a confirmation page first. Atlas verifies the one-time token
+only after the user presses **Continue securely**, preventing automated email
+link scanners from consuming the token before the user.
+
 ## Supabase production checks
 
 Before QTIME data is entered:

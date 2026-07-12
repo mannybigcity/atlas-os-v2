@@ -61,9 +61,10 @@ http://localhost:3000/client
 http://localhost:3000/lions-den
 ```
 
-Atlas uses `/auth/confirm` to verify a hashed, one-time Supabase recovery token
-server-side before showing `/reset-password`. This avoids binding password
-recovery to the browser that originally requested the email.
+Atlas uses `/auth/confirm` as a deliberate confirmation page for a hashed,
+one-time Supabase recovery token. The token is verified server-side only after
+the user presses **Continue securely**, avoiding both browser binding and
+automated email-link prefetching before showing `/reset-password`.
 
 In **Authentication > Emails > Reset password**, set the reset link to:
 

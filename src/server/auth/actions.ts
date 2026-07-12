@@ -59,6 +59,28 @@ export async function requestPasswordReset(formData: FormData) {
   redirect("/forgot-password?status=sent");
 }
 
+export async function confirmPasswordRecovery(formData: FormData) {
+  const tokenHash = String(formData.get("tokenHash") ?? "");
+  const type = String(formData.get("type") ?? "");
+  const nextPath = safeRedirectPath(formData.get("next"));
+
+  if (!tokenHash || type !== "recovery") {
+    redirect("/login?error=auth_callback_failed");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: "recovery",
+  });
+
+  if (error) {
+    redirect("/login?error=auth_callback_failed");
+  }
+
+  redirect(nextPath);
+}
+
 export async function updatePassword(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
