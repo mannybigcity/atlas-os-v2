@@ -1,9 +1,7 @@
 export function getSupabaseEnv() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const requiredPublicEnv = {
-    supabaseUrl,
-    supabaseAnonKey,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   };
 
   const missing = Object.entries(requiredPublicEnv)
@@ -17,8 +15,8 @@ export function getSupabaseEnv() {
   }
 
   return {
-    supabaseUrl: supabaseUrl as string,
-    supabaseAnonKey: supabaseAnonKey as string,
+    supabaseUrl: requiredPublicEnv.NEXT_PUBLIC_SUPABASE_URL as string,
+    supabaseAnonKey: requiredPublicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
   };
 }
 
