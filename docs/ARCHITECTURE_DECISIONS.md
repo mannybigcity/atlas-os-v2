@@ -77,6 +77,19 @@ When billing is introduced, design around a provider abstraction so PayPal, Stri
 
 The initial Atlas pricing model is not approved yet.
 
+## AI cost controls
+
+Atlas must not add AI provider calls until the cost-control rules in
+`docs/AI_COST_CONTROLS.md` are satisfied.
+
+Approved direction:
+
+- AI calls must go through a server-side gateway.
+- Provider keys must never be exposed to the browser.
+- AI usage must be attributable to an organization, user, feature, and model.
+- No autonomous loops, hidden background jobs, or duplicate model stacks.
+- The first AI feature should be narrow, user-triggered, and logged.
+
 ## Where things should live
 
 ### Source code
