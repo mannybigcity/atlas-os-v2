@@ -5,6 +5,11 @@ import { signOut } from "@/server/auth/actions";
 import { getBusinessProfile } from "@/server/business-profile/queries";
 import { saveBusinessProfile } from "@/server/business-profile/actions";
 import { requireUser } from "@/server/auth/guards";
+import {
+  createOrganizationNote,
+  updateOrganizationNote,
+} from "@/server/notes/actions";
+import { getOrganizationNotes } from "@/server/notes/queries";
 import { getUserMemberships } from "@/server/organizations/queries";
 import { formatDateTime } from "@/lib/format";
 
@@ -13,6 +18,7 @@ export const dynamic = "force-dynamic";
 type ClientDashboardPageProps = {
   searchParams?: Promise<{
     access?: string;
+    note?: string;
     profile?: string;
   }>;
 };
@@ -33,8 +39,8 @@ const workspaceSections = [
   {
     title: "Notes",
     description:
-      "This will capture business context before we introduce AI retrieval or document storage.",
-    status: "Not connected",
+      "Capture business context before we introduce AI retrieval or document storage.",
+    status: "Connected foundation",
   },
   {
     title: "Activity",
@@ -67,8 +73,12 @@ export default async function ClientDashboardPage({
   const primaryOrganization = primaryMembership?.organization;
   const canEditBusinessProfile =
     primaryMembership?.role === "owner" || primaryMembership?.role === "admin";
+  const canEditNotes = canEditBusinessProfile;
   const businessProfile = primaryOrganization
     ? await getBusinessProfile(primaryOrganization.id)
+    : null;
+  const notes = primaryOrganization
+    ? await getOrganizationNotes(primaryOrganization.id)
     : null;
   const businessProfileFields: BusinessProfileField[] = [
     {
@@ -147,6 +157,31 @@ export default async function ClientDashboardPage({
           </div>
         ) : null}
 
+        {params?.note === "created" || params?.note === "updated" ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Note {params.note === "created" ? "created" : "updated"}.
+          </div>
+        ) : null}
+
+        {params?.note === "denied" ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
+            Only organization owners and admins can save notes.
+          </div>
+        ) : null}
+
+        {params?.note === "missing_title" ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
+            Add a note title before saving.
+          </div>
+        ) : null}
+
+        {params?.note === "error" ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
+            Note could not be saved. Check that the Notes migration has been
+            applied.
+          </div>
+        ) : null}
+
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
           Signed in as {user.email}. This workspace uses real organization
           membership data. Customer records, metrics, documents, and AI are not
@@ -220,6 +255,147 @@ export default async function ClientDashboardPage({
                   />
                 ))}
               </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
+                    Organization Memory
+                  </p>
+                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                    Notes
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Capture useful business context without AI spend,
+                    embeddings, or document storage.
+                  </p>
+                </div>
+                <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  {canEditNotes ? "Editable" : "Read only"}
+                </span>
+              </div>
+
+              {notes?.setupRequired ? (
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+                  Notes are not ready yet. Apply the Notes migration in Supabase
+                  to enable this section.
+                </div>
+              ) : null}
+
+              {!notes?.setupRequired && canEditNotes ? (
+                <form
+                  action={createOrganizationNote}
+                  className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                >
+                  <input
+                    name="organizationId"
+                    type="hidden"
+                    value={primaryOrganization?.id ?? ""}
+                  />
+                  <div className="grid gap-4">
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-700">
+                        Note title
+                      </span>
+                      <input
+                        className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                        name="title"
+                        placeholder="Example: Website positioning feedback"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-700">
+                        Note body
+                      </span>
+                      <textarea
+                        className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                        name="body"
+                        placeholder="Write the business context Atlas should remember."
+                      />
+                    </label>
+                  </div>
+                  <button
+                    className="mt-4 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                    type="submit"
+                  >
+                    Save note
+                  </button>
+                </form>
+              ) : null}
+
+              {!notes?.setupRequired ? (
+                <div className="mt-5 space-y-4">
+                  {notes?.data.length === 0 ? (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
+                      No notes have been saved for this organization yet.
+                    </div>
+                  ) : null}
+
+                  {notes?.data.map((note) =>
+                    canEditNotes ? (
+                      <form
+                        action={updateOrganizationNote}
+                        className="rounded-2xl border border-slate-200 bg-white p-5"
+                        key={note.id}
+                      >
+                        <input
+                          name="organizationId"
+                          type="hidden"
+                          value={note.organizationId}
+                        />
+                        <input name="noteId" type="hidden" value={note.id} />
+                        <label className="block">
+                          <span className="text-sm font-medium text-slate-700">
+                            Title
+                          </span>
+                          <input
+                            className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                            defaultValue={note.title}
+                            name="title"
+                          />
+                        </label>
+                        <label className="mt-4 block">
+                          <span className="text-sm font-medium text-slate-700">
+                            Body
+                          </span>
+                          <textarea
+                            className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                            defaultValue={note.body ?? ""}
+                            name="body"
+                          />
+                        </label>
+                        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <p className="text-sm leading-6 text-slate-500">
+                            Last updated: {formatDateTime(note.updatedAt)}
+                          </p>
+                          <button
+                            className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                            type="submit"
+                          >
+                            Update note
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <article
+                        className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                        key={note.id}
+                      >
+                        <h3 className="text-lg font-semibold text-slate-950">
+                          {note.title}
+                        </h3>
+                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                          {note.body || "No note body yet."}
+                        </p>
+                        <p className="mt-4 text-sm leading-6 text-slate-500">
+                          Last updated: {formatDateTime(note.updatedAt)}
+                        </p>
+                      </article>
+                    ),
+                  )}
+                </div>
+              ) : null}
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5">

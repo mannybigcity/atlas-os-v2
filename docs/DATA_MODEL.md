@@ -103,6 +103,32 @@ Likely fields:
 
 This will eventually become part of Atlas's business memory.
 
+### OrganizationNote
+
+Stores lightweight organization-scoped business notes.
+
+Defined in:
+
+```text
+supabase/migrations/20260712002000_organization_notes.sql
+```
+
+Current fields:
+
+- id
+- organization_id
+- title
+- body
+- created_by
+- created_at
+- updated_at
+
+Current access rules:
+
+- Organization members can read notes.
+- Organization owners/admins can create and update notes.
+- Delete is intentionally not implemented yet.
+
 ## Later entities
 
 These should not be implemented yet, but they are likely future primitives:
@@ -111,7 +137,6 @@ These should not be implemented yet, but they are likely future primitives:
 - Company
 - Opportunity
 - Task
-- Note
 - Document
 - Decision
 - AIConversation
@@ -134,6 +159,8 @@ Current RLS baseline:
 - The approved Super Admin email can read organization and membership shells.
 - Organization members can read their business profile.
 - Organization owners/admins can create and update their business profile.
+- Organization members can read organization notes.
+- Organization owners/admins can create and update organization notes.
 - Delete policies are intentionally not created yet.
 
 ## Data modeling bias
