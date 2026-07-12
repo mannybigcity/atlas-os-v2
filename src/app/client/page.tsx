@@ -2,6 +2,8 @@ import Link from "next/link";
 import { SurfaceShell } from "@/components/surface-shell";
 import { WorkspaceSectionCard } from "@/components/workspace-section-card";
 import { signOut } from "@/server/auth/actions";
+import { getBusinessProfile } from "@/server/business-profile/queries";
+import { saveBusinessProfile } from "@/server/business-profile/actions";
 import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
 
@@ -10,6 +12,7 @@ export const dynamic = "force-dynamic";
 type ClientDashboardPageProps = {
   searchParams?: Promise<{
     access?: string;
+    profile?: string;
   }>;
 };
 
@@ -40,6 +43,17 @@ const workspaceSections = [
   },
 ];
 
+type BusinessProfileField = {
+  name:
+    | "offer"
+    | "targetCustomer"
+    | "positioning"
+    | "currentGoals"
+    | "constraints";
+  label: string;
+  value: string | null | undefined;
+};
+
 export default async function ClientDashboardPage({
   searchParams,
 }: ClientDashboardPageProps) {
@@ -48,6 +62,38 @@ export default async function ClientDashboardPage({
   const memberships = await getUserMemberships(user.id);
   const primaryMembership = memberships.data.find((membership) => membership.organization);
   const primaryOrganization = primaryMembership?.organization;
+  const canEditBusinessProfile =
+    primaryMembership?.role === "owner" || primaryMembership?.role === "admin";
+  const businessProfile = primaryOrganization
+    ? await getBusinessProfile(primaryOrganization.id)
+    : null;
+  const businessProfileFields: BusinessProfileField[] = [
+    {
+      name: "offer",
+      label: "Offer",
+      value: businessProfile?.data?.offer,
+    },
+    {
+      name: "targetCustomer",
+      label: "Target customer",
+      value: businessProfile?.data?.targetCustomer,
+    },
+    {
+      name: "positioning",
+      label: "Positioning",
+      value: businessProfile?.data?.positioning,
+    },
+    {
+      name: "currentGoals",
+      label: "Current goals",
+      value: businessProfile?.data?.currentGoals,
+    },
+    {
+      name: "constraints",
+      label: "Constraints",
+      value: businessProfile?.data?.constraints,
+    },
+  ];
 
   return (
     <SurfaceShell
@@ -60,6 +106,25 @@ export default async function ClientDashboardPage({
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
             Your account is authenticated, but it is not authorized for The
             Lion&apos;s Den.
+          </div>
+        ) : null}
+
+        {params?.profile === "saved" ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Business context saved.
+          </div>
+        ) : null}
+
+        {params?.profile === "denied" ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
+            Only organization owners and admins can update business context.
+          </div>
+        ) : null}
+
+        {params?.profile === "error" ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
+            Business context could not be saved. Check that the Organization
+            Context migration has been applied.
           </div>
         ) : null}
 
@@ -136,6 +201,76 @@ export default async function ClientDashboardPage({
                   />
                 ))}
               </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
+                    Organization Context
+                  </p>
+                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                    Business profile
+                  </h2>
+                </div>
+                <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  {canEditBusinessProfile ? "Editable" : "Read only"}
+                </span>
+              </div>
+
+              {businessProfile?.setupRequired ? (
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+                  Organization Context is not ready yet. Apply the business
+                  profile migration in Supabase to enable this section.
+                </div>
+              ) : null}
+
+              {!businessProfile?.setupRequired && canEditBusinessProfile ? (
+                <form action={saveBusinessProfile} className="mt-5 space-y-4">
+                  <input
+                    name="organizationId"
+                    type="hidden"
+                    value={primaryOrganization?.id ?? ""}
+                  />
+                  {businessProfileFields.map((field) => (
+                    <label className="block" key={field.name}>
+                      <span className="text-sm font-medium text-slate-700">
+                        {field.label}
+                      </span>
+                      <textarea
+                        className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                        defaultValue={field.value ?? ""}
+                        name={field.name}
+                      />
+                    </label>
+                  ))}
+
+                  <button
+                    className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                    type="submit"
+                  >
+                    Save business context
+                  </button>
+                </form>
+              ) : null}
+
+              {!businessProfile?.setupRequired && !canEditBusinessProfile ? (
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {businessProfileFields.map((field) => (
+                    <div
+                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                      key={field.name}
+                    >
+                      <p className="text-sm font-semibold text-slate-950">
+                        {field.label}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        {field.value || "Not filled in yet."}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </section>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-5">

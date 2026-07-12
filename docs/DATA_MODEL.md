@@ -68,17 +68,22 @@ Initial roles:
 
 Stores the strategic context Atlas needs to understand the business.
 
-Likely fields:
+Defined in:
 
-- id
-- workspaceId
+```text
+supabase/migrations/20260712001000_business_profiles.sql
+```
+
+Current fields:
+
+- organization_id
 - offer
-- targetCustomer
+- target_customer
 - positioning
-- currentGoals
+- current_goals
 - constraints
-- createdAt
-- updatedAt
+- created_at
+- updated_at
 
 ### ActivityEvent
 
@@ -127,7 +132,9 @@ Current RLS baseline:
 - Organization members can read their own organizations.
 - Users can read their own memberships.
 - The approved Super Admin email can read organization and membership shells.
-- Insert/update/delete policies are intentionally not created yet.
+- Organization members can read their business profile.
+- Organization owners/admins can create and update their business profile.
+- Delete policies are intentionally not created yet.
 
 ## Data modeling bias
 
