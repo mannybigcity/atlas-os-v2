@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SurfaceShell } from "@/components/surface-shell";
 import { WorkspaceSectionCard } from "@/components/workspace-section-card";
+import { getOrganizationActivity } from "@/server/activity/queries";
 import { signOut } from "@/server/auth/actions";
 import { getBusinessProfile } from "@/server/business-profile/queries";
 import { saveBusinessProfile } from "@/server/business-profile/actions";
@@ -45,8 +46,8 @@ const workspaceSections = [
   {
     title: "Activity",
     description:
-      "This will become the organization timeline once real business events exist.",
-    status: "Not connected",
+      "Review the organization timeline as real workspace changes happen.",
+    status: "Connected foundation",
   },
 ];
 
@@ -80,6 +81,9 @@ export default async function ClientDashboardPage({
     : null;
   const notes = primaryOrganization
     ? await getOrganizationNotes(primaryOrganization.id)
+    : null;
+  const activity = primaryOrganization
+    ? await getOrganizationActivity(primaryOrganization.id)
     : null;
   const businessProfileFields: BusinessProfileField[] = [
     {
@@ -257,6 +261,62 @@ export default async function ClientDashboardPage({
                   />
                 ))}
               </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
+                    Organization Timeline
+                  </p>
+                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                    Activity
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    A read-only record of meaningful workspace changes. No AI,
+                    email, or notification costs are triggered.
+                  </p>
+                </div>
+                <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Read only
+                </span>
+              </div>
+
+              {activity?.setupRequired ? (
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+                  Activity is not ready yet. Apply the Activity Events migration
+                  in Supabase to begin recording workspace changes.
+                </div>
+              ) : null}
+
+              {!activity?.setupRequired ? (
+                <div className="mt-5 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-slate-50 px-5">
+                  {activity?.data.length === 0 ? (
+                    <p className="py-5 text-sm leading-6 text-slate-600">
+                      No activity has been recorded yet. New note and business
+                      profile changes will appear here.
+                    </p>
+                  ) : null}
+
+                  {activity?.data.map((event) => (
+                    <article className="py-5" key={event.id}>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <h3 className="font-semibold text-slate-950">
+                            {event.title}
+                          </h3>
+                          <p className="mt-1 text-sm leading-6 text-slate-500">
+                            {formatDateTime(event.occurredAt)}
+                          </p>
+                        </div>
+                        <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 ring-1 ring-slate-200">
+                          {event.eventType.replaceAll(".", " ")}
+                        </span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : null}
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5">

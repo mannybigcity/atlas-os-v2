@@ -89,19 +89,28 @@ Current fields:
 
 Captures meaningful business activity over time.
 
-Likely fields:
+Defined in:
+
+```text
+supabase/migrations/20260712004000_activity_events.sql
+```
+
+Current fields:
 
 - id
-- workspaceId
-- actorUserId
-- type
+- organization_id
+- actor_user_id
+- event_type
 - title
-- body
+- entity_type
+- entity_id
 - metadata
-- occurredAt
-- createdAt
+- occurred_at
+- created_at
 
-This will eventually become part of Atlas's business memory.
+Current events cover note creation, note updates, `@Atlas` attention requests,
+and business-profile updates. Events are append-only and become part of Atlas's
+business memory without requiring AI spend.
 
 ### OrganizationNote
 
@@ -168,6 +177,8 @@ Current RLS baseline:
 - Organization members can create organization notes.
 - Note authors can update their own organization notes.
 - Organization owners/admins can update all organization notes.
+- Organization members can read their organization's activity events.
+- Activity events are written by database triggers and are append-only.
 - Delete policies are intentionally not created yet.
 
 ## Data modeling bias
