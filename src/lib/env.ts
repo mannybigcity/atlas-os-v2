@@ -34,3 +34,22 @@ export function isSuperAdminEmail(email?: string | null) {
 
   return getSuperAdminEmails().includes(email.toLowerCase());
 }
+
+export function getSiteUrl(fallbackOrigin?: string | null) {
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (!configuredUrl && process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SITE_URL. Configure the exact HTTPS production origin.",
+    );
+  }
+
+  const rawUrl = configuredUrl || fallbackOrigin || "http://localhost:3000";
+  const url = new URL(rawUrl);
+
+  if (process.env.NODE_ENV === "production" && url.protocol !== "https:") {
+    throw new Error("NEXT_PUBLIC_SITE_URL must use HTTPS in production.");
+  }
+
+  return url.origin;
+}

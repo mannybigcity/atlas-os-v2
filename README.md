@@ -2,7 +2,10 @@
 
 Atlas is an AI-powered operating system for entrepreneurs and small businesses.
 
-This repository is starting intentionally small: product planning documents plus a minimal Next.js application scaffold. The goal is to build the foundation before adding product features, authentication, billing, database services, or AI integrations.
+Atlas OS v2 is a secure, organization-scoped SaaS foundation for entrepreneurs
+and small businesses. It currently supports authentication, client/Super Admin
+access boundaries, business context, shared note conversations, an attention
+inbox, and activity history. Billing and AI remain intentionally disabled.
 
 ## Guiding principles
 
@@ -14,21 +17,21 @@ Every engineering decision should help generate revenue, reduce costs, save time
 
 ## Current scope
 
-This initial milestone includes:
+The current foundation includes:
 
-- Product vision documentation
-- Architecture direction
-- Milestone plan
-- Initial data model thinking
-- Minimal Next.js scaffold with TypeScript, Tailwind, and the App Router
+- Next.js, TypeScript, Tailwind, and App Router
+- Supabase Email/Password authentication
+- Organization memberships and RLS tenant isolation
+- Client and Super Admin surfaces
+- Business profiles and threaded note conversations
+- Super Admin attention inbox and organization activity history
+- Production-pilot deployment and onboarding documentation
 
-This milestone intentionally does not include:
+Still intentionally excluded:
 
-- Authentication
-- Supabase or any database provider
 - Billing
 - AI integrations
-- Tasks, contacts, opportunities, or other product features
+- CRM, documents, and broad task-management features
 - Extra UI/component libraries
 
 ## Getting started
@@ -47,13 +50,19 @@ npm run dev
 
 Open http://localhost:3000.
 
+Real credentials belong only in `.env.local` locally and in the hosting
+provider's encrypted environment-variable settings for production.
+
 ## Project structure
 
 ```text
-docs/                 Planning and architecture documents
-src/app/              Next.js App Router application
+docs/                 Architecture, setup, and operating documents
+src/app/              Next.js routes and server-rendered UI
+src/server/           Server-side queries, guards, and actions
+supabase/migrations/  Reviewed database migrations and RLS policies
 ```
 
 ## Next recommended step
 
-Create Milestone 0: confirm the product wedge, decide the exact initial user, and lock the first clickable app shell before adding SaaS infrastructure.
+Complete the production pilot checklist, verify tenant isolation with a second
+organization, and onboard the first controlled founding customer.

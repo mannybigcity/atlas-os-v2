@@ -29,6 +29,7 @@ Create `.env.local` from `.env.example`:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ATLAS_SUPER_ADMIN_EMAILS=info@atlasforentrepreneurs.com
 ```
 
@@ -64,6 +65,8 @@ session before showing `/reset-password`. It supports both server auth-code
 callbacks and browser hash-token recovery links.
 
 When Atlas is deployed, add the production equivalents for the live domain.
+Set `NEXT_PUBLIC_SITE_URL` to that exact HTTPS origin. Password recovery uses
+this configured origin instead of trusting a request host header.
 
 ## Create the Super Admin user
 

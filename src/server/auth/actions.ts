@@ -2,26 +2,32 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getSiteUrl, isSuperAdminEmail } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
 
 export async function signInWithPassword(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const nextPath = safeRedirectPath(formData.get("next"));
+  const requestedNext = formData.get("next");
+  const nextPath = safeRedirectPath(requestedNext);
 
   if (!email || !password) {
     redirect(`/login?error=missing_credentials&next=${encodeURIComponent(nextPath)}`);
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (error) {
     redirect(`/login?error=invalid_credentials&next=${encodeURIComponent(nextPath)}`);
+  }
+
+  if (typeof requestedNext !== "string" || requestedNext.length === 0) {
+    redirect(isSuperAdminEmail(data.user.email) ? "/lions-den" : "/client");
   }
 
   redirect(nextPath);
@@ -43,7 +49,7 @@ export async function requestPasswordReset(formData: FormData) {
   }
 
   const requestHeaders = await headers();
-  const origin = requestHeaders.get("origin") ?? "http://localhost:3000";
+  const origin = getSiteUrl(requestHeaders.get("origin"));
   const supabase = await createClient();
 
   await supabase.auth.resetPasswordForEmail(email, {
