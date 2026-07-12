@@ -2,7 +2,14 @@
 
 ## Current status
 
-No database has been added yet.
+The minimal workspace foundation has been defined in:
+
+```text
+supabase/migrations/20260712000000_workspace_foundation.sql
+```
+
+Apply it manually in the Supabase SQL editor before expecting organization data
+to appear in the app.
 
 This document captures the intended domain model so we can design intentionally when persistence is introduced.
 
@@ -26,32 +33,30 @@ Likely fields:
 - createdAt
 - updatedAt
 
-### Workspace
+### Organization / Workspace
 
 Represents a business using Atlas.
 
-Likely fields:
+Current fields:
 
 - id
 - name
-- industry
-- website
-- description
-- createdAt
-- updatedAt
+- slug
+- created_at
+- updated_at
 
-### Membership
+### OrganizationMembership
 
-Connects users to workspaces.
+Connects users to organizations/workspaces.
 
-Likely fields:
+Current fields:
 
 - id
-- userId
-- workspaceId
+- organization_id
+- user_id
 - role
-- createdAt
-- updatedAt
+- created_at
+- updated_at
 
 Initial roles:
 
@@ -112,10 +117,17 @@ These should not be implemented yet, but they are likely future primitives:
 
 When persistence is introduced:
 
-- All workspace-owned tables should include `workspaceId`.
-- Server-side data access should require a workspace context.
-- Users should never be able to query by arbitrary workspace IDs without membership checks.
+- All workspace-owned tables should include `organization_id`.
+- Server-side data access should require organization context.
+- Users should never be able to query by arbitrary organization IDs without membership checks.
 - AI tools should receive scoped context, not raw unrestricted database access.
+
+Current RLS baseline:
+
+- Organization members can read their own organizations.
+- Users can read their own memberships.
+- The approved Super Admin email can read organization and membership shells.
+- Insert/update/delete policies are intentionally not created yet.
 
 ## Data modeling bias
 
