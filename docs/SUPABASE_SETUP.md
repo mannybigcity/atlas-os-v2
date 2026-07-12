@@ -55,14 +55,24 @@ If Supabase asks for redirect URLs, add:
 ```text
 http://localhost:3000/login
 http://localhost:3000/auth/callback
+http://localhost:3000/auth/confirm
 http://localhost:3000/reset-password
 http://localhost:3000/client
 http://localhost:3000/lions-den
 ```
 
-Atlas uses `/auth/callback` to exchange Supabase recovery links for a secure
-session before showing `/reset-password`. It supports both server auth-code
-callbacks and browser hash-token recovery links.
+Atlas uses `/auth/confirm` to verify a hashed, one-time Supabase recovery token
+server-side before showing `/reset-password`. This avoids binding password
+recovery to the browser that originally requested the email.
+
+In **Authentication > Emails > Reset password**, set the reset link to:
+
+```html
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/reset-password">Reset password</a>
+```
+
+Keep the rest of the email content concise and do not expose the token anywhere
+other than this link.
 
 When Atlas is deployed, add the production equivalents for the live domain.
 Set `NEXT_PUBLIC_SITE_URL` to that exact HTTPS origin. Password recovery uses

@@ -52,6 +52,7 @@ In **Supabase > Authentication > URL Configuration**:
 ```text
 https://YOUR-DOMAIN/login
 https://YOUR-DOMAIN/auth/callback
+https://YOUR-DOMAIN/auth/confirm
 https://YOUR-DOMAIN/reset-password
 https://YOUR-DOMAIN/client
 https://YOUR-DOMAIN/lions-den
@@ -59,6 +60,13 @@ https://YOUR-DOMAIN/lions-den
 
 3. Keep `http://localhost:3000/**` as an additional development redirect.
 4. Do not use a broad production wildcard.
+
+In **Supabase > Authentication > Emails > Reset password**, use the
+server-verifiable recovery link:
+
+```html
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/reset-password">Reset password</a>
+```
 
 ## Supabase production checks
 
@@ -92,4 +100,3 @@ Validate in production:
 - Supabase Free: acceptable for the controlled pilot with manual recovery
   planning; reconsider after customer two or when availability demands it.
 - AI/API spend: $0 because no AI feature is enabled.
-
