@@ -112,6 +112,34 @@ Current events cover note creation, note updates, `@Atlas` attention requests,
 and business-profile updates. Events are append-only and become part of Atlas's
 business memory without requiring AI spend.
 
+### AttentionRequest
+
+Tracks active `@Atlas` requests for the Super Admin inbox.
+
+Defined in:
+
+```text
+supabase/migrations/20260712005000_attention_inbox.sql
+```
+
+Current fields:
+
+- id
+- organization_id
+- note_id
+- requested_by
+- status
+- requested_at
+- acknowledged_at
+- acknowledged_by
+- resolved_at
+- resolved_by
+- created_at
+- updated_at
+
+Only Super Admin can read or triage this inbox. Organization members create and
+close requests indirectly by adding or removing `@Atlas` from a shared note.
+
 ### OrganizationNote
 
 Stores lightweight organization-scoped business notes.
