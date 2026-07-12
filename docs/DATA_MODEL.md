@@ -140,6 +140,32 @@ Current fields:
 Only Super Admin can read or triage this inbox. Organization members create and
 close requests indirectly by adding or removing `@Atlas` from a shared note.
 
+### NoteMessage
+
+Stores immutable replies within a note conversation.
+
+Defined in:
+
+```text
+supabase/migrations/20260712006000_threaded_note_conversations.sql
+```
+
+Current fields:
+
+- id
+- organization_id
+- note_id
+- author_user_id
+- author_kind
+- author_display_name
+- body
+- attention_requested
+- created_at
+
+Existing note bodies are migrated into first messages. New messages are
+timestamped, cannot be edited or deleted, and identify human Atlas responses as
+`Atlas Admin`.
+
 ### OrganizationNote
 
 Stores lightweight organization-scoped business notes.

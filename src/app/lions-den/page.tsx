@@ -8,6 +8,8 @@ import {
 import { getActiveAttentionRequests } from "@/server/attention/queries";
 import { signOut } from "@/server/auth/actions";
 import { requireSuperAdmin } from "@/server/auth/guards";
+import { createAdminNoteMessage } from "@/server/notes/actions";
+import { getMessagesForNotes } from "@/server/notes/messages";
 import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +17,7 @@ export const dynamic = "force-dynamic";
 type LionsDenPageProps = {
   searchParams?: Promise<{
     attention?: string;
+    message?: string;
   }>;
 };
 
@@ -23,6 +26,9 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
   const params = await searchParams;
   const organizations = await getOrganizationsForSuperAdmin();
   const attentionRequests = await getActiveAttentionRequests();
+  const messages = await getMessagesForNotes(
+    attentionRequests.data.map((request) => request.noteId),
+  );
   const openRequestCount = attentionRequests.data.filter(
     (request) => request.status === "open",
   ).length;
@@ -55,6 +61,19 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
             The attention request could not be updated. Confirm that the
             Attention Inbox migration has been applied.
+          </div>
+        ) : null}
+
+        {params?.message === "created" ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Atlas Admin reply sent.
+          </div>
+        ) : null}
+
+        {params?.message && params.message !== "created" ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
+            Add a reply before sending. If a reply was entered, confirm that
+            the Threaded Note Conversations migration has been applied.
           </div>
         ) : null}
 
@@ -119,6 +138,62 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
                       {request.status}
                     </span>
                   </div>
+
+                  {messages.setupRequired ? (
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-600">
+                      Apply the Threaded Note Conversations migration to read
+                      and reply to this conversation.
+                    </div>
+                  ) : (
+                    <div className="mt-4 space-y-3">
+                      {messages.data
+                        .filter((message) => message.noteId === request.noteId)
+                        .map((message) => (
+                          <div
+                            className={`rounded-2xl border p-4 ${
+                              message.authorKind === "atlas_admin"
+                                ? "border-blue-200 bg-blue-50"
+                                : "border-slate-200 bg-white"
+                            }`}
+                            key={message.id}
+                          >
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                              <p className="text-sm font-semibold text-slate-950">
+                                {message.authorKind === "atlas_admin"
+                                  ? "Atlas Admin"
+                                  : message.authorDisplayName}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {formatDateTime(message.createdAt)}
+                              </p>
+                            </div>
+                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                              {message.body}
+                            </p>
+                          </div>
+                        ))}
+
+                      <form action={createAdminNoteMessage}>
+                        <input name="noteId" type="hidden" value={request.noteId} />
+                        <label className="block">
+                          <span className="text-sm font-medium text-slate-700">
+                            Reply as Atlas Admin
+                          </span>
+                          <textarea
+                            className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                            name="body"
+                            placeholder="Write a human Atlas Admin response."
+                          />
+                        </label>
+                        <button
+                          className="mt-3 rounded-full bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+                          type="submit"
+                        >
+                          Send Atlas reply
+                        </button>
+                      </form>
+                    </div>
+                  )}
 
                   <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                     {request.status === "open" ? (

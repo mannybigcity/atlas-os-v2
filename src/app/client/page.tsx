@@ -1,15 +1,18 @@
 import Link from "next/link";
 import { SurfaceShell } from "@/components/surface-shell";
 import { WorkspaceSectionCard } from "@/components/workspace-section-card";
+import { isSuperAdminEmail } from "@/lib/env";
 import { getOrganizationActivity } from "@/server/activity/queries";
 import { signOut } from "@/server/auth/actions";
+import { saveDisplayName } from "@/server/auth/profile-actions";
 import { getBusinessProfile } from "@/server/business-profile/queries";
 import { saveBusinessProfile } from "@/server/business-profile/actions";
 import { requireUser } from "@/server/auth/guards";
 import {
+  createClientNoteMessage,
   createOrganizationNote,
-  updateOrganizationNote,
 } from "@/server/notes/actions";
+import { getNoteMessages } from "@/server/notes/messages";
 import { getOrganizationNotes } from "@/server/notes/queries";
 import { getUserMemberships } from "@/server/organizations/queries";
 import { formatDateTime } from "@/lib/format";
@@ -19,6 +22,8 @@ export const dynamic = "force-dynamic";
 type ClientDashboardPageProps = {
   searchParams?: Promise<{
     access?: string;
+    identity?: string;
+    message?: string;
     note?: string;
     profile?: string;
   }>;
@@ -74,13 +79,17 @@ export default async function ClientDashboardPage({
   const primaryOrganization = primaryMembership?.organization;
   const canEditBusinessProfile =
     primaryMembership?.role === "owner" || primaryMembership?.role === "admin";
-  const canManageAllNotes = canEditBusinessProfile;
   const canCreateNotes = Boolean(primaryMembership);
+  const isSuperAdmin = isSuperAdminEmail(user.email);
+  const displayName = String(user.user_metadata.display_name ?? "").trim();
   const businessProfile = primaryOrganization
     ? await getBusinessProfile(primaryOrganization.id)
     : null;
   const notes = primaryOrganization
     ? await getOrganizationNotes(primaryOrganization.id)
+    : null;
+  const messages = primaryOrganization
+    ? await getNoteMessages(primaryOrganization.id)
     : null;
   const activity = primaryOrganization
     ? await getOrganizationActivity(primaryOrganization.id)
@@ -188,11 +197,70 @@ export default async function ClientDashboardPage({
           </div>
         ) : null}
 
+        {params?.message === "created" ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Conversation reply added.
+          </div>
+        ) : null}
+
+        {params?.message === "missing_body" ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
+            Add a message before sending.
+          </div>
+        ) : null}
+
+        {params?.message === "error" || params?.message === "denied" ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
+            The conversation reply could not be added.
+          </div>
+        ) : null}
+
+        {params?.identity === "saved" ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Conversation display name saved.
+          </div>
+        ) : null}
+
+        {params?.identity && params.identity !== "saved" ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
+            Use a display name between 2 and 80 characters. “Atlas Admin” is
+            reserved for authorized Atlas staff.
+          </div>
+        ) : null}
+
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
           Signed in as {user.email}. This workspace uses real organization
           membership data. Customer records, metrics, documents, and AI are not
           connected yet.
         </div>
+
+        {!isSuperAdmin ? (
+          <form
+            action={saveDisplayName}
+            className="rounded-2xl border border-slate-200 bg-white p-5"
+          >
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-950">
+                Your conversation name
+              </span>
+              <span className="mt-1 block text-sm leading-6 text-slate-600">
+                This name appears beside your timestamped messages.
+              </span>
+              <input
+                className="mt-3 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                defaultValue={displayName}
+                name="displayName"
+                placeholder="Example: Manny Ramirez"
+              />
+            </label>
+            <button
+              className="mt-4 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              type="submit"
+            >
+              Save display name
+            </button>
+          </form>
+        ) : null}
 
         {memberships.setupRequired ? (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
@@ -326,11 +394,11 @@ export default async function ClientDashboardPage({
                     Organization Memory
                   </p>
                   <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-                    Notes
+                    Note conversations
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Capture useful business context without AI spend,
-                    embeddings, or document storage.
+                    Keep timestamped client and Atlas Admin replies together
+                    without AI spend, email, or document storage.
                   </p>
                 </div>
                 <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
@@ -345,7 +413,14 @@ export default async function ClientDashboardPage({
                 </div>
               ) : null}
 
-              {!notes?.setupRequired && canCreateNotes ? (
+              {messages?.setupRequired && !notes?.setupRequired ? (
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+                  Conversations are not ready yet. Apply the Threaded Note
+                  Conversations migration in Supabase.
+                </div>
+              ) : null}
+
+              {!notes?.setupRequired && !messages?.setupRequired && canCreateNotes ? (
                 <form
                   action={createOrganizationNote}
                   className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5"
@@ -358,8 +433,8 @@ export default async function ClientDashboardPage({
                   <div className="grid gap-4">
                     <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
                       Mention <span className="font-semibold">@Atlas</span> in
-                      a note to flag it for future review. No notifications or
-                      AI run yet.
+                      a message to place the conversation in the Atlas Inbox.
+                      No external notification or AI runs.
                     </div>
                     <label className="block">
                       <span className="text-sm font-medium text-slate-700">
@@ -373,12 +448,12 @@ export default async function ClientDashboardPage({
                     </label>
                     <label className="block">
                       <span className="text-sm font-medium text-slate-700">
-                        Note body
+                        First message
                       </span>
                       <textarea
                         className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                         name="body"
-                        placeholder="Write the business context Atlas should remember. Mention @Atlas to flag it for review."
+                        placeholder="Start the conversation. Mention @Atlas when you need Atlas Admin attention."
                       />
                     </label>
                   </div>
@@ -386,12 +461,12 @@ export default async function ClientDashboardPage({
                     className="mt-4 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                     type="submit"
                   >
-                    Save note
+                    Start conversation
                   </button>
                 </form>
               ) : null}
 
-              {!notes?.setupRequired ? (
+              {!notes?.setupRequired && !messages?.setupRequired ? (
                 <div className="mt-5 space-y-4">
                   {notes?.data.length === 0 ? (
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
@@ -399,15 +474,52 @@ export default async function ClientDashboardPage({
                     </div>
                   ) : null}
 
-                  {notes?.data.map((note) => {
-                    const canUpdateNote = canManageAllNotes || note.createdBy === user.id;
+                  {notes?.data.map((note) => (
+                    <article
+                      className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                      key={note.id}
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <h3 className="text-lg font-semibold text-slate-950">
+                          {note.title}
+                        </h3>
+                        {note.attentionRequested ? (
+                          <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+                            Atlas attention requested
+                          </span>
+                        ) : null}
+                      </div>
 
-                    return canUpdateNote ? (
-                      <form
-                        action={updateOrganizationNote}
-                        className="rounded-2xl border border-slate-200 bg-white p-5"
-                        key={note.id}
-                      >
+                      <div className="mt-4 space-y-3">
+                        {messages?.data
+                          .filter((message) => message.noteId === note.id)
+                          .map((message) => (
+                            <div
+                              className={`rounded-2xl border p-4 ${
+                                message.authorKind === "atlas_admin"
+                                  ? "border-blue-200 bg-blue-50"
+                                  : "border-slate-200 bg-white"
+                              }`}
+                              key={message.id}
+                            >
+                              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-sm font-semibold text-slate-950">
+                                  {message.authorKind === "atlas_admin"
+                                    ? "Atlas Admin"
+                                    : message.authorDisplayName}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {formatDateTime(message.createdAt)}
+                                </p>
+                              </div>
+                              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                                {message.body}
+                              </p>
+                            </div>
+                          ))}
+                      </div>
+
+                      <form action={createClientNoteMessage} className="mt-4">
                         <input
                           name="organizationId"
                           type="hidden"
@@ -415,68 +527,24 @@ export default async function ClientDashboardPage({
                         />
                         <input name="noteId" type="hidden" value={note.id} />
                         <label className="block">
-                          <span className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <span className="text-sm font-medium text-slate-700">
-                              Title
-                            </span>
-                            {note.attentionRequested ? (
-                              <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
-                                Atlas attention requested
-                              </span>
-                            ) : null}
-                          </span>
-                          <input
-                            className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                            defaultValue={note.title}
-                            name="title"
-                          />
-                        </label>
-                        <label className="mt-4 block">
                           <span className="text-sm font-medium text-slate-700">
-                            Body
+                            Add a reply
                           </span>
                           <textarea
                             className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                            defaultValue={note.body ?? ""}
                             name="body"
+                            placeholder="Write a new message. Mention @Atlas when you need attention."
                           />
                         </label>
-                        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <p className="text-sm leading-6 text-slate-500">
-                            Last updated: {formatDateTime(note.updatedAt)}
-                          </p>
-                          <button
-                            className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                            type="submit"
-                          >
-                            Update note
-                          </button>
-                        </div>
+                        <button
+                          className="mt-3 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                          type="submit"
+                        >
+                          Send reply
+                        </button>
                       </form>
-                    ) : (
-                      <article
-                        className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
-                        key={note.id}
-                      >
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                          <h3 className="text-lg font-semibold text-slate-950">
-                            {note.title}
-                          </h3>
-                          {note.attentionRequested ? (
-                            <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
-                              Atlas attention requested
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
-                          {note.body || "No note body yet."}
-                        </p>
-                        <p className="mt-4 text-sm leading-6 text-slate-500">
-                          Last updated: {formatDateTime(note.updatedAt)}
-                        </p>
-                      </article>
-                    );
-                  })}
+                    </article>
+                  ))}
                 </div>
               ) : null}
             </section>

@@ -3,6 +3,7 @@ import type { WorkspaceQueryResult } from "@/server/organizations/queries";
 
 export type AttentionRequest = {
   id: string;
+  organizationId: string;
   noteId: string;
   status: "open" | "acknowledged";
   requestedAt: string;
@@ -15,6 +16,7 @@ type TitledRelation = { title: string };
 
 type AttentionRequestRow = {
   id: string;
+  organization_id: string;
   note_id: string;
   status: "open" | "acknowledged";
   requested_at: string;
@@ -35,6 +37,7 @@ export async function getActiveAttentionRequests(): Promise<
     .select(
       `
         id,
+        organization_id,
         note_id,
         status,
         requested_at,
@@ -57,6 +60,7 @@ export async function getActiveAttentionRequests(): Promise<
   return {
     data: ((data ?? []) as AttentionRequestRow[]).map((request) => ({
       id: request.id,
+      organizationId: request.organization_id,
       noteId: request.note_id,
       status: request.status,
       requestedAt: request.requested_at,
@@ -69,4 +73,3 @@ export async function getActiveAttentionRequests(): Promise<
     error: null,
   };
 }
-
