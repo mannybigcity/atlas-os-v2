@@ -53,9 +53,16 @@ If Supabase asks for redirect URLs, add:
 
 ```text
 http://localhost:3000/login
+http://localhost:3000/auth/callback
+http://localhost:3000/reset-password
 http://localhost:3000/client
 http://localhost:3000/lions-den
 ```
+
+Atlas uses `/auth/callback` to exchange Supabase recovery links for a secure
+server-side session before showing `/reset-password`.
+
+When Atlas is deployed, add the production equivalents for the live domain.
 
 ## Create the Super Admin user
 
@@ -71,6 +78,8 @@ This milestone authorizes Super Admin access through the `ATLAS_SUPER_ADMIN_EMAI
 
 - `/client` requires any authenticated Supabase user.
 - `/lions-den` requires an authenticated Supabase user whose email is listed in `ATLAS_SUPER_ADMIN_EMAILS`.
+- `/forgot-password` requests a Supabase password recovery email.
+- `/reset-password` updates the password only after a valid recovery session exists.
 
 Authenticated non-admin users who visit `/lions-den` are redirected to `/client?access=denied`.
 

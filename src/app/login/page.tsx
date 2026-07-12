@@ -6,11 +6,14 @@ type LoginPageProps = {
   searchParams?: Promise<{
     error?: string;
     next?: string;
+    status?: string;
   }>;
 };
 
 const errorMessages: Record<string, string> = {
+  auth_callback_failed: "The recovery link could not be verified. Request a new reset link.",
   invalid_credentials: "The email or password was not accepted.",
+  missing_auth_code: "The recovery link was missing its secure code. Request a new reset link.",
   missing_credentials: "Enter both an email and password.",
 };
 
@@ -55,6 +58,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 </div>
               ) : null}
 
+              {params?.status === "password_updated" ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+                  Password updated. Sign in with your new password.
+                </div>
+              ) : null}
+
               <div>
                 <label className="text-sm font-medium text-slate-700" htmlFor="email">
                   Email
@@ -92,10 +101,18 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 Sign in
               </button>
 
-              <p className="text-sm leading-6 text-slate-500">
-                Magic links, signup flows, and password reset are intentionally
-                not enabled in this milestone.
-              </p>
+              <div className="flex flex-col gap-2 text-sm leading-6 text-slate-500">
+                <Link
+                  className="font-semibold text-slate-700 hover:text-slate-950"
+                  href="/forgot-password"
+                >
+                  Forgot your password?
+                </Link>
+                <p>
+                  Magic links and public signup flows are intentionally not
+                  enabled.
+                </p>
+              </div>
             </form>
           </div>
         </section>
