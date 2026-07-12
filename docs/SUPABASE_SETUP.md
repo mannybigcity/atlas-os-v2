@@ -60,7 +60,8 @@ http://localhost:3000/lions-den
 ```
 
 Atlas uses `/auth/callback` to exchange Supabase recovery links for a secure
-server-side session before showing `/reset-password`.
+session before showing `/reset-password`. It supports both server auth-code
+callbacks and browser hash-token recovery links.
 
 When Atlas is deployed, add the production equivalents for the live domain.
 

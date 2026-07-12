@@ -1,4 +1,4 @@
-const allowedRedirectPaths = new Set(["/", "/client", "/lions-den"]);
+const allowedRedirectPaths = new Set(["/", "/client", "/lions-den", "/reset-password"]);
 
 export function safeRedirectPath(value: FormDataEntryValue | string | null | undefined) {
   if (typeof value !== "string") {
