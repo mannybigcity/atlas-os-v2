@@ -6,12 +6,16 @@ import { requireUser } from "@/server/auth/guards";
 
 const editableRoles = new Set(["owner", "admin"]);
 
+function includesAtlasMention(title: string | null, body: string | null) {
+  return `${title ?? ""} ${body ?? ""}`.toLowerCase().includes("@atlas");
+}
+
 function textValue(formData: FormData, key: string) {
   const value = String(formData.get(key) ?? "").trim();
   return value.length > 0 ? value : null;
 }
 
-async function requireEditableOrganization(
+async function requireOrganizationMembership(
   organizationId: string,
   userId: string,
 ) {
@@ -23,11 +27,14 @@ async function requireEditableOrganization(
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error || !membership || !editableRoles.has(String(membership.role))) {
+  if (error || !membership) {
     redirect("/client?note=denied");
   }
 
-  return supabase;
+  return {
+    role: String(membership.role),
+    supabase,
+  };
 }
 
 export async function createOrganizationNote(formData: FormData) {
@@ -44,12 +51,13 @@ export async function createOrganizationNote(formData: FormData) {
     redirect("/client?note=missing_title");
   }
 
-  const supabase = await requireEditableOrganization(organizationId, user.id);
+  const { supabase } = await requireOrganizationMembership(organizationId, user.id);
   const { error } = await supabase.from("organization_notes").insert({
     organization_id: organizationId,
     title,
     body,
     created_by: user.id,
+    attention_requested: includesAtlasMention(title, body),
   });
 
   if (error) {
@@ -74,12 +82,31 @@ export async function updateOrganizationNote(formData: FormData) {
     redirect("/client?note=missing_title");
   }
 
-  const supabase = await requireEditableOrganization(organizationId, user.id);
+  const { role, supabase } = await requireOrganizationMembership(
+    organizationId,
+    user.id,
+  );
+  const { data: note, error: noteError } = await supabase
+    .from("organization_notes")
+    .select("created_by")
+    .eq("id", noteId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (
+    noteError ||
+    !note ||
+    (note.created_by !== user.id && !editableRoles.has(role))
+  ) {
+    redirect("/client?note=denied");
+  }
+
   const { error } = await supabase
     .from("organization_notes")
     .update({
       title,
       body,
+      attention_requested: includesAtlasMention(title, body),
     })
     .eq("id", noteId)
     .eq("organization_id", organizationId);

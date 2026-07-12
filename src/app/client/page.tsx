@@ -73,7 +73,8 @@ export default async function ClientDashboardPage({
   const primaryOrganization = primaryMembership?.organization;
   const canEditBusinessProfile =
     primaryMembership?.role === "owner" || primaryMembership?.role === "admin";
-  const canEditNotes = canEditBusinessProfile;
+  const canManageAllNotes = canEditBusinessProfile;
+  const canCreateNotes = Boolean(primaryMembership);
   const businessProfile = primaryOrganization
     ? await getBusinessProfile(primaryOrganization.id)
     : null;
@@ -165,7 +166,8 @@ export default async function ClientDashboardPage({
 
         {params?.note === "denied" ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            Only organization owners and admins can save notes.
+            You can only update notes you created unless you are an organization
+            owner or admin.
           </div>
         ) : null}
 
@@ -272,7 +274,7 @@ export default async function ClientDashboardPage({
                   </p>
                 </div>
                 <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  {canEditNotes ? "Editable" : "Read only"}
+                  Shared workspace
                 </span>
               </div>
 
@@ -283,7 +285,7 @@ export default async function ClientDashboardPage({
                 </div>
               ) : null}
 
-              {!notes?.setupRequired && canEditNotes ? (
+              {!notes?.setupRequired && canCreateNotes ? (
                 <form
                   action={createOrganizationNote}
                   className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5"
@@ -294,6 +296,11 @@ export default async function ClientDashboardPage({
                     value={primaryOrganization?.id ?? ""}
                   />
                   <div className="grid gap-4">
+                    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+                      Mention <span className="font-semibold">@Atlas</span> in
+                      a note to flag it for future review. No notifications or
+                      AI run yet.
+                    </div>
                     <label className="block">
                       <span className="text-sm font-medium text-slate-700">
                         Note title
@@ -311,7 +318,7 @@ export default async function ClientDashboardPage({
                       <textarea
                         className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                         name="body"
-                        placeholder="Write the business context Atlas should remember."
+                        placeholder="Write the business context Atlas should remember. Mention @Atlas to flag it for review."
                       />
                     </label>
                   </div>
@@ -332,8 +339,10 @@ export default async function ClientDashboardPage({
                     </div>
                   ) : null}
 
-                  {notes?.data.map((note) =>
-                    canEditNotes ? (
+                  {notes?.data.map((note) => {
+                    const canUpdateNote = canManageAllNotes || note.createdBy === user.id;
+
+                    return canUpdateNote ? (
                       <form
                         action={updateOrganizationNote}
                         className="rounded-2xl border border-slate-200 bg-white p-5"
@@ -346,8 +355,15 @@ export default async function ClientDashboardPage({
                         />
                         <input name="noteId" type="hidden" value={note.id} />
                         <label className="block">
-                          <span className="text-sm font-medium text-slate-700">
-                            Title
+                          <span className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <span className="text-sm font-medium text-slate-700">
+                              Title
+                            </span>
+                            {note.attentionRequested ? (
+                              <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+                                Atlas attention requested
+                              </span>
+                            ) : null}
                           </span>
                           <input
                             className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
@@ -382,9 +398,16 @@ export default async function ClientDashboardPage({
                         className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
                         key={note.id}
                       >
-                        <h3 className="text-lg font-semibold text-slate-950">
-                          {note.title}
-                        </h3>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <h3 className="text-lg font-semibold text-slate-950">
+                            {note.title}
+                          </h3>
+                          {note.attentionRequested ? (
+                            <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+                              Atlas attention requested
+                            </span>
+                          ) : null}
+                        </div>
                         <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
                           {note.body || "No note body yet."}
                         </p>
@@ -392,8 +415,8 @@ export default async function ClientDashboardPage({
                           Last updated: {formatDateTime(note.updatedAt)}
                         </p>
                       </article>
-                    ),
-                  )}
+                    );
+                  })}
                 </div>
               ) : null}
             </section>

@@ -111,6 +111,7 @@ Defined in:
 
 ```text
 supabase/migrations/20260712002000_organization_notes.sql
+supabase/migrations/20260712003000_workspace_notes_v2.sql
 ```
 
 Current fields:
@@ -120,13 +121,17 @@ Current fields:
 - title
 - body
 - created_by
+- attention_requested
 - created_at
 - updated_at
 
 Current access rules:
 
 - Organization members can read notes.
-- Organization owners/admins can create and update notes.
+- Organization members can create notes.
+- Note authors can update their own notes.
+- Organization owners/admins can update all notes.
+- Notes containing `@Atlas` are flagged with `attention_requested`.
 - Delete is intentionally not implemented yet.
 
 ## Later entities
@@ -160,7 +165,9 @@ Current RLS baseline:
 - Organization members can read their business profile.
 - Organization owners/admins can create and update their business profile.
 - Organization members can read organization notes.
-- Organization owners/admins can create and update organization notes.
+- Organization members can create organization notes.
+- Note authors can update their own organization notes.
+- Organization owners/admins can update all organization notes.
 - Delete policies are intentionally not created yet.
 
 ## Data modeling bias
