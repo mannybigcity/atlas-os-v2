@@ -12,7 +12,8 @@ const errorMessages: Record<string, string> = {
   missing_password: "Enter and confirm the new password.",
   password_mismatch: "The password fields do not match.",
   update_failed: "The password could not be updated. Request a new reset link.",
-  weak_password: "Use at least 8 characters for the new password.",
+  weak_password:
+    "Use at least 12 characters with a lowercase letter, uppercase letter, number, and symbol.",
 };
 
 export default async function ResetPasswordPage({
@@ -56,13 +57,21 @@ export default async function ResetPasswordPage({
                 <input
                   autoComplete="new-password"
                   className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  aria-describedby="password-requirements"
                   id="password"
-                  minLength={8}
+                  minLength={12}
                   name="password"
                   placeholder="New password"
                   required
                   type="password"
                 />
+                <p
+                  className="mt-2 text-sm leading-6 text-slate-600"
+                  id="password-requirements"
+                >
+                  At least 12 characters, including lowercase, uppercase, a
+                  number, and a symbol.
+                </p>
               </div>
 
               <div>
@@ -76,7 +85,7 @@ export default async function ResetPasswordPage({
                   autoComplete="new-password"
                   className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                   id="confirmPassword"
-                  minLength={8}
+                  minLength={12}
                   name="confirmPassword"
                   placeholder="Confirm new password"
                   required

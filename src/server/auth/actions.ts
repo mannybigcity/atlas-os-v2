@@ -89,7 +89,14 @@ export async function updatePassword(formData: FormData) {
     redirect("/reset-password?error=missing_password");
   }
 
-  if (password.length < 8) {
+  const meetsPasswordPolicy =
+    password.length >= 12 &&
+    /[a-z]/.test(password) &&
+    /[A-Z]/.test(password) &&
+    /[0-9]/.test(password) &&
+    /[^A-Za-z0-9]/.test(password);
+
+  if (!meetsPasswordPolicy) {
     redirect("/reset-password?error=weak_password");
   }
 
