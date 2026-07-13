@@ -1,5 +1,20 @@
 # Milestones
 
+## Current status — July 13, 2026
+
+Milestones 0-3 are complete for a controlled pilot. Atlas now has a deployed
+Next.js application, Supabase authentication, organization memberships,
+tenant-scoped data, production password recovery, threaded conversations,
+activity history, and a Super Admin attention inbox.
+
+The immediate milestone is no longer a generic AI briefing. It is a controlled
+founding-customer cycle for QTIME Productions. See
+`docs/CANONICAL_PRODUCT_BRIEF.md` and `docs/QTIME_PILOT_PLAN.md`.
+
+AI, billing automation, CRM, lead generation, content publishing, and public
+self-service onboarding remain deferred until a real QTIME delivery proves
+which workflow should be productized.
+
 ## Milestone 0: Foundation
 
 Goal: create the product and technical foundation without prematurely adding SaaS complexity.
@@ -110,3 +125,41 @@ Success criteria:
 
 - A customer can pay for Atlas.
 - Costs and usage are visible enough to protect margins.
+
+## Milestone 6: Controlled QTIME founding pilot
+
+Goal: deliver one useful, repeatable, human-reviewed business outcome to the
+first paying customer through the secure Atlas workspace.
+
+Scope:
+
+- Reconcile the original customer promise and payment
+- Complete the live cross-tenant isolation test
+- Provision a separate QTIME organization and owner account
+- Capture a primary 30-day goal and three priorities
+- Deliver one reviewed weekly package
+- Record customer feedback, delivery time, and direct cost
+- Build only the smallest missing workflow proven by the delivery
+
+Out of scope:
+
+- Public signup
+- Autonomous agents
+- Automated publishing or outreach
+- Broad CRM or billing systems
+- Claims of AI functionality that does not exist
+
+Success criteria:
+
+- QTIME can access only its own workspace.
+- Quincy receives and reviews one real weekly outcome.
+- Atlas identifies one workflow worth repeating or productizing.
+- No customer data, secrets, or uncontrolled spend are introduced.
+
+### Step 2 implementation status
+
+The local Step 2 foundation now includes organization-scoped 30-day plans,
+actions, deliverables, and separate client review records. Client and Super
+Admin interfaces are connected. Production migration, smoke testing, QTIME
+provisioning, and the live cross-tenant isolation test remain gated by
+`docs/FOUNDING_PILOT_DEPLOYMENT.md`.

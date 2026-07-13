@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SurfaceShell } from "@/components/surface-shell";
+import { AdminPilotWorkspace } from "@/components/admin-pilot-workspace";
 import { formatDateTime } from "@/lib/format";
 import {
   acknowledgeAttentionRequest,
@@ -11,6 +12,7 @@ import { requireSuperAdmin } from "@/server/auth/guards";
 import { createAdminNoteMessage } from "@/server/notes/actions";
 import { getMessagesForNotes } from "@/server/notes/messages";
 import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
+import { getPilotWorkspace } from "@/server/pilot/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +20,7 @@ type LionsDenPageProps = {
   searchParams?: Promise<{
     attention?: string;
     message?: string;
+    pilot?: string;
   }>;
 };
 
@@ -25,6 +28,12 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
   const user = await requireSuperAdmin("/lions-den");
   const params = await searchParams;
   const organizations = await getOrganizationsForSuperAdmin();
+  const pilotWorkspaces = await Promise.all(
+    organizations.data.map(async (organization) => ({
+      organization,
+      result: await getPilotWorkspace(organization.id),
+    })),
+  );
   const attentionRequests = await getActiveAttentionRequests();
   const messages = await getMessagesForNotes(
     attentionRequests.data.map((request) => request.noteId),
@@ -74,6 +83,19 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
             Add a reply before sending. If a reply was entered, confirm that
             the Threaded Note Conversations migration has been applied.
+          </div>
+        ) : null}
+
+        {params?.pilot && !["error", "missing_plan", "missing_action", "missing_deliverable"].includes(params.pilot) ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Founding pilot workspace updated.
+          </div>
+        ) : null}
+
+        {params?.pilot && ["error", "missing_plan", "missing_action", "missing_deliverable"].includes(params.pilot) ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
+            The pilot update could not be saved. Check required fields and confirm
+            that the Founding Pilot Workflow migration has been applied.
           </div>
         ) : null}
 
@@ -222,6 +244,44 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
             </div>
           ) : null}
         </section>
+
+        {organizations.data.length > 0 ? (
+          <section className="rounded-2xl border border-slate-200 bg-white p-5">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
+                Founding Pilot Operations
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                Client execution workspaces
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Human-managed goals, actions, deliverables, and client approvals.
+                No automated agents or external API calls run from this surface.
+              </p>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {pilotWorkspaces.map(({ organization, result }) =>
+                result.setupRequired ? (
+                  <div
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700"
+                    key={organization.id}
+                  >
+                    Apply the Founding Pilot Workflow migration to manage pilot
+                    workspaces.
+                  </div>
+                ) : (
+                  <AdminPilotWorkspace
+                    key={organization.id}
+                    organizationId={organization.id}
+                    organizationName={organization.name}
+                    workspace={result.data}
+                  />
+                ),
+              )}
+            </div>
+          </section>
+        ) : null}
 
         {organizations.setupRequired ? (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">

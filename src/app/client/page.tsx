@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SurfaceShell } from "@/components/surface-shell";
 import { WorkspaceSectionCard } from "@/components/workspace-section-card";
+import { ClientPilotWorkspace } from "@/components/client-pilot-workspace";
 import { isSuperAdminEmail } from "@/lib/env";
 import { getOrganizationActivity } from "@/server/activity/queries";
 import { signOut } from "@/server/auth/actions";
@@ -15,6 +16,7 @@ import {
 import { getNoteMessages } from "@/server/notes/messages";
 import { getOrganizationNotes } from "@/server/notes/queries";
 import { getUserMemberships } from "@/server/organizations/queries";
+import { getPilotWorkspace } from "@/server/pilot/queries";
 import { formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +27,7 @@ type ClientDashboardPageProps = {
     identity?: string;
     message?: string;
     note?: string;
+    pilot?: string;
     profile?: string;
   }>;
 };
@@ -40,7 +43,7 @@ const workspaceSections = [
     title: "Priorities",
     description:
       "This will hold the focused work that needs attention before Atlas grows into deeper workflows.",
-    status: "Not connected",
+    status: "Connected foundation",
   },
   {
     title: "Notes",
@@ -93,6 +96,9 @@ export default async function ClientDashboardPage({
     : null;
   const activity = primaryOrganization
     ? await getOrganizationActivity(primaryOrganization.id)
+    : null;
+  const pilot = primaryOrganization
+    ? await getPilotWorkspace(primaryOrganization.id)
     : null;
   const businessProfileFields: BusinessProfileField[] = [
     {
@@ -155,6 +161,24 @@ export default async function ClientDashboardPage({
         {params?.profile === "saved" ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
             Business context saved.
+          </div>
+        ) : null}
+
+        {params?.pilot === "review_saved" ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Deliverable review saved.
+          </div>
+        ) : null}
+
+        {params?.pilot === "review_denied" ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
+            Only organization owners and admins can review deliverables.
+          </div>
+        ) : null}
+
+        {params?.pilot === "review_error" ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
+            The deliverable review could not be saved.
           </div>
         ) : null}
 
@@ -314,8 +338,8 @@ export default async function ClientDashboardPage({
                   </h2>
                 </div>
                 <p className="max-w-xl text-sm leading-6 text-slate-600">
-                  These are intentionally empty. We are defining the product
-                  surface before adding new tables or AI.
+                  The pilot priorities surface is now connected. Daily Briefing
+                  remains deferred until a real customer cycle proves its value.
                 </p>
               </div>
 
@@ -330,6 +354,21 @@ export default async function ClientDashboardPage({
                 ))}
               </div>
             </section>
+
+            {pilot?.setupRequired ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+                The founding pilot workspace is not ready yet. Apply the Founding
+                Pilot Workflow migration in Supabase.
+              </div>
+            ) : null}
+
+            {!pilot?.setupRequired && pilot && primaryOrganization ? (
+              <ClientPilotWorkspace
+                canReview={canEditBusinessProfile}
+                organizationId={primaryOrganization.id}
+                workspace={pilot.data}
+              />
+            ) : null}
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
