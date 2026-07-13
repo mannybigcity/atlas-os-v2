@@ -255,7 +255,7 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
                 Client execution workspaces
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Human-managed goals, actions, deliverables, and client approvals.
+                Human-managed goals, actions, work for client review, and approvals.
                 No automated agents or external API calls run from this surface.
               </p>
             </div>

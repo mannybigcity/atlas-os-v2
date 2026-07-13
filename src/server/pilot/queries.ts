@@ -25,6 +25,7 @@ export type PilotAction = {
 export type DeliverableReview = {
   decision: "approved" | "changes_requested";
   note: string | null;
+  reviewedByDisplayName: string;
   reviewedAt: string;
 };
 
@@ -69,6 +70,7 @@ type ActionRow = {
 type ReviewRow = {
   decision: DeliverableReview["decision"];
   note: string | null;
+  reviewed_by_display_name: string;
   reviewed_at: string;
 };
 
@@ -121,6 +123,7 @@ export async function getPilotWorkspace(
           organization_pilot_deliverable_reviews (
             decision,
             note,
+            reviewed_by_display_name,
             reviewed_at
           )
         `,
@@ -177,6 +180,7 @@ export async function getPilotWorkspace(
           ? {
               decision: review.decision,
               note: review.note,
+              reviewedByDisplayName: review.reviewed_by_display_name,
               reviewedAt: review.reviewed_at,
             }
           : null,

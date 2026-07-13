@@ -5,6 +5,7 @@ import {
   updatePilotAction,
   updatePilotDeliverable,
 } from "@/server/pilot/actions";
+import { formatDateTime } from "@/lib/format";
 import type { PilotWorkspace } from "@/server/pilot/queries";
 
 type AdminPilotWorkspaceProps = {
@@ -18,6 +19,10 @@ const inputClass =
 
 function datetimeLocalValue(value?: string | null) {
   return value ? value.slice(0, 16) : "";
+}
+
+function reviewDecisionLabel(decision: "approved" | "changes_requested") {
+  return decision === "approved" ? "Approved" : "Changes requested";
 }
 
 export function AdminPilotWorkspace({
@@ -123,7 +128,16 @@ export function AdminPilotWorkspace({
                   </div>
                 </div>
                 {deliverable.review ? (
-                  <p className="mt-2 text-xs text-blue-700">Client: {deliverable.review.decision.replaceAll("_", " ")}</p>
+                  <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs leading-5 text-blue-950">
+                    <p className="font-semibold">
+                      {reviewDecisionLabel(deliverable.review.decision)} by{" "}
+                      {deliverable.review.reviewedByDisplayName} on{" "}
+                      {formatDateTime(deliverable.review.reviewedAt)}
+                    </p>
+                    <p className="mt-1">
+                      {deliverable.review.note ?? "No review note was added."}
+                    </p>
+                  </div>
                 ) : null}
               </form>
             ))}

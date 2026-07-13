@@ -28,7 +28,7 @@ export function ClientPilotWorkspace({
             30-day execution workspace
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            One goal, focused actions, human-reviewed deliverables, and a clear
+            One goal, focused actions, human-reviewed work, and a clear
             next check-in.
           </p>
         </div>
@@ -103,10 +103,10 @@ export function ClientPilotWorkspace({
       </div>
 
       <div className="mt-6">
-        <h3 className="text-lg font-semibold text-slate-950">Deliverables</h3>
+        <h3 className="text-lg font-semibold text-slate-950">Work for your review</h3>
         {workspace.deliverables.length === 0 ? (
           <p className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-            No deliverables have been published yet.
+            Nothing is ready for your review yet.
           </p>
         ) : (
           <div className="mt-3 space-y-4">
@@ -135,7 +135,11 @@ export function ClientPilotWorkspace({
 
                 {deliverable.review ? (
                   <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-                    <p className="font-semibold">Review: {label(deliverable.review.decision)}</p>
+                    <p className="font-semibold">
+                      {deliverable.review.decision === "approved"
+                        ? "Approved"
+                        : "Changes requested"} by {deliverable.review.reviewedByDisplayName}
+                    </p>
                     <p className="mt-1">{deliverable.review.note ?? "No review note."}</p>
                     <p className="mt-1 text-xs text-blue-700">
                       {formatDateTime(deliverable.review.reviewedAt)}
@@ -148,7 +152,7 @@ export function ClientPilotWorkspace({
                     <input name="organizationId" type="hidden" value={organizationId} />
                     <input name="deliverableId" type="hidden" value={deliverable.id} />
                     <label className="block">
-                      <span className="text-sm font-medium text-slate-700">Review note</span>
+                      <span className="text-sm font-medium text-slate-700">Your note</span>
                       <textarea
                         className="mt-2 min-h-20 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                         defaultValue={deliverable.review?.note ?? ""}

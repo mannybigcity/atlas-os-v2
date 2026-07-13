@@ -163,3 +163,29 @@ actions, deliverables, and separate client review records. Client and Super
 Admin interfaces are connected. Production migration, smoke testing, QTIME
 provisioning, and the live cross-tenant isolation test remain gated by
 `docs/FOUNDING_PILOT_DEPLOYMENT.md`.
+
+Pre-launch wording requirement:
+
+- On client-facing screens, replace **Deliverables** with **Work for your
+  review**.
+- When no reviewable work is available, display: **Nothing is ready for your
+  review yet.**
+- Database and internal implementation names may continue using
+  `deliverable` to avoid unnecessary schema changes.
+
+Client-facing plain-language review before launch:
+
+- **Offer** -> **What you offer**
+- **Positioning** -> **Why customers choose you**
+- **Constraints** -> **Challenges and limits** (discuss final wording with
+  Manny; **What could get in the way** is another option)
+- Keep **Target customer** and **Current goals**.
+- Review the rest of the client interface with Manny for corporate, technical,
+  or unfamiliar language before inviting real clients.
+- Consider **About your business** instead of **Organization context** and
+  **Profile progress** instead of **Context preview**.
+- In the Lion's Den, client reviews must identify the reviewer in plain
+  language: **Approved by [client display name] on [date and time]** or
+  **Changes requested by [client display name] on [date and time]**. Use the
+  account email as a fallback when no display name is available, and show the
+  review note to Atlas Admin.

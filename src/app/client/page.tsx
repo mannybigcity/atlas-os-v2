@@ -103,7 +103,7 @@ export default async function ClientDashboardPage({
   const businessProfileFields: BusinessProfileField[] = [
     {
       name: "offer",
-      label: "Offer",
+      label: "What you offer",
       description: "What does this business sell, and what result does it create?",
       placeholder:
         "Example: AI-powered operating system for entrepreneurs and small businesses.",
@@ -119,7 +119,7 @@ export default async function ClientDashboardPage({
     },
     {
       name: "positioning",
-      label: "Positioning",
+      label: "Why customers choose you",
       description: "How should customers understand why this business is different?",
       placeholder:
         "Example: A practical AI chief of staff that helps owners focus and execute.",
@@ -135,8 +135,8 @@ export default async function ClientDashboardPage({
     },
     {
       name: "constraints",
-      label: "Constraints",
-      description: "What limits should Atlas respect?",
+      label: "Challenges and limits",
+      description: "What could get in the way, or what should Atlas respect?",
       placeholder:
         "Example: Minimal budget, no uncontrolled AI spend, and no premature complexity.",
       value: businessProfile?.data?.constraints,
@@ -166,19 +166,19 @@ export default async function ClientDashboardPage({
 
         {params?.pilot === "review_saved" ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-            Deliverable review saved.
+            Your review was saved.
           </div>
         ) : null}
 
         {params?.pilot === "review_denied" ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            Only organization owners and admins can review deliverables.
+            Only organization owners and admins can review this work.
           </div>
         ) : null}
 
         {params?.pilot === "review_error" ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
-            The deliverable review could not be saved.
+            Your review could not be saved.
           </div>
         ) : null}
 
@@ -592,7 +592,7 @@ export default async function ClientDashboardPage({
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
-                    Organization Context
+                    About your business
                   </p>
                   <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
                     Business profile
@@ -609,7 +609,7 @@ export default async function ClientDashboardPage({
 
               {businessProfile?.setupRequired ? (
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                  Organization Context is not ready yet. Apply the business
+                  Your business profile is not ready yet. Apply the business
                   profile migration in Supabase to enable this section.
                 </div>
               ) : null}
@@ -643,13 +643,13 @@ export default async function ClientDashboardPage({
                       className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                       type="submit"
                     >
-                      Save business context
+                      Save business profile
                     </button>
                   </form>
 
                   <aside className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                     <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Context preview
+                      Profile progress
                     </p>
                     <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-950">
                       {completedProfileFields.length}/5 fields filled
@@ -677,7 +677,7 @@ export default async function ClientDashboardPage({
                 <div className="mt-5">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                     <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Context preview
+                      Profile progress
                     </p>
                     <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-950">
                       {completedProfileFields.length}/5 fields filled
