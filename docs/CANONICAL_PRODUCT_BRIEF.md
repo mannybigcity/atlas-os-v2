@@ -100,6 +100,11 @@ Old Atlas applications, DigitalOcean runtimes, Paperclip/Hermes experiments,
 static dashboards, prompts, and exports are research material, not production
 dependencies.
 
+The original Atlas source repository is
+`https://github.com/mannybigcity/atlas-os`. Manny provided this identity on
+July 14, 2026. It remains an unaudited **OLD PROTOTYPE**. Atlas OS v2 remains
+the only canonical application and production repository.
+
 Before reusing a legacy asset:
 
 1. Inventory what it contains and why it might matter.
@@ -127,9 +132,11 @@ QTIME; neither should replace the organization name in Atlas. The relationship
 between the older "Food for Thought" materials and Food4Thought Network still
 needs Quincy's confirmation.
 
-The amount is recorded as $49 in the active project conversation and as
-approximately $50 in the historical handoff. Treat $49 as the working value
-until the payment record confirms otherwise.
+The assessment deck advertised $49/month. Puter's July 14 evidence handoff
+reports that a $50 payment was recorded on June 29, 2026, but no recurring term,
+contract length, guaranteed result, or delivery date was found. Treat $50 as a
+reported payment fact and locate the receipt or payment record before treating
+the commercial terms as verified.
 
 No promise should be inferred from the old feature inventory. Before customer
 access is sent, Atlas must document what Quincy understood the payment to buy,

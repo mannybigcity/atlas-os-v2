@@ -54,6 +54,9 @@ Every capability, integration, or agent claim must use one of these labels:
 
 - SIS Custom Creations and FRESH are real Manny-operated businesses.
 - QTIME Productions is a paying founding client.
+- Puter's evidence handoff reports a $50 QTIME payment on June 29, 2026. The
+  underlying payment record still needs to be located before the commercial
+  terms are considered verified.
 - Roll'n Wars and Food4Thought Network are QTIME projects or brands, not
   separate Atlas customer organizations unless Quincy requests otherwise.
 - KR Permits and Sugar Cruise Vibe are prospective opportunities.
@@ -64,7 +67,11 @@ Every capability, integration, or agent claim must use one of these labels:
 
 ### OLD PROTOTYPE
 
-- Earlier Atlas websites, static dashboards, and legacy repositories.
+- The original Atlas repository, provided by Manny on July 14, 2026:
+  `https://github.com/mannybigcity/atlas-os`. Its contents have not yet been
+  audited, so the repository is reference material rather than a production
+  dependency.
+- Earlier Atlas websites and static dashboards.
 - Prompt-only or simulated agents.
 - Old DigitalOcean experiments and prior authentication/demo data.
 - Paperclip, Hermes, and other experimental runtimes unless separately audited
@@ -170,6 +177,9 @@ A role may be labeled **VERIFIED BUILT** only when all of the following exist:
 - The first Founder Home daily workflow and what counts as an urgent item.
 - Which businesses are active now versus parked ideas.
 - QTIME's exact paid-pilot scope and success measure.
+- Whether personal and family availability belongs in Founder Home. Health or
+  family details must not be stored until Manny explicitly approves a private
+  scope and access policy; client work must never receive that information.
 - Which existing external accounts contain reusable assets versus obsolete
   experiments.
 

@@ -26,24 +26,50 @@ Hunter opportunity report, Micah content calendar, and David CRM starter shown
 as Month 1 deliverables are therefore outstanding unless Quincy agrees to a
 revised founding-pilot scope.
 
+Puter's July 14 evidence handoff reports that a **$50 payment was recorded on
+June 29, 2026**. This does not match the deck's advertised $49/month price.
+Until Manny locates the payment record or receipt, treat $50 as a reported
+payment fact that still needs source confirmation. No verified recurring term,
+contract length, guaranteed result, quantity, or delivery date has been found.
+
+Safest current interpretation: Quincy paid for an initial, human-assisted Atlas
+pilot involving marketing support, lead opportunities, business organization,
+and recommendations. He did not purchase a proven autonomous-agent platform or
+a guaranteed financial result.
+
 ## Proposed first outcome
 
-Each week, QTIME receives:
+The first package should focus on Roll'n Wars competitor recruitment because
+Manny directly discussed helping Quincy find local competitors and support the
+events with social content.
 
-- one reviewed content plan;
-- a small set of verified growth opportunities;
-- three clear priority actions;
-- a simple follow-up list; and
-- one short check-in from Manny inside its private Atlas workspace.
+First delivery:
+
+- a small, verified list of relevant food trucks and event prospects;
+- public contact details and source links only;
+- a short relevance note for each prospect;
+- practical outreach wording and follow-up steps;
+- five immediate actions for Quincy and five for Manny/Atlas; and
+- one check-in inside QTIME's private Atlas workspace.
+
+Second delivery, after Quincy confirms the direction:
+
+- a reviewed seven-day social package supporting the selected Roll'n Wars
+  event, including content themes, captions, calls to action, and suggested
+  timing.
+
+Sponsorship research or a sponsor one-sheet remains a valid alternative only if
+Quincy identifies sponsorship as the more urgent goal.
 
 This is a human-assisted service delivered through Atlas. Atlas does not yet
 autonomously research, publish, contact leads, or make business decisions.
 
 ## Questions Manny must answer first
 
-1. Did Quincy understand and accept the deck's advertised $49/month offer?
-2. Was the payment actually established as a recurring subscription, or was
-   only one $49 payment collected?
+1. Did Quincy understand and accept the deck's advertised $49/month offer, or
+   did he understand the recorded $50 as a one-time founding-pilot payment?
+2. Was the payment established as recurring, project-based, or optional after
+   the first package?
 3. Besides this assessment and blueprint, what has Quincy already received?
 4. Was a delivery date or launch date promised?
 5. Is the first outcome focused on Roll'n Wars, Food4Thought Network, or
@@ -115,13 +141,13 @@ confidential records.
 
 ### Days 4-5: deliver the first useful package
 
-- A seven-day reviewed content plan for the project Quincy selects
-- A practical sponsorship one-sheet for Roll'n Wars if sponsorship is the
-  selected revenue goal
-- Three verified growth or sponsor opportunities with source and relevance
-  notes
+- A verified food-truck and event-prospect list for the selected Roll'n Wars
+  location and date
+- Public source and contact information with a relevance note for each entry
+- Suggested outreach wording and follow-up steps
 - Three priority actions with owner and due date
-- A simple sponsor/prospect follow-up list with next step and status
+- A simple prospect follow-up list with next step and status
+- A seven-day reviewed content plan after Quincy confirms the campaign focus
 
 Manual research and review are acceptable. Label assumptions and do not invent
 facts, metrics, prospects, or results.

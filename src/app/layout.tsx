@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Atlas OS",
+  title: "Atlas For Entrepreneurs | Practical Business Growth Support",
   description:
-    "A private founder operating system for organizing businesses, projects, client work, and new ideas.",
+    "A human-guided 30-day business pilot that turns one important goal into clear priorities, reviewed work, and practical next actions.",
 };
 
 export default function RootLayout({
