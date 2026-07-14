@@ -2,15 +2,22 @@
 
 ## North star
 
-Atlas helps entrepreneurs and small businesses know what matters, decide what to do next, and execute faster.
+ATLAS helps Manny know what matters across his businesses, client work,
+projects, products, and ideas; decide what to do next; and execute faster.
 
-The long-term vision is an AI-powered business operating system. The first version should be much narrower: an AI chief of staff for service-based entrepreneurs.
+The long-term vision is Manny's private Founder OS with carefully controlled AI
+assistance. The first version is narrower: a human-operated command center that
+uses verified business context and real workflows. Atlas For Entrepreneurs is
+the separate public business and client-acquisition website.
 
 ## Target customer, first pass
 
-The first customer should be a solo founder or small service business owner doing roughly $5k-$100k/month who is overwhelmed by follow-ups, priorities, client work, and scattered business context.
+The primary user of ATLAS OS is Manny. Paying clients receive a limited,
+organization-scoped workspace inside it. The first paying client is QTIME
+Productions, so early client features should solve a narrow, paid need without
+turning the Founder OS into a generic SaaS product.
 
-Good early customer segments:
+Possible later customer segments for Atlas For Entrepreneurs:
 
 - Consultants
 - Agencies
@@ -23,7 +30,8 @@ We should avoid regulated, complex, or integration-heavy industries at the begin
 
 ## First promise
 
-Atlas helps you run your business without everything living in your head.
+ATLAS helps Manny run multiple businesses and client engagements without
+everything living in his head.
 
 More concretely:
 
@@ -35,15 +43,17 @@ More concretely:
 
 ## Product wedge
 
-The first wedge is the Atlas Command Center: a focused operating dashboard for the founder.
+The first Founder OS wedge is a private Founder Home above the existing client
+and Lion's Den workflows.
 
 The first valuable loop:
 
-1. The founder enters business context.
-2. Atlas organizes the context into a simple operating picture.
-3. Atlas gives a daily briefing and recommended next actions.
-4. The founder acts faster.
-5. Atlas captures more context and becomes more useful.
+1. Manny captures or verifies business context.
+2. ATLAS combines existing plans, actions, messages, reviews, and dates into a
+   simple operating picture.
+3. ATLAS shows the most important outcomes and next actions.
+4. Manny completes or delegates the work.
+5. ATLAS records the result and makes the next review more useful.
 
 ## What Atlas is not yet
 
@@ -60,6 +70,7 @@ The early product should earn trust by being focused, useful, and simple.
 
 ## Strategic product principle
 
-Chat is the interface. Context is the product.
+The command center is the interface. Trusted context and completed work are the
+product.
 
 The durable value in Atlas will come from structured business memory, thoughtful workflows, and safe AI-assisted action.

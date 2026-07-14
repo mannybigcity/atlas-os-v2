@@ -2,9 +2,13 @@
 
 ## Purpose of Atlas OS v2
 
-Atlas OS v2 is the foundation for an AI-powered operating system for entrepreneurs and small businesses. The product should help owners understand what matters, decide what to do next, and execute faster without scattering business context across tools.
+Atlas OS v2 is Manny's private Founder OS. It should help him understand what
+matters across his businesses, clients, projects, products, and ideas; decide
+what to do next; and execute without scattering context across tools.
 
-The first product wedge remains narrow: an AI chief of staff and command center for service-based entrepreneurs.
+The first founder wedge is a private Founder Home built above the existing
+organization, client-review, and Lion's Den foundation. Atlas For Entrepreneurs
+remains the separate public sales and client-acquisition website.
 
 ## Role of the Next.js application
 
@@ -16,11 +20,12 @@ The Next.js app is the primary web application for Atlas. During the initial bui
 
 The public website, client dashboard, and The Lion's Den will stay inside the same Next.js application for now. The code should still keep The Lion's Den modular enough that it could become a separate internal application later without rebuilding the entire system.
 
-For now, the app is only a minimal scaffold. It should stay lightweight until the product flow is clearer.
+The app is now a working production foundation. It should remain lightweight
+and should extend verified workflows instead of introducing parallel systems.
 
 ## Planned role of Supabase
 
-Supabase is the approved backend foundation when persistence is introduced.
+Supabase is the implemented backend and authentication foundation.
 
 Expected responsibilities:
 
@@ -31,13 +36,15 @@ Expected responsibilities:
 - `pgvector` for initial AI retrieval
 - Edge functions only when they clearly simplify backend workflows
 
-Supabase should not be added until we are ready for the SaaS foundation milestone.
+Supabase is already in production. New tables must preserve organization
+isolation, Row Level Security, auditability, and server-side privileged access.
 
 ## Authentication
 
 Approved decision: use Supabase Auth.
 
-Authentication should be implemented as part of the SaaS foundation milestone, not before. The app should support a shared login entry at `/login`.
+Supabase authentication is implemented through the shared `/login` entry, with
+server-side protection for client and Super Admin routes.
 
 ## Access model: Super Admin and Client
 

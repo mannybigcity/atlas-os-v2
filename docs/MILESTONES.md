@@ -196,3 +196,43 @@ Client-facing plain-language review before launch:
   **Changes requested by [client display name] on [date and time]**. Use the
   account email as a fallback when no display name is available, and show the
   review note to Atlas Admin.
+
+## Milestone 7: Private Founder Home
+
+Goal: give Manny one private operating view across his businesses, clients,
+projects, and revenue-producing work without exposing founder information to
+client accounts.
+
+First scope:
+
+- Today's three most important outcomes
+- Open client requests requiring Manny's response
+- Upcoming and overdue check-ins or action dates
+- Work waiting on Manny versus work waiting on a client
+- Fast capture for a task, lead, idea, or note
+- A compact list of businesses and clients with current goal and next action
+
+Reuse before adding schema:
+
+- Organizations and memberships
+- Pilot plans and actions
+- Work-review messages and decisions
+- Attention requests
+- Activity events
+- Business profiles
+
+Out of scope:
+
+- Autonomous agents
+- A full CRM
+- Broad analytics dashboards
+- Unverified external integrations
+- Self-service public signup
+
+Success criteria:
+
+- Manny can identify his next three outcomes in under two minutes.
+- No client can access Founder Home or another organization's records.
+- At least one QTIME delivery and one Manny-owned project are managed from the
+  same founder view without duplicating their source records.
+- The screen reduces navigation and decision time during a real workday.

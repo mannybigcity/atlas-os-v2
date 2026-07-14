@@ -2,9 +2,13 @@
 
 ## Current architecture scope
 
-This repo currently contains only the planning foundation and a minimal Next.js application scaffold.
+This repository contains the canonical deployed Next.js application and its
+Supabase database migrations.
 
-No authentication, database, billing, AI provider, or external SaaS service has been added yet.
+Authentication, organization membership, Row Level Security, business
+profiles, notes, messages, activity, attention requests, pilot plans, actions,
+client work review, and tenant-isolation controls are implemented. Billing,
+document storage, AI providers, and broad external integrations are not.
 
 ## Recommended long-term architecture
 
@@ -67,11 +71,16 @@ src/
   features/            Product feature modules
 ```
 
-Only `src/app` exists right now because we are intentionally keeping the scaffold minimal.
+The repository now uses `src/app`, `src/components`, `src/lib`, and `src/server`
+for implemented routes, interfaces, authentication, and tenant-safe data
+access. Add new feature folders only when a real implementation needs them.
 
-## Security baseline, later milestone
+## Security baseline
 
-When we introduce real customer data, the baseline should include:
+The current foundation includes workspace-scoped records, role-based access,
+environment-managed secrets, activity records, and server-enforced access.
+Before expanding the number or sensitivity of customer records, complete and
+maintain:
 
 - Workspace-scoped records
 - Role-based access control

@@ -1,19 +1,45 @@
 # Atlas OS Canonical Product Brief
 
-Updated July 13, 2026. This brief distills the Atlas master handoff packet and
+Updated July 14, 2026. This brief distills the Atlas master handoff packet and
 the verified state of Atlas OS v2. When an older prototype, note, or plan
 conflicts with this document, pause and resolve the conflict before building.
 
+The detailed private-founder direction and evidence ledger live in
+`docs/ATLAS_FOUNDER_OS_VISION.md`.
+
+## Product and business boundaries
+
+**Atlas For Entrepreneurs** is Manny's public-facing business and client
+acquisition website. Its job is to explain the service, earn trust, collect
+qualified leads, and sell approved offers.
+
+**ATLAS OS** is Manny's private founder operating system. It is intended to help
+Manny organize and build his businesses, client work, apps, products, and new
+ideas from one secure command center. ATLAS is the name and identity of the
+system; Codex is one of the development tools used to build it.
+
+**The client workspace** is a limited surface inside ATLAS OS. Approved clients
+may see only their own organization, goals, actions, work for review, messages,
+and business profile. It is not the whole founder operating system.
+
+These three surfaces must not be treated as interchangeable. In particular,
+the ATLAS OS homepage must not become the Atlas For Entrepreneurs marketing
+website, and a client login must never expose Manny's private founder workspace.
+
 ## Product direction
 
-Atlas is a secure business operating workspace for entrepreneurs and small
-businesses. It should help an owner understand what matters, decide what to do
-next, and follow through without keeping the business entirely in their head.
+ATLAS OS should help Manny understand what matters, decide what to do next,
+turn ideas into real projects, and follow through without keeping every
+business in his head.
 
-The long-term vision includes assessment, recommendations, tasks, customer
-follow-up, content, growth opportunities, progress tracking, and carefully
-controlled AI assistance. Those are directions, not claims about the current
-product.
+The long-term vision includes project planning, app creation, business idea
+development, assessment, recommendations, tasks, customer follow-up, content,
+growth opportunities, progress tracking, and carefully controlled AI
+assistance. Those are directions, not claims about the current product.
+
+Named ATLAS roles or agents may eventually support specialized workflows, but
+each one must correspond to real code, permissions, tools, logs, cost controls,
+and human approval. A name or prompt alone is not a running agent.
 
 The near-term product is narrower: a human-assisted command center that turns
 approved business context into a small number of reviewed priorities,
@@ -37,9 +63,9 @@ Verified foundation:
 
 Not yet delivered as product capabilities:
 
-- A real priority and task workflow
-- Customer deliverables and approval tracking
-- Structured customer onboarding
+- A private Founder Home and cross-business command center
+- Founder-wide projects, ideas, products, tasks, and revenue pipeline
+- Self-service customer onboarding
 - CRM, lead-generation, or follow-up automation
 - Content planning and publishing workflows
 - Assessments and generated action plans
@@ -48,9 +74,11 @@ Not yet delivered as product capabilities:
 - Formal public-launch operations such as managed backups, monitoring, legal
   documents, incident response, and mature admin role management
 
-Atlas is ready for a tightly controlled, human-assisted pilot after the
-customer isolation gate passes. It is not ready for self-service public signup
-or claims of autonomous AI operation.
+Atlas now has verified organization-scoped plans, actions, work review,
+client decisions, reviewer identity, message history, and tenant hardening.
+QTIME has a separate organization and owner membership. The controlled pilot
+may proceed after Quincy completes login and access-isolation verification. It
+is not ready for self-service public signup or claims of autonomous AI work.
 
 ## Operating rules
 

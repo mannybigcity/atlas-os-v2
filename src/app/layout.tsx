@@ -3,7 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Atlas OS",
-  description: "An AI-powered operating system for entrepreneurs and small businesses.",
+  description:
+    "A private founder operating system for organizing businesses, projects, client work, and new ideas.",
 };
 
 export default function RootLayout({
