@@ -9,6 +9,11 @@ In the Supabase SQL Editor, run the complete contents of:
 
 `supabase/migrations/20260713000000_founding_pilot_workflow.sql`
 
+Then run these follow-up migrations in order:
+
+1. `supabase/migrations/20260713001000_pilot_review_identity.sql`
+2. `supabase/migrations/20260713002000_pilot_work_message_history.sql`
+
 Expected result: `Success. No rows returned.`
 
 Then refresh the Supabase Security Advisor. The migration should not introduce
@@ -27,11 +32,16 @@ Before QTIME exists:
 1. Sign in as Atlas Super Admin and open `/lions-den`.
 2. Save a test 30-day plan for Atlas Test Organization.
 3. Add three test actions.
-4. Add one draft deliverable. Confirm it is visible in the Lion's Den.
+4. Add one draft item under **Work for Client Review**. Confirm it is visible
+   in the Lion's Den.
 5. Sign in as the test client. Confirm the draft is not visible.
-6. As Super Admin, change the deliverable to `Ready for review`.
-7. As the test client owner/admin, approve it or request changes.
-8. As Super Admin, confirm the client decision appears.
+6. As Super Admin, change the work to `Ready for client review`.
+7. As the test client owner/admin, request changes and enter a clear note.
+8. As Super Admin, confirm the client's name, note, date, and time appear.
+9. Revise the work and send it for review again.
+10. As the test client, confirm the prior request remains in the message trail,
+    the Atlas revision has its own timestamp, and the new message box is blank.
+11. Approve the revised work, then confirm the approval is added to the trail.
 
 Stop if any item fails.
 
@@ -69,8 +79,8 @@ Use a private/incognito browser as Quincy:
 
 1. Sign in through the production Atlas URL.
 2. Confirm the workspace title is **QTIME Productions**.
-3. Confirm no Atlas Test Organization notes, actions, deliverables, activity,
-   or business profile data appear.
+3. Confirm no Atlas Test Organization messages, actions, work for review,
+   history, or business profile data appear.
 4. Open `/lions-den` directly. Confirm access is denied and the client workspace
    loads safely.
 5. Sign out and confirm the public home page loads.
@@ -94,7 +104,7 @@ After Quincy confirms the scope, use the Lion's Den to enter:
 - one plain-language success definition;
 - the next check-in date;
 - no more than three current actions; and
-- the first human-reviewed deliverable as a draft.
+- the first item under **Work for Client Review** as a draft.
 
-Only change a deliverable to **Ready for review** after Manny has checked every
+Only change work to **Ready for client review** after Manny has checked every
 fact, source, claim, and recommendation.

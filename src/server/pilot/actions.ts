@@ -163,16 +163,12 @@ export async function reviewPilotDeliverable(formData: FormData) {
     redirect("/client?pilot=review_denied");
   }
 
-  const { error } = await supabase
-    .from("organization_pilot_deliverable_reviews")
-    .upsert({
-      deliverable_id: deliverableId,
-      organization_id: organizationId,
-      decision,
-      note: optionalText(formData, "note"),
-      reviewed_by: user.id,
-      reviewed_at: new Date().toISOString(),
-    });
+  const { error } = await supabase.rpc("submit_pilot_work_review", {
+    p_deliverable_id: deliverableId,
+    p_organization_id: organizationId,
+    p_decision: decision,
+    p_message: optionalText(formData, "note"),
+  });
 
   if (error) redirect("/client?pilot=review_error");
   redirect("/client?pilot=review_saved");

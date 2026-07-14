@@ -29,6 +29,15 @@ export type DeliverableReview = {
   reviewedAt: string;
 };
 
+export type PilotWorkMessage = {
+  id: string;
+  messageKind: "work_sent" | "approved" | "changes_requested";
+  message: string | null;
+  authorKind: "atlas_admin" | "client";
+  authorDisplayName: string;
+  createdAt: string;
+};
+
 export type PilotDeliverable = {
   id: string;
   organizationId: string;
@@ -38,6 +47,7 @@ export type PilotDeliverable = {
   status: "draft" | "ready_for_review" | "delivered" | "archived";
   updatedAt: string;
   review: DeliverableReview | null;
+  messages: PilotWorkMessage[];
 };
 
 export type PilotWorkspace = {
@@ -74,6 +84,15 @@ type ReviewRow = {
   reviewed_at: string;
 };
 
+type WorkMessageRow = {
+  id: string;
+  message_kind: PilotWorkMessage["messageKind"];
+  message: string | null;
+  author_kind: PilotWorkMessage["authorKind"];
+  author_display_name: string;
+  created_at: string;
+};
+
 type DeliverableRow = {
   id: string;
   organization_id: string;
@@ -83,6 +102,7 @@ type DeliverableRow = {
   status: PilotDeliverable["status"];
   updated_at: string;
   organization_pilot_deliverable_reviews: ReviewRow | ReviewRow[] | null;
+  organization_pilot_work_messages: WorkMessageRow[] | null;
 };
 
 function firstReview(value: DeliverableRow["organization_pilot_deliverable_reviews"]) {
@@ -125,6 +145,14 @@ export async function getPilotWorkspace(
             note,
             reviewed_by_display_name,
             reviewed_at
+          ),
+          organization_pilot_work_messages (
+            id,
+            message_kind,
+            message,
+            author_kind,
+            author_display_name,
+            created_at
           )
         `,
       )
@@ -184,6 +212,16 @@ export async function getPilotWorkspace(
               reviewedAt: review.reviewed_at,
             }
           : null,
+        messages: (row.organization_pilot_work_messages ?? [])
+          .map((message) => ({
+            id: message.id,
+            messageKind: message.message_kind,
+            message: message.message,
+            authorKind: message.author_kind,
+            authorDisplayName: message.author_display_name,
+            createdAt: message.created_at,
+          }))
+          .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
       };
     },
   );

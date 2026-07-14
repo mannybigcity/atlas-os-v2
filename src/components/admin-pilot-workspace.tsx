@@ -25,6 +25,17 @@ function reviewDecisionLabel(decision: "approved" | "changes_requested") {
   return decision === "approved" ? "Approved" : "Changes requested";
 }
 
+function workMessageTitle(
+  messageKind: "work_sent" | "approved" | "changes_requested",
+  authorDisplayName: string,
+) {
+  if (messageKind === "work_sent") {
+    return `${authorDisplayName} sent work for client review`;
+  }
+
+  return `${reviewDecisionLabel(messageKind)} by ${authorDisplayName}`;
+}
+
 export function AdminPilotWorkspace({
   organizationId,
   organizationName,
@@ -115,16 +126,29 @@ export function AdminPilotWorkspace({
             {workspace.deliverables.map((deliverable) => (
               <form action={updatePilotDeliverable} className="rounded-xl border border-slate-200 bg-white p-3" key={deliverable.id}>
                 <input name="deliverableId" type="hidden" value={deliverable.id} />
-                {deliverable.review ? (
-                  <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs leading-5 text-blue-950">
-                    <p className="font-semibold">
-                      {reviewDecisionLabel(deliverable.review.decision)} by{" "}
-                      {deliverable.review.reviewedByDisplayName} on{" "}
-                      {formatDateTime(deliverable.review.reviewedAt)}
-                    </p>
-                    <p className="mt-1">
-                      {deliverable.review.note ?? "No review note was added."}
-                    </p>
+                {deliverable.messages.length > 0 ? (
+                  <div className="mt-3 space-y-2" aria-label="Work message history">
+                    {deliverable.messages.map((message) => (
+                      <div
+                        className={`rounded-xl border p-3 text-xs leading-5 ${
+                          message.authorKind === "atlas_admin"
+                            ? "border-slate-200 bg-slate-50 text-slate-800"
+                            : "border-blue-200 bg-blue-50 text-blue-950"
+                        }`}
+                        key={message.id}
+                      >
+                        <p className="font-semibold">
+                          {workMessageTitle(
+                            message.messageKind,
+                            message.authorDisplayName,
+                          )}
+                        </p>
+                        {message.message ? <p className="mt-1">{message.message}</p> : null}
+                        <p className="mt-1 text-slate-500">
+                          {formatDateTime(message.createdAt)}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 ) : null}
                 {deliverable.review?.decision === "changes_requested" ? (

@@ -158,10 +158,12 @@ Success criteria:
 
 ### Step 2 implementation status
 
-The local Step 2 foundation now includes organization-scoped 30-day plans,
-actions, deliverables, and separate client review records. Client and Super
-Admin interfaces are connected. Production migration, smoke testing, QTIME
-provisioning, and the live cross-tenant isolation test remain gated by
+The Step 2 foundation now includes organization-scoped 30-day plans, actions,
+work for client review, and client decisions. Work-specific communication is
+stored as an append-only trail with the sender, date, time, and message. New
+message boxes start blank so an old request is never mistaken for a new one.
+Client and Super Admin interfaces are connected. QTIME provisioning and the
+live cross-tenant isolation test remain gated by
 `docs/FOUNDING_PILOT_DEPLOYMENT.md`.
 
 Pre-launch wording requirement:
@@ -172,6 +174,11 @@ Pre-launch wording requirement:
   review yet.**
 - Database and internal implementation names may continue using
   `deliverable` to avoid unnecessary schema changes.
+- Keep **Work & messages** together. Client requests and Atlas revisions must
+  remain attached to the specific work being discussed.
+- Keep unrelated **General messages** available but collapsed by default.
+- Keep **Workspace history** available but collapsed by default so it does not
+  dominate the client workspace.
 
 Client-facing plain-language review before launch:
 

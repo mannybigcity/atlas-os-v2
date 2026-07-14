@@ -46,15 +46,15 @@ const workspaceSections = [
     status: "Connected foundation",
   },
   {
-    title: "Notes",
+    title: "General messages",
     description:
-      "Capture business context before we introduce AI retrieval or document storage.",
+      "Use this only for conversations that are not connected to specific work.",
     status: "Connected foundation",
   },
   {
-    title: "Activity",
+    title: "History",
     description:
-      "Review the organization timeline as real workspace changes happen.",
+      "Open a read-only record of workspace changes when you need it.",
     status: "Connected foundation",
   },
 ];
@@ -370,11 +370,11 @@ export default async function ClientDashboardPage({
               />
             ) : null}
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <details className="rounded-2xl border border-slate-200 bg-white p-5">
+              <summary className="flex cursor-pointer list-none flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
-                    Organization Timeline
+                    Workspace history
                   </p>
                   <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
                     Activity
@@ -385,9 +385,9 @@ export default async function ClientDashboardPage({
                   </p>
                 </div>
                 <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  Read only
+                  View history
                 </span>
-              </div>
+              </summary>
 
               {activity?.setupRequired ? (
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
@@ -424,26 +424,26 @@ export default async function ClientDashboardPage({
                   ))}
                 </div>
               ) : null}
-            </section>
+            </details>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <details className="rounded-2xl border border-slate-200 bg-white p-5">
+              <summary className="flex cursor-pointer list-none flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
-                    Organization Memory
+                    General messages
                   </p>
                   <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-                    Note conversations
+                    Messages not tied to work
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Keep timestamped client and Atlas Admin replies together
-                    without AI spend, email, or document storage.
+                    Use this for a conversation that does not belong to a specific
+                    item in Work &amp; Messages above.
                   </p>
                 </div>
                 <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  Shared workspace
+                  Open messages
                 </span>
-              </div>
+              </summary>
 
               {notes?.setupRequired ? (
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
@@ -586,7 +586,7 @@ export default async function ClientDashboardPage({
                   ))}
                 </div>
               ) : null}
-            </section>
+            </details>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">

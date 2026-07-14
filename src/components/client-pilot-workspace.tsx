@@ -12,6 +12,19 @@ function label(value: string) {
   return value.replaceAll("_", " ");
 }
 
+function workMessageTitle(
+  messageKind: "work_sent" | "approved" | "changes_requested",
+  authorDisplayName: string,
+) {
+  if (messageKind === "work_sent") {
+    return `${authorDisplayName} sent work for review`;
+  }
+
+  return messageKind === "approved"
+    ? `Approved by ${authorDisplayName}`
+    : `Changes requested by ${authorDisplayName}`;
+}
+
 export function ClientPilotWorkspace({
   organizationId,
   canReview,
@@ -25,11 +38,11 @@ export function ClientPilotWorkspace({
             Founding Pilot
           </p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-            30-day execution workspace
+            Work &amp; Messages
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            One goal, focused actions, human-reviewed work, and a clear
-            next check-in.
+            Your 30-day plan, focused actions, work to review, and every
+            response in one place.
           </p>
         </div>
         <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
@@ -133,17 +146,35 @@ export function ClientPilotWorkspace({
                   </div>
                 ) : null}
 
-                {deliverable.review ? (
-                  <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-                    <p className="font-semibold">
-                      {deliverable.review.decision === "approved"
-                        ? "Approved"
-                        : "Changes requested"} by {deliverable.review.reviewedByDisplayName}
-                    </p>
-                    <p className="mt-1">{deliverable.review.note ?? "No review note."}</p>
-                    <p className="mt-1 text-xs text-blue-700">
-                      {formatDateTime(deliverable.review.reviewedAt)}
-                    </p>
+                {deliverable.messages.length > 0 ? (
+                  <div className="mt-4 space-y-3" aria-label="Work message history">
+                    {deliverable.messages.map((message) => (
+                      <div
+                        className={`rounded-2xl border p-4 text-sm leading-6 ${
+                          message.authorKind === "atlas_admin"
+                            ? "border-slate-200 bg-white text-slate-800"
+                            : "border-blue-200 bg-blue-50 text-blue-950"
+                        }`}
+                        key={message.id}
+                      >
+                        <p className="font-semibold">
+                          {workMessageTitle(
+                            message.messageKind,
+                            message.authorDisplayName,
+                          )}
+                        </p>
+                        {message.message ? <p className="mt-1">{message.message}</p> : null}
+                        <p
+                          className={`mt-1 text-xs ${
+                            message.authorKind === "atlas_admin"
+                              ? "text-slate-500"
+                              : "text-blue-700"
+                          }`}
+                        >
+                          {formatDateTime(message.createdAt)}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 ) : null}
 
@@ -152,12 +183,13 @@ export function ClientPilotWorkspace({
                     <input name="organizationId" type="hidden" value={organizationId} />
                     <input name="deliverableId" type="hidden" value={deliverable.id} />
                     <label className="block">
-                      <span className="text-sm font-medium text-slate-700">Your note</span>
+                      <span className="text-sm font-medium text-slate-700">
+                        New message
+                      </span>
                       <textarea
                         className="mt-2 min-h-20 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                        defaultValue={deliverable.review?.note ?? ""}
                         name="note"
-                        placeholder="What works, or what should Atlas change?"
+                        placeholder="Write a new message about this version."
                       />
                     </label>
                     <div className="flex flex-col gap-3 sm:flex-row">
