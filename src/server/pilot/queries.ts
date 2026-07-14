@@ -140,13 +140,13 @@ export async function getPilotWorkspace(
           body,
           status,
           updated_at,
-          organization_pilot_deliverable_reviews (
+          organization_pilot_deliverable_reviews:organization_pilot_deliverable_reviews!pilot_reviews_work_organization_fkey (
             decision,
             note,
             reviewed_by_display_name,
             reviewed_at
           ),
-          organization_pilot_work_messages (
+          organization_pilot_work_messages:organization_pilot_work_messages!pilot_work_messages_work_organization_fkey (
             id,
             message_kind,
             message,

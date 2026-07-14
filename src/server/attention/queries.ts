@@ -42,7 +42,7 @@ export async function getActiveAttentionRequests(): Promise<
         status,
         requested_at,
         organizations (name),
-        organization_notes (title)
+        organization_notes:organization_notes!attention_requests_note_organization_fkey (title)
       `,
     )
     .in("status", ["open", "acknowledged"])
