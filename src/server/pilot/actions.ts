@@ -106,16 +106,27 @@ export async function createPilotDeliverable(formData: FormData) {
 export async function updatePilotDeliverable(formData: FormData) {
   const user = await requireSuperAdmin();
   const deliverableId = requiredText(formData, "deliverableId");
+  const title = requiredText(formData, "title");
   const status = requiredText(formData, "status");
 
-  if (!deliverableId || !["draft", "ready_for_review", "delivered", "archived"].includes(status)) {
+  if (
+    !deliverableId ||
+    !title ||
+    !["draft", "ready_for_review", "delivered", "archived"].includes(status)
+  ) {
     redirect("/lions-den?pilot=error");
   }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("organization_pilot_deliverables")
-    .update({ status, updated_by: user.id })
+    .update({
+      title,
+      summary: optionalText(formData, "summary"),
+      body: optionalText(formData, "body"),
+      status,
+      updated_by: user.id,
+    })
     .eq("id", deliverableId);
 
   if (error) redirect("/lions-den?pilot=error");
