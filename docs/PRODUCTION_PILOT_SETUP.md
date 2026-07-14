@@ -53,6 +53,7 @@ In **Supabase > Authentication > URL Configuration**:
 https://YOUR-DOMAIN/login
 https://YOUR-DOMAIN/auth/callback
 https://YOUR-DOMAIN/auth/confirm
+https://YOUR-DOMAIN/set-password
 https://YOUR-DOMAIN/reset-password
 https://YOUR-DOMAIN/client
 https://YOUR-DOMAIN/lions-den
@@ -61,16 +62,32 @@ https://YOUR-DOMAIN/lions-den
 3. Keep `http://localhost:3000/**` as an additional development redirect.
 4. Do not use a broad production wildcard.
 
-In **Supabase > Authentication > Emails > Reset password**, use the
-server-verifiable recovery link:
+Keep both production origins allowed while the custom domain is being moved:
 
-```html
-<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/reset-password">Reset password</a>
+```text
+https://atlasforentrepreneurs.com/auth/confirm
+https://atlas-os-v2.netlify.app/auth/confirm
 ```
 
-The link opens a confirmation page first. Atlas verifies the one-time token
-only after the user presses **Continue securely**, preventing automated email
-link scanners from consuming the token before the user.
+In **Supabase > Authentication > Emails > Invite user**, use:
+
+```html
+<h2>Welcome to Atlas</h2>
+<p>Your private Atlas client workspace is ready.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=invite&amp;next=/set-password">Accept invitation and create password</a></p>
+<p>Your login email is the address where you received this invitation. Atlas never sends passwords by email.</p>
+```
+
+In **Supabase > Authentication > Emails > Reset password**, use:
+
+```html
+<h2>Reset your Atlas password</h2>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/reset-password">Create a new password</a></p>
+```
+
+Both links open a confirmation page first. Atlas verifies the one-time token
+only after the user presses the secure confirmation button. Invitations then
+open the create-password page; recovery emails open the reset-password page.
 
 ## Supabase production checks
 
@@ -94,6 +111,8 @@ Validate in production:
 - A client cannot access `/lions-den`.
 - Super Admin lands on `/lions-den` after a normal login.
 - Password-recovery links return to the production domain.
+- Invitation links open **Create your Atlas password**, then open the correct
+  private client workspace.
 - Sign out clears the production session.
 - Security response headers are present.
 - No credentials or secrets appear in deployment logs.

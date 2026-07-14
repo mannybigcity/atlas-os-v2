@@ -59,26 +59,78 @@ export async function requestPasswordReset(formData: FormData) {
   redirect("/forgot-password?status=sent");
 }
 
-export async function confirmPasswordRecovery(formData: FormData) {
+export async function confirmAuthLink(formData: FormData) {
   const tokenHash = String(formData.get("tokenHash") ?? "");
   const type = String(formData.get("type") ?? "");
   const nextPath = safeRedirectPath(formData.get("next"));
 
-  if (!tokenHash || type !== "recovery") {
+  if (!tokenHash || (type !== "invite" && type !== "recovery")) {
     redirect("/login?error=auth_callback_failed");
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({
-    token_hash: tokenHash,
-    type: "recovery",
-  });
+  const { error } =
+    type === "invite"
+      ? await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "invite",
+        })
+      : await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery",
+        });
 
   if (error) {
     redirect("/login?error=auth_callback_failed");
   }
 
   redirect(nextPath);
+}
+
+function passwordMeetsPolicy(password: string) {
+  return (
+    password.length >= 12 &&
+    /[a-z]/.test(password) &&
+    /[A-Z]/.test(password) &&
+    /[0-9]/.test(password) &&
+    /[^A-Za-z0-9]/.test(password)
+  );
+}
+
+export async function completeInvitation(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (!password || !confirmPassword) {
+    redirect("/set-password?error=missing_password");
+  }
+
+  if (!passwordMeetsPolicy(password)) {
+    redirect("/set-password?error=weak_password");
+  }
+
+  if (password !== confirmPassword) {
+    redirect("/set-password?error=password_mismatch");
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?error=invitation_expired");
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password,
+  });
+
+  if (error) {
+    redirect("/set-password?error=update_failed");
+  }
+
+  redirect("/client?status=welcome");
 }
 
 export async function updatePassword(formData: FormData) {
@@ -89,14 +141,7 @@ export async function updatePassword(formData: FormData) {
     redirect("/reset-password?error=missing_password");
   }
 
-  const meetsPasswordPolicy =
-    password.length >= 12 &&
-    /[a-z]/.test(password) &&
-    /[A-Z]/.test(password) &&
-    /[0-9]/.test(password) &&
-    /[^A-Za-z0-9]/.test(password);
-
-  if (!meetsPasswordPolicy) {
+  if (!passwordMeetsPolicy(password)) {
     redirect("/reset-password?error=weak_password");
   }
 

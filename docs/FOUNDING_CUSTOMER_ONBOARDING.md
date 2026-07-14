@@ -24,14 +24,28 @@ The customer should enter business context after signing in whenever possible.
 
 Account provisioning remains manual for the controlled pilot:
 
-1. Create the user in Supabase Authentication using a strong random temporary
-   password that is never sent to the customer and never placed in Git/chat.
-2. Create a separate organization for the customer's company.
-3. Add an `owner` membership connecting that user to the organization.
-4. Send one password-recovery email from production `/forgot-password` so the
-   customer chooses their own password.
-5. Confirm the link opens the production `/reset-password` flow.
-6. Never ask the customer to send their password to Atlas staff.
+1. Create a separate organization for the customer's company.
+2. In Supabase Authentication, use **Send invitation** for the customer's
+   business email. Supabase creates the Auth user and sends a one-time link;
+   Atlas never creates or emails a password.
+3. Immediately add an `owner` membership connecting that Auth user to the
+   correct organization before telling the customer to open the invitation.
+4. Confirm the email button says **Accept invitation and create password** and
+   opens production `/auth/confirm`, followed by `/set-password`.
+5. The customer uses their email address as the login name and creates their
+   own password. Never ask them to send that password to Atlas staff.
+6. For an existing pre-provisioned user such as Quincy, send one new password
+   reset only after the Reset password template and production URL settings
+   have been verified.
+
+Before sending any invitation or reset email, verify:
+
+- Supabase **Site URL** is the live Atlas HTTPS origin.
+- The Invite user and Reset password templates contain only the secure Atlas
+  links documented in `docs/SUPABASE_SETUP.md`.
+- The user's organization membership already points to the correct business.
+- The link is tested with an Atlas-owned test user before it is sent to a real
+  client.
 
 ## Data-isolation gate
 
@@ -59,4 +73,3 @@ If any isolation check fails, stop onboarding and do not enter customer data.
 Do not bulk-import Atlas v1 data. Inventory it first and migrate only approved,
 useful business context. Exclude credentials, logs, generated content,
 duplicates, and unverified records.
-

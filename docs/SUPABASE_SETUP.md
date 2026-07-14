@@ -56,28 +56,41 @@ If Supabase asks for redirect URLs, add:
 http://localhost:3000/login
 http://localhost:3000/auth/callback
 http://localhost:3000/auth/confirm
+http://localhost:3000/set-password
 http://localhost:3000/reset-password
 http://localhost:3000/client
 http://localhost:3000/lions-den
 ```
 
-Atlas uses `/auth/confirm` as a deliberate confirmation page for a hashed,
-one-time Supabase recovery token. The token is verified server-side only after
-the user presses **Continue securely**, avoiding both browser binding and
-automated email-link prefetching before showing `/reset-password`.
+Atlas uses `/auth/confirm` as a deliberate confirmation page for hashed,
+one-time Supabase invitation and recovery tokens. The token is verified
+server-side only after the user presses the secure confirmation button. An
+invitation continues to `/set-password`; password recovery continues to
+`/reset-password`.
 
-In **Authentication > Emails > Reset password**, set the reset link to:
+In **Authentication > Emails > Invite user**, use:
 
 ```html
-<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/reset-password">Reset password</a>
+<h2>Welcome to Atlas</h2>
+<p>Your private Atlas client workspace is ready.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=invite&amp;next=/set-password">Accept invitation and create password</a></p>
+<p>Your login email is the address where you received this invitation. Atlas never sends passwords by email.</p>
+```
+
+In **Authentication > Emails > Reset password**, use:
+
+```html
+<h2>Reset your Atlas password</h2>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/reset-password">Create a new password</a></p>
 ```
 
 Keep the rest of the email content concise and do not expose the token anywhere
 other than this link.
 
 When Atlas is deployed, add the production equivalents for the live domain.
-Set `NEXT_PUBLIC_SITE_URL` to that exact HTTPS origin. Password recovery uses
-this configured origin instead of trusting a request host header.
+Set both the Supabase **Site URL** and `NEXT_PUBLIC_SITE_URL` to that exact
+HTTPS origin. Email templates use this configured origin instead of links to
+the public sales-page buttons.
 
 ## Create the Super Admin user
 
@@ -94,6 +107,8 @@ This milestone authorizes Super Admin access through the `ATLAS_SUPER_ADMIN_EMAI
 - `/client` requires any authenticated Supabase user.
 - `/lions-den` requires an authenticated Supabase user whose email is listed in `ATLAS_SUPER_ADMIN_EMAILS`.
 - `/forgot-password` requests a Supabase password recovery email.
+- `/set-password` lets an invited user create a password after accepting a
+  valid invitation.
 - `/reset-password` updates the password only after a valid recovery session exists.
 
 Authenticated non-admin users who visit `/lions-den` are redirected to `/client?access=denied`.

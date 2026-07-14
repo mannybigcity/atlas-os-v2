@@ -11,9 +11,13 @@ type LoginPageProps = {
 };
 
 const errorMessages: Record<string, string> = {
-  auth_callback_failed: "The recovery link could not be verified. Request a new reset link.",
+  auth_callback_failed:
+    "That secure email link could not be verified. Request a new invitation or password-reset email.",
+  invitation_expired:
+    "That invitation is no longer valid. Ask Atlas to send a new invitation.",
   invalid_credentials: "The email or password was not accepted.",
-  missing_auth_code: "The recovery link was missing its secure code. Request a new reset link.",
+  missing_auth_code:
+    "That secure email link was incomplete. Request a new invitation or password-reset email.",
   missing_credentials: "Enter both an email and password.",
 };
 
@@ -61,6 +65,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               {params?.status === "password_updated" ? (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
                   Password updated. Sign in with your new password.
+                </div>
+              ) : null}
+
+              {params?.status === "invitation_complete" ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+                  Your Atlas account is ready. Sign in with your email and the
+                  password you created.
                 </div>
               ) : null}
 

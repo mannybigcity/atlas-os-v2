@@ -29,6 +29,7 @@ type ClientDashboardPageProps = {
     note?: string;
     pilot?: string;
     profile?: string;
+    status?: string;
   }>;
 };
 
@@ -151,6 +152,13 @@ export default async function ClientDashboardPage({
       title={primaryOrganization?.name ?? "Client Workspace Home"}
     >
       <div className="space-y-4">
+        {params?.status === "welcome" ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Welcome to Atlas. Your password is set, and this is your private
+            business workspace.
+          </div>
+        ) : null}
+
         {params?.access === "denied" ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
             Your account is authenticated, but it is not authorized for The
