@@ -43,7 +43,7 @@ export function SiteHeader({ active }: SiteHeaderProps) {
                 How it works
               </a>
               <a className="hidden rounded-full px-3 py-2 text-sm font-medium text-[#16325c] transition hover:bg-[#eef4ff] hover:text-[#0a2f78] md:block" href="#founding-pilot">
-                Founding pilot
+                30-day sprint
               </a>
             </>
           ) : (

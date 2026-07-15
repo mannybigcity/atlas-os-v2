@@ -31,13 +31,13 @@ const businessTeam = [
   },
 ];
 
-const membershipIncludes = [
-  "A focused business assessment",
+const opportunitySprintIncludes = [
+  "A focused assessment and kickoff",
+  "One measurable 30-day goal",
   "A private ATLAS workspace",
-  "A clear 30-day priority plan",
-  "Work you can review and approve",
-  "Regular progress check-ins",
-  "Early access as the four-role team is introduced",
+  "Up to 10 leads or opportunities organized",
+  "Follow-up and content drafts for your review",
+  "Two progress reviews with practical AI guidance",
 ];
 
 const process = [
@@ -177,32 +177,53 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="border-b border-[#dce6f5]">
+        <section className="border-b border-[#dce6f5]" id="founding-pilot">
           <div className="mx-auto grid w-full max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-            <div className="mx-auto w-full max-w-lg">
-              <Image
-                alt="ATLAS Founding Member — $49 per month"
-                className="h-auto w-full rounded-[2rem] border border-[#dce6f5] shadow-2xl shadow-blue-100"
-                height={1254}
-                src="/brand/founding-member-49.png"
-                width={1254}
-              />
+            <div className="mx-auto w-full max-w-lg rounded-[2rem] border border-[#e5bb51] bg-[#071b42] p-7 text-white shadow-2xl shadow-blue-100 sm:p-9">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#ffd068]">
+                Founding pilot
+              </p>
+              <div className="mt-7 flex items-end gap-3">
+                <span className="text-7xl font-black tracking-tight">30</span>
+                <span className="pb-2 text-xl font-bold text-blue-100">days</span>
+              </div>
+              <h3 className="mt-5 text-3xl font-bold tracking-tight">
+                ATLAS Opportunity Sprint
+              </h3>
+              <p className="mt-4 leading-7 text-blue-100">
+                One focused business outcome, organized and moved forward with
+                hands-on guidance. No AI experience required.
+              </p>
+              <div className="mt-8 rounded-2xl bg-white px-6 py-5 text-[#071b42]">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
+                  Founding price
+                </p>
+                <p className="mt-2 text-5xl font-black tracking-tight">
+                  $750
+                  <span className="ml-2 text-sm font-bold text-slate-500">
+                    one time
+                  </span>
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Available to the first three clients. Standard sprint: $995.
+                </p>
+              </div>
             </div>
 
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#b17700]">
-                Founding Membership
+                A practical first engagement
               </p>
               <h2 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
-                Start building with ATLAS for $49/month.
+                Start with one important opportunity, not another tool.
               </h2>
               <p className="mt-5 text-lg leading-8 text-slate-600">
-                Founding Members help shape ATLAS while getting a practical
-                system for choosing priorities, reviewing progress, and moving
-                important work forward.
+                In 30 days, ATLAS helps identify a useful business priority,
+                organize the work around it, prepare the follow-up and supporting
+                content, and show you where AI can help without overwhelming you.
               </p>
               <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-                {membershipIncludes.map((item) => (
+                {opportunitySprintIncludes.map((item) => (
                   <li
                     className="flex gap-3 rounded-2xl border border-[#dce6f5] bg-[#f7faff] p-4 text-sm font-semibold leading-6 text-[#16325c]"
                     key={item}
@@ -217,11 +238,11 @@ export default function Home() {
                   className="rounded-full bg-[#1246a0] px-7 py-4 text-center text-sm font-bold text-white transition hover:bg-[#0a2f78]"
                   href={assessmentHref}
                 >
-                  See if ATLAS fits my business
+                  Apply for the founding sprint
                 </Link>
                 <p className="self-center text-sm leading-6 text-slate-500">
-                  Complete the assessment first. Scope and payment are
-                  confirmed with you directly.
+                  Start with the free assessment. Continuing support is
+                  optional and available from $349/month.
                 </p>
               </div>
             </div>
