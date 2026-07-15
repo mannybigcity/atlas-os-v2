@@ -302,19 +302,6 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="border-t border-[#305ca8] bg-[#071b42] text-blue-100">
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-6 py-8 text-sm sm:flex-row sm:items-center sm:justify-between">
-            <p>Atlas For Entrepreneurs — Guide. Grow. Live More.</p>
-            <div className="flex gap-5">
-              <a className="hover:text-white" href="mailto:info@atlasforentrepreneurs.com">
-                Contact
-              </a>
-              <Link className="hover:text-white" href="/login">
-                Client login
-              </Link>
-            </div>
-          </div>
-        </footer>
       </main>
     </>
   );

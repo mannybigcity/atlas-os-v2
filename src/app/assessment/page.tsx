@@ -116,7 +116,13 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
               </Question>
               <Question number="10" title="What's the best way to reach you?">
                 <div className="grid gap-5 sm:grid-cols-2"><Field label="Your name" name="contactName" /><Field label="Business name" name="businessName" /><Field label="Email" name="contactEmail" type="email" /><Field label="Phone" name="contactPhone" type="tel" /><div className="sm:col-span-2"><Field label="Website (optional)" name="website" required={false} type="url" /></div></div>
-                <label className="mt-6 flex items-start gap-3 text-sm leading-6 text-slate-600"><input className="mt-1 h-4 w-4 accent-[#1246a0]" name="consentToContact" required type="checkbox" value="yes" />Atlas may contact me about this assessment. My information will be used to respond to my request and will not be sold.</label>
+                <label className="mt-6 flex items-start gap-3 text-sm leading-6 text-slate-600">
+                  <input className="mt-1 h-4 w-4 accent-[#1246a0]" name="consentToContact" required type="checkbox" value="yes" />
+                  <span>
+                    Atlas may contact me about this assessment. My information will be used to respond to my request and will not be sold. See the{" "}
+                    <Link className="font-semibold text-[#1246a0] underline underline-offset-4" href="/privacy">Privacy Policy</Link>.
+                  </span>
+                </label>
               </Question>
 
               <button className="w-full rounded-full bg-[#f4b52f] px-8 py-4 text-lg font-bold text-[#071b42] shadow-sm transition hover:bg-[#ffc94f]" type="submit">Send my free assessment</button>
