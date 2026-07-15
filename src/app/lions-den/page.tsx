@@ -7,6 +7,8 @@ import {
   resolveAttentionRequest,
 } from "@/server/attention/actions";
 import { getActiveAttentionRequests } from "@/server/attention/queries";
+import { updateBusinessAssessmentStatus } from "@/server/assessments/admin-actions";
+import { getBusinessAssessments } from "@/server/assessments/queries";
 import { signOut } from "@/server/auth/actions";
 import { requireSuperAdmin } from "@/server/auth/guards";
 import { createAdminNoteMessage } from "@/server/notes/actions";
@@ -19,6 +21,7 @@ export const dynamic = "force-dynamic";
 type LionsDenPageProps = {
   searchParams?: Promise<{
     attention?: string;
+    assessment?: string;
     message?: string;
     pilot?: string;
   }>;
@@ -28,6 +31,7 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
   const user = await requireSuperAdmin("/lions-den");
   const params = await searchParams;
   const organizations = await getOrganizationsForSuperAdmin();
+  const assessments = await getBusinessAssessments();
   const pilotWorkspaces = await Promise.all(
     organizations.data.map(async (organization) => ({
       organization,
@@ -40,6 +44,9 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
   );
   const openRequestCount = attentionRequests.data.filter(
     (request) => request.status === "open",
+  ).length;
+  const newAssessmentCount = assessments.data.filter(
+    (assessment) => assessment.status === "new",
   ).length;
 
   return (
@@ -57,6 +64,19 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
         {params?.attention === "acknowledged" ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
             Attention request acknowledged.
+          </div>
+        ) : null}
+
+        {params?.assessment === "updated" ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Business Assessment lead updated.
+          </div>
+        ) : null}
+
+        {params?.assessment === "error" ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
+            The Business Assessment lead could not be updated. Confirm that the
+            Business Assessment migration has been applied.
           </div>
         ) : null}
 
@@ -98,6 +118,106 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
             that the Founding Pilot Workflow migration has been applied.
           </div>
         ) : null}
+
+        <section className="rounded-2xl border border-amber-200 bg-white p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-700">
+                New Business
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                Business Assessment Leads
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Review what each business needs, contact the owner, and move the
+                opportunity forward from one secure queue.
+              </p>
+            </div>
+            <span className="w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-800">
+              {newAssessmentCount} new
+            </span>
+          </div>
+
+          {assessments.setupRequired ? (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+              Business Assessment intake is not ready yet. Apply the Public
+              Business Assessments migration in Supabase.
+            </div>
+          ) : null}
+
+          {!assessments.setupRequired && assessments.data.length === 0 ? (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
+              No Business Assessments have been submitted yet.
+            </div>
+          ) : null}
+
+          {!assessments.setupRequired && assessments.data.length > 0 ? (
+            <div className="mt-5 space-y-4">
+              {assessments.data.map((assessment) => (
+                <article
+                  className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                  key={assessment.id}
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-700">
+                        {assessment.businessName}
+                      </p>
+                      <h3 className="mt-2 text-lg font-semibold text-slate-950">
+                        {assessment.contactName}
+                      </h3>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Submitted {formatDateTime(assessment.createdAt)}
+                      </p>
+                    </div>
+                    <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
+                      {humanize(assessment.status)}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <LeadDetail label="What the business does" value={assessment.businessDescription} />
+                    <LeadDetail label="Ideal customer" value={assessment.idealCustomer} />
+                    <LeadDetail label="Biggest challenge" value={humanize(assessment.biggestChallenge)} />
+                    <LeadDetail label="90-day goal" value={assessment.ninetyDayGoal} />
+                    <LeadDetail label="Customers come from" value={assessment.customerSources.map(humanize).join(", ")} />
+                    <LeadDetail label="Areas to evaluate" value={assessment.evaluationAreas.map(humanize).join(", ")} />
+                    <LeadDetail label="Business size" value={humanize(assessment.businessSize)} />
+                    <LeadDetail label="AI tools" value={assessment.aiTools.map(humanize).join(", ")} />
+                    <LeadDetail label="Timing" value={humanize(assessment.improvementTiming)} />
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                        Contact
+                      </p>
+                      <a className="mt-2 block text-sm font-semibold text-blue-700 hover:underline" href={`mailto:${assessment.contactEmail}`}>
+                        {assessment.contactEmail}
+                      </a>
+                      <p className="mt-1 text-sm text-slate-700">{assessment.contactPhone}</p>
+                      <WebsiteLink value={assessment.website} />
+                    </div>
+                  </div>
+
+                  <form action={updateBusinessAssessmentStatus} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <input name="assessmentId" type="hidden" value={assessment.id} />
+                    <label className="block flex-1">
+                      <span className="text-sm font-medium text-slate-700">Lead status</span>
+                      <select className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950" defaultValue={assessment.status} name="status">
+                        <option value="new">New</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="qualified">Qualified</option>
+                        <option value="not_a_fit">Not a fit</option>
+                        <option value="converted">Converted</option>
+                      </select>
+                    </label>
+                    <button className="rounded-full bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800" type="submit">
+                      Save status
+                    </button>
+                  </form>
+                </article>
+              ))}
+            </div>
+          ) : null}
+        </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -255,8 +375,9 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
                 Client execution workspaces
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Human-managed goals, actions, work for client review, and approvals.
-                No automated agents or external API calls run from this surface.
+                Goals, actions, work for client review, and approvals stay in one
+                place. Agent capabilities will appear here as each workflow is
+                connected, tested, and approved.
               </p>
             </div>
 
@@ -334,5 +455,53 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
         </form>
       </div>
     </SurfaceShell>
+  );
+}
+
+function humanize(value: string) {
+  const words = value.replaceAll("_", " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+function LeadDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function WebsiteLink({ value }: { value?: string | null }) {
+  if (!value) {
+    return null;
+  }
+
+  let safeUrl: string;
+
+  try {
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol)) {
+      return null;
+    }
+
+    safeUrl = url.toString();
+  } catch {
+    return null;
+  }
+
+  return (
+    <a
+      className="mt-1 block break-all text-sm text-blue-700 hover:underline"
+      href={safeUrl}
+      rel="noreferrer"
+      target="_blank"
+    >
+      {value}
+    </a>
   );
 }

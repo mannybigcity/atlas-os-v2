@@ -14,33 +14,43 @@ this inventory.
 - Content: lion, mountain, sun, ATLAS wordmark, and
   "Guide. Grow. Live More." tagline
 - Decision: use as the current primary brand reference
+- Web copy: `public/brand/atlas-logo.png`, 720 x 720, approximately 302 KB
 - Before web use: create optimized icon, horizontal wordmark, full lockup,
   light-background, dark-background, and social-avatar variants
 - Preferred future source: true SVG or other editable vector artwork
 
 Do not serve the 14.5 MB source file directly from the website.
 
-## Marketing collateral on hold
+The optimized copy preserves the transparent background and is suitable for
+the public header and landing page. The original remains the source of truth.
+
+## Active web campaign assets
 
 ### Founding Member 49.png
 
 - Source size: 1254 x 1254
 - Format: opaque square PNG
-- Intended use: social promotion for a $49 monthly founding membership
-- Hold reason: it advertises an active recurring commercial offer. Publish
-  only after the exact deliverables, recurring-payment terms, cancellation
-  process, checkout flow, and customer support path are working and approved.
+- Web copy: `public/brand/founding-member-49.png`
+- Active use: the public landing page presents the $49 monthly founding
+  membership as an assessment-first early-access offer.
+- Commercial boundary: the offer includes the private workspace, focused plan,
+  work review, check-ins, and staged access to approved workflows. It does not
+  promise unlimited human labor, autonomous outreach, ad spend, lead-data
+  purchases, or uncapped third-party API usage.
 
 ### Free Assessment Image needs URL.png
 
 - Source size: 1536 x 1024
 - Format: opaque landscape PNG
-- Intended use: free business-assessment campaign
-- Hold reason: the assessment form, privacy disclosure, consent language,
-  delivery workflow, and destination URL must work before promotion.
-- Claims to verify: personalized blueprint, marketing strategy, customer
-  profile, content plan, growth roadmap, no obligation, and completion in less
-  than five minutes.
+- Web copy: `public/brand/free-business-assessment.png`
+- Active use: supports the free assessment campaign at `/assessment`.
+- Delivery path: the ten-question form writes to the secured assessment queue
+  in the Lion's Den after the public assessment migration is applied.
+- Claims still requiring review before use in paid advertising: personalized
+  blueprint, marketing strategy, content plan, growth roadmap, no obligation,
+  and completion in less than five minutes.
+
+## Marketing collateral on hold
 
 ### i want YOU Atlas Business Assessment poster.png
 
@@ -54,12 +64,29 @@ Do not serve the 14.5 MB source file directly from the website.
   aggressive than the calm, premium Atlas product interface. Use selectively,
   not as the primary product aesthetic.
 
+### Page 1 Business Growth Blueprint.png
+
+- Format: portrait PNG
+- Intended use: cover page for a client-specific business growth blueprint
+- Hold reason: the visible copy names QTime Productions and makes service
+  claims that should remain private to that client unless Quincy approves
+  public portfolio use.
+
+### Proverbs_ Jul 2, 2026, 09_08_56 AM.png
+
+- Format: square PNG
+- Intended use: faith-centered social content
+- Brand note: it strongly supports the lion, mountain, blue, gold, wisdom, and
+  family-purpose identity. Keep it as a social-content reference rather than a
+  core sales-page graphic until the public faith positioning is finalized.
+
 ## Usage rules
 
 1. The product interface should use the logo and core color system first.
 2. Marketing graphics must link only to a functioning canonical route.
 3. Every advertised deliverable must have a real owner and delivery process.
-4. Do not advertise an automated agent when the service is human-reviewed.
+4. Describe each named role by capabilities that are currently working, and
+   label staged or human-approved workflows plainly.
 5. Preserve original source files outside the build; publish optimized copies.
 6. Confirm ownership or licensing for fonts, stock imagery, generated imagery,
    and logo artwork before broad commercial use.
@@ -70,5 +97,5 @@ Do not serve the 14.5 MB source file directly from the website.
 - Establish primary navy, blue, gold, background, text, and border tokens.
 - Produce small web-safe logo variants after the brand lockup is approved.
 - Confirm the canonical public domain before adding URLs to collateral.
-- Complete the real assessment and founding-pilot workflows before publishing
-  the three campaign graphics.
+- Build and approve each external workflow one at a time, with permissions,
+  review steps, API limits, and costs confirmed before activation.

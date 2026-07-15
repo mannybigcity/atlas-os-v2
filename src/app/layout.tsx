@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Atlas For Entrepreneurs | Practical Business Growth Support",
+  title: "Atlas For Entrepreneurs | Your AI-Powered Business Team",
   description:
-    "A human-guided 30-day business pilot that turns one important goal into clear priorities, reviewed work, and practical next actions.",
+    "Start with a free business assessment and build a focused plan for leads, content, follow-up, and execution with ATLAS.",
 };
 
 export default function RootLayout({
