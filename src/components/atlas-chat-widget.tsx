@@ -6,6 +6,7 @@ import { askAtlasPreview } from "@/server/atlas-chat/actions";
 type ChatState = {
   ok: boolean;
   error?: string;
+  assessmentCta?: boolean;
   response?: {
     answer: string;
     nextSteps: string[];
@@ -27,6 +28,7 @@ export function AtlasChatWidget() {
     async (_prevState: ChatState, formData: FormData) => askAtlasPreview(formData),
     initialState,
   );
+  const showAssessmentCta = isLimited || state.assessmentCta === true;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -154,18 +156,33 @@ export function AtlasChatWidget() {
         )}
 
         {state.ok === false && state.error ? (
-          <p className="mt-4 text-sm font-semibold text-[#b42318]">{state.error}</p>
+          <p
+            className={`mt-4 text-sm font-semibold ${
+              state.assessmentCta ? "text-[#16325c]" : "text-[#b42318]"
+            }`}
+          >
+            {state.error}
+          </p>
         ) : null}
 
         {isLimited ? (
           <p className="mt-4 text-sm font-semibold text-[#8b5d00]">
-            Preview limit reached for today. Use the free assessment for a deeper plan.
+            Your free preview is complete. Continue with the assessment for a plan built around your business.
           </p>
         ) : (
           <p className="mt-4 text-sm leading-6 text-slate-500">
             Public preview is capped to keep costs low. The paid dashboard can go deeper.
           </p>
         )}
+
+        {showAssessmentCta ? (
+          <a
+            className="mt-4 inline-flex rounded-full bg-[#f5bd2e] px-6 py-3 text-sm font-black text-[#071b42] shadow-sm transition hover:bg-[#ffd05a]"
+            href="/assessment"
+          >
+            Start my free assessment
+          </a>
+        ) : null}
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">

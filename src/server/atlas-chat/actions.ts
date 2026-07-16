@@ -260,11 +260,12 @@ export async function askAtlasPreview(formData: FormData) {
               : error.options.status === 400
                 ? "OpenAI rejected the request configuration. Confirm OPENAI_MODEL is gpt-5-mini."
                 : error.code === "incomplete_response"
-                  ? "Atlas reached its response limit. Please try a shorter question."
+                  ? "That’s the end of this free Atlas preview. Start the free assessment so Atlas can learn about your business and prepare a more focused next step."
                   : `OpenAI request failed (${error.code}, status ${error.options.status ?? "unknown"}).`;
       return {
         ok: false,
         error: message,
+        assessmentCta: error.code === "incomplete_response",
       } as const;
     }
 
