@@ -61,7 +61,7 @@ function Eyebrow({
   );
 }
 
-function MockGPTPanel() {
+export function MockGPTPanel() {
   return (
     <aside className="relative mx-auto w-full max-w-xl rounded-[1.75rem] border border-[#cbd8ec] bg-white p-3 shadow-2xl shadow-[#a8bfdf]/40 sm:p-5">
       <div className="rounded-[1.35rem] border border-[#dce6f5] bg-[#f7faff] p-4 sm:p-6">

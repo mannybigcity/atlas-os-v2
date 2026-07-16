@@ -1,7 +1,9 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sendAssessmentNotification } from "@/server/notifications/resend";
 
 const allowed = {
   customerSources: new Set([
@@ -104,8 +106,11 @@ export async function submitBusinessAssessment(formData: FormData) {
     redirect("/assessment?error=missing_information");
   }
 
+  const assessmentId = randomUUID();
+  const submittedAt = new Date().toISOString();
   const supabase = await createClient();
   const { error } = await supabase.from("business_assessment_submissions").insert({
+    id: assessmentId,
     business_description: businessDescription,
     ideal_customer: idealCustomer,
     customer_sources: customerSources,
@@ -133,6 +138,22 @@ export async function submitBusinessAssessment(formData: FormData) {
     });
     redirect("/assessment?error=submit_failed");
   }
+
+  await sendAssessmentNotification({
+    id: assessmentId,
+    businessName,
+    contactName,
+    contactEmail,
+    contactPhone,
+    businessDescription,
+    idealCustomer,
+    biggestChallenge,
+    ninetyDayGoal,
+    improvementTiming,
+    website,
+    socialMedia: socialMedia || null,
+    createdAt: submittedAt,
+  });
 
   redirect("/assessment?status=received");
 }

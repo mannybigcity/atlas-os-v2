@@ -17,7 +17,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       eyebrow="Privacy & data"
-      lastUpdated="July 15, 2026"
+      lastUpdated="July 16, 2026"
       summary="This policy explains what Atlas collects, why it is needed, when it may be shared, and the choices available to assessment prospects and client workspace users."
       title="Privacy Policy"
     >
@@ -53,6 +53,12 @@ export default function PrivacyPage() {
             organization membership, business profile, plans, actions, drafts,
             review decisions, messages, notes, and activity records created while
             providing the service.
+          </li>
+          <li>
+            <strong>Public Atlas chat information:</strong> questions submitted to
+            the homepage preview, Atlas replies, a short-lived browser-session
+            identifier, response status, model and token-usage records, and
+            estimated API cost used to operate, limit, and evaluate the preview.
           </li>
           <li>
             <strong>Technical information:</strong> essential authentication and
@@ -149,6 +155,14 @@ export default function PrivacyPage() {
           paid scope is proposed.
         </p>
         <p>
+          Questions entered into the public Atlas chat preview are sent to OpenAI
+          to generate the requested reply. Atlas stores the question, reply,
+          operational status, session identifier, and usage record so we can
+          provide the preview, prevent misuse, understand what prospects need, and
+          control costs. Do not enter confidential or sensitive information into
+          the public preview.
+        </p>
+        <p>
           If a proposed client workflow will use an external AI or data provider,
           Atlas will describe the purpose, approval point, and any separately billed
           external cost before that workflow is activated. Read our{" "}
@@ -162,9 +176,9 @@ export default function PrivacyPage() {
       <LegalSection title="6. Cookies and similar technology">
         <p>
           Atlas uses cookies that are necessary for secure sign-in, session
-          continuity, password recovery, and fraud prevention. Our infrastructure
-          providers may also create operational logs needed to deliver and secure
-          the website.
+          continuity, password recovery, fraud prevention, and enforcement of the
+          public chat preview limit. Our infrastructure providers may also create
+          operational logs needed to deliver and secure the website.
         </p>
         <p>
           Atlas does not currently use advertising cookies or cross-site targeted

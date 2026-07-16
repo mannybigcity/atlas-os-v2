@@ -17,7 +17,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       eyebrow="Website terms"
-      lastUpdated="July 15, 2026"
+      lastUpdated="July 16, 2026"
       summary="These terms govern use of the Atlas website, free assessment, and client workspace. A separate written service agreement governs paid work."
       title="Terms of Use"
     >
@@ -56,6 +56,13 @@ export default function TermsPage() {
           No payment is collected by the assessment and no subscription begins
           automatically. Paid work starts only after the parties agree to a written
           scope, deliverables, price, timing, approval process, and payment terms.
+        </p>
+        <p>
+          The public Atlas chat is a limited preview, not a paid consulting
+          engagement. Questions and replies may be retained to operate and secure
+          the preview, understand common business needs, and control API usage.
+          Preview access may be limited or unavailable, and its output must be
+          reviewed before use.
         </p>
       </LegalSection>
 
