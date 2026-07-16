@@ -178,6 +178,20 @@ export default function TermsPage() {
           Atlas is not responsible for an external website merely because Atlas
           links to it or reviews its public content.
         </p>
+        <p>
+          A private Atlas research preview may display transient Google Maps
+          Platform content. That content is governed by the{" "}
+          <a
+            className={legalLinkClass}
+            href="https://cloud.google.com/maps-platform/terms"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Google Maps Platform Terms
+          </a>
+          . Google Maps result content is provided for review and verification;
+          users may not bulk-copy, export, or build a separate directory from it.
+        </p>
       </LegalSection>
 
       <LegalSection title="11. Availability and disclaimers">

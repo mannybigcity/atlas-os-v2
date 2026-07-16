@@ -119,6 +119,29 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
           </div>
         ) : null}
 
+        <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
+                Atlas Revenue Operations
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                HUNTER + DAVID Sales Command
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
+                Research real prospects, verify their source, schedule the next
+                action, and require approval before any outreach.
+              </p>
+            </div>
+            <Link
+              className="shrink-0 rounded-full bg-blue-700 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
+              href="/lions-den/sales"
+            >
+              Open Sales Command
+            </Link>
+          </div>
+        </section>
+
         <section className="rounded-2xl border border-amber-200 bg-white p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -194,6 +217,16 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
                       </a>
                       <p className="mt-1 text-sm text-slate-700">{assessment.contactPhone}</p>
                       <WebsiteLink value={assessment.website} />
+                      {assessment.socialMedia ? (
+                        <div className="mt-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            Social media
+                          </p>
+                          <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                            {assessment.socialMedia}
+                          </p>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
 

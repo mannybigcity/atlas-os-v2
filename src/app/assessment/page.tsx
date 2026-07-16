@@ -115,7 +115,8 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
                 <div className="grid gap-3 sm:grid-cols-2"><Choice label="Immediately" name="improvementTiming" type="radio" value="immediately" /><Choice label="Within 30 days" name="improvementTiming" type="radio" value="30_days" /><Choice label="Within 90 days" name="improvementTiming" type="radio" value="90_days" /><Choice label="Just exploring" name="improvementTiming" type="radio" value="exploring" /></div>
               </Question>
               <Question number="10" title="What's the best way to reach you?">
-                <div className="grid gap-5 sm:grid-cols-2"><Field label="Your name" name="contactName" /><Field label="Business name" name="businessName" /><Field label="Email" name="contactEmail" type="email" /><Field label="Phone" name="contactPhone" type="tel" /><div className="sm:col-span-2"><Field label="Website (optional)" name="website" required={false} type="url" /></div></div>
+                <div className="grid gap-5 sm:grid-cols-2"><Field label="Your name" name="contactName" /><Field label="Business name" name="businessName" /><Field label="Email" name="contactEmail" type="email" /><Field label="Phone" name="contactPhone" type="tel" /><div className="sm:col-span-2"><Field label="Website (optional)" name="website" placeholder="siscustomcreations.com" required={false} /></div></div>
+                <label className="mt-5 block text-sm font-semibold text-[#16325c]">Social media links or handles (optional)<textarea className="field mt-2 min-h-24" maxLength={1500} name="socialMedia" placeholder="Facebook, Instagram, TikTok, LinkedIn, YouTube, Etsy, or other public pages" /></label>
                 <label className="mt-6 flex items-start gap-3 text-sm leading-6 text-slate-600">
                   <input className="mt-1 h-4 w-4 accent-[#1246a0]" name="consentToContact" required type="checkbox" value="yes" />
                   <span>
@@ -139,6 +140,6 @@ function Question({ number, title, help, children }: { number: string; title: st
   return <section className="rounded-3xl border border-[#dce6f5] bg-white p-6 shadow-sm sm:p-8"><div className="flex gap-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1246a0] text-sm font-bold text-white">{number}</span><div><h2 className="text-xl font-bold">{title}</h2>{help && <p className="mt-1 text-sm text-slate-500">{help}</p>}</div></div><div className="mt-6">{children}</div></section>;
 }
 
-function Field({ label, name, type = "text", required = true }: { label: string; name: string; type?: string; required?: boolean }) {
-  return <label className="block text-sm font-semibold text-[#16325c]">{label}<input className="field mt-2" maxLength={name === "contactEmail" ? 320 : 250} name={name} required={required} type={type} /></label>;
+function Field({ label, name, type = "text", required = true, placeholder }: { label: string; name: string; type?: string; required?: boolean; placeholder?: string }) {
+  return <label className="block text-sm font-semibold text-[#16325c]">{label}<input className="field mt-2" inputMode={name === "website" ? "url" : undefined} maxLength={name === "contactEmail" ? 320 : 250} name={name} placeholder={placeholder} required={required} type={type} /></label>;
 }

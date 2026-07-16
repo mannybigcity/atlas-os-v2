@@ -49,13 +49,13 @@ export function SiteFooter() {
               info@atlasforentrepreneurs.com
             </a>
             <p className="mt-3 text-xs leading-5 text-blue-200">
-              For privacy requests, use the subject line “Privacy request.”
+              For privacy requests, use the subject line &ldquo;Privacy request.&rdquo;
             </p>
           </div>
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs leading-5 text-blue-200 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 Atlas For Entrepreneurs. All rights reserved.</p>
+          <p>&copy; 2026 Atlas For Entrepreneurs. All rights reserved.</p>
           <p>Business results vary. No automatic subscription.</p>
         </div>
       </div>

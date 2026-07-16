@@ -31,13 +31,28 @@ function selectedValues(formData: FormData, name: string, choices: Set<string>) 
 }
 
 function normalizeWebsite(value: string) {
-  if (!value) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
     return null;
   }
 
+  const candidate = /^[a-z][a-z\d+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+
   try {
-    const url = new URL(value);
-    return ["http:", "https:"].includes(url.protocol) ? url.toString() : null;
+    const url = new URL(candidate);
+
+    if (!["http:", "https:"].includes(url.protocol)) {
+      return null;
+    }
+
+    if (!url.hostname.includes(".")) {
+      return null;
+    }
+
+    return url.toString();
   } catch {
     return null;
   }
@@ -64,6 +79,7 @@ export async function submitBusinessAssessment(formData: FormData) {
   const businessName = textValue(formData, "businessName", 250);
   const websiteInput = textValue(formData, "website", 500);
   const website = normalizeWebsite(websiteInput);
+  const socialMedia = textValue(formData, "socialMedia", 1500);
   const consentToContact = formData.get("consentToContact") === "yes";
 
   const invalid =
@@ -81,6 +97,7 @@ export async function submitBusinessAssessment(formData: FormData) {
     contactPhone.length < 7 ||
     businessName.length < 2 ||
     (websiteInput.length > 0 && !website) ||
+    (socialMedia.length > 0 && socialMedia.length < 3) ||
     !consentToContact;
 
   if (invalid) {
@@ -103,6 +120,7 @@ export async function submitBusinessAssessment(formData: FormData) {
     contact_phone: contactPhone,
     business_name: businessName,
     website,
+    social_media: socialMedia || null,
     consent_to_contact: true,
     status: "new",
     source: "atlas_website",

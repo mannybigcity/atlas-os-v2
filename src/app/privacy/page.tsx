@@ -122,6 +122,23 @@ export default function PrivacyPage() {
           terms and security obligations. Atlas remains responsible for selecting
           providers appropriate to the information and proposed workflow.
         </p>
+        <p>
+          When an authorized Atlas administrator deliberately runs the HUNTER
+          local-business preview, Atlas sends the entered business type and service
+          area to Google Places API. Result content is displayed transiently for
+          verification and is not automatically copied into the Atlas CRM. Google
+          may process request and usage information under the{" "}
+          <a
+            className={legalLinkClass}
+            href="https://policies.google.com/privacy"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Google Privacy Policy
+          </a>
+          . Atlas separately records the search phrase, request count, result count,
+          and estimated list-price exposure for cost control.
+        </p>
       </LegalSection>
 
       <LegalSection title="5. AI-assisted processing">

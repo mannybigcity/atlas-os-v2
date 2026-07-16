@@ -10,11 +10,19 @@ Massive Action does not mean uncontrolled spend.
 
 Every AI call must clearly help generate revenue, reduce costs, save time, improve security, or create a better customer experience.
 
-## Current status
+## Current implementation status
 
-Atlas does not currently call any AI provider.
+The repository now contains a server-only OpenAI Responses gateway and one
+bounded, user-triggered MICAH social-sample workflow. The workflow makes one
+request, requests exactly three draft posts, records provider/model/token use
+and estimated cost, stores the result as an internal draft, and never publishes
+it. A database daily limit allows at most three successful sample runs per
+prospect.
 
-No OpenAI API key, model SDK, agent runtime, vector database, background AI job, or AI feature is implemented yet.
+The code is not active merely because it exists locally. The CRM and usage
+ledger migrations, deployment environment variables, and production smoke tests
+must all be completed first. No OpenAI request was made while implementing or
+testing this foundation.
 
 ## Approved AI spending rules
 
@@ -90,22 +98,24 @@ Before shipping the first AI-powered feature, implement:
 - safe error handling
 - no service keys in browser code
 
-## First acceptable AI feature
+## First implemented AI feature
 
-The first AI feature should be narrow and user-triggered:
+The first feature is narrow and user-triggered:
 
 ```text
-Generate a daily briefing draft from approved organization context.
+Generate three social-post drafts from one reviewed prospect record.
 ```
 
-It should be:
+It is:
 
 - one button
 - one request
-- one response
+- one structured response
 - no autonomous loop
 - no background execution
 - no hidden retries
+- no external publishing
+- usage recorded before the draft is treated as complete
 
 ## Explicitly not approved yet
 
@@ -115,7 +125,7 @@ It should be:
 - automatic document ingestion
 - automatic embedding jobs
 - vector database outside Supabase
-- AI-generated outbound communication
+- automatic AI-generated outbound communication
 - AI actions that modify business data without approval
 
 ## Budget posture

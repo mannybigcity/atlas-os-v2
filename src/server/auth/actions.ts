@@ -52,9 +52,17 @@ export async function requestPasswordReset(formData: FormData) {
   const origin = getSiteUrl(requestHeaders.get("origin"));
   const supabase = await createClient();
 
-  await supabase.auth.resetPasswordForEmail(email, {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/confirm`,
   });
+
+  if (error) {
+    console.error("Atlas password-reset email request failed", {
+      code: error.code,
+      status: error.status,
+    });
+    redirect("/forgot-password?error=delivery_failed");
+  }
 
   redirect("/forgot-password?status=sent");
 }

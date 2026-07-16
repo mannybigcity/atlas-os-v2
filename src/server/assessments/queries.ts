@@ -17,6 +17,7 @@ export type BusinessAssessment = {
   contactPhone: string;
   businessName: string;
   website: string | null;
+  socialMedia: string | null;
   status: "new" | "contacted" | "qualified" | "not_a_fit" | "converted";
   createdAt: string;
   updatedAt: string;
@@ -38,6 +39,7 @@ type BusinessAssessmentRow = {
   contact_phone: string;
   business_name: string;
   website: string | null;
+  social_media: string | null;
   status: BusinessAssessment["status"];
   created_at: string;
   updated_at: string;
@@ -50,7 +52,7 @@ export async function getBusinessAssessments(): Promise<
   const { data, error } = await supabase
     .from("business_assessment_submissions")
     .select(
-      "id, business_description, ideal_customer, customer_sources, biggest_challenge, ninety_day_goal, evaluation_areas, business_size, ai_tools, improvement_timing, contact_name, contact_email, contact_phone, business_name, website, status, created_at, updated_at",
+      "id, business_description, ideal_customer, customer_sources, biggest_challenge, ninety_day_goal, evaluation_areas, business_size, ai_tools, improvement_timing, contact_name, contact_email, contact_phone, business_name, website, social_media, status, created_at, updated_at",
     )
     .order("created_at", { ascending: false })
     .limit(100);
@@ -76,6 +78,7 @@ export async function getBusinessAssessments(): Promise<
       contactPhone: row.contact_phone,
       businessName: row.business_name,
       website: row.website,
+      socialMedia: row.social_media,
       status: row.status,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

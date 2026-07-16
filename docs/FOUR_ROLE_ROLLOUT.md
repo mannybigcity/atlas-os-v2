@@ -56,7 +56,9 @@ and complete follow-up history.
 
 ## Commercial boundary
 
-The $49 founding membership covers early access to the core workspace,
-onboarding, the focused plan, work review, check-ins, and staged access to the
-approved workflows. Third-party API usage, paid data, advertising spend,
-production printing, and custom high-volume work must be scoped separately.
+Atlas is not offered as an unlimited $49 agent service. The free assessment is
+an intake step, not a subscription. Any paid engagement must define the human
+work included, workflow limits, review responsibilities, third-party API or
+data costs, and approved external actions before work begins. Advertising
+spend, paid data, production printing, integrations, and high-volume work are
+scoped separately.

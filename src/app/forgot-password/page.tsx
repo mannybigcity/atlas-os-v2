@@ -10,6 +10,8 @@ type ForgotPasswordPageProps = {
 };
 
 const errorMessages: Record<string, string> = {
+  delivery_failed:
+    "Atlas could not send the reset email right now. Please wait a few minutes and try once more, or contact Atlas for help.",
   missing_email: "Enter the email address for the account.",
   session_expired: "The reset session expired. Request a new reset link.",
 };
