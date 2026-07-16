@@ -224,6 +224,14 @@ export async function askAtlasPreview(formData: FormData) {
         chat_surface: "homepage",
         prompt_length: prompt.length,
         openai_error: isOpenAIError,
+        provider_status:
+          error instanceof IntegrationRequestError
+            ? error.options.status
+            : null,
+        retryable:
+          error instanceof IntegrationRequestError
+            ? error.options.retryable
+            : false,
       },
     });
 
@@ -236,13 +244,27 @@ export async function askAtlasPreview(formData: FormData) {
     }
 
     if (error instanceof IntegrationRequestError) {
-      const hint =
-        error.code === "incomplete_response"
-          ? " The model likely hit its output limit."
-          : "";
+      console.error("Atlas OpenAI request failed", {
+        code: error.code,
+        status: error.options.status,
+        retryable: error.options.retryable,
+      });
+
+      const message =
+        error.options.status === 401
+          ? "OpenAI rejected the API key configured in Netlify. Replace OPENAI_API_KEY and redeploy."
+          : error.options.status === 403
+            ? "The OpenAI project does not have access to the configured model."
+            : error.options.status === 429
+              ? "The OpenAI account reached a billing or rate limit. Check OpenAI billing and usage limits."
+              : error.options.status === 400
+                ? "OpenAI rejected the request configuration. Confirm OPENAI_MODEL is gpt-5-mini."
+                : error.code === "incomplete_response"
+                  ? "Atlas reached its response limit. Please try a shorter question."
+                  : `OpenAI request failed (${error.code}, status ${error.options.status ?? "unknown"}).`;
       return {
         ok: false,
-        error: `OpenAI request failed (${error.code}). Check model access or try again.${hint}`,
+        error: message,
       } as const;
     }
 
