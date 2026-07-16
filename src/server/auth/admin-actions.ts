@@ -1,0 +1,74 @@
+"use server";
+
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { getSiteUrl } from "@/lib/env";
+import { createClient } from "@/lib/supabase/server";
+import { requireSuperAdmin } from "@/server/auth/guards";
+
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+type ClientAccessRow = {
+  organization_id: string;
+  user_id: string;
+  email: string;
+};
+
+function redirectWithAccessStatus(status: string): never {
+  redirect(`/lions-den?access=${encodeURIComponent(status)}`);
+}
+
+export async function sendClientLoginEmail(formData: FormData) {
+  await requireSuperAdmin("/lions-den");
+
+  const organizationId = String(
+    formData.get("organizationId") ?? "",
+  ).trim();
+  const userId = String(formData.get("userId") ?? "").trim();
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (
+    !uuidPattern.test(organizationId) ||
+    !uuidPattern.test(userId) ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  ) {
+    redirectWithAccessStatus("invalid_request");
+  }
+
+  const supabase = await createClient();
+  const { data: roster, error: rosterError } = await supabase.rpc(
+    "get_atlas_client_access_roster",
+  );
+  const verifiedMember = ((roster ?? []) as ClientAccessRow[]).find(
+    (row) =>
+      row.organization_id === organizationId &&
+      row.user_id === userId &&
+      row.email.toLowerCase() === email,
+  );
+
+  if (rosterError || !verifiedMember) {
+    redirectWithAccessStatus("membership_not_verified");
+  }
+
+  const requestHeaders = await headers();
+  const origin = getSiteUrl(requestHeaders.get("origin"));
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/confirm`,
+  });
+
+  if (error) {
+    console.error("Atlas client access email request failed", {
+      code: error.code,
+      status: error.status,
+      organizationId,
+      userId,
+    });
+    redirectWithAccessStatus("delivery_failed");
+  }
+
+  redirectWithAccessStatus("sent");
+}
+

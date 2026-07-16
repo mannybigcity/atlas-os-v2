@@ -9,17 +9,22 @@ import {
 import { getActiveAttentionRequests } from "@/server/attention/queries";
 import { updateBusinessAssessmentStatus } from "@/server/assessments/admin-actions";
 import { getBusinessAssessments } from "@/server/assessments/queries";
+import { sendClientLoginEmail } from "@/server/auth/admin-actions";
 import { signOut } from "@/server/auth/actions";
 import { requireSuperAdmin } from "@/server/auth/guards";
 import { createAdminNoteMessage } from "@/server/notes/actions";
 import { getMessagesForNotes } from "@/server/notes/messages";
-import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
+import {
+  getClientAccessRoster,
+  getOrganizationsForSuperAdmin,
+} from "@/server/organizations/queries";
 import { getPilotWorkspace } from "@/server/pilot/queries";
 
 export const dynamic = "force-dynamic";
 
 type LionsDenPageProps = {
   searchParams?: Promise<{
+    access?: string;
     attention?: string;
     assessment?: string;
     message?: string;
@@ -31,6 +36,7 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
   const user = await requireSuperAdmin("/lions-den");
   const params = await searchParams;
   const organizations = await getOrganizationsForSuperAdmin();
+  const clientAccess = await getClientAccessRoster();
   const assessments = await getBusinessAssessments();
   const pilotWorkspaces = await Promise.all(
     organizations.data.map(async (organization) => ({
@@ -61,6 +67,20 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
       </div>
 
       <div className="mt-4 space-y-4">
+        {params?.access === "sent" ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Secure client login email requested. Ask the client to check the
+            inbox and spam folder and use only the newest Atlas link.
+          </div>
+        ) : null}
+
+        {params?.access && params.access !== "sent" ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
+            The client login email was not sent. Confirm the membership roster,
+            Supabase Auth email settings, and delivery logs before trying again.
+          </div>
+        ) : null}
+
         {params?.attention === "acknowledged" ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
             Attention request acknowledged.
@@ -469,6 +489,102 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
             </div>
           </div>
         ) : null}
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
+                Client access
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                Verify membership and send a secure login email
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                This sends a one-time password setup/reset link only after the
+                Auth user and organization membership match. Atlas never sees
+                or sends a client password.
+              </p>
+            </div>
+            <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+              Super Admin only
+            </span>
+          </div>
+
+          {clientAccess.setupRequired ? (
+            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+              Apply migration <code>20260716120000_atlas_client_access_roster.sql</code>
+              {" "}in Supabase to verify QTime access here.
+            </div>
+          ) : null}
+
+          {!clientAccess.setupRequired && clientAccess.data.length === 0 ? (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+              No client Auth users are attached to an organization yet.
+            </div>
+          ) : null}
+
+          <div className="mt-5 divide-y divide-slate-200">
+            {clientAccess.data.map((member) => (
+              <div
+                className="flex flex-col gap-4 py-5 first:pt-0 last:pb-0 lg:flex-row lg:items-center lg:justify-between"
+                key={`${member.organizationId}:${member.userId}`}
+              >
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-slate-950">
+                      {member.organizationName}
+                    </p>
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-700">
+                      {member.membershipRole}
+                    </span>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${
+                        member.emailConfirmedAt
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-amber-50 text-amber-800"
+                      }`}
+                    >
+                      {member.emailConfirmedAt
+                        ? "Email confirmed"
+                        : "Invitation not accepted"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-700">{member.email}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Last sign-in:{" "}
+                    {member.lastSignInAt
+                      ? formatDateTime(member.lastSignInAt)
+                      : "Never"}
+                  </p>
+                </div>
+
+                {member.emailConfirmedAt ? (
+                  <form action={sendClientLoginEmail}>
+                    <input
+                      name="organizationId"
+                      type="hidden"
+                      value={member.organizationId}
+                    />
+                    <input name="userId" type="hidden" value={member.userId} />
+                    <input name="email" type="hidden" value={member.email} />
+                    <button
+                      className="w-full rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 lg:w-auto"
+                      type="submit"
+                    >
+                      Send secure login email
+                    </button>
+                  </form>
+                ) : (
+                  <p className="max-w-sm text-sm leading-6 text-amber-900">
+                    Resend the invitation once from Supabase Authentication.
+                    Do not send a password-reset email until the invitation is
+                    accepted and the email is confirmed.
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
