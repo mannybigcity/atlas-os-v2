@@ -1,5 +1,8 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
+import { createClient } from "@/lib/supabase/server";
 import { generateStructuredText } from "@/server/integrations/openai-responses";
 import {
   IntegrationConfigurationError,
@@ -65,8 +68,71 @@ function parseAtlasChatResponse(value: unknown): AtlasChatResponse {
   };
 }
 
+type AtlasChatTurnInsert = {
+  session_id: string;
+  source: "homepage_chat";
+  page_path: string;
+  prompt: string;
+  response: Record<string, unknown>;
+  model: string | null;
+  response_id: string | null;
+  status: "succeeded" | "blocked" | "failed";
+  input_tokens: number;
+  cached_input_tokens: number;
+  output_tokens: number;
+  reasoning_tokens: number;
+  estimated_cost_microusd: number;
+  error_code: string | null;
+  metadata: Record<string, unknown>;
+};
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
+function normalizePagePath(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "/";
+  if (trimmed.length > 200) return "/";
+  if (!trimmed.startsWith("/")) return "/";
+  return trimmed;
+}
+
+function estimateMicrousd(
+  model: string,
+  usage: {
+    inputTokens: number | null;
+    cachedInputTokens: number | null;
+    outputTokens: number | null;
+  },
+) {
+  if (model !== "gpt-5-mini" && !model.startsWith("gpt-5-mini-")) {
+    return 0;
+  }
+
+  const input = usage.inputTokens ?? 0;
+  const cached = Math.min(usage.cachedInputTokens ?? 0, input);
+  const output = usage.outputTokens ?? 0;
+
+  return Math.round((input - cached) * 0.25 + cached * 0.025 + output * 2);
+}
+
+async function recordPublicChatTurn(turn: AtlasChatTurnInsert) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("atlas_public_chat_turns").insert(turn);
+
+  if (error) {
+    console.error("Failed to record public Atlas chat turn", error);
+  }
+}
+
 export async function askAtlasPreview(formData: FormData) {
   const prompt = String(formData.get("prompt") ?? "").trim();
+  const rawSessionId = String(formData.get("sessionId") ?? "").trim();
+  const sessionId = isUuid(rawSessionId) ? rawSessionId : randomUUID();
+  const pagePath = normalizePagePath(String(formData.get("pagePath") ?? ""));
 
   if (!prompt) {
     return {
@@ -97,11 +163,70 @@ export async function askAtlasPreview(formData: FormData) {
       parse: parseAtlasChatResponse,
     });
 
+    await recordPublicChatTurn({
+      session_id: sessionId,
+      source: "homepage_chat",
+      page_path: pagePath,
+      prompt,
+      response: result.value,
+      model: result.model,
+      response_id: result.responseId,
+      status: "succeeded",
+      input_tokens: result.usage.inputTokens ?? 0,
+      cached_input_tokens: result.usage.cachedInputTokens ?? 0,
+      output_tokens: result.usage.outputTokens ?? 0,
+      reasoning_tokens: result.usage.reasoningTokens ?? 0,
+      estimated_cost_microusd: estimateMicrousd(result.model, {
+        inputTokens: result.usage.inputTokens,
+        cachedInputTokens: result.usage.cachedInputTokens,
+        outputTokens: result.usage.outputTokens,
+      }),
+      error_code: null,
+      metadata: {
+        chat_surface: "homepage",
+        prompt_length: prompt.length,
+      },
+    });
+
     return {
       ok: true,
       response: result.value,
     } as const;
   } catch (error) {
+    const isOpenAIError =
+      error instanceof IntegrationConfigurationError ||
+      error instanceof IntegrationRequestError;
+
+    await recordPublicChatTurn({
+      session_id: sessionId,
+      source: "homepage_chat",
+      page_path: pagePath,
+      prompt,
+      response: {},
+      model:
+        error instanceof IntegrationRequestError || error instanceof IntegrationConfigurationError
+          ? "openai"
+          : null,
+      response_id: null,
+      status: error instanceof IntegrationConfigurationError ? "blocked" : "failed",
+      input_tokens: 0,
+      cached_input_tokens: 0,
+      output_tokens: 0,
+      reasoning_tokens: 0,
+      estimated_cost_microusd: 0,
+      error_code:
+        error instanceof IntegrationConfigurationError
+          ? error.code
+          : error instanceof IntegrationRequestError
+            ? error.code
+            : "unknown_error",
+      metadata: {
+        chat_surface: "homepage",
+        prompt_length: prompt.length,
+        openai_error: isOpenAIError,
+      },
+    });
+
     if (error instanceof IntegrationConfigurationError) {
       return {
         ok: false,
