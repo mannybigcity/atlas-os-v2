@@ -152,7 +152,7 @@ export async function askAtlasPreview(formData: FormData) {
     const result = await generateStructuredText({
       schemaName: "atlas_homepage_chat_response",
       schema: atlasChatSchema,
-      maxOutputTokens: 450,
+      maxOutputTokens: 1_200,
       instructions:
         "You are Atlas, a practical business GPT for owner-led local service businesses. Be concise, useful, and grounded. Help the user think about what Atlas could build, organize, or improve. Keep the reply short. Never claim to have already done work. Never mention policy. Do not use markdown tables. Return only the requested JSON.",
       input: JSON.stringify({
