@@ -1,45 +1,107 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { AtlasChatWidget } from "@/components/atlas-chat-widget";
+import { AtlasBetaProof } from "@/components/atlas-beta-proof";
+import { AtlasProductPreview } from "@/components/atlas-product-preview";
 
 const assessmentHref = "/assessment";
 
-const steps = [
+const painPoints = [
   {
-    title: "Gather",
-    text: "Atlas learns from the assessment, website, and public social links.",
+    number: "01",
+    title: "Warm leads go cold",
+    text: "Calls, forms, estimates, and referrals land in different places. The next follow-up depends on memory.",
   },
   {
-    title: "Organize",
-    text: "Leads, notes, and follow-up live in one private business workspace.",
+    number: "02",
+    title: "Marketing stops when work gets busy",
+    text: "Posting, reviews, offers, and customer reminders become one more job the owner cannot get to.",
   },
   {
-    title: "Act",
-    text: "Atlas drafts the next move, then the owner approves what goes out.",
+    number: "03",
+    title: "The owner carries the whole system",
+    text: "Priorities, customer context, and growth ideas live in one head instead of a repeatable operating rhythm.",
   },
 ];
 
-const samples = [
+const capabilities = [
   {
     role: "ATLAS",
-    title: "What matters next",
-    text: "Focus warm leads first.",
+    title: "One growth priority",
+    text: "Turns the business assessment into a focused 30-day plan, clear decisions, and the next best action.",
+    badge: "Chief of Staff",
   },
   {
     role: "HUNTER",
-    title: "Who to reach",
-    text: "Local prospects with fit signals.",
+    title: "Better opportunities",
+    text: "Organizes lead research, fit signals, sources, and revenue opportunities for owner review.",
+    badge: "Lead Research",
   },
   {
     role: "MICAH",
-    title: "What to post",
-    text: "Simple content tied to one goal.",
+    title: "Consistent marketing",
+    text: "Prepares useful local content, offers, and campaign drafts connected to the work you want more of.",
+    badge: "Content Studio",
   },
   {
     role: "DAVID",
-    title: "What to follow up",
-    text: "Every open opportunity gets a next date.",
+    title: "Every lead gets a next step",
+    text: "Keeps contacts, notes, follow-up dates, and open opportunities visible in one private pipeline.",
+    badge: "CRM + Follow-up",
+  },
+];
+
+const sprintWeeks = [
+  {
+    week: "Week 1",
+    title: "Find the leaks",
+    text: "Review your lead flow, follow-up, marketing, website, and current 30-day goal.",
+  },
+  {
+    week: "Week 2",
+    title: "Install the operating view",
+    text: "Organize the priorities, prospects, customer notes, and next actions that matter first.",
+  },
+  {
+    week: "Week 3",
+    title: "Build the growth assets",
+    text: "Prepare the follow-up sequence, campaign, content, or workflow approved in your plan.",
+  },
+  {
+    week: "Week 4",
+    title: "Review what moved",
+    text: "Measure the work, tighten the system, and choose the next growth priority with evidence.",
+  },
+];
+
+const fitChecks = [
+  "You run an owner-led service business with real customers and repeatable work.",
+  "Most leads arrive through calls, forms, referrals, Google, or social media.",
+  "Follow-up and marketing still depend heavily on you.",
+  "You want a practical system without becoming an AI expert.",
+  "You are willing to review and approve work before anything goes out.",
+];
+
+const faqs = [
+  {
+    question: "Is Atlas another CRM I have to learn?",
+    answer:
+      "Atlas includes a simple private sales pipeline, but the service is broader than a CRM. It connects lead follow-up, marketing work, owner priorities, and review history around one 30-day business goal.",
+  },
+  {
+    question: "Do I need to know anything about AI?",
+    answer:
+      "No. Atlas is built for practical owners who want the benefit without learning prompts, models, or a complicated technology stack.",
+  },
+  {
+    question: "Will Atlas contact customers or publish content by itself?",
+    answer:
+      "Not during the founding pilot. Drafts and next actions stay private until the authorized owner reviews and approves them. Connected actions are introduced only when the workflow, cost, and controls are ready.",
+  },
+  {
+    question: "What happens after the assessment?",
+    answer:
+      "Manny reviews the business context and identifies the strongest practical starting point. If Atlas is a fit, you receive a clearly scoped recommendation before any paid work begins.",
   },
 ];
 
@@ -52,7 +114,7 @@ function Eyebrow({
 }) {
   return (
     <p
-      className={`text-xs font-black uppercase tracking-[0.24em] ${
+      className={`text-xs font-black uppercase tracking-[0.22em] ${
         light ? "text-[#ffd068]" : "text-[#1246a0]"
       }`}
     >
@@ -60,91 +122,17 @@ function Eyebrow({
     </p>
   );
 }
-
-export function MockGPTPanel() {
+function PrimaryCta({ className = "" }: { className?: string }) {
   return (
-    <aside className="relative mx-auto w-full max-w-xl rounded-[1.75rem] border border-[#cbd8ec] bg-white p-3 shadow-2xl shadow-[#a8bfdf]/40 sm:p-5">
-      <div className="rounded-[1.35rem] border border-[#dce6f5] bg-[#f7faff] p-4 sm:p-6">
-        <div className="flex items-center justify-between gap-3 border-b border-[#dce6f5] pb-4">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1246a0]">
-              Atlas and the team
-            </p>
-            <p className="mt-1 text-sm font-bold text-[#071b42]">
-              Private workspace
-            </p>
-          </div>
-          <span className="rounded-full border border-[#b9ddcd] bg-[#edf9f4] px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#167151]">
-            Sample
-          </span>
-        </div>
-
-        <div className="mt-4 rounded-2xl bg-[#0a3b91] p-5 text-white">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ffd068]">
-            Ask Atlas
-          </p>
-          <p className="mt-3 text-2xl font-black leading-tight">
-            What can Atlas build for you today?
-          </p>
-          <p className="mt-3 text-sm leading-6 text-blue-100">
-            A new business? Sales help? Marketing? Tell Atlas what you need.
-          </p>
-        </div>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {[
-            ["Leads", "4"],
-            ["Drafts", "2"],
-            ["Follow-ups", "3"],
-          ].map(([label, value]) => (
-            <div
-              className="rounded-2xl border border-[#dce6f5] bg-white p-4"
-              key={label}
-            >
-              <p className="text-[10px] font-black uppercase tracking-[0.13em] text-[#6b7d99]">
-                {label}
-              </p>
-              <p className="mt-2 text-3xl font-black text-[#071b42]">{value}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-[#dce6f5] bg-white p-4">
-          <p className="text-xs font-black uppercase tracking-[0.15em] text-[#1246a0]">
-            Next move
-          </p>
-          <p className="mt-3 text-sm font-bold text-[#071b42]">
-            Review the warm leads and send a short follow-up.
-          </p>
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-[#dce6f5] bg-white p-4">
-          <label className="text-xs font-black uppercase tracking-[0.15em] text-[#1246a0]" htmlFor="atlas-chat">
-            Chat with Atlas
-          </label>
-          <textarea
-            id="atlas-chat"
-            className="mt-3 min-h-28 w-full resize-none rounded-2xl border border-[#cbd8ec] bg-[#f8fbff] px-4 py-3 text-sm leading-6 text-[#071b42] outline-none transition placeholder:text-slate-400 focus:border-[#1246a0]"
-            placeholder="Example: I run a roofing company and need help with sales and follow-up."
-            rows={4}
-          />
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-full bg-[#eef4ff] px-3 py-1.5 text-[11px] font-bold text-[#1246a0]">
-              New business
-            </span>
-            <span className="rounded-full bg-[#eef4ff] px-3 py-1.5 text-[11px] font-bold text-[#1246a0]">
-              Sales help
-            </span>
-            <span className="rounded-full bg-[#eef4ff] px-3 py-1.5 text-[11px] font-bold text-[#1246a0]">
-              Marketing
-            </span>
-          </div>
-        </div>
-      </div>
-      <div className="absolute -bottom-4 left-6 rounded-full border border-[#efd381] bg-[#fff9e8] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#7a5700] shadow-sm">
-        Illustrative preview
-      </div>
-    </aside>
+    <Link
+      className={`inline-flex items-center justify-center rounded-full bg-[#f5b932] px-7 py-4 text-sm font-black text-[#071b42] shadow-[0_14px_34px_rgba(245,185,50,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ffd064] ${className}`}
+      href={assessmentHref}
+    >
+      Find my revenue leak
+      <span aria-hidden="true" className="ml-2 text-lg leading-none">
+        &rarr;
+      </span>
+    </Link>
   );
 }
 
@@ -152,214 +140,411 @@ export function AtlasHomepage({ preview = false }: { preview?: boolean }) {
   const homeHref = preview ? "/homepage-v2" : "/";
 
   return (
-    <div className="min-h-screen bg-white text-[#071b42]">
+    <div className="min-h-screen overflow-hidden bg-white text-[#071b42]">
       {preview ? (
-        <div className="bg-[#071b42] px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.14em] text-blue-100">
+        <div className="bg-[#f5b932] px-4 py-2 text-center text-[10px] font-black uppercase tracking-[0.16em] text-[#071b42]">
           Private homepage review route
         </div>
       ) : null}
 
-      <header className="sticky top-0 z-50 border-b border-[#dce6f5] bg-white/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:px-6">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#061631]/95 text-white backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-5 py-3 sm:px-7">
           <Link className="flex items-center gap-3" href={homeHref}>
-            <Image
-              alt="Atlas lion and mountain logo"
-              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
-              height={720}
-              priority
-              src="/brand/atlas-logo.png"
-              width={720}
-            />
-            <span className="hidden leading-tight sm:block">
-              <span className="block text-base font-black tracking-tight sm:text-lg">
+            <span className="rounded-xl bg-white p-1.5">
+              <Image
+                alt="Atlas For Entrepreneurs lion and mountain logo"
+                className="h-9 w-9 object-contain sm:h-10 sm:w-10"
+                height={720}
+                priority
+                src="/brand/atlas-logo.png"
+                width={720}
+              />
+            </span>
+            <span className="leading-tight">
+              <span className="block text-sm font-black tracking-tight sm:text-base">
                 Atlas For Entrepreneurs
               </span>
-              <span className="hidden text-[9px] font-bold uppercase tracking-[0.18em] text-[#1246a0] sm:block">
-                Guide. Grow. Live More.
+              <span className="hidden text-[8px] font-bold uppercase tracking-[0.19em] text-blue-200 sm:block">
+                Service Business Growth OS
               </span>
             </span>
           </Link>
 
-          <nav aria-label="Primary navigation" className="flex items-center gap-2">
+          <nav aria-label="Primary navigation" className="flex items-center gap-1 sm:gap-2">
             <a
-              className="hidden rounded-full px-3 py-2 text-sm font-semibold text-[#16325c] hover:bg-[#eef4ff] lg:block"
-              href="#how-it-works"
+              className="hidden rounded-full px-3 py-2 text-sm font-semibold text-blue-100 transition hover:bg-white/10 hover:text-white lg:block"
+              href="#product"
             >
-              How it works
+              Product
             </a>
             <a
-              className="hidden rounded-full px-3 py-2 text-sm font-semibold text-[#16325c] hover:bg-[#eef4ff] lg:block"
-              href="#samples"
+              className="hidden rounded-full px-3 py-2 text-sm font-semibold text-blue-100 transition hover:bg-white/10 hover:text-white lg:block"
+              href="#30-day-system"
             >
-              Sample work
+              30-day system
             </a>
             <Link
-              className="hidden rounded-full px-3 py-2 text-sm font-semibold text-[#16325c] hover:bg-[#eef4ff] md:block"
+              className="hidden rounded-full px-3 py-2 text-sm font-semibold text-blue-100 transition hover:bg-white/10 hover:text-white md:block"
               href="/login"
             >
               Client login
             </Link>
             <Link
-              className="rounded-full bg-[#1246a0] px-4 py-2.5 text-xs font-black text-white hover:bg-[#0a2f78] sm:px-5 sm:text-sm"
+              className="rounded-full border border-white/20 bg-white px-4 py-2.5 text-xs font-black text-[#071b42] transition hover:bg-blue-50 sm:px-5 sm:text-sm"
               href={assessmentHref}
             >
-              Free assessment
+              Free growth assessment
             </Link>
           </nav>
         </div>
       </header>
 
       <main>
-        <section className="border-b border-[#dce6f5] bg-[#f8fbff]">
-          <div className="mx-auto grid w-full max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:py-24">
+        <section className="relative isolate overflow-hidden bg-[#061631] text-white">
+          <div className="absolute inset-0 -z-20 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:44px_44px]" />
+          <div className="absolute -left-40 top-24 -z-10 h-[34rem] w-[34rem] rounded-full bg-[#1246a0]/25 blur-[120px]" />
+          <div className="absolute -right-40 bottom-0 -z-10 h-[30rem] w-[30rem] rounded-full bg-[#f5b932]/12 blur-[120px]" />
+
+          <div className="mx-auto grid w-full max-w-[84rem] gap-14 px-6 py-16 sm:px-7 sm:py-20 lg:grid-cols-[0.86fr_1.14fr] lg:items-center lg:py-24">
             <div>
-              <Eyebrow>For local service businesses</Eyebrow>
-              <h1 className="mt-5 max-w-3xl text-5xl font-black leading-[0.96] tracking-[-0.05em] sm:text-6xl lg:text-7xl">
-                What can Atlas and the team build for you today?
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-blue-100">
+                <span className="h-2 w-2 rounded-full bg-[#f5b932] shadow-[0_0_18px_rgba(245,185,50,0.9)]" />
+                Built for owner-led service businesses
+              </div>
+              <h1 className="mt-7 max-w-3xl text-5xl font-black leading-[0.94] tracking-[-0.055em] sm:text-6xl lg:text-[4.7rem]">
+                Stop losing revenue between inquiry and follow-up.
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl sm:leading-9">
-                Atlas learns from the assessment, the website, and public social links,
-                then turns that into a simple next step for the owner.
+              <p className="mt-7 max-w-2xl text-lg leading-8 text-blue-100/80 sm:text-xl sm:leading-9">
+                Atlas gives businesses built on appointments, estimates,
+                memberships, and repeat customers one operating system for
+                leads, follow-up, practical marketing, and the next growth priority.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  className="rounded-full bg-[#1246a0] px-7 py-4 text-center text-sm font-black text-white shadow-lg shadow-blue-200 hover:bg-[#0a2f78]"
-                  href={assessmentHref}
-                >
-                  Start free assessment
-                </Link>
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <PrimaryCta />
                 <a
-                  className="rounded-full border-2 border-[#d9a522] bg-white px-7 py-4 text-center text-sm font-black text-[#16325c] hover:bg-[#fff9e8]"
-                  href="#samples"
+                  className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/[0.05] px-7 py-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-white/10"
+                  href="#product"
                 >
-                  See sample output
+                  See how Atlas works
                 </a>
               </div>
-              <p className="mt-5 max-w-2xl text-sm leading-6 text-slate-500">
-                Free assessment first. Paid work only if Atlas is a fit.
-              </p>
+              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-blue-100/65">
+                <span>7-minute assessment</span>
+                <span>No credit card</span>
+                <span>Paid scope only after review</span>
+              </div>
             </div>
-            <AtlasChatWidget />
+
+            <AtlasProductPreview />
           </div>
         </section>
 
-        <section className="border-b border-[#dce6f5] bg-white">
-          <div className="mx-auto grid w-full max-w-7xl gap-4 px-6 py-7 sm:grid-cols-3">
+        <section className="border-b border-[#dde6f2] bg-white">
+          <div className="mx-auto grid w-full max-w-[84rem] gap-5 px-6 py-7 sm:grid-cols-3 sm:px-7">
             {[
-              "Built for owner-led businesses",
-              "Private workspace",
-              "Approved before action",
-            ].map((item) => (
-              <div
-                className="flex items-center justify-center gap-3 text-center text-sm font-bold text-[#16325c]"
-                key={item}
-              >
-                <span
-                  aria-hidden="true"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#edf9f4] text-xs text-[#167151]"
-                >
-                  ✓
+              ["One private workspace", "Leads, notes, plans, and review history"],
+              ["Human approval built in", "Nothing external goes out by surprise"],
+              ["No AI learning curve", "Plain-English help for practical owners"],
+            ].map(([title, text]) => (
+              <div className="flex items-start gap-3" key={title}>
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#eaf8f2] text-xs font-black text-[#137454]">
+                  &#10003;
                 </span>
-                <span>{item}</span>
+                <div>
+                  <p className="text-sm font-black text-[#071b42]">{title}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{text}</p>
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="border-b border-[#dce6f5] bg-[#071b42] text-white" id="how-it-works">
-          <div className="mx-auto w-full max-w-7xl px-6 py-18 sm:py-20">
-            <div className="max-w-3xl">
-              <Eyebrow light>How Atlas works</Eyebrow>
-              <h2 className="mt-4 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
-                Short flow. Real data. Clear next step.
-              </h2>
+        <section className="bg-[#f4f7fb]" id="problem">
+          <div className="mx-auto w-full max-w-[84rem] px-6 py-20 sm:px-7 sm:py-28">
+            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+              <div>
+                <Eyebrow>The real growth problem</Eyebrow>
+                <h2 className="mt-5 max-w-3xl text-4xl font-black leading-[1.02] tracking-[-0.045em] sm:text-6xl">
+                  The owner is still the operating system.
+                </h2>
+              </div>
+              <p className="max-w-2xl text-lg leading-8 text-slate-600 lg:justify-self-end">
+                You probably do not need more software. You need one clear view
+                of the opportunities, follow-up, marketing, and decisions that
+                already move through your business every day.
+              </p>
             </div>
-            <div className="mt-12 grid gap-5 lg:grid-cols-3">
-              {steps.map((step) => (
-                <article className="rounded-3xl border border-white/10 bg-[#0b2553] p-6" key={step.title}>
-                  <p className="text-xs font-black tracking-[0.16em] text-[#ffd068]">
-                    0{steps.indexOf(step) + 1}
-                  </p>
-                  <h3 className="mt-5 text-2xl font-black">{step.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-blue-100">{step.text}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        <section className="border-b border-[#dce6f5] bg-[#f7faff]" id="samples">
-          <div className="mx-auto w-full max-w-7xl px-6 py-20">
-            <div className="max-w-3xl">
-              <Eyebrow>Sample output</Eyebrow>
-              <h2 className="mt-4 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
-                What Atlas can produce.
-              </h2>
-            </div>
-            <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {samples.map((sample) => (
+            <div className="mt-14 grid gap-5 lg:grid-cols-3">
+              {painPoints.map((item) => (
                 <article
-                  className="rounded-3xl border border-[#dce6f5] bg-white p-7 shadow-sm"
-                  key={sample.role}
+                  className="group rounded-[1.75rem] border border-[#dce5f1] bg-white p-7 transition hover:-translate-y-1 hover:border-[#b5cae8] hover:shadow-xl hover:shadow-blue-950/5 sm:p-8"
+                  key={item.number}
                 >
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#b17700]">
-                    {sample.role}
-                  </p>
-                  <h3 className="mt-5 text-2xl font-black leading-tight">
-                    {sample.title}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black tracking-[0.16em] text-[#1246a0]">
+                      {item.number}
+                    </span>
+                    <span className="h-px w-12 bg-[#dce5f1] transition group-hover:w-20 group-hover:bg-[#f5b932]" />
+                  </div>
+                  <h3 className="mt-10 text-2xl font-black tracking-tight">
+                    {item.title}
                   </h3>
-                  <p className="mt-4 text-sm leading-7 text-slate-600">{sample.text}</p>
+                  <p className="mt-4 text-sm leading-7 text-slate-600">{item.text}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="border-b border-[#dce6f5] bg-white">
-          <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <section className="relative overflow-hidden bg-white" id="product">
+          <div className="mx-auto grid w-full max-w-[84rem] gap-14 px-6 py-20 sm:px-7 sm:py-28 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
             <div>
-              <Eyebrow>Who it is for</Eyebrow>
-              <h2 className="mt-4 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
-                HVAC, plumbing, roofing, cleaning, and other local service teams.
+              <Eyebrow>One system, not four more apps</Eyebrow>
+              <h2 className="mt-5 text-4xl font-black leading-[1.02] tracking-[-0.045em] sm:text-6xl">
+                See the work. Know the next move.
               </h2>
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-                Owners who want a practical system to gather data, organize work, and
-                use AI without becoming AI experts.
+              <p className="mt-6 text-lg leading-8 text-slate-600">
+                Atlas coordinates the operating loop. The named roles make each
+                responsibility easy to understand, while the owner keeps one
+                place to review the work and make decisions.
               </p>
+              <div className="mt-8 space-y-4">
+                {[
+                  "Capture every lead and customer commitment.",
+                  "Assign one owner and one next date.",
+                  "Prepare follow-up and marketing for review.",
+                  "Track what moved before adding more work.",
+                ].map((item) => (
+                  <div className="flex items-center gap-3" key={item}>
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#071b42] text-xs font-black text-[#ffd068]">
+                      +
+                    </span>
+                    <p className="text-sm font-bold text-[#16325c]">{item}</p>
+                  </div>
+                ))}
+              </div>
+              <a
+                className="mt-9 inline-flex items-center text-sm font-black text-[#1246a0] hover:text-[#082d73]"
+                href="#30-day-system"
+              >
+                See the 30-day operating plan
+                <span aria-hidden="true" className="ml-2">
+                  &darr;
+                </span>
+              </a>
             </div>
-            <div className="rounded-[2rem] border border-[#dce6f5] bg-[#f8fbff] p-7 shadow-sm sm:p-9">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
-                The point
-              </p>
-              <p className="mt-4 text-2xl font-black leading-tight text-[#071b42]">
-                Atlas gathers data, then helps the prospect or client.
-              </p>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                That is the whole model: learn enough, show the plan, and help the
-                business move forward.
-              </p>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {capabilities.map((item) => (
+                <article
+                  className="relative overflow-hidden rounded-[1.75rem] border border-[#dce5f1] bg-[#f7f9fc] p-7"
+                  key={item.role}
+                >
+                  <div className="absolute right-3 top-0 text-7xl font-black tracking-tighter text-[#e9eff8]">
+                    {capabilities.indexOf(item) + 1}
+                  </div>
+                  <div className="relative">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b17800]">
+                      {item.role}
+                    </p>
+                    <p className="mt-2 text-xs font-bold uppercase tracking-[0.1em] text-[#527096]">
+                      {item.badge}
+                    </p>
+                    <h3 className="mt-8 text-2xl font-black tracking-tight">
+                      {item.title}
+                    </h3>
+                    <p className="mt-4 text-sm leading-7 text-slate-600">
+                      {item.text}
+                    </p>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
         </section>
 
-        <section className="bg-[#0a3b91] text-white">
-          <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-20 lg:grid-cols-[1fr_auto] lg:items-center">
-            <div className="max-w-3xl">
-              <Eyebrow light>Next move</Eyebrow>
-              <h2 className="mt-4 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
-                Start with the assessment.
+        <section className="relative overflow-hidden bg-[#071b42] text-white" id="30-day-system">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(24,85,190,0.35),transparent_35%)]" />
+          <div className="relative mx-auto w-full max-w-[84rem] px-6 py-20 sm:px-7 sm:py-28">
+            <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <Eyebrow light>The first operating cycle</Eyebrow>
+                <h2 className="mt-5 max-w-4xl text-4xl font-black leading-[1.02] tracking-[-0.045em] sm:text-6xl">
+                  Install one growth system in 30 days.
+                </h2>
+                <p className="mt-6 max-w-3xl text-lg leading-8 text-blue-100/75">
+                  Start with the leak costing the business the most attention or
+                  revenue. Build the smallest useful system around it. Then
+                  measure before expanding.
+                </p>
+              </div>
+              <PrimaryCta className="lg:mb-1" />
+            </div>
+
+            <div className="mt-14 grid gap-px overflow-hidden rounded-[2rem] border border-white/10 bg-white/10 lg:grid-cols-4">
+              {sprintWeeks.map((item) => (
+                <article className="bg-[#0b2553] p-7 sm:p-8" key={item.week}>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ffd068]">
+                    {item.week}
+                  </p>
+                  <h3 className="mt-8 text-2xl font-black tracking-tight">
+                    {item.title}
+                  </h3>
+                  <p className="mt-4 text-sm leading-7 text-blue-100/75">
+                    {item.text}
+                  </p>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-[#f5b932]/25 bg-[#f5b932]/10 px-5 py-4 text-sm leading-6 text-[#fff2c8]">
+              <strong className="text-white">Clear commercial boundary:</strong>{" "}
+              the assessment is free. If Atlas is a fit, scope, timing, price,
+              outside costs, and approval controls are confirmed before paid work begins.
+            </div>
+          </div>
+        </section>
+
+        <AtlasBetaProof />
+
+        <section className="bg-[#f4f7fb]">
+          <div className="mx-auto grid w-full max-w-[84rem] gap-12 px-6 py-20 sm:px-7 sm:py-28 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div>
+              <Eyebrow>Built for a specific kind of owner</Eyebrow>
+              <h2 className="mt-5 text-4xl font-black leading-[1.03] tracking-[-0.045em] sm:text-6xl">
+                Practical business. Real customers. Too much living in your head.
               </h2>
-              <p className="mt-5 text-lg leading-8 text-blue-100">
-                The better the data, the better the help.
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+                Atlas is built around the way service businesses actually grow:
+                earn attention, respond quickly, deliver good work, and give
+                every customer a reason to return or refer someone else.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-2">
+                {["Appointments", "Estimates", "Recurring services", "Memberships", "Local leads", "Repeat customers"].map(
+                  (businessModel) => (
+                    <span
+                      className="rounded-full border border-[#cfdaea] bg-white px-4 py-2 text-xs font-black text-[#16325c]"
+                      key={businessModel}
+                    >
+                      {businessModel}
+                    </span>
+                  ),
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[2rem] border border-[#d7e2f0] bg-white p-7 shadow-xl shadow-blue-950/5 sm:p-9">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
+                A strong founding-pilot fit
+              </p>
+              <div className="mt-7 space-y-5">
+                {fitChecks.map((item) => (
+                  <div className="flex items-start gap-4" key={item}>
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf8f2] text-xs font-black text-[#137454]">
+                      &#10003;
+                    </span>
+                    <p className="pt-0.5 text-sm font-semibold leading-6 text-[#16325c]">
+                      {item}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8 border-t border-[#e0e8f2] pt-7">
+                <PrimaryCta className="w-full" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white">
+          <div className="mx-auto grid w-full max-w-[84rem] gap-12 px-6 py-20 sm:px-7 sm:py-28 lg:grid-cols-[0.75fr_1.25fr]">
+            <div>
+              <Eyebrow>Accountable by design</Eyebrow>
+              <h2 className="mt-5 text-4xl font-black leading-[1.03] tracking-[-0.045em] sm:text-5xl">
+                AI assistance with a real person responsible for the work.
+              </h2>
+              <div className="mt-8 rounded-[1.75rem] border border-[#dce5f1] bg-[#f7f9fc] p-6">
+                <div className="flex items-center gap-4">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#071b42] text-sm font-black text-[#ffd068]">
+                    MR
+                  </span>
+                  <div>
+                    <p className="font-black">Manny Ramirez</p>
+                    <p className="mt-1 text-xs font-bold uppercase tracking-[0.12em] text-[#527096]">
+                      Founder-led pilot
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-5 text-sm leading-7 text-slate-600">
+                  Manny reviews assessments, confirms the operating problem,
+                  coordinates the work, and approves the pilot scope before
+                  automation is introduced.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                ["Private by default", "Client work lives in an organization-scoped workspace with server-side access controls."],
+                ["Approval before action", "Drafts remain private until the authorized owner reviews the next step."],
+                ["Costs confirmed first", "Paid work, advertising, and outside API expenses require a clear scope."],
+                ["History stays visible", "Plans, notes, decisions, and review messages remain attached to the work."],
+              ].map(([title, text]) => (
+                <article className="rounded-[1.75rem] border border-[#dce5f1] p-7" key={title}>
+                  <span className="block h-2 w-10 rounded-full bg-[#f5b932]" />
+                  <h3 className="mt-8 text-xl font-black">{title}</h3>
+                  <p className="mt-4 text-sm leading-7 text-slate-600">{text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-[#dce5f1] bg-[#f7f9fc]">
+          <div className="mx-auto w-full max-w-5xl px-6 py-20 sm:px-7 sm:py-24">
+            <div className="text-center">
+              <Eyebrow>Questions before you start</Eyebrow>
+              <h2 className="mt-5 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
+                Straight answers for busy owners.
+              </h2>
+            </div>
+            <div className="mt-12 divide-y divide-[#dce5f1] border-y border-[#dce5f1]">
+              {faqs.map((faq) => (
+                <details className="group py-6" key={faq.question}>
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-lg font-black text-[#071b42]">
+                    {faq.question}
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#c8d6e8] text-lg font-medium text-[#1246a0] transition group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  <p className="max-w-3xl pt-5 text-sm leading-7 text-slate-600">
+                    {faq.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="relative overflow-hidden bg-[#0d459f] text-white">
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent_45%,rgba(255,255,255,0.07)_45%,rgba(255,255,255,0.07)_55%,transparent_55%)]" />
+          <div className="relative mx-auto grid w-full max-w-[84rem] gap-10 px-6 py-20 sm:px-7 sm:py-24 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <Eyebrow light>Your next move</Eyebrow>
+              <h2 className="mt-5 max-w-4xl text-4xl font-black leading-[1.02] tracking-[-0.045em] sm:text-6xl">
+                Find the growth leak costing your business the most.
+              </h2>
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-blue-100">
+                Give Atlas the real picture. Get a focused starting point before
+                buying another tool, campaign, or subscription.
               </p>
             </div>
             <div className="text-center lg:text-right">
-              <Link
-                className="inline-flex rounded-full bg-[#ffc94d] px-8 py-4 text-sm font-black text-[#071b42] shadow-lg hover:bg-[#ffda82]"
-                href={assessmentHref}
-              >
-                Take the free assessment
-              </Link>
+              <PrimaryCta />
+              <p className="mt-4 text-xs font-semibold text-blue-100/70">
+                No payment. No automatic subscription.
+              </p>
             </div>
           </div>
         </section>

@@ -4,9 +4,9 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://atlasforentrepreneurs.com"),
-  title: "Atlas For Entrepreneurs | Your AI-Powered Business Team",
+  title: "Atlas For Entrepreneurs | Service Business Growth OS",
   description:
-    "Start with a free business assessment and build a focused plan for leads, content, follow-up, and execution with ATLAS.",
+    "A practical growth operating system for owner-led service businesses. Organize leads, follow-up, marketing, and the next priority in one private workspace.",
 };
 
 export default function RootLayout({

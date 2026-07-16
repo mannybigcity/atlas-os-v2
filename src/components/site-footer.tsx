@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const exploreLinks = [
   { href: "/", label: "Home" },
-  { href: "/assessment", label: "Free assessment" },
+  { href: "/assessment", label: "Revenue leak assessment" },
   { href: "/login", label: "Client login" },
 ];
 
@@ -19,19 +19,19 @@ export function SiteFooter() {
       <div className="mx-auto w-full max-w-7xl px-6 py-10 sm:py-12">
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm leading-6 text-blue-50 sm:px-6">
           <span className="font-bold text-white">Built for trust:</span>{" "}
-          no AI experience required, human approval before external action, and
-          assessment information is not sold.
+          private workspaces, human approval before external action, clear cost
+          controls, and assessment information that is not sold.
         </div>
 
         <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_0.7fr_0.9fr_1fr]">
           <div className="max-w-sm">
             <p className="text-lg font-bold text-white">Atlas For Entrepreneurs</p>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#ffd068]">
-              Guide. Grow. Live More.
+              Service Business Growth OS
             </p>
             <p className="mt-4 text-sm leading-6 text-blue-100">
-              Practical, approval-controlled AI guidance for owner-led businesses
-              that want useful help without the technology overwhelm.
+              Lead follow-up, practical marketing, and one clear growth priority
+              for owner-led service businesses.
             </p>
           </div>
 

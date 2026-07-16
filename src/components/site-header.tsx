@@ -31,7 +31,7 @@ export function SiteHeader({ active }: SiteHeaderProps) {
               Atlas For Entrepreneurs
             </span>
             <span className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1246a0] sm:block">
-              Guide. Grow. Live More.
+              Service Business Growth OS
             </span>
           </span>
         </Link>
@@ -52,8 +52,8 @@ export function SiteHeader({ active }: SiteHeaderProps) {
             </Link>
           )}
           <Link className={linkClass("assessment")} href="/assessment">
-            <span className="sm:hidden">Assessment</span>
-            <span className="hidden sm:inline">Free assessment</span>
+            <span className="sm:hidden">Find my leak</span>
+            <span className="hidden sm:inline">Find my revenue leak</span>
           </Link>
           <Link className={linkClass("login")} href="/login">
             <span className="hidden sm:inline">Client login</span>

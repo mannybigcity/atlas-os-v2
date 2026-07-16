@@ -5,8 +5,9 @@ import { SiteHeader } from "@/components/site-header";
 import { submitBusinessAssessment } from "@/server/assessments/actions";
 
 export const metadata: Metadata = {
-  title: "Free Business Assessment | Atlas For Entrepreneurs",
-  description: "Tell Atlas where your business is now and what you want to improve next.",
+  title: "Free Service-Business Growth Assessment | Atlas",
+  description:
+    "Find the lead, follow-up, marketing, or operating leak costing your service business the most.",
 };
 
 const customerSources = [
@@ -59,10 +60,10 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
       <main className="min-h-screen bg-[#f6f9ff] text-[#071b42]">
         <section className="border-b border-[#dce6f5] bg-white">
           <div className="mx-auto max-w-4xl px-6 py-14 text-center sm:py-20">
-            <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#c48713]">Free business assessment</p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-6xl">Let&apos;s find your strongest next move.</h1>
+            <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#c48713]">Free revenue leak assessment</p>
+            <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-6xl">Find the revenue leak costing you the most.</h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              Give Atlas the real picture of your business. Manny will review your answers and identify where focused action can create the most value.
+              Show Atlas how leads arrive, what happens after the first call, and where the owner gets pulled back in. Manny will review the answers and identify the strongest practical starting point.
             </p>
             <p className="mt-4 text-sm font-semibold text-[#1246a0]">About 7 minutes. No payment required.</p>
           </div>
@@ -72,9 +73,9 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
           {received ? (
             <section className="rounded-3xl border border-[#b8e2cf] bg-white p-8 shadow-sm sm:p-12">
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#167151]">Assessment received</p>
-              <h2 className="mt-3 text-3xl font-bold">Thank you. Your business is now on our radar.</h2>
+              <h2 className="mt-3 text-3xl font-bold">Thank you. Your growth assessment is in.</h2>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-                Manny will review your answers and contact you using the information you provided. If Atlas is a good fit, you will receive a clear recommended next step before any payment is requested.
+                Manny will review your lead flow, follow-up, marketing, and goals. If Atlas is a good fit, you will receive one clear recommended starting point before any payment is requested.
               </p>
               <Link className="mt-8 inline-flex rounded-full bg-[#1246a0] px-6 py-3 font-semibold text-white hover:bg-[#0a2f78]" href="/">Return to the Atlas home page</Link>
             </section>
@@ -87,7 +88,7 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
               )}
               <input className="absolute -left-[9999px]" name="companyFax" tabIndex={-1} type="text" />
 
-              <Question number="1" title="Tell us about your business." help="What does your business do?">
+              <Question number="1" title="Tell us about your service business." help="What do you provide, who do you serve, and where do you operate?">
                 <textarea className="field min-h-36" maxLength={3000} name="businessDescription" required />
               </Question>
               <Question number="2" title="Who do you help?" help="Who is your ideal customer?">
