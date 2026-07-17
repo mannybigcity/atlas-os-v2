@@ -36,11 +36,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               Secure access
             </p>
             <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-              Secure login for Atlas clients and Super Admin users.
+              Sign in to your private Atlas workspace.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-              Atlas now uses Supabase Email and Password authentication. Access
-              to protected routes is enforced server-side.
+              Use the email address invited by Atlas and the password you
+              created. Your business workspace is private to your organization.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -120,8 +120,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                   Forgot your password?
                 </Link>
                 <p>
-                  Magic links and public signup flows are intentionally not
-                  enabled.
+                  First time here? Open the newest secure invitation sent by
+                  Atlas to create your password.
                 </p>
               </div>
             </form>

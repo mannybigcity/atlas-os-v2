@@ -37,26 +37,26 @@ const workspaceSections = [
   {
     title: "Daily Briefing",
     description:
-      "This will become the first place Atlas summarizes what matters today for this organization.",
-    status: "Not connected",
+      "A short summary of what matters now, what is waiting, and what comes next.",
+    status: "Coming soon",
   },
   {
     title: "Priorities",
     description:
-      "This will hold the focused work that needs attention before Atlas grows into deeper workflows.",
-    status: "Connected foundation",
+      "Your focused plan, active priorities, owners, and due dates in one place.",
+    status: "Ready",
   },
   {
     title: "General messages",
     description:
-      "Use this only for conversations that are not connected to specific work.",
-    status: "Connected foundation",
+      "Use this for questions or conversations that are not tied to a specific work item.",
+    status: "Ready",
   },
   {
     title: "History",
     description:
       "Open a read-only record of workspace changes when you need it.",
-    status: "Connected foundation",
+    status: "Ready",
   },
 ];
 
@@ -198,8 +198,8 @@ export default async function ClientDashboardPage({
 
         {params?.profile === "error" ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
-            Business context could not be saved. Check that the Organization
-            Context migration has been applied.
+            Business context could not be saved right now. Please try once
+            more or send Atlas a message for help.
           </div>
         ) : null}
 
@@ -224,8 +224,8 @@ export default async function ClientDashboardPage({
 
         {params?.note === "error" ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
-            Note could not be saved. Check that the Notes migration has been
-            applied.
+            The note could not be saved right now. Please try once more or send
+            Atlas a message for help.
           </div>
         ) : null}
 
@@ -261,10 +261,70 @@ export default async function ClientDashboardPage({
         ) : null}
 
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-          Signed in as {user.email}. This workspace uses real organization
-          membership data. Customer records, metrics, documents, and AI are not
-          connected yet.
+          Your private {primaryOrganization?.name ?? "Atlas"} workspace is
+          ready. You are signed in as {user.email}, and the information shown
+          here is limited to your organization.
         </div>
+
+        {memberships.data.length > 0 ? (
+          <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+              Start here
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+              Three steps to put Atlas to work
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
+              Give Atlas the business context it needs, review the current plan,
+              and keep questions or decisions inside this private workspace.
+            </p>
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <Link
+                className="rounded-2xl border border-blue-200 bg-white p-4 transition hover:border-blue-400 hover:shadow-sm"
+                href="#business-profile"
+              >
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                  Step 1
+                </span>
+                <span className="mt-2 block font-semibold text-slate-950">
+                  Complete your business profile
+                </span>
+                <span className="mt-1 block text-sm leading-6 text-slate-600">
+                  Tell Atlas what {primaryOrganization?.name ?? "your business"} offers,
+                  who it serves, and what matters now.
+                </span>
+              </Link>
+              <Link
+                className="rounded-2xl border border-blue-200 bg-white p-4 transition hover:border-blue-400 hover:shadow-sm"
+                href="#work-messages"
+              >
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                  Step 2
+                </span>
+                <span className="mt-2 block font-semibold text-slate-950">
+                  Review your 30-day plan
+                </span>
+                <span className="mt-1 block text-sm leading-6 text-slate-600">
+                  See priorities, next actions, check-ins, and work awaiting approval.
+                </span>
+              </Link>
+              <Link
+                className="rounded-2xl border border-blue-200 bg-white p-4 transition hover:border-blue-400 hover:shadow-sm"
+                href="#general-messages"
+              >
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                  Step 3
+                </span>
+                <span className="mt-2 block font-semibold text-slate-950">
+                  Keep the conversation together
+                </span>
+                <span className="mt-1 block text-sm leading-6 text-slate-600">
+                  Ask questions, record decisions, and mention @Atlas when you need help.
+                </span>
+              </Link>
+            </div>
+          </section>
+        ) : null}
 
         {!isSuperAdmin ? (
           <form
@@ -296,14 +356,15 @@ export default async function ClientDashboardPage({
 
         {memberships.setupRequired ? (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-            Workspace tables are not ready yet. Apply the workspace foundation
-            migration in Supabase, then add an organization membership.
+            Atlas could not load your workspace access. Contact Atlas so we can
+            restore it before you continue.
           </div>
         ) : null}
 
         {!memberships.setupRequired && memberships.data.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-            No organization membership is assigned to this account yet.
+            Your login is active, but a business workspace has not been assigned
+            yet. Contact Atlas and we will connect it.
           </div>
         ) : null}
 
@@ -318,7 +379,7 @@ export default async function ClientDashboardPage({
                   {primaryOrganization?.name ?? "Unknown organization"}
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Slug: {primaryOrganization?.slug ?? "not set"}
+                  Your private business workspace
                 </p>
               </div>
 
@@ -330,7 +391,7 @@ export default async function ClientDashboardPage({
                   {primaryMembership?.role ?? "member"}
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Role is read from organization membership.
+                  You can update business context and review work for this organization.
                 </p>
               </div>
             </section>
@@ -346,8 +407,8 @@ export default async function ClientDashboardPage({
                   </h2>
                 </div>
                 <p className="max-w-xl text-sm leading-6 text-slate-600">
-                  The pilot priorities surface is now connected. Daily Briefing
-                  remains deferred until a real customer cycle proves its value.
+                  Start with your plan, review work that needs a decision, or
+                  message Atlas when you need help.
                 </p>
               </div>
 
@@ -363,20 +424,22 @@ export default async function ClientDashboardPage({
               </div>
             </section>
 
-            {pilot?.setupRequired ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                The founding pilot workspace is not ready yet. Apply the Founding
-                Pilot Workflow migration in Supabase.
-              </div>
-            ) : null}
+            <div id="work-messages">
+              {pilot?.setupRequired ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+                  Atlas is preparing your plan and review workspace. You can still
+                  complete your business profile and send a message below.
+                </div>
+              ) : null}
 
-            {!pilot?.setupRequired && pilot && primaryOrganization ? (
-              <ClientPilotWorkspace
-                canReview={canEditBusinessProfile}
-                organizationId={primaryOrganization.id}
-                workspace={pilot.data}
-              />
-            ) : null}
+              {!pilot?.setupRequired && pilot && primaryOrganization ? (
+                <ClientPilotWorkspace
+                  canReview={canEditBusinessProfile}
+                  organizationId={primaryOrganization.id}
+                  workspace={pilot.data}
+                />
+              ) : null}
+            </div>
 
             <details className="rounded-2xl border border-slate-200 bg-white p-5">
               <summary className="flex cursor-pointer list-none flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -399,8 +462,8 @@ export default async function ClientDashboardPage({
 
               {activity?.setupRequired ? (
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                  Activity is not ready yet. Apply the Activity Events migration
-                  in Supabase to begin recording workspace changes.
+                  Workspace history is being prepared. Your current work and
+                  messages remain available.
                 </div>
               ) : null}
 
@@ -434,7 +497,10 @@ export default async function ClientDashboardPage({
               ) : null}
             </details>
 
-            <details className="rounded-2xl border border-slate-200 bg-white p-5">
+            <details
+              className="rounded-2xl border border-slate-200 bg-white p-5"
+              id="general-messages"
+            >
               <summary className="flex cursor-pointer list-none flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
@@ -455,15 +521,15 @@ export default async function ClientDashboardPage({
 
               {notes?.setupRequired ? (
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                  Notes are not ready yet. Apply the Notes migration in Supabase
-                  to enable this section.
+                  General messages are being prepared. Contact Atlas directly if
+                  you need help before this section is available.
                 </div>
               ) : null}
 
               {messages?.setupRequired && !notes?.setupRequired ? (
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                  Conversations are not ready yet. Apply the Threaded Note
-                  Conversations migration in Supabase.
+                  Conversation history is being prepared. Your existing notes
+                  remain safe.
                 </div>
               ) : null}
 
@@ -596,7 +662,10 @@ export default async function ClientDashboardPage({
               ) : null}
             </details>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5">
+            <section
+              className="rounded-2xl border border-slate-200 bg-white p-5"
+              id="business-profile"
+            >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
@@ -617,8 +686,8 @@ export default async function ClientDashboardPage({
 
               {businessProfile?.setupRequired ? (
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                  Your business profile is not ready yet. Apply the business
-                  profile migration in Supabase to enable this section.
+                  Atlas is preparing your business profile. Send Atlas a message
+                  with any important context you want captured now.
                 </div>
               ) : null}
 

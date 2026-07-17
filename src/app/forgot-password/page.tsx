@@ -34,8 +34,8 @@ export default async function ForgotPasswordPage({
             Reset your Atlas password.
           </h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">
-            Enter your email address and Atlas will send a Supabase recovery
-            link. The link opens a secure page where you can set a new password.
+            Enter your Atlas login email. We will send a secure, one-time link
+            that lets you choose a new password.
           </p>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
