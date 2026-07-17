@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { RecoverySessionHandler } from "./recovery-session-handler";
+
+export const metadata: Metadata = {
+  title: "Secure Account Verification | Atlas For Entrepreneurs",
+  robots: { index: false, follow: false },
+};
 
 type AuthCallbackPageProps = {
   searchParams?: Promise<{
@@ -25,7 +31,7 @@ export default async function AuthCallbackPage({
             Verifying your reset link.
           </h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">
-            Atlas is checking the Supabase recovery session before sending you
+            Atlas is checking your secure recovery session before sending you
             to the password reset page.
           </p>
 

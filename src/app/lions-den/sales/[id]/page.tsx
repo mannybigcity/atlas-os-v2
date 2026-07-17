@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SurfaceShell } from "@/components/surface-shell";
 import { formatDateTime } from "@/lib/format";
@@ -17,6 +18,11 @@ import {
 } from "@/server/sales/queries";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Prospect Record | Atlas For Entrepreneurs",
+  robots: { index: false, follow: false },
+};
 
 type ProspectPageProps = {
   params: Promise<{ id: string }>;

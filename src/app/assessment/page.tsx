@@ -44,7 +44,7 @@ function Choice({ name, value, label, type = "checkbox" }: {
 }) {
   return (
     <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#d9e4f4] bg-white px-4 py-3 text-sm font-medium text-[#16325c] transition hover:border-[#1246a0] hover:bg-[#f6f9ff]">
-      <input className="h-4 w-4 accent-[#1246a0]" name={name} type={type} value={value} />
+      <input className="h-4 w-4 accent-[#1246a0]" name={name} required={type === "radio"} type={type} value={value} />
       {label}
     </label>
   );
@@ -71,7 +71,7 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
 
         <div className="mx-auto max-w-4xl px-6 py-12">
           {received ? (
-            <section className="rounded-3xl border border-[#b8e2cf] bg-white p-8 shadow-sm sm:p-12">
+            <section aria-live="polite" className="rounded-3xl border border-[#b8e2cf] bg-white p-8 shadow-sm sm:p-12">
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#167151]">Assessment received</p>
               <h2 className="mt-3 text-3xl font-bold">Thank you. Your growth assessment is in.</h2>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
@@ -82,17 +82,17 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
           ) : (
             <form action={submitBusinessAssessment} className="space-y-7">
               {params.error && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-800">
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-800" role="alert">
                   {params.error === "missing_information" ? "Please complete every required question before sending your assessment." : "We could not save your assessment. Please try again in a moment."}
                 </div>
               )}
-              <input className="absolute -left-[9999px]" name="companyFax" tabIndex={-1} type="text" />
+              <input aria-hidden="true" autoComplete="off" className="absolute -left-[9999px]" name="companyFax" tabIndex={-1} type="text" />
 
               <Question number="1" title="Tell us about your service business." help="What do you provide, who do you serve, and where do you operate?">
-                <textarea className="field min-h-36" maxLength={3000} name="businessDescription" required />
+                <textarea aria-labelledby="assessment-question-1" className="field min-h-36" maxLength={3000} name="businessDescription" required />
               </Question>
               <Question number="2" title="Who do you help?" help="Who is your ideal customer?">
-                <textarea className="field min-h-28" maxLength={1500} name="idealCustomer" required />
+                <textarea aria-labelledby="assessment-question-2" className="field min-h-28" maxLength={1500} name="idealCustomer" required />
               </Question>
               <Question number="3" title="Where do most of your customers come from?" help="Choose all that apply.">
                 <div className="grid gap-3 sm:grid-cols-2">{customerSources.map(([value, label]) => <Choice key={value} label={label} name="customerSources" value={value} />)}</div>
@@ -101,7 +101,7 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
                 <div className="grid gap-3 sm:grid-cols-2">{challenges.map(([value, label]) => <Choice key={value} label={label} name="biggestChallenge" type="radio" value={value} />)}</div>
               </Question>
               <Question number="5" title="If Atlas could fix one thing in the next 90 days, what would it be?">
-                <textarea className="field min-h-32" maxLength={2000} name="ninetyDayGoal" required />
+                <textarea aria-labelledby="assessment-question-5" className="field min-h-32" maxLength={2000} name="ninetyDayGoal" required />
               </Question>
               <Question number="6" title="Which areas would you like Atlas to evaluate?" help="Choose all that apply.">
                 <div className="grid gap-3 sm:grid-cols-3">{evaluationAreas.map(([value, label]) => <Choice key={value} label={label} name="evaluationAreas" value={value} />)}</div>
@@ -138,9 +138,17 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
 }
 
 function Question({ number, title, help, children }: { number: string; title: string; help?: string; children: ReactNode }) {
-  return <section className="rounded-3xl border border-[#dce6f5] bg-white p-6 shadow-sm sm:p-8"><div className="flex gap-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1246a0] text-sm font-bold text-white">{number}</span><div><h2 className="text-xl font-bold">{title}</h2>{help && <p className="mt-1 text-sm text-slate-500">{help}</p>}</div></div><div className="mt-6">{children}</div></section>;
+  return <fieldset className="rounded-3xl border border-[#dce6f5] bg-white p-6 shadow-sm sm:p-8"><legend className="w-full"><span className="flex gap-4"><span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1246a0] text-sm font-bold text-white">{number}</span><span><span className="block text-xl font-bold" id={`assessment-question-${number}`}>{title}</span>{help && <span className="mt-1 block text-sm font-normal text-slate-500">{help}</span>}</span></span></legend><div className="mt-6">{children}</div></fieldset>;
 }
 
 function Field({ label, name, type = "text", required = true, placeholder }: { label: string; name: string; type?: string; required?: boolean; placeholder?: string }) {
-  return <label className="block text-sm font-semibold text-[#16325c]">{label}<input className="field mt-2" inputMode={name === "website" ? "url" : undefined} maxLength={name === "contactEmail" ? 320 : 250} name={name} placeholder={placeholder} required={required} type={type} /></label>;
+  const autoComplete = {
+    contactName: "name",
+    businessName: "organization",
+    contactEmail: "email",
+    contactPhone: "tel",
+    website: "url",
+  }[name];
+
+  return <label className="block text-sm font-semibold text-[#16325c]">{label}<input autoComplete={autoComplete} className="field mt-2" inputMode={name === "website" ? "url" : undefined} maxLength={name === "contactEmail" ? 320 : 250} name={name} placeholder={placeholder} required={required} type={type} /></label>;
 }

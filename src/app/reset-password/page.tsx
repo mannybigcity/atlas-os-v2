@@ -1,6 +1,12 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { updatePassword } from "@/server/auth/actions";
+
+export const metadata: Metadata = {
+  title: "Choose a New Password | Atlas For Entrepreneurs",
+  robots: { index: false, follow: false },
+};
 
 type ResetPasswordPageProps = {
   searchParams?: Promise<{

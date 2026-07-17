@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { HunterSearch } from "@/components/hunter-search";
 import { SurfaceShell } from "@/components/surface-shell";
 import { formatDateTime } from "@/lib/format";
@@ -10,6 +11,11 @@ import {
 } from "@/server/sales/queries";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Sales Command | Atlas For Entrepreneurs",
+  robots: { index: false, follow: false },
+};
 
 type SalesPageProps = {
   searchParams?: Promise<{ crm?: string }>;

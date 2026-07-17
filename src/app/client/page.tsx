@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { SurfaceShell } from "@/components/surface-shell";
 import { WorkspaceSectionCard } from "@/components/workspace-section-card";
 import { ClientPilotWorkspace } from "@/components/client-pilot-workspace";
@@ -20,6 +21,11 @@ import { getPilotWorkspace } from "@/server/pilot/queries";
 import { formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Client Workspace | Atlas For Entrepreneurs",
+  robots: { index: false, follow: false },
+};
 
 type ClientDashboardPageProps = {
   searchParams?: Promise<{

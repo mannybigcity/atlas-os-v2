@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { SurfaceShell } from "@/components/surface-shell";
 import { AdminPilotWorkspace } from "@/components/admin-pilot-workspace";
 import { formatDateTime } from "@/lib/format";
@@ -21,6 +22,11 @@ import {
 import { getPilotWorkspace } from "@/server/pilot/queries";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "The Lion's Den | Atlas For Entrepreneurs",
+  robots: { index: false, follow: false },
+};
 
 type LionsDenPageProps = {
   searchParams?: Promise<{
