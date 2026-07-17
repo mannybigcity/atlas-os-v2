@@ -27,10 +27,12 @@ export function HunterSearch() {
             HUNTER discovery preview
           </p>
           <h2 className="mt-2 text-2xl font-bold text-slate-950">
-            Find local service businesses
+            Find owner-led businesses in one market
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
             One click makes one bounded Google Places request for up to ten results.
+            Search repair shops, childcare, fitness, pet care, professional services,
+            home services, and other appointment- or relationship-driven businesses.
             Results stay only in this page session and are not copied into the CRM.
           </p>
         </div>
@@ -45,7 +47,7 @@ export function HunterSearch() {
           <input
             className="mt-2 w-full rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-950"
             name="service"
-            placeholder="HVAC contractor"
+            placeholder="Auto repair shop or daycare"
             required
           />
         </label>

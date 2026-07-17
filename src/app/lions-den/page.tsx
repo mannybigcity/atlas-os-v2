@@ -10,9 +10,13 @@ import {
 import { getActiveAttentionRequests } from "@/server/attention/queries";
 import { updateBusinessAssessmentStatus } from "@/server/assessments/admin-actions";
 import { getBusinessAssessments } from "@/server/assessments/queries";
-import { sendClientLoginEmail } from "@/server/auth/admin-actions";
+import {
+  assignClientMembership,
+  sendClientLoginEmail,
+} from "@/server/auth/admin-actions";
 import { signOut } from "@/server/auth/actions";
 import { requireSuperAdmin } from "@/server/auth/guards";
+import { getBusinessProfile } from "@/server/business-profile/queries";
 import { createAdminNoteMessage } from "@/server/notes/actions";
 import { getMessagesForNotes } from "@/server/notes/messages";
 import {
@@ -50,6 +54,12 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
       result: await getPilotWorkspace(organization.id),
     })),
   );
+  const clientProfiles = await Promise.all(
+    organizations.data.map(async (organization) => ({
+      organization,
+      result: await getBusinessProfile(organization.id),
+    })),
+  );
   const attentionRequests = await getActiveAttentionRequests();
   const messages = await getMessagesForNotes(
     attentionRequests.data.map((request) => request.noteId),
@@ -80,10 +90,24 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
           </div>
         ) : null}
 
-        {params?.access && params.access !== "sent" ? (
+        {params?.access === "membership_linked" ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Client membership linked. The organization should now appear in the
+            access roster below.
+          </div>
+        ) : null}
+
+        {params?.access === "auth_user_not_found" ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
+            No Supabase Auth user was found for that email. Invite the client in
+            Supabase Authentication first, then attach the account here.
+          </div>
+        ) : null}
+
+        {params?.access && !["sent", "membership_linked", "auth_user_not_found"].includes(params.access) ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
-            The client login email was not sent. Confirm the membership roster,
-            Supabase Auth email settings, and delivery logs before trying again.
+            The client access update did not complete. Confirm the email,
+            organization, membership migration, and Supabase Auth delivery logs.
           </div>
         ) : null}
 
@@ -425,6 +449,78 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
         </section>
 
         {organizations.data.length > 0 ? (
+          <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
+                  Client Intelligence
+                </p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                  What each business told Atlas
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
+                  Review the offer, customer, positioning, goals, and constraints
+                  your clients saved in their private workspace before planning work.
+                </p>
+              </div>
+              <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                Organization scoped
+              </span>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {clientProfiles.map(({ organization, result }) => (
+                <article
+                  className="rounded-2xl border border-blue-200 bg-white p-5"
+                  key={organization.id}
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+                        Business profile
+                      </p>
+                      <h3 className="mt-2 text-xl font-bold text-slate-950">
+                        {organization.name}
+                      </h3>
+                    </div>
+                    {!result.setupRequired && result.data ? (
+                      <p className="text-xs text-slate-500">
+                        Updated {formatDateTime(result.data.updatedAt)}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {result.setupRequired ? (
+                    <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+                      Apply the Business Profile migration to read this client&apos;s
+                      saved business context.
+                    </div>
+                  ) : null}
+
+                  {!result.setupRequired && !result.data ? (
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                      This client has not saved a business profile yet.
+                    </div>
+                  ) : null}
+
+                  {!result.setupRequired && result.data ? (
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <LeadDetail label="Offer" value={result.data.offer ?? "Not provided"} />
+                      <LeadDetail label="Target customer" value={result.data.targetCustomer ?? "Not provided"} />
+                      <LeadDetail label="Positioning" value={result.data.positioning ?? "Not provided"} />
+                      <LeadDetail label="Current goals" value={result.data.currentGoals ?? "Not provided"} />
+                      <div className="sm:col-span-2">
+                        <LeadDetail label="Constraints" value={result.data.constraints ?? "Not provided"} />
+                      </div>
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {organizations.data.length > 0 ? (
           <section className="rounded-2xl border border-slate-200 bg-white p-5">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
@@ -528,6 +624,68 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
               No client Auth users are attached to an organization yet.
             </div>
           ) : null}
+
+          <form
+            action={assignClientMembership}
+            className="mt-5 grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:grid-cols-2"
+          >
+            <div className="sm:col-span-2">
+              <p className="text-sm font-semibold text-slate-950">
+                Attach an invited Auth user to an organization
+              </p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                First invite the client in Supabase Authentication. Then enter
+                the same email here so Atlas can create or repair the membership.
+              </p>
+            </div>
+            <label>
+              <span className="text-sm font-medium text-slate-700">
+                Client email
+              </span>
+              <input
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950"
+                name="email"
+                placeholder="owner@example.com"
+                required
+                type="email"
+              />
+            </label>
+            <label>
+              <span className="text-sm font-medium text-slate-700">
+                Organization
+              </span>
+              <select
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950"
+                name="organizationId"
+                required
+              >
+                <option value="">Choose an organization</option>
+                {organizations.data.map((organization) => (
+                  <option key={organization.id} value={organization.id}>
+                    {organization.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="text-sm font-medium text-slate-700">Role</span>
+              <select
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950"
+                defaultValue="owner"
+                name="role"
+              >
+                <option value="owner">Owner</option>
+                <option value="admin">Admin</option>
+                <option value="member">Member</option>
+              </select>
+            </label>
+            <button
+              className="rounded-full bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 sm:self-end"
+              type="submit"
+            >
+              Attach client account
+            </button>
+          </form>
 
           <div className="mt-5 divide-y divide-slate-200">
             {clientAccess.data.map((member) => (

@@ -54,6 +54,20 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
       prospect.nextActionAt &&
       openStatuses.has(prospect.status),
   ).length;
+  const now = await getCurrentTimestamp();
+  const followUpQueue = prospects.data
+    .filter(
+      (prospect) =>
+        prospect.nextActionAt && openStatuses.has(prospect.status),
+    )
+    .sort(
+      (left, right) =>
+        new Date(left.nextActionAt!).getTime() -
+        new Date(right.nextActionAt!).getTime(),
+    );
+  const overdueCount = followUpQueue.filter(
+    (prospect) => new Date(prospect.nextActionAt!).getTime() < now,
+  ).length;
   const approvedCount = prospects.data.filter(
     (prospect) => prospect.outreachApprovedAt,
   ).length;
@@ -64,9 +78,10 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
       eyebrow="Atlas Revenue Operations"
       title="Sales Command"
     >
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Metric label="Open prospects" value={openCount} />
-        <Metric label="Follow-ups scheduled" value={scheduledCount} tone={scheduledCount ? "amber" : "slate"} />
+        <Metric label="Overdue next actions" value={overdueCount} tone={overdueCount ? "amber" : "slate"} />
+        <Metric label="Actions scheduled" value={scheduledCount} tone={scheduledCount ? "blue" : "slate"} />
         <Metric label="Outreach approved" value={approvedCount} tone="blue" />
       </div>
 
@@ -96,6 +111,63 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+              DAVID follow-up focus
+            </p>
+            <h2 className="mt-2 text-2xl font-bold text-slate-950">
+              Do not let the next step disappear
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Overdue work appears first. Open the prospect, complete the action,
+              and schedule the next one while the conversation is fresh.
+            </p>
+          </div>
+          <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${overdueCount ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
+            {overdueCount ? `${overdueCount} overdue` : "Queue current"}
+          </span>
+        </div>
+
+        {followUpQueue.length === 0 ? (
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+            No follow-up dates are scheduled yet. Add a next action and due date
+            to every active prospect.
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {followUpQueue.slice(0, 8).map((prospect) => {
+              const overdue = new Date(prospect.nextActionAt!).getTime() < now;
+              return (
+                <Link
+                  className={`rounded-2xl border p-4 transition hover:shadow-sm ${overdue ? "border-amber-200 bg-amber-50 hover:border-amber-300" : "border-slate-200 bg-slate-50 hover:border-blue-300"}`}
+                  href={`/lions-den/sales/${prospect.id}`}
+                  key={prospect.id}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-950">
+                        {prospect.businessName}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-slate-700">
+                        {prospect.nextAction ?? "Choose the next follow-up step"}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${overdue ? "bg-amber-200 text-amber-900" : "bg-blue-100 text-blue-800"}`}>
+                      {overdue ? "Overdue" : "Next up"}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-xs font-medium text-slate-500">
+                    {formatDateTime(prospect.nextActionAt)}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
               HUNTER intake
             </p>
             <h2 className="mt-2 text-2xl font-bold text-slate-950">
@@ -114,7 +186,7 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
 
         <form action={createSalesProspect} className="mt-5 grid gap-4 sm:grid-cols-2">
           <Field label="Business name" name="businessName" required />
-          <Field label="Industry" name="industry" placeholder="HVAC, plumbing, electrical..." />
+          <Field label="Business category" name="industry" placeholder="Auto repair, childcare, fitness, home services..." />
           <Field label="City" name="city" />
           <Field label="State / region" name="region" placeholder="TX" />
           <Field label="Business website" name="website" placeholder="example.com" type="text" />
@@ -268,4 +340,8 @@ function StageBadge({ status }: { status: SalesProspectStatus }) {
 function humanize(value: string) {
   const words = value.replaceAll("_", " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+async function getCurrentTimestamp() {
+  return Date.now();
 }

@@ -19,6 +19,45 @@ function redirectWithAccessStatus(status: string): never {
   redirect(`/lions-den?access=${encodeURIComponent(status)}`);
 }
 
+export async function assignClientMembership(formData: FormData) {
+  await requireSuperAdmin("/lions-den");
+
+  const organizationId = String(
+    formData.get("organizationId") ?? "",
+  ).trim();
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  const role = String(formData.get("role") ?? "member").trim();
+
+  if (
+    !uuidPattern.test(organizationId) ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+    !["owner", "admin", "member"].includes(role)
+  ) {
+    redirectWithAccessStatus("invalid_membership");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("assign_atlas_client_membership", {
+    p_email: email,
+    p_organization_id: organizationId,
+    p_role: role,
+  });
+
+  if (error) {
+    console.error("Atlas client membership assignment failed", {
+      code: error.code,
+      organizationId,
+    });
+    redirectWithAccessStatus(
+      error.code === "P0002" ? "auth_user_not_found" : "membership_failed",
+    );
+  }
+
+  redirectWithAccessStatus("membership_linked");
+}
+
 export async function sendClientLoginEmail(formData: FormData) {
   await requireSuperAdmin("/lions-den");
 
@@ -71,4 +110,3 @@ export async function sendClientLoginEmail(formData: FormData) {
 
   redirectWithAccessStatus("sent");
 }
-
