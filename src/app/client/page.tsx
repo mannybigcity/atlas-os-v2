@@ -4,6 +4,7 @@ import { SurfaceShell } from "@/components/surface-shell";
 import { WorkspaceSectionCard } from "@/components/workspace-section-card";
 import { ClientPilotWorkspace } from "@/components/client-pilot-workspace";
 import { ClientContentStudio } from "@/components/client-content-studio";
+import { ClientOpportunityPipeline } from "@/components/client-opportunity-pipeline";
 import { isSuperAdminEmail } from "@/lib/env";
 import { getOrganizationActivity } from "@/server/activity/queries";
 import { signOut } from "@/server/auth/actions";
@@ -23,6 +24,7 @@ import {
 } from "@/server/organizations/queries";
 import { getPilotWorkspace } from "@/server/pilot/queries";
 import { getContentStudio } from "@/server/content-studio/queries";
+import { getOpportunityPipeline } from "@/server/opportunities/queries";
 import { formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -141,6 +143,9 @@ export default async function ClientDashboardPage({
     : null;
   const contentStudio = primaryOrganization
     ? await getContentStudio(primaryOrganization.id)
+    : null;
+  const opportunityPipeline = primaryOrganization
+    ? await getOpportunityPipeline(primaryOrganization.id)
     : null;
   const businessProfileFields: BusinessProfileField[] = [
     {
@@ -520,6 +525,17 @@ export default async function ClientDashboardPage({
                 />
               ) : null}
             </div>
+
+            {opportunityPipeline?.setupRequired ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+                Atlas is preparing HUNTER&apos;s opportunity pipeline. No prospect
+                outreach has been sent.
+              </div>
+            ) : null}
+
+            {!opportunityPipeline?.setupRequired && opportunityPipeline ? (
+              <ClientOpportunityPipeline pipeline={opportunityPipeline.data} />
+            ) : null}
 
             {contentStudio?.setupRequired ? (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
