@@ -6,3 +6,5 @@
   NODE_VERSION = "22"
   NPM_FLAGS = "--no-audit --no-fund"
 
+[functions."daily-content-studio"]
+  schedule = "0 14 * * *"

@@ -184,6 +184,12 @@ export function AtlasHomepage({ preview = false }: { preview?: boolean }) {
               30-day system
             </a>
             <Link
+              className="hidden rounded-full px-3 py-2 text-sm font-semibold text-blue-100 transition hover:bg-white/10 hover:text-white lg:block"
+              href="/atlas-team-live"
+            >
+              Atlas team live
+            </Link>
+            <Link
               className="hidden rounded-full px-3 py-2 text-sm font-semibold text-blue-100 transition hover:bg-white/10 hover:text-white md:block"
               href="/login"
             >

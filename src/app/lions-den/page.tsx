@@ -16,6 +16,7 @@ import {
 } from "@/server/auth/admin-actions";
 import { signOut } from "@/server/auth/actions";
 import { requireSuperAdmin } from "@/server/auth/guards";
+import { saveAdminBusinessProfile } from "@/server/business-profile/admin-actions";
 import { getBusinessProfile } from "@/server/business-profile/queries";
 import { createAdminNoteMessage } from "@/server/notes/actions";
 import { getMessagesForNotes } from "@/server/notes/messages";
@@ -39,6 +40,7 @@ type LionsDenPageProps = {
     assessment?: string;
     message?: string;
     pilot?: string;
+    profile?: string;
   }>;
 };
 
@@ -81,6 +83,38 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
         Signed in as Super Admin {user.email}. Privileged access is enforced
         server-side.
       </div>
+
+      <section className="mt-5 rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">
+              Atlas Command
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight">
+              See the agents working
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+              ATLAS stays Chief of Staff while HUNTER, MICAH, DAVID, and
+              ORACLE show their roles, budgets, approval gates, and real ledger
+              activity.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:items-end">
+            <Link
+              className="inline-flex justify-center rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-amber-200"
+              href="/lions-den/agents"
+            >
+              Open Agent Command
+            </Link>
+            <Link
+              className="inline-flex justify-center rounded-full border border-white/20 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
+              href="/atlas-team-live"
+            >
+              Public live preview
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <div className="mt-4 space-y-4">
         {params?.access === "sent" ? (
@@ -449,7 +483,10 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
         </section>
 
         {organizations.data.length > 0 ? (
-          <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+          <section
+            className="rounded-2xl border border-blue-200 bg-blue-50 p-5"
+            id="client-intelligence"
+          >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
@@ -467,6 +504,18 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
                 Organization scoped
               </span>
             </div>
+
+            {params?.profile === "saved" ? (
+              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+                Client business context saved.
+              </div>
+            ) : null}
+            {params?.profile === "error" || params?.profile === "invalid" ? (
+              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-900">
+                Client business context was not saved. Confirm the organization
+                and Business Profile migration, then try again.
+              </div>
+            ) : null}
 
             <div className="mt-5 space-y-4">
               {clientProfiles.map(({ organization, result }) => (
@@ -513,6 +562,57 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
                         <LeadDetail label="Constraints" value={result.data.constraints ?? "Not provided"} />
                       </div>
                     </div>
+                  ) : null}
+
+                  {!result.setupRequired ? (
+                    <details className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <summary className="cursor-pointer text-sm font-bold text-slate-950">
+                        Edit client business context
+                      </summary>
+                      <p className="mt-3 text-sm leading-6 text-slate-600">
+                        Save only client-approved operating context. Keep private
+                        sponsor contacts, legal terms, passwords, and financial
+                        account details out of this general profile.
+                      </p>
+                      <form action={saveAdminBusinessProfile} className="mt-4 space-y-4">
+                        <input
+                          name="organizationId"
+                          type="hidden"
+                          value={organization.id}
+                        />
+                        <AdminProfileField
+                          defaultValue={result.data?.offer}
+                          label="What you offer"
+                          name="offer"
+                        />
+                        <AdminProfileField
+                          defaultValue={result.data?.targetCustomer}
+                          label="Target customer"
+                          name="targetCustomer"
+                        />
+                        <AdminProfileField
+                          defaultValue={result.data?.positioning}
+                          label="Why customers choose you"
+                          name="positioning"
+                        />
+                        <AdminProfileField
+                          defaultValue={result.data?.currentGoals}
+                          label="Current goals"
+                          name="currentGoals"
+                        />
+                        <AdminProfileField
+                          defaultValue={result.data?.constraints}
+                          label="Challenges and limits"
+                          name="constraints"
+                        />
+                        <button
+                          className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                          type="submit"
+                        >
+                          Save client business context
+                        </button>
+                      </form>
+                    </details>
                   ) : null}
                 </article>
               ))}
@@ -579,13 +679,26 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
             </h2>
             <div className="mt-4 divide-y divide-slate-200">
               {organizations.data.map((organization) => (
-                <div className="py-4 first:pt-0 last:pb-0" key={organization.id}>
-                  <p className="font-medium text-slate-950">
-                    {organization.name}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Slug: {organization.slug ?? "not set"}
-                  </p>
+                <div
+                  className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                  key={organization.id}
+                >
+                  <div>
+                    <p className="font-medium text-slate-950">
+                      {organization.name}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Slug: {organization.slug ?? "not set"}
+                    </p>
+                  </div>
+                  {organization.slug ? (
+                    <Link
+                      className="w-fit rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
+                      href={`/client?previewOrg=${encodeURIComponent(organization.slug)}`}
+                    >
+                      View client dashboard
+                    </Link>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -768,6 +881,28 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
         </form>
       </div>
     </SurfaceShell>
+  );
+}
+
+function AdminProfileField({
+  defaultValue,
+  label,
+  name,
+}: {
+  defaultValue?: string | null;
+  label: string;
+  name: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-semibold text-slate-800">{label}</span>
+      <textarea
+        className="mt-2 min-h-28 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950"
+        defaultValue={defaultValue ?? ""}
+        maxLength={10000}
+        name={name}
+      />
+    </label>
   );
 }
 

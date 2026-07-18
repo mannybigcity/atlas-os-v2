@@ -42,6 +42,9 @@ export function SiteHeader({ active }: SiteHeaderProps) {
               <a className="hidden rounded-full px-3 py-2 text-sm font-medium text-[#16325c] transition hover:bg-[#eef4ff] hover:text-[#0a2f78] sm:block" href="#how-it-works">
                 How it works
               </a>
+              <Link className="hidden rounded-full px-3 py-2 text-sm font-medium text-[#16325c] transition hover:bg-[#eef4ff] hover:text-[#0a2f78] md:block" href="/atlas-team-live">
+                Atlas team live
+              </Link>
               <a className="hidden rounded-full px-3 py-2 text-sm font-medium text-[#16325c] transition hover:bg-[#eef4ff] hover:text-[#0a2f78] md:block" href="#founding-pilot">
                 30-day sprint
               </a>

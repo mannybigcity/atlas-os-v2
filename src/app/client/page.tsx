@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { SurfaceShell } from "@/components/surface-shell";
 import { WorkspaceSectionCard } from "@/components/workspace-section-card";
 import { ClientPilotWorkspace } from "@/components/client-pilot-workspace";
+import { ClientContentStudio } from "@/components/client-content-studio";
 import { isSuperAdminEmail } from "@/lib/env";
 import { getOrganizationActivity } from "@/server/activity/queries";
 import { signOut } from "@/server/auth/actions";
@@ -16,8 +17,12 @@ import {
 } from "@/server/notes/actions";
 import { getNoteMessages } from "@/server/notes/messages";
 import { getOrganizationNotes } from "@/server/notes/queries";
-import { getUserMemberships } from "@/server/organizations/queries";
+import {
+  getOrganizationBySlugForSuperAdmin,
+  getUserMemberships,
+} from "@/server/organizations/queries";
 import { getPilotWorkspace } from "@/server/pilot/queries";
+import { getContentStudio } from "@/server/content-studio/queries";
 import { formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -30,10 +35,12 @@ export const metadata: Metadata = {
 type ClientDashboardPageProps = {
   searchParams?: Promise<{
     access?: string;
+    content?: string;
     identity?: string;
     message?: string;
     note?: string;
     pilot?: string;
+    previewOrg?: string;
     profile?: string;
     status?: string;
   }>;
@@ -84,13 +91,38 @@ export default async function ClientDashboardPage({
 }: ClientDashboardPageProps) {
   const user = await requireUser("/client");
   const params = await searchParams;
-  const memberships = await getUserMemberships(user.id);
+  const isSuperAdmin = isSuperAdminEmail(user.email);
+  const previewOrgSlug = isSuperAdmin
+    ? String(params?.previewOrg ?? "").trim().toLowerCase()
+    : "";
+  const previewOrganization = previewOrgSlug
+    ? await getOrganizationBySlugForSuperAdmin(previewOrgSlug)
+    : null;
+  const personalMemberships = await getUserMemberships(user.id);
+  const isClientPreview = Boolean(
+    previewOrganization &&
+      !previewOrganization.setupRequired &&
+      previewOrganization.data,
+  );
+  const memberships = isClientPreview
+    ? {
+        data: [
+          {
+            id: `preview-${previewOrganization?.data?.id}`,
+            role: "owner" as const,
+            organization: previewOrganization?.data ?? null,
+          },
+        ],
+        setupRequired: false as const,
+        error: null,
+      }
+    : personalMemberships;
   const primaryMembership = memberships.data.find((membership) => membership.organization);
   const primaryOrganization = primaryMembership?.organization;
   const canEditBusinessProfile =
-    primaryMembership?.role === "owner" || primaryMembership?.role === "admin";
-  const canCreateNotes = Boolean(primaryMembership);
-  const isSuperAdmin = isSuperAdminEmail(user.email);
+    !isClientPreview &&
+    (primaryMembership?.role === "owner" || primaryMembership?.role === "admin");
+  const canCreateNotes = Boolean(primaryMembership) && !isClientPreview;
   const displayName = String(user.user_metadata.display_name ?? "").trim();
   const businessProfile = primaryOrganization
     ? await getBusinessProfile(primaryOrganization.id)
@@ -106,6 +138,9 @@ export default async function ClientDashboardPage({
     : null;
   const pilot = primaryOrganization
     ? await getPilotWorkspace(primaryOrganization.id)
+    : null;
+  const contentStudio = primaryOrganization
+    ? await getContentStudio(primaryOrganization.id)
     : null;
   const businessProfileFields: BusinessProfileField[] = [
     {
@@ -196,6 +231,18 @@ export default async function ClientDashboardPage({
           </div>
         ) : null}
 
+        {params?.content === "review_saved" ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
+            Your content review was saved. Atlas and MICAH can now see your decision.
+          </div>
+        ) : null}
+
+        {params?.content === "review_error" ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
+            The content review could not be saved. Please try once more or message Atlas.
+          </div>
+        ) : null}
+
         {params?.profile === "denied" ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
             Only organization owners and admins can update business context.
@@ -266,10 +313,35 @@ export default async function ClientDashboardPage({
           </div>
         ) : null}
 
+        {previewOrganization?.setupRequired ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
+            Atlas could not load the requested client preview. Confirm the
+            organization slug and workspace access.
+          </div>
+        ) : null}
+
+        {previewOrgSlug && previewOrganization && !previewOrganization.data ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
+            No organization was found for preview slug "{previewOrgSlug}".
+          </div>
+        ) : null}
+
+        {isClientPreview ? (
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
+            <p className="font-semibold">Client preview mode</p>
+            <p className="mt-1">
+              You are viewing {primaryOrganization?.name} through the client
+              workspace layout while signed in as Super Admin {user.email}.
+              Review controls are disabled here so you can audit the experience
+              without acting as the client.
+            </p>
+          </div>
+        ) : null}
+
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-          Your private {primaryOrganization?.name ?? "Atlas"} workspace is
-          ready. You are signed in as {user.email}, and the information shown
-          here is limited to your organization.
+          {isClientPreview
+            ? `The ${primaryOrganization?.name ?? "client"} workspace is ready for review. The information shown here is limited to that organization.`
+            : `Your private ${primaryOrganization?.name ?? "Atlas"} workspace is ready. You are signed in as ${user.email}, and the information shown here is limited to your organization.`}
         </div>
 
         {memberships.data.length > 0 ? (
@@ -397,7 +469,9 @@ export default async function ClientDashboardPage({
                   {primaryMembership?.role ?? "member"}
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  You can update business context and review work for this organization.
+                  {isClientPreview
+                    ? "Read-only owner preview. Q can update business context and review work from his own login."
+                    : "You can update business context and review work for this organization."}
                 </p>
               </div>
             </section>
@@ -446,6 +520,20 @@ export default async function ClientDashboardPage({
                 />
               ) : null}
             </div>
+
+            {contentStudio?.setupRequired ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+                Atlas is preparing your Content Studio. Your plan and messages remain available.
+              </div>
+            ) : null}
+
+            {!contentStudio?.setupRequired && contentStudio && primaryOrganization ? (
+              <ClientContentStudio
+                canReview={canEditBusinessProfile}
+                organizationId={primaryOrganization.id}
+                studio={contentStudio.data}
+              />
+            ) : null}
 
             <details className="rounded-2xl border border-slate-200 bg-white p-5">
               <summary className="flex cursor-pointer list-none flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">

@@ -97,3 +97,92 @@ the strongest first package is:
 This package maps the historical Hunter opportunity report, Micah content
 calendar, and David CRM starter into honest human-assisted deliverables without
 claiming that autonomous agents exist.
+
+## July 17 client-provided profile draft
+
+Source: Quincy sent Manny a five-field draft generated from QTime Productions'
+Claude context on July 17, 2026.
+
+Status: client-provided working context. It is appropriate for Quincy's private
+Atlas workspace after Quincy reviews the wording. It is not independent proof
+of sponsor relationships, ownership terms, production results, or performance
+claims.
+
+### What you offer
+
+QTime Productions ("To be on Q") is a Denver-based media production company
+spanning marketing strategy, brand promotions, and film/reality production.
+Core offerings include original content properties such as Roll'n Wars, a food
+truck competition series, and Food4Thought Network, a culinary interview and
+recipe series. QTime also provides social content packages, host scripts,
+sponsorship outreach support, branded documents, and website and marketing
+collateral.
+
+### Target customer
+
+Food trucks, restaurants, and local culinary businesses in the Denver and
+Colorado market seeking exposure through competition-style content; brand
+sponsors seeking relevant audience access; musical artists and small businesses
+needing social content packages; and event venues seeking audience draw.
+
+### Why customers choose you
+
+QTime combines entertainment-focused production with hands-on marketing
+execution. Its working model brings multi-location production, host and judging
+formats, social content, branded documents, and sponsorship packaging together
+so a customer does not need to coordinate several separate production and
+marketing vendors.
+
+### Current goals
+
+Launch Food4Thought Network Season 1 across YouTube, TikTok, and Instagram;
+continue growing Roll'n Wars events; turn qualified warm sponsor opportunities
+into clear next steps; and strengthen QTP LLC's business-credit readiness.
+
+### Challenges and limits
+
+QTime operates with a lean founder-led team while balancing scripts, shoots,
+editing, and marketing across several platforms. Current constraints include
+turning sponsorship conversations into signed agreements, maintaining
+consistent execution across active productions, and limited working capital
+during the current growth stage.
+
+### Data-minimization decisions
+
+Do not place the following details in the general business profile:
+
+- the name of a specific warm sponsor prospect;
+- the reported 90/10 co-creator ownership or revenue split; or
+- unverified claims about production value, audience size, campaign results,
+  sponsor commitments, or financing eligibility.
+
+If Quincy wants Atlas to manage a named sponsor opportunity, record it in the
+private QTime pipeline with a public or client-provided source, status, owner,
+and next action. If ownership terms are operationally necessary, keep them in
+an appropriate private legal record rather than Atlas's general business
+profile.
+
+## Recommended 30-day focus from this intake
+
+Recommended goal:
+
+> Install one sponsorship follow-up system for Roll'n Wars so every qualified
+> sponsor opportunity has a clear status, owner, next action, and follow-up
+> date, and move at least one qualified opportunity to a scheduled conversation
+> or requested proposal decision by the day-30 review.
+
+This goal does not promise a signed sponsor or revenue result. It focuses the
+pilot on the closest stated revenue path and creates a measurable operating
+improvement that Atlas can help maintain.
+
+First five actions:
+
+1. Quincy confirms that Roll'n Wars sponsorship is the single 30-day priority.
+2. Quincy identifies the current sponsor opportunities he is authorized to
+   place in Atlas and supplies only necessary business contact information.
+3. Manny and Quincy agree on sponsor-fit criteria and a simple pipeline stage
+   definition.
+4. Atlas prepares one sponsor follow-up sequence and one supporting one-sheet
+   for review; nothing is sent without approval.
+5. DAVID records every next action and the weekly review measures movement,
+   response, and time spent.

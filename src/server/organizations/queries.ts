@@ -147,6 +147,31 @@ export async function getOrganizationsForSuperAdmin(): Promise<
   };
 }
 
+export async function getOrganizationBySlugForSuperAdmin(
+  slug: string,
+): Promise<WorkspaceQueryResult<OrganizationSummary | null>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("id, name, slug, created_at")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    return {
+      data: null,
+      setupRequired: true,
+      error: error.message,
+    };
+  }
+
+  return {
+    data: data ? normalizeOrganization(data as OrganizationRow) : null,
+    setupRequired: false,
+    error: null,
+  };
+}
+
 export async function getClientAccessRoster(): Promise<
   WorkspaceQueryResult<ClientAccessSummary[]>
 > {
