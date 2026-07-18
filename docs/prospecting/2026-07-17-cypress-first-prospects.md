@@ -29,16 +29,11 @@ These are research candidates, not endorsements or confirmed sales leads.
 
 ## 2. Discovery Years Early Learning Center
 
-- Category: Family-owned childcare and early learning
-- Location: Cypress, TX
-- Public source: https://www.discoverycypresstx.com/
-- Public phone: 281-861-8755
-- Fit signal: Tours and enrollment inquiries create a clear lead-to-enrollment
-  journey with multiple follow-up moments.
-- Atlas hypothesis to verify: tour inquiries, wait-list follow-up, enrollment
-  reminders, and parent communication may be spread across separate tools.
-- First research task: review the public tour/contact flow and note the visible
-  next step after a parent submits an inquiry.
+- Status: Do not contact from this research record.
+- Reason: On July 17, 2026, the previously identified domain was serving
+  unrelated foreign-language entertainment content. Treat the old business
+  details as stale until the operating business and its current official
+  website can be independently verified.
 
 ## 3. Train Every Athlete
 
@@ -133,4 +128,3 @@ Do not pitch “AI agents.” Lead with one business outcome and a question:
 > repeat-customer opportunity may be slipping through? No obligation.
 
 Personalize the bracketed fact for every business. Do not mass-send this text.
-
