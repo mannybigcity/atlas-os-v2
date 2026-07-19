@@ -1,36 +1,22 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { SurfaceShell } from "@/components/surface-shell";
-import { WorkspaceSectionCard } from "@/components/workspace-section-card";
-import { ClientPilotWorkspace } from "@/components/client-pilot-workspace";
-import { ClientContentStudio } from "@/components/client-content-studio";
-import { ClientOpportunityPipeline } from "@/components/client-opportunity-pipeline";
-import { isSuperAdminEmail } from "@/lib/env";
-import { getOrganizationActivity } from "@/server/activity/queries";
+import { formatDateTime } from "@/lib/format";
 import { signOut } from "@/server/auth/actions";
-import { saveDisplayName } from "@/server/auth/profile-actions";
+import {
+  clientWorkspaceHref,
+  getClientWorkspaceContext,
+} from "@/server/client-workspace/context";
 import { getBusinessProfile } from "@/server/business-profile/queries";
-import { saveBusinessProfile } from "@/server/business-profile/actions";
-import { requireUser } from "@/server/auth/guards";
-import {
-  createClientNoteMessage,
-  createOrganizationNote,
-} from "@/server/notes/actions";
-import { getNoteMessages } from "@/server/notes/messages";
-import { getOrganizationNotes } from "@/server/notes/queries";
-import {
-  getOrganizationBySlugForSuperAdmin,
-  getUserMemberships,
-} from "@/server/organizations/queries";
-import { getPilotWorkspace } from "@/server/pilot/queries";
 import { getContentStudio } from "@/server/content-studio/queries";
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
-import { formatDateTime } from "@/lib/format";
+import { getPilotWorkspace } from "@/server/pilot/queries";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Client Workspace | Atlas For Entrepreneurs",
+  title: "Client Command Center | Atlas For Entrepreneurs",
   robots: { index: false, follow: false },
 };
 
@@ -48,95 +34,127 @@ type ClientDashboardPageProps = {
   }>;
 };
 
-const workspaceSections = [
-  {
-    title: "Daily Briefing",
-    description:
-      "A short summary of what matters now, what is waiting, and what comes next.",
-    status: "Coming soon",
-  },
-  {
-    title: "Priorities",
-    description:
-      "Your focused plan, active priorities, owners, and due dates in one place.",
-    status: "Ready",
-  },
-  {
-    title: "General messages",
-    description:
-      "Use this for questions or conversations that are not tied to a specific work item.",
-    status: "Ready",
-  },
-  {
-    title: "History",
-    description:
-      "Open a read-only record of workspace changes when you need it.",
-    status: "Ready",
-  },
-];
-
-type BusinessProfileField = {
-  name:
-    | "offer"
-    | "targetCustomer"
-    | "positioning"
-    | "currentGoals"
-    | "constraints";
-  label: string;
+type DepartmentCardProps = {
+  accent: "amber" | "blue" | "indigo";
+  badge: string;
   description: string;
-  placeholder: string;
-  value: string | null | undefined;
+  href: string;
+  metric: string;
+  secondaryMetric: string;
+  title: string;
 };
+
+const accentClasses = {
+  amber: {
+    border: "border-amber-200 hover:border-amber-400",
+    badge: "bg-amber-100 text-amber-800",
+    button: "bg-amber-400 text-slate-950 hover:bg-amber-300",
+  },
+  blue: {
+    border: "border-blue-200 hover:border-blue-400",
+    badge: "bg-blue-100 text-blue-800",
+    button: "bg-blue-700 text-white hover:bg-blue-800",
+  },
+  indigo: {
+    border: "border-indigo-200 hover:border-indigo-400",
+    badge: "bg-indigo-100 text-indigo-800",
+    button: "bg-indigo-700 text-white hover:bg-indigo-800",
+  },
+};
+
+function DepartmentCard({
+  accent,
+  badge,
+  description,
+  href,
+  metric,
+  secondaryMetric,
+  title,
+}: DepartmentCardProps) {
+  const classes = accentClasses[accent];
+
+  return (
+    <Link
+      className={`flex min-h-64 flex-col rounded-3xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md ${classes.border}`}
+      href={href}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${classes.badge}`}
+        >
+          {badge}
+        </span>
+        <span className="text-sm font-semibold text-slate-400">Open</span>
+      </div>
+      <h2 className="mt-6 text-2xl font-black tracking-tight text-slate-950">
+        {title}
+      </h2>
+      <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
+      <div className="mt-auto grid grid-cols-2 gap-3 pt-6">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+            Now
+          </p>
+          <p className="mt-1 text-xl font-black tracking-tight text-slate-950">
+            {metric}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+            Next
+          </p>
+          <p className="mt-1 text-xl font-black tracking-tight text-slate-950">
+            {secondaryMetric}
+          </p>
+        </div>
+      </div>
+      <span
+        className={`mt-4 inline-flex w-fit rounded-full px-4 py-2 text-sm font-semibold transition ${classes.button}`}
+      >
+        View screen
+      </span>
+    </Link>
+  );
+}
+
+function StatusAlert({
+  children,
+  tone = "emerald",
+}: {
+  children: ReactNode;
+  tone?: "emerald" | "amber" | "rose" | "blue";
+}) {
+  const classes = {
+    amber: "border-amber-200 bg-amber-50 text-amber-900",
+    blue: "border-blue-200 bg-blue-50 text-blue-950",
+    emerald: "border-emerald-200 bg-emerald-50 text-emerald-900",
+    rose: "border-rose-200 bg-rose-50 text-rose-900",
+  };
+
+  return (
+    <div className={`rounded-2xl border p-5 text-sm leading-6 ${classes[tone]}`}>
+      {children}
+    </div>
+  );
+}
 
 export default async function ClientDashboardPage({
   searchParams,
 }: ClientDashboardPageProps) {
-  const user = await requireUser("/client");
   const params = await searchParams;
-  const isSuperAdmin = isSuperAdminEmail(user.email);
-  const previewOrgSlug = isSuperAdmin
-    ? String(params?.previewOrg ?? "").trim().toLowerCase()
-    : "";
-  const previewOrganization = previewOrgSlug
-    ? await getOrganizationBySlugForSuperAdmin(previewOrgSlug)
-    : null;
-  const personalMemberships = await getUserMemberships(user.id);
-  const isClientPreview = Boolean(
-    previewOrganization &&
-      !previewOrganization.setupRequired &&
-      previewOrganization.data,
-  );
-  const memberships = isClientPreview
-    ? {
-        data: [
-          {
-            id: `preview-${previewOrganization?.data?.id}`,
-            role: "owner" as const,
-            organization: previewOrganization?.data ?? null,
-          },
-        ],
-        setupRequired: false as const,
-        error: null,
-      }
-    : personalMemberships;
-  const primaryMembership = memberships.data.find((membership) => membership.organization);
-  const primaryOrganization = primaryMembership?.organization;
-  const canEditBusinessProfile =
-    !isClientPreview &&
-    (primaryMembership?.role === "owner" || primaryMembership?.role === "admin");
-  const canCreateNotes = Boolean(primaryMembership) && !isClientPreview;
-  const displayName = String(user.user_metadata.display_name ?? "").trim();
+  const workspace = await getClientWorkspaceContext("/client", params);
+  const {
+    isClientPreview,
+    memberships,
+    previewOrgSlug,
+    previewOrganization,
+    primaryMembership,
+    primaryOrganization,
+    user,
+  } = workspace;
+
   const businessProfile = primaryOrganization
     ? await getBusinessProfile(primaryOrganization.id)
-    : null;
-  const notes = primaryOrganization
-    ? await getOrganizationNotes(primaryOrganization.id)
-    : null;
-  const messages = primaryOrganization
-    ? await getNoteMessages(primaryOrganization.id)
-    : null;
-  const activity = primaryOrganization
-    ? await getOrganizationActivity(primaryOrganization.id)
     : null;
   const pilot = primaryOrganization
     ? await getPilotWorkspace(primaryOrganization.id)
@@ -147,768 +165,227 @@ export default async function ClientDashboardPage({
   const opportunityPipeline = primaryOrganization
     ? await getOpportunityPipeline(primaryOrganization.id)
     : null;
-  const businessProfileFields: BusinessProfileField[] = [
-    {
-      name: "offer",
-      label: "What you offer",
-      description: "What does this business sell, and what result does it create?",
-      placeholder:
-        "Example: AI-powered operating system for entrepreneurs and small businesses.",
-      value: businessProfile?.data?.offer,
-    },
-    {
-      name: "targetCustomer",
-      label: "Target customer",
-      description: "Who is the business built to serve first?",
-      placeholder:
-        "Example: Solo founders and service businesses doing $5k-$100k/month.",
-      value: businessProfile?.data?.targetCustomer,
-    },
-    {
-      name: "positioning",
-      label: "Why customers choose you",
-      description: "How should customers understand why this business is different?",
-      placeholder:
-        "Example: A practical AI chief of staff that helps owners focus and execute.",
-      value: businessProfile?.data?.positioning,
-    },
-    {
-      name: "currentGoals",
-      label: "Current goals",
-      description: "What outcomes matter most right now?",
-      placeholder:
-        "Example: Validate the command center, onboard first users, and protect costs.",
-      value: businessProfile?.data?.currentGoals,
-    },
-    {
-      name: "constraints",
-      label: "Challenges and limits",
-      description: "What could get in the way, or what should Atlas respect?",
-      placeholder:
-        "Example: Minimal budget, no uncontrolled AI spend, and no premature complexity.",
-      value: businessProfile?.data?.constraints,
-    },
-  ];
-  const completedProfileFields = businessProfileFields.filter((field) => field.value);
+
+  const businessProfileData =
+    businessProfile && !businessProfile.setupRequired ? businessProfile.data : null;
+  const pilotData = pilot && !pilot.setupRequired ? pilot.data : null;
+  const contentData =
+    contentStudio && !contentStudio.setupRequired ? contentStudio.data : null;
+  const pipelineData =
+    opportunityPipeline && !opportunityPipeline.setupRequired
+      ? opportunityPipeline.data
+      : null;
+
+  const profileFieldsFilled = [
+    businessProfileData?.offer,
+    businessProfileData?.targetCustomer,
+    businessProfileData?.positioning,
+    businessProfileData?.currentGoals,
+    businessProfileData?.constraints,
+  ].filter(Boolean).length;
+  const actionCount = pilotData?.actions.length ?? 0;
+  const reviewCount =
+    pilotData?.deliverables.filter(
+      (deliverable) => deliverable.status === "ready_for_review",
+    ).length ?? 0;
+  const draftCount = contentData?.drafts.length ?? 0;
+  const draftsAwaitingReview =
+    contentData?.drafts.filter((draft) => draft.status === "ready_for_review")
+      .length ?? 0;
+  const targetCount = pipelineData?.opportunities.length ?? 0;
+  const followUpReadyCount =
+    pipelineData?.opportunities.filter((opportunity) =>
+      ["ready_for_follow_up", "follow_up_queued"].includes(opportunity.stage),
+    ).length ?? 0;
+  const clientName = primaryOrganization?.name ?? "Client Workspace";
 
   return (
     <SurfaceShell
-      description="This is the beginning of the Atlas Command Center: a secure workspace home scoped to your organization."
-      eyebrow="Client access"
-      title={primaryOrganization?.name ?? "Client Workspace Home"}
+      description="One screen for today's brief, then focused doors into HUNTER, MICAH, and DAVID."
+      eyebrow={isClientPreview ? "Client preview" : "Client command center"}
+      title={clientName}
     >
       <div className="space-y-4">
         {params?.status === "welcome" ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-            Welcome to Atlas. Your password is set, and this is your private
-            business workspace.
-          </div>
+          <StatusAlert>Welcome to Atlas. Your private workspace is ready.</StatusAlert>
         ) : null}
 
         {params?.access === "denied" ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            Your account is authenticated, but it is not authorized for The
-            Lion&apos;s Den.
-          </div>
+          <StatusAlert tone="amber">
+            Your login worked, but this account is not authorized for that area.
+          </StatusAlert>
         ) : null}
 
-        {params?.profile === "saved" ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-            Business context saved.
-          </div>
+        {params?.pilot === "review_saved" || params?.content === "review_saved" ? (
+          <StatusAlert>Your review was saved for Atlas.</StatusAlert>
         ) : null}
 
-        {params?.pilot === "review_saved" ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-            Your review was saved.
-          </div>
-        ) : null}
-
-        {params?.pilot === "review_denied" ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            Only organization owners and admins can review this work.
-          </div>
-        ) : null}
-
-        {params?.pilot === "review_error" ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
-            Your review could not be saved.
-          </div>
-        ) : null}
-
-        {params?.content === "review_saved" ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-            Your content review was saved. Atlas and MICAH can now see your decision.
-          </div>
-        ) : null}
-
-        {params?.content === "review_error" ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
-            The content review could not be saved. Please try once more or message Atlas.
-          </div>
-        ) : null}
-
-        {params?.profile === "denied" ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            Only organization owners and admins can update business context.
-          </div>
-        ) : null}
-
-        {params?.profile === "error" ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
-            Business context could not be saved right now. Please try once
-            more or send Atlas a message for help.
-          </div>
-        ) : null}
-
-        {params?.note === "created" || params?.note === "updated" ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-            Note {params.note === "created" ? "created" : "updated"}.
-          </div>
-        ) : null}
-
-        {params?.note === "denied" ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            You can only update notes you created unless you are an organization
-            owner or admin.
-          </div>
-        ) : null}
-
-        {params?.note === "missing_title" ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            Add a note title before saving.
-          </div>
-        ) : null}
-
-        {params?.note === "error" ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
-            The note could not be saved right now. Please try once more or send
-            Atlas a message for help.
-          </div>
-        ) : null}
-
-        {params?.message === "created" ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-            Conversation reply added.
-          </div>
-        ) : null}
-
-        {params?.message === "missing_body" ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            Add a message before sending.
-          </div>
-        ) : null}
-
-        {params?.message === "error" || params?.message === "denied" ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
-            The conversation reply could not be added.
-          </div>
-        ) : null}
-
-        {params?.identity === "saved" ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-            Conversation display name saved.
-          </div>
-        ) : null}
-
-        {params?.identity && params.identity !== "saved" ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            Use a display name between 2 and 80 characters. “Atlas Admin” is
-            reserved for authorized Atlas staff.
-          </div>
+        {params?.pilot === "review_error" || params?.content === "review_error" ? (
+          <StatusAlert tone="rose">
+            That review could not be saved. Try again or message Atlas.
+          </StatusAlert>
         ) : null}
 
         {previewOrganization?.setupRequired ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
+          <StatusAlert tone="rose">
             Atlas could not load the requested client preview. Confirm the
             organization slug and workspace access.
-          </div>
+          </StatusAlert>
         ) : null}
 
         {previewOrgSlug && previewOrganization && !previewOrganization.data ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            No organization was found for preview slug "{previewOrgSlug}".
-          </div>
+          <StatusAlert tone="amber">
+            No organization was found for preview slug &ldquo;{previewOrgSlug}&rdquo;.
+          </StatusAlert>
         ) : null}
 
         {isClientPreview ? (
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
-            <p className="font-semibold">Client preview mode</p>
+          <StatusAlert tone="blue">
+            <p className="font-semibold">Viewer mode</p>
             <p className="mt-1">
-              You are viewing {primaryOrganization?.name} through the client
-              workspace layout while signed in as Super Admin {user.email}.
-              Review controls are disabled here so you can audit the experience
-              without acting as the client.
+              You are seeing the same client command center layout as{" "}
+              {primaryOrganization?.name}. Review and edit controls stay off
+              here so you can audit the experience without acting as the client.
             </p>
-          </div>
-        ) : null}
-
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-          {isClientPreview
-            ? `The ${primaryOrganization?.name ?? "client"} workspace is ready for review. The information shown here is limited to that organization.`
-            : `Your private ${primaryOrganization?.name ?? "Atlas"} workspace is ready. You are signed in as ${user.email}, and the information shown here is limited to your organization.`}
-        </div>
-
-        {memberships.data.length > 0 ? (
-          <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
-              Start here
-            </p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-              Three steps to put Atlas to work
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
-              Give Atlas the business context it needs, review the current plan,
-              and keep questions or decisions inside this private workspace.
-            </p>
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <Link
-                className="rounded-2xl border border-blue-200 bg-white p-4 transition hover:border-blue-400 hover:shadow-sm"
-                href="#business-profile"
-              >
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
-                  Step 1
-                </span>
-                <span className="mt-2 block font-semibold text-slate-950">
-                  Complete your business profile
-                </span>
-                <span className="mt-1 block text-sm leading-6 text-slate-600">
-                  Tell Atlas what {primaryOrganization?.name ?? "your business"} offers,
-                  who it serves, and what matters now.
-                </span>
-              </Link>
-              <Link
-                className="rounded-2xl border border-blue-200 bg-white p-4 transition hover:border-blue-400 hover:shadow-sm"
-                href="#work-messages"
-              >
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
-                  Step 2
-                </span>
-                <span className="mt-2 block font-semibold text-slate-950">
-                  Review your 30-day plan
-                </span>
-                <span className="mt-1 block text-sm leading-6 text-slate-600">
-                  See priorities, next actions, check-ins, and work awaiting approval.
-                </span>
-              </Link>
-              <Link
-                className="rounded-2xl border border-blue-200 bg-white p-4 transition hover:border-blue-400 hover:shadow-sm"
-                href="#general-messages"
-              >
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
-                  Step 3
-                </span>
-                <span className="mt-2 block font-semibold text-slate-950">
-                  Keep the conversation together
-                </span>
-                <span className="mt-1 block text-sm leading-6 text-slate-600">
-                  Ask questions, record decisions, and mention @Atlas when you need help.
-                </span>
-              </Link>
-            </div>
-          </section>
-        ) : null}
-
-        {!isSuperAdmin ? (
-          <form
-            action={saveDisplayName}
-            className="rounded-2xl border border-slate-200 bg-white p-5"
-          >
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-950">
-                Your conversation name
-              </span>
-              <span className="mt-1 block text-sm leading-6 text-slate-600">
-                This name appears beside your timestamped messages.
-              </span>
-              <input
-                className="mt-3 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                defaultValue={displayName}
-                name="displayName"
-                placeholder="Example: Manny Ramirez"
-              />
-            </label>
-            <button
-              className="mt-4 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              type="submit"
-            >
-              Save display name
-            </button>
-          </form>
+          </StatusAlert>
         ) : null}
 
         {memberships.setupRequired ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-            Atlas could not load your workspace access. Contact Atlas so we can
-            restore it before you continue.
-          </div>
+          <StatusAlert tone="rose">
+            Atlas could not load workspace access. Contact Atlas so we can
+            restore the account.
+          </StatusAlert>
         ) : null}
 
         {!memberships.setupRequired && memberships.data.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+          <StatusAlert tone="amber">
             Your login is active, but a business workspace has not been assigned
             yet. Contact Atlas and we will connect it.
-          </div>
+          </StatusAlert>
         ) : null}
 
-        {memberships.data.length > 0 ? (
+        {primaryOrganization ? (
           <>
-            <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Organization
+            <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-950 to-blue-800 p-6 text-white shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">
+                  Daily brief
                 </p>
-                <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
-                  {primaryOrganization?.name ?? "Unknown organization"}
+                <h2 className="mt-4 text-3xl font-black tracking-tight">
+                  Move the strongest opportunity forward today.
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Your private business workspace
+                <p className="mt-4 text-sm leading-6 text-blue-100">
+                  Atlas is watching three moving parts: the content direction,
+                  the sponsor/outreach list, and the follow-up queue. The goal
+                  is not more clutter. The goal is one clear next move.
                 </p>
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-100">
+                      Profile
+                    </p>
+                    <p className="mt-2 text-2xl font-black">
+                      {profileFieldsFilled}/5
+                    </p>
+                    <p className="mt-1 text-xs text-blue-100">fields filled</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-100">
+                      Review
+                    </p>
+                    <p className="mt-2 text-2xl font-black">{reviewCount}</p>
+                    <p className="mt-1 text-xs text-blue-100">work items</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-100">
+                      Check-in
+                    </p>
+                    <p className="mt-2 text-base font-black">
+                      {pilotData?.plan?.nextCheckInAt
+                        ? formatDateTime(pilotData.plan.nextCheckInAt)
+                        : "Not set"}
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Access
+              <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                  Atlas priority
                 </p>
-                <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
-                  {primaryMembership?.role ?? "member"}
+                <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
+                  {pilotData?.plan?.thirtyDayGoal ??
+                    "Install the first focused operating loop."}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {isClientPreview
-                    ? "Read-only owner preview. Q can update business context and review work from his own login."
-                    : "You can update business context and review work for this organization."}
+                <p className="mt-4 text-sm leading-6 text-slate-600">
+                  <span className="font-semibold text-slate-900">
+                    Success means:{" "}
+                  </span>
+                  {pilotData?.plan?.successDefinition ??
+                    "QTime can see the work, approve the next move, and keep follow-up from getting lost."}
                 </p>
-              </div>
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                  Signed in as <span className="font-semibold">{user.email}</span>
+                  . Role: <span className="font-semibold">{primaryMembership?.role}</span>.
+                </div>
+              </aside>
             </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
-                    Command Center
-                  </p>
-                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-                    Workspace sections
-                  </h2>
-                </div>
-                <p className="max-w-xl text-sm leading-6 text-slate-600">
-                  Start with your plan, review work that needs a decision, or
-                  message Atlas when you need help.
-                </p>
-              </div>
-
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                {workspaceSections.map((section) => (
-                  <WorkspaceSectionCard
-                    description={section.description}
-                    key={section.title}
-                    status={section.status}
-                    title={section.title}
-                  />
-                ))}
-              </div>
-            </section>
-
-            <div id="work-messages">
-              {pilot?.setupRequired ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                  Atlas is preparing your plan and review workspace. You can still
-                  complete your business profile and send a message below.
-                </div>
-              ) : null}
-
-              {!pilot?.setupRequired && pilot && primaryOrganization ? (
-                <ClientPilotWorkspace
-                  canReview={canEditBusinessProfile}
-                  organizationId={primaryOrganization.id}
-                  workspace={pilot.data}
-                />
-              ) : null}
-            </div>
-
-            {opportunityPipeline?.setupRequired ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                Atlas is preparing HUNTER&apos;s opportunity pipeline. No prospect
-                outreach has been sent.
-              </div>
-            ) : null}
-
-            {!opportunityPipeline?.setupRequired && opportunityPipeline ? (
-              <ClientOpportunityPipeline pipeline={opportunityPipeline.data} />
-            ) : null}
-
-            {contentStudio?.setupRequired ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                Atlas is preparing your Content Studio. Your plan and messages remain available.
-              </div>
-            ) : null}
-
-            {!contentStudio?.setupRequired && contentStudio && primaryOrganization ? (
-              <ClientContentStudio
-                canReview={canEditBusinessProfile}
-                organizationId={primaryOrganization.id}
-                studio={contentStudio.data}
+            <section className="grid gap-4 xl:grid-cols-3">
+              <DepartmentCard
+                accent="amber"
+                badge="HUNTER"
+                description="Leads, sponsors, partners, venues, and warm opportunities that need research or follow-up."
+                href={clientWorkspaceHref("/client/hunter", previewOrgSlug)}
+                metric={`${targetCount} targets`}
+                secondaryMetric={`${followUpReadyCount} ready`}
+                title="Leads & Outreach"
               />
-            ) : null}
-
-            <details className="rounded-2xl border border-slate-200 bg-white p-5">
-              <summary className="flex cursor-pointer list-none flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
-                    Workspace history
-                  </p>
-                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-                    Activity
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    A read-only record of meaningful workspace changes. No AI,
-                    email, or notification costs are triggered.
-                  </p>
-                </div>
-                <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  View history
-                </span>
-              </summary>
-
-              {activity?.setupRequired ? (
-                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                  Workspace history is being prepared. Your current work and
-                  messages remain available.
-                </div>
-              ) : null}
-
-              {!activity?.setupRequired ? (
-                <div className="mt-5 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-slate-50 px-5">
-                  {activity?.data.length === 0 ? (
-                    <p className="py-5 text-sm leading-6 text-slate-600">
-                      No activity has been recorded yet. New note and business
-                      profile changes will appear here.
-                    </p>
-                  ) : null}
-
-                  {activity?.data.map((event) => (
-                    <article className="py-5" key={event.id}>
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <h3 className="font-semibold text-slate-950">
-                            {event.title}
-                          </h3>
-                          <p className="mt-1 text-sm leading-6 text-slate-500">
-                            {formatDateTime(event.occurredAt)}
-                          </p>
-                        </div>
-                        <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 ring-1 ring-slate-200">
-                          {event.eventType.replaceAll(".", " ")}
-                        </span>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : null}
-            </details>
-
-            <details
-              className="rounded-2xl border border-slate-200 bg-white p-5"
-              id="general-messages"
-            >
-              <summary className="flex cursor-pointer list-none flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
-                    General messages
-                  </p>
-                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-                    Messages not tied to work
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Use this for a conversation that does not belong to a specific
-                    item in Work &amp; Messages above.
-                  </p>
-                </div>
-                <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  Open messages
-                </span>
-              </summary>
-
-              {notes?.setupRequired ? (
-                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                  General messages are being prepared. Contact Atlas directly if
-                  you need help before this section is available.
-                </div>
-              ) : null}
-
-              {messages?.setupRequired && !notes?.setupRequired ? (
-                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                  Conversation history is being prepared. Your existing notes
-                  remain safe.
-                </div>
-              ) : null}
-
-              {!notes?.setupRequired && !messages?.setupRequired && canCreateNotes ? (
-                <form
-                  action={createOrganizationNote}
-                  className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5"
-                >
-                  <input
-                    name="organizationId"
-                    type="hidden"
-                    value={primaryOrganization?.id ?? ""}
-                  />
-                  <div className="grid gap-4">
-                    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-                      Mention <span className="font-semibold">@Atlas</span> in
-                      a message to place the conversation in the Atlas Inbox.
-                      No external notification or AI runs.
-                    </div>
-                    <label className="block">
-                      <span className="text-sm font-medium text-slate-700">
-                        Note title
-                      </span>
-                      <input
-                        className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                        name="title"
-                        placeholder="Example: Website positioning feedback"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-sm font-medium text-slate-700">
-                        First message
-                      </span>
-                      <textarea
-                        className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                        name="body"
-                        placeholder="Start the conversation. Mention @Atlas when you need Atlas Admin attention."
-                      />
-                    </label>
-                  </div>
-                  <button
-                    className="mt-4 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                    type="submit"
-                  >
-                    Start conversation
-                  </button>
-                </form>
-              ) : null}
-
-              {!notes?.setupRequired && !messages?.setupRequired ? (
-                <div className="mt-5 space-y-4">
-                  {notes?.data.length === 0 ? (
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-                      No notes have been saved for this organization yet.
-                    </div>
-                  ) : null}
-
-                  {notes?.data.map((note) => (
-                    <article
-                      className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
-                      key={note.id}
-                    >
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <h3 className="text-lg font-semibold text-slate-950">
-                          {note.title}
-                        </h3>
-                        {note.attentionRequested ? (
-                          <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
-                            Atlas attention requested
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <div className="mt-4 space-y-3">
-                        {messages?.data
-                          .filter((message) => message.noteId === note.id)
-                          .map((message) => (
-                            <div
-                              className={`rounded-2xl border p-4 ${
-                                message.authorKind === "atlas_admin"
-                                  ? "border-blue-200 bg-blue-50"
-                                  : "border-slate-200 bg-white"
-                              }`}
-                              key={message.id}
-                            >
-                              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                                <p className="text-sm font-semibold text-slate-950">
-                                  {message.authorKind === "atlas_admin"
-                                    ? "Atlas Admin"
-                                    : message.authorDisplayName}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  {formatDateTime(message.createdAt)}
-                                </p>
-                              </div>
-                              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                                {message.body}
-                              </p>
-                            </div>
-                          ))}
-                      </div>
-
-                      <form action={createClientNoteMessage} className="mt-4">
-                        <input
-                          name="organizationId"
-                          type="hidden"
-                          value={note.organizationId}
-                        />
-                        <input name="noteId" type="hidden" value={note.id} />
-                        <label className="block">
-                          <span className="text-sm font-medium text-slate-700">
-                            Add a reply
-                          </span>
-                          <textarea
-                            className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                            name="body"
-                            placeholder="Write a new message. Mention @Atlas when you need attention."
-                          />
-                        </label>
-                        <button
-                          className="mt-3 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                          type="submit"
-                        >
-                          Send reply
-                        </button>
-                      </form>
-                    </article>
-                  ))}
-                </div>
-              ) : null}
-            </details>
-
-            <section
-              className="rounded-2xl border border-slate-200 bg-white p-5"
-              id="business-profile"
-            >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
-                    About your business
-                  </p>
-                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-                    Business profile
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    This is the structured business memory Atlas will use before
-                    any AI features are allowed.
-                  </p>
-                </div>
-                <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  {canEditBusinessProfile ? "Editable" : "Read only"}
-                </span>
-              </div>
-
-              {businessProfile?.setupRequired ? (
-                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-                  Atlas is preparing your business profile. Send Atlas a message
-                  with any important context you want captured now.
-                </div>
-              ) : null}
-
-              {!businessProfile?.setupRequired && canEditBusinessProfile ? (
-                <div className="mt-5 grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-                  <form action={saveBusinessProfile} className="space-y-4">
-                    <input
-                      name="organizationId"
-                      type="hidden"
-                      value={primaryOrganization?.id ?? ""}
-                    />
-                    {businessProfileFields.map((field) => (
-                      <label className="block" key={field.name}>
-                        <span className="text-sm font-medium text-slate-700">
-                          {field.label}
-                        </span>
-                        <span className="mt-1 block text-sm leading-6 text-slate-500">
-                          {field.description}
-                        </span>
-                        <textarea
-                          className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                          defaultValue={field.value ?? ""}
-                          name={field.name}
-                          placeholder={field.placeholder}
-                        />
-                      </label>
-                    ))}
-
-                    <button
-                      className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                      type="submit"
-                    >
-                      Save business profile
-                    </button>
-                  </form>
-
-                  <aside className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Profile progress
-                    </p>
-                    <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-950">
-                      {completedProfileFields.length}/5 fields filled
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Last updated: {formatDateTime(businessProfile?.data?.updatedAt)}
-                    </p>
-                    <div className="mt-5 space-y-4">
-                      {businessProfileFields.map((field) => (
-                        <div key={field.name}>
-                          <p className="text-sm font-semibold text-slate-950">
-                            {field.label}
-                          </p>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">
-                            {field.value || "Not filled in yet."}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </aside>
-                </div>
-              ) : null}
-
-              {!businessProfile?.setupRequired && !canEditBusinessProfile ? (
-                <div className="mt-5">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Profile progress
-                    </p>
-                    <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-950">
-                      {completedProfileFields.length}/5 fields filled
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Last updated: {formatDateTime(businessProfile?.data?.updatedAt)}
-                    </p>
-                  </div>
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  {businessProfileFields.map((field) => (
-                    <div
-                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                      key={field.name}
-                    >
-                      <p className="text-sm font-semibold text-slate-950">
-                        {field.label}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
-                        {field.value || "Not filled in yet."}
-                      </p>
-                    </div>
-                  ))}
-                  </div>
-                </div>
-              ) : null}
+              <DepartmentCard
+                accent="blue"
+                badge="MICAH"
+                description="Social images, captions, concepts, campaign drafts, and client review before anything goes public."
+                href={clientWorkspaceHref("/client/micah", previewOrgSlug)}
+                metric={`${draftCount} drafts`}
+                secondaryMetric={`${draftsAwaitingReview} review`}
+                title="Social Media"
+              />
+              <DepartmentCard
+                accent="indigo"
+                badge="DAVID"
+                description="CRM-style follow-up, action items, work review, approvals, and next steps that keep deals moving."
+                href={clientWorkspaceHref("/client/david", previewOrgSlug)}
+                metric={`${actionCount} actions`}
+                secondaryMetric={`${reviewCount} review`}
+                title="CRM & Follow-up"
+              />
             </section>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-5">
-              <h2 className="text-lg font-semibold text-slate-950">
-                Your organization memberships
-              </h2>
-              <div className="mt-4 divide-y divide-slate-200">
-                {memberships.data.map((membership) => (
-                  <div className="py-4 first:pt-0 last:pb-0" key={membership.id}>
-                    <p className="font-medium text-slate-950">
-                      {membership.organization?.name ?? "Unknown organization"}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Role: {membership.role}
-                    </p>
-                  </div>
-                ))}
+            <section className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Business memory
+                </p>
+                <h2 className="mt-3 text-xl font-bold text-slate-950">
+                  {profileFieldsFilled}/5 profile fields filled
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Last updated: {formatDateTime(businessProfileData?.updatedAt)}
+                </p>
               </div>
-            </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Client rule
+                </p>
+                <h2 className="mt-3 text-xl font-bold text-slate-950">
+                  Approval before action.
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Drafts, outreach, and CRM work stay visible. Atlas does not
+                  contact, publish, or spend without approval.
+                </p>
+              </div>
+            </section>
           </>
         ) : null}
       </div>
