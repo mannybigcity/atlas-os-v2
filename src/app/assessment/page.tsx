@@ -35,6 +35,36 @@ const evaluationAreas = [
   ["technology", "Technology"],
 ] as const;
 
+const monthlyLeadVolumes = [
+  ["under_10", "Under 10 new leads per month"],
+  ["10_25", "10-25 new leads per month"],
+  ["26_75", "26-75 new leads per month"],
+  ["76_plus", "76+ new leads per month"],
+  ["not_sure", "Not sure yet"],
+] as const;
+
+const followUpSpeeds = [
+  ["same_day", "Same day"],
+  ["1_2_days", "1-2 days"],
+  ["3_7_days", "3-7 days"],
+  ["when_remembered", "When someone remembers"],
+  ["not_tracking", "We are not tracking it yet"],
+] as const;
+
+const pilotBudgets = [
+  ["under_500", "Under $500"],
+  ["500_1500", "$500-$1,500"],
+  ["1500_3000", "$1,500-$3,000"],
+  ["3000_plus", "$3,000+"],
+  ["need_recommendation", "I need a recommendation"],
+] as const;
+
+const contactPreferences = [
+  ["phone", "Phone call"],
+  ["email", "Email"],
+  ["text", "Text message"],
+] as const;
+
 type PageProps = {
   searchParams: Promise<{ error?: string; status?: string }>;
 };
@@ -115,8 +145,21 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
               <Question number="9" title="How soon are you looking to improve your business?">
                 <div className="grid gap-3 sm:grid-cols-2"><Choice label="Immediately" name="improvementTiming" type="radio" value="immediately" /><Choice label="Within 30 days" name="improvementTiming" type="radio" value="30_days" /><Choice label="Within 90 days" name="improvementTiming" type="radio" value="90_days" /><Choice label="Just exploring" name="improvementTiming" type="radio" value="exploring" /></div>
               </Question>
-              <Question number="10" title="What's the best way to reach you?">
+              <Question number="10" title="How many new leads do you usually get each month?" help="A close estimate is fine. This helps Atlas size the first operating cycle.">
+                <div className="grid gap-3 sm:grid-cols-2">{monthlyLeadVolumes.map(([value, label]) => <Choice key={value} label={label} name="monthlyLeadVolume" type="radio" value={value} />)}</div>
+              </Question>
+              <Question number="11" title="How fast do new leads usually get a follow-up?">
+                <div className="grid gap-3 sm:grid-cols-2">{followUpSpeeds.map(([value, label]) => <Choice key={value} label={label} name="followUpSpeed" type="radio" value={value} />)}</div>
+              </Question>
+              <Question number="12" title="If Atlas is a fit, what budget range should Manny design around?" help="This is not a payment screen. It keeps the recommendation realistic.">
+                <div className="grid gap-3 sm:grid-cols-2">{pilotBudgets.map(([value, label]) => <Choice key={value} label={label} name="pilotBudget" type="radio" value={value} />)}</div>
+              </Question>
+              <Question number="13" title="What's the best way to reach you?">
                 <div className="grid gap-5 sm:grid-cols-2"><Field label="Your name" name="contactName" /><Field label="Business name" name="businessName" /><Field label="Email" name="contactEmail" type="email" /><Field label="Phone" name="contactPhone" type="tel" /><div className="sm:col-span-2"><Field label="Website (optional)" name="website" placeholder="siscustomcreations.com" required={false} /></div></div>
+                <div className="mt-5">
+                  <p className="text-sm font-semibold text-[#16325c]">Preferred contact method</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">{contactPreferences.map(([value, label]) => <Choice key={value} label={label} name="preferredContactMethod" type="radio" value={value} />)}</div>
+                </div>
                 <label className="mt-5 block text-sm font-semibold text-[#16325c]">Social media links or handles (optional)<textarea className="field mt-2 min-h-24" maxLength={1500} name="socialMedia" placeholder="Facebook, Instagram, TikTok, LinkedIn, YouTube, Etsy, or other public pages" /></label>
                 <label className="mt-6 flex items-start gap-3 text-sm leading-6 text-slate-600">
                   <input className="mt-1 h-4 w-4 accent-[#1246a0]" name="consentToContact" required type="checkbox" value="yes" />
