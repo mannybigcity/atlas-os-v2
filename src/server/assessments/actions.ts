@@ -22,6 +22,10 @@ const allowed = {
   businessSizes: new Set(["just_me", "2_5", "6_15", "16_50", "50_plus"]),
   aiTools: new Set(["none", "chatgpt", "claude", "gemini", "copilot", "multiple"]),
   timing: new Set(["immediately", "30_days", "90_days", "exploring"]),
+  monthlyLeadVolumes: new Set(["under_10", "10_25", "26_75", "76_plus", "not_sure"]),
+  followUpSpeeds: new Set(["same_day", "1_2_days", "3_7_days", "when_remembered", "not_tracking"]),
+  pilotBudgets: new Set(["under_500", "500_1500", "1500_3000", "3000_plus", "need_recommendation"]),
+  contactPreferences: new Set(["phone", "email", "text"]),
 };
 
 function textValue(formData: FormData, name: string, maxLength: number) {
@@ -75,6 +79,10 @@ export async function submitBusinessAssessment(formData: FormData) {
   const businessSize = textValue(formData, "businessSize", 50);
   const aiTools = selectedValues(formData, "aiTools", allowed.aiTools);
   const improvementTiming = textValue(formData, "improvementTiming", 50);
+  const monthlyLeadVolume = textValue(formData, "monthlyLeadVolume", 50);
+  const followUpSpeed = textValue(formData, "followUpSpeed", 50);
+  const pilotBudget = textValue(formData, "pilotBudget", 50);
+  const preferredContactMethod = textValue(formData, "preferredContactMethod", 50);
   const contactName = textValue(formData, "contactName", 200);
   const contactEmail = textValue(formData, "contactEmail", 320).toLowerCase();
   const contactPhone = textValue(formData, "contactPhone", 50);
@@ -94,6 +102,10 @@ export async function submitBusinessAssessment(formData: FormData) {
     !allowed.businessSizes.has(businessSize) ||
     aiTools.length === 0 ||
     !allowed.timing.has(improvementTiming) ||
+    !allowed.monthlyLeadVolumes.has(monthlyLeadVolume) ||
+    !allowed.followUpSpeeds.has(followUpSpeed) ||
+    !allowed.pilotBudgets.has(pilotBudget) ||
+    !allowed.contactPreferences.has(preferredContactMethod) ||
     contactName.length < 2 ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail) ||
     contactPhone.length < 7 ||
@@ -120,6 +132,10 @@ export async function submitBusinessAssessment(formData: FormData) {
     business_size: businessSize,
     ai_tools: aiTools,
     improvement_timing: improvementTiming,
+    monthly_lead_volume: monthlyLeadVolume,
+    follow_up_speed: followUpSpeed,
+    pilot_budget: pilotBudget,
+    preferred_contact_method: preferredContactMethod,
     contact_name: contactName,
     contact_email: contactEmail,
     contact_phone: contactPhone,
@@ -150,6 +166,10 @@ export async function submitBusinessAssessment(formData: FormData) {
     biggestChallenge,
     ninetyDayGoal,
     improvementTiming,
+    monthlyLeadVolume,
+    followUpSpeed,
+    pilotBudget,
+    preferredContactMethod,
     website,
     socialMedia: socialMedia || null,
     createdAt: submittedAt,
