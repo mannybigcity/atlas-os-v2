@@ -19,6 +19,6 @@ export default function robots(): MetadataRoute.Robots {
         "/set-password",
       ],
     },
-    sitemap: "https://atlasforentrepreneurs.com/sitemap.xml",
+    sitemap: "https://www.siscustomcreations.com/sitemap.xml",
   };
 }

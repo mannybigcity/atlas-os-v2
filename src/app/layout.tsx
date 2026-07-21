@@ -3,10 +3,10 @@ import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://atlasforentrepreneurs.com"),
-  title: "Atlas For Entrepreneurs | Service Business Growth OS",
+  metadataBase: new URL("https://www.siscustomcreations.com"),
+  title: "SIS Custom Creations | Creative Commerce Studio",
   description:
-    "A practical growth operating system for owner-led service businesses. Organize leads, follow-up, marketing, and the next priority in one private workspace.",
+    "Premium custom apparel, creative experiences, DIY kits, and SIS AI design tools for families, teams, schools, and businesses.",
 };
 
 export default function RootLayout({

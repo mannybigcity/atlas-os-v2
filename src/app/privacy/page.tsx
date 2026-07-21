@@ -217,9 +217,9 @@ export default function PrivacyPage() {
           Submit a request by emailing{" "}
           <a
             className={legalLinkClass}
-            href="mailto:info@atlasforentrepreneurs.com?subject=Privacy%20request"
+            href="mailto:hello@siscustomcreations.com?subject=Privacy%20request"
           >
-            info@atlasforentrepreneurs.com
+            hello@siscustomcreations.com
           </a>{" "}
           with the subject “Privacy request.” We may need to verify your identity or
           authority before acting. If a request is denied, reply with the subject
@@ -242,8 +242,8 @@ export default function PrivacyPage() {
         </p>
         <p>
           Questions or privacy requests may be sent to{" "}
-          <a className={legalLinkClass} href="mailto:info@atlasforentrepreneurs.com">
-            info@atlasforentrepreneurs.com
+          <a className={legalLinkClass} href="mailto:hello@siscustomcreations.com">
+            hello@siscustomcreations.com
           </a>
           .
         </p>

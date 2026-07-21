@@ -243,8 +243,8 @@ export default function TermsPage() {
         </p>
         <p>
           Questions may be sent to{" "}
-          <a className={legalLinkClass} href="mailto:info@atlasforentrepreneurs.com">
-            info@atlasforentrepreneurs.com
+          <a className={legalLinkClass} href="mailto:hello@siscustomcreations.com">
+            hello@siscustomcreations.com
           </a>
           .
         </p>

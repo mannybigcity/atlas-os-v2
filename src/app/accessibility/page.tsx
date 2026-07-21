@@ -49,8 +49,8 @@ export default function AccessibilityPage() {
         <p>
           If you cannot access part of the website or complete the assessment,
           email{" "}
-          <a className={legalLinkClass} href="mailto:info@atlasforentrepreneurs.com?subject=Accessibility%20request">
-            info@atlasforentrepreneurs.com
+          <a className={legalLinkClass} href="mailto:hello@siscustomcreations.com?subject=Accessibility%20request">
+            hello@siscustomcreations.com
           </a>{" "}
           with the subject “Accessibility request.” Please describe the page,
           information, or action you were trying to use and the format or assistance

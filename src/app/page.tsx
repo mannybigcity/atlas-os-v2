@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { AtlasHomepage } from "@/components/atlas-homepage";
+import { CustomPrintPage } from "@/components/custom-print-page";
 
 export const metadata: Metadata = {
-  title: "Atlas for Service Businesses | Lead Follow-Up & Growth OS",
+  title: "SIS Custom Creations | Creative Commerce Studio",
   description:
-    "Atlas helps owner-led service businesses organize leads, follow up on opportunities, keep marketing moving, and focus on the next growth priority.",
+    "Premium custom apparel, creative experiences, DIY kits, and SIS AI design tools for families, teams, schools, and businesses.",
   alternates: {
     canonical: "/",
   },
@@ -13,19 +13,19 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Atlas | The Growth OS for Owner-Led Service Businesses",
+    title: "SIS Custom Creations | Creative Commerce Studio",
     description:
-      "Stop losing customers between the first call and the follow-up. Start with a free service-business growth assessment.",
+      "Custom apparel, AI-assisted design, DIY kits, and creative experiences presented with a premium family-centered brand.",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Atlas | The Growth OS for Owner-Led Service Businesses",
+    title: "SIS Custom Creations | Creative Commerce Studio",
     description:
-      "Leads, follow-up, practical marketing, and one clear growth priority for owner-led service businesses.",
+      "Choose a garment, upload artwork, or start with SIS AI to order premium custom apparel and creative experiences.",
   },
 };
 
 export default function Home() {
-  return <AtlasHomepage />;
+  return <CustomPrintPage />;
 }
