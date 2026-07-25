@@ -4,9 +4,9 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.siscustomcreations.com"),
-  title: "SIS Custom Creations | Creative Commerce Studio",
+  title: "SIS Custom Creations | Create. Connect. Celebrate.",
   description:
-    "Premium custom apparel, creative experiences, DIY kits, and SIS AI design tools for families, teams, schools, and businesses.",
+    "Mobile creative experiences, sign parties, splatter paint parties, DIY kits, custom signs, fundraising projects, and custom apparel by SIS Custom Creations.",
 };
 
 export default function RootLayout({
