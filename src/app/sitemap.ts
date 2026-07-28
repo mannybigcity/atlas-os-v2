@@ -1,36 +1,20 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl = "https://www.siscustomcreations.com";
-
-const sisPages = [
-  "/sis-ai-design-studio",
-  "/custom-apparel",
-  "/fresh-apparel-design",
-  "/diy-kits",
-  "/diy-subscriptions",
-  "/paint-parties",
-  "/splatter-paint-parties",
-  "/group-events",
-  "/business-and-bulk-orders",
-  "/pricing",
-  "/gallery",
-  "/our-story",
-  "/contact",
-  "/faq",
-  "/cart",
-  "/checkout",
-  "/customer-account",
-  "/order-tracking",
-] as const;
+const siteUrl = "https://atlasforentrepreneurs.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: siteUrl, changeFrequency: "weekly", priority: 1 },
-    ...sisPages.map((page) => ({
-      url: `${siteUrl}${page}`,
-      changeFrequency: "monthly" as const,
-      priority: 0.7,
-    })),
+    {
+      url: `${siteUrl}/assessment`,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
+      url: `${siteUrl}/responsible-ai`,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
     {
       url: `${siteUrl}/privacy`,
       changeFrequency: "yearly",
@@ -45,11 +29,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${siteUrl}/accessibility`,
       changeFrequency: "yearly",
       priority: 0.3,
-    },
-    {
-      url: `${siteUrl}/responsible-ai`,
-      changeFrequency: "monthly",
-      priority: 0.4,
     },
   ];
 }
