@@ -34,6 +34,7 @@ export type ContentDraft = {
   status: ContentDraftStatus;
   generatedBy: string;
   generationSource: string;
+  metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   events: ContentDraftEvent[];
@@ -65,6 +66,7 @@ type DraftRow = {
   status: ContentDraftStatus;
   generated_by: string;
   generation_source: string;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   organization_content_draft_events: Array<{
@@ -99,6 +101,7 @@ export async function getContentStudio(
         status,
         generated_by,
         generation_source,
+        metadata,
         created_at,
         updated_at,
         organization_content_draft_events (
@@ -145,6 +148,7 @@ export async function getContentStudio(
     status: row.status,
     generatedBy: row.generated_by,
     generationSource: row.generation_source,
+    metadata: row.metadata ?? {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     events: (row.organization_content_draft_events ?? [])

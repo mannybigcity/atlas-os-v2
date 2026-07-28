@@ -130,6 +130,25 @@ function MetricCard({
   );
 }
 
+function PackageCount({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-2xl border border-indigo-100 bg-white p-4">
+      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+        {value}
+      </p>
+    </div>
+  );
+}
+
 export function ClientQTimeDashboard({
   workspace,
   dashboard,
@@ -212,6 +231,18 @@ export function ClientQTimeDashboard({
   const weeklyAiCount = dashboard.weeklyCounts.aiRequests;
   const readyReviewCount = approvalQueue.length;
   const openNotesCount = notes.length;
+  const flyerConceptCount = (contentStudio?.drafts ?? []).filter((draft) =>
+    draft.metadata.asset_type === "flyer_concept",
+  ).length;
+  const socialDraftCount = (contentStudio?.drafts ?? []).filter((draft) =>
+    draft.metadata.asset_type === "social_post",
+  ).length;
+  const venueProspectCount = (pipeline?.opportunities ?? []).filter(
+    (opportunity) => opportunity.opportunityType === "venue",
+  ).length;
+  const foodTruckProspectCount = (pipeline?.opportunities ?? []).filter(
+    (opportunity) => opportunity.opportunityType === "food_truck",
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -346,6 +377,46 @@ export function ClientQTimeDashboard({
             </div>
           )}
         </article>
+      </section>
+
+      <section className="rounded-[1.8rem] border border-indigo-200 bg-indigo-50/60 p-5 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-700">
+              This week&apos;s Q-Time package
+            </p>
+            <h3 className="mt-2 text-xl font-semibold tracking-[-0.04em] text-slate-950">
+              Research and creative are ready for review
+            </h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
+              All items below are drafts. No outreach was sent, no post was
+              published, and no event, availability, or result is being claimed.
+            </p>
+          </div>
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-amber-800">
+            Approval required
+          </span>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <PackageCount label="Flyer concepts" value={flyerConceptCount} />
+          <PackageCount label="Social drafts" value={socialDraftCount} />
+          <PackageCount label="Venue prospects" value={venueProspectCount} />
+          <PackageCount label="Food-truck prospects" value={foodTruckProspectCount} />
+        </div>
+        <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
+          <Link
+            className="rounded-full bg-white px-4 py-2 text-indigo-800 ring-1 ring-indigo-200 transition hover:bg-indigo-100"
+            href={clientWorkspaceHref("/client/micah", workspace.previewOrgSlug)}
+          >
+            Review MICAH package
+          </Link>
+          <Link
+            className="rounded-full bg-white px-4 py-2 text-indigo-800 ring-1 ring-indigo-200 transition hover:bg-indigo-100"
+            href={clientWorkspaceHref("/client/hunter", workspace.previewOrgSlug)}
+          >
+            Review HUNTER research
+          </Link>
+        </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-3">
