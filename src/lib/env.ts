@@ -27,6 +27,16 @@ export function getSuperAdminEmails() {
     .filter(Boolean);
 }
 
+export function getSupabaseServiceRoleKey() {
+  const value = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  if (!value) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY on the server.");
+  }
+
+  return value;
+}
+
 export function isSuperAdminEmail(email?: string | null) {
   if (!email) {
     return false;
