@@ -10,7 +10,7 @@ import { getPilotWorkspace } from "@/server/pilot/queries";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "DAVID CRM & Follow-up | Atlas For Entrepreneurs",
+  title: "Follow-up Desk | Client Workspace",
   robots: { index: false, follow: false },
 };
 
@@ -36,13 +36,13 @@ export default async function DavidPage({ searchParams }: DavidPageProps) {
   return (
     <ClientWorkspaceScreen
       backHref={clientWorkspaceHref("/client", previewOrgSlug)}
-      description="DAVID keeps follow-up, approvals, open work, and CRM-style next actions from getting lost."
-      eyebrow="DAVID"
+      description="The Follow-up Desk keeps approvals, open work, and CRM-style next actions from getting lost."
+      eyebrow="Follow-up Desk"
+      organizationName={primaryOrganization?.name}
       previewMode={isClientPreview}
-      title={`${primaryOrganization?.name ?? "Client"} CRM & Follow-up`}
     >
       <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5 text-sm leading-6 text-indigo-950">
-        <p className="font-semibold">DAVID is the follow-up desk.</p>
+        <p className="font-semibold">The Follow-up Desk keeps next actions visible.</p>
         <p className="mt-1">
           Today this screen uses the 30-day plan, action queue, work reviews,
           and approval messages. The deeper CRM table can come next, but this is
@@ -52,7 +52,7 @@ export default async function DavidPage({ searchParams }: DavidPageProps) {
 
       {pilot?.setupRequired ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-          DAVID is preparing the follow-up workspace for this organization.
+          The Follow-up Desk is preparing this workspace.
         </div>
       ) : null}
 

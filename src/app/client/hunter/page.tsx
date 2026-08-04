@@ -10,7 +10,7 @@ import { getOpportunityPipeline } from "@/server/opportunities/queries";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "HUNTER Leads & Outreach | Atlas For Entrepreneurs",
+  title: "Growth Research | Client Workspace",
   robots: { index: false, follow: false },
 };
 
@@ -31,14 +31,14 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
   return (
     <ClientWorkspaceScreen
       backHref={clientWorkspaceHref("/client", previewOrgSlug)}
-      description="HUNTER tracks leads, sponsors, partners, venues, and warm opportunities before DAVID turns them into follow-up."
-      eyebrow="HUNTER"
+      description="Growth research tracks leads, sponsors, partners, venues, and warm opportunities before they become follow-up."
+      eyebrow="Growth research"
+      organizationName={primaryOrganization?.name}
       previewMode={isClientPreview}
-      title={`${primaryOrganization?.name ?? "Client"} Leads & Outreach`}
     >
       {pipeline?.setupRequired ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-          HUNTER is preparing the opportunity pipeline for this workspace.
+          Growth research is preparing the opportunity pipeline for this workspace.
         </div>
       ) : null}
 

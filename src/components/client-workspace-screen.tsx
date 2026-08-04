@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { SurfaceShell } from "@/components/surface-shell";
-import { signOut } from "@/server/auth/actions";
+import { ClientPortalShell } from "@/components/client-portal-shell";
 
 type ClientWorkspaceScreenProps = {
   backHref: string;
@@ -9,7 +8,7 @@ type ClientWorkspaceScreenProps = {
   description: string;
   eyebrow: string;
   previewMode?: boolean;
-  title: string;
+  organizationName?: string | null;
 };
 
 export function ClientWorkspaceScreen({
@@ -18,10 +17,10 @@ export function ClientWorkspaceScreen({
   description,
   eyebrow,
   previewMode = false,
-  title,
+  organizationName,
 }: ClientWorkspaceScreenProps) {
   return (
-    <SurfaceShell description={description} eyebrow={eyebrow} title={title}>
+    <ClientPortalShell description={description} eyebrow={eyebrow} organizationName={organizationName}>
       <div className="space-y-5">
         {previewMode ? (
           <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
@@ -38,7 +37,7 @@ export function ClientWorkspaceScreen({
             className="w-fit rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
             href={backHref}
           >
-            ← Command Center
+            ← Workspace overview
           </Link>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
@@ -47,19 +46,11 @@ export function ClientWorkspaceScreen({
             >
               Public site
             </Link>
-            <form action={signOut}>
-              <button
-                className="w-full rounded-full bg-slate-950 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
-                type="submit"
-              >
-                Sign out
-              </button>
-            </form>
           </div>
         </div>
 
         {children}
       </div>
-    </SurfaceShell>
+    </ClientPortalShell>
   );
 }

@@ -88,7 +88,7 @@ function getPlanPriority(
   return {
     title: `Add the first 30-day priority for ${organizationName}.`,
     detail:
-      "Atlas needs one clear goal, one success definition, and the next check-in date before the plan can turn into a repeatable weekly loop.",
+      "The workspace needs one clear goal, one success definition, and the next check-in date before the plan can turn into a repeatable weekly loop.",
     needsInput: true,
   };
 }
@@ -298,7 +298,7 @@ export function ClientQTimeDashboard({
 
           {priority.needsInput ? (
             <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-              Truthful gap: Atlas still needs either a saved 30-day plan or a
+              Truthful gap: The workspace still needs either a saved 30-day plan or a
               clear next check-in date to make this priority fully concrete.
             </div>
           ) : null}
@@ -373,7 +373,7 @@ export function ClientQTimeDashboard({
           ) : (
             <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
               The business profile has not been saved yet. That is the next
-              input needed before Atlas can give a sharper plan.
+              input needed before the workspace can give a sharper plan.
             </div>
           )}
         </article>
@@ -432,7 +432,7 @@ export function ClientQTimeDashboard({
               ? emptyState({
                   title: "Nothing is waiting for review.",
                   body:
-                    "Atlas does not have any client-ready content, deliverables, or attention requests yet. The next input is the first item to approve.",
+                    "There are no client-ready content, deliverables, or attention requests yet. The next input is the first item to approve.",
                 })
               : approvalQueue.slice(0, 4).map((item) => {
                   if ("title" in item && "attentionRequested" in item) {
@@ -568,7 +568,7 @@ export function ClientQTimeDashboard({
               ? emptyState({
                   title: "No open opportunities yet.",
                   body:
-                    "The workspace does not have a current prospect list. That is the next place HUNTER should fill in.",
+                    "The workspace does not have a current prospect list. That is the next place the growth research tool should fill in.",
                 })
               : openPipeline.slice(0, 5).map((opportunity) => (
                   <article
@@ -674,7 +674,7 @@ export function ClientQTimeDashboard({
               emptyState({
                 title: "No content drafts yet.",
                 body:
-                  "There are no visible content drafts in this workspace. Atlas can still draft them, but the current state is honest: nothing is ready for review yet.",
+                  "There are no visible content drafts in this workspace. The content tool can still draft them, but the current state is honest: nothing is ready for review yet.",
               })
             )}
           </div>
@@ -707,17 +707,17 @@ export function ClientQTimeDashboard({
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           <RoleLink
             href={clientWorkspaceHref("/client/hunter", workspace.previewOrgSlug)}
-            label="Hunter"
+            label="Growth research"
             note="Opportunity research and lead fit."
           />
           <RoleLink
             href={clientWorkspaceHref("/client/micah", workspace.previewOrgSlug)}
-            label="Micah"
+            label="Content studio"
             note="Drafts, captions, and content review."
           />
           <RoleLink
             href={clientWorkspaceHref("/client/david", workspace.previewOrgSlug)}
-            label="David"
+            label="Follow-up desk"
             note="CRM, follow-up, and review status."
           />
         </div>

@@ -321,7 +321,7 @@ export async function submitClientAiRequest(
       ...initialClientAiActionState,
       status: "failed",
       role: "atlas",
-      error: "Select a workspace before asking Atlas.",
+      error: "Select a workspace before asking the coordinator.",
     };
   }
 
@@ -360,7 +360,7 @@ export async function submitClientAiRequest(
       ...initialClientAiActionState,
       status: "failed",
       role,
-      error: "Workspace access could not be loaded. Try again or contact Atlas.",
+      error: "Workspace access could not be loaded. Try again or contact your workspace team.",
     };
   }
 
@@ -381,7 +381,7 @@ export async function submitClientAiRequest(
   const responsePrefix = decision.scopeStatus === "declined"
     ? "That request is not allowed here."
     : decision.scopeStatus === "rerouted"
-      ? decision.reason ?? "That request belongs with Atlas."
+      ? decision.reason ?? "That request belongs with the coordinator."
       : null;
 
   if (decision.blocked) {
@@ -409,7 +409,7 @@ export async function submitClientAiRequest(
         answer: response,
         nextStep:
           decision.scopeStatus === "declined"
-            ? "Ask Atlas to coordinate a safe workspace question."
+            ? "Ask the coordinator to handle a safe workspace question."
             : "Add the missing input and try again.",
         missingInputs:
           decision.scopeStatus === "needs_input" ? ["A clear question"] : [],
@@ -430,7 +430,7 @@ export async function submitClientAiRequest(
 
   if (decision.scopeStatus === "rerouted" && resolvedRole === "atlas") {
     const response =
-      decision.reason ?? "That question belongs in Atlas for coordination.";
+      decision.reason ?? "That question belongs with the coordinator.";
 
     try {
       const logged = await logClientAiRequest({
@@ -452,7 +452,7 @@ export async function submitClientAiRequest(
         requestId: logged.id,
         createdAt: logged.createdAt,
         answer: response,
-        nextStep: "Switch to Atlas if you want a coordinator-style answer.",
+        nextStep: "Switch to the coordinator for a workspace-wide answer.",
         missingInputs: [],
         error: null,
       };
@@ -486,7 +486,7 @@ export async function submitClientAiRequest(
         `Use only the supplied workspace context and do not invent facts, metrics, events, or results.`,
         `Never browse the web, scrape sources, send messages, publish content, spend money, or change credentials.`,
         `If the request is missing key inputs, say exactly which ones are needed.`,
-        `If the request would require an external action, respond that Atlas must coordinate it.`,
+        `If the request would require an external action, respond that the workspace team must coordinate it.`,
         `Return only the requested JSON.`,
         "",
         guardrails,
@@ -505,7 +505,7 @@ export async function submitClientAiRequest(
         ? "OpenAI is not configured in the server runtime."
         : error instanceof IntegrationRequestError
           ? `OpenAI request failed (${error.code}).`
-          : "Atlas could not generate a response right now.";
+          : "The workspace could not generate a response right now.";
 
     try {
       const logged = await logClientAiRequest({

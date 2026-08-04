@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   demoWorkEvents,
@@ -13,7 +14,6 @@ import {
 import {
   findShortestPath,
   interpolatePathPosition,
-  pathToPolyline,
 } from "@/lib/lions-den/pathfinding";
 import type {
   AgentSceneSnapshot,
@@ -75,6 +75,7 @@ export function LionsDenScene() {
   const selectedSnapshot = snapshots.find(
     (snapshot) => snapshot.agentId === selectedAgentId,
   );
+  const activeAgentIsMoving = progress > 0 && progress < 1;
 
   useEffect(() => {
     if (isPaused) return;
@@ -106,9 +107,9 @@ export function LionsDenScene() {
   );
 
   return (
-    <section className="lions-shell" aria-label="Atlas Lion's Den live office demo">
+    <section className="lions-shell" aria-label="Atlas Lion's Den public demo playback">
       <div className="lions-copy">
-        <span className="tiny-tag">Event-driven office preview</span>
+        <span className="tiny-tag">Demo event playback</span>
         <h1>Watch Atlas and the team move the work.</h1>
         <p>
           This is the sales-safe version of the Lion&apos;s Den. The room is
@@ -116,12 +117,12 @@ export function LionsDenScene() {
           walking.
         </p>
         <div className="lions-actions">
-          <a href="/assessment" className="primary-cta">
+          <Link href="/assessment" className="primary-cta">
             Start assessment
-          </a>
-          <a href="/login" className="secondary-cta">
+          </Link>
+          <Link href="/login" className="secondary-cta">
             Client login
-          </a>
+          </Link>
         </div>
         <p className="lions-note">
           Public mode uses demo data. Private client work stays behind login and
@@ -131,6 +132,11 @@ export function LionsDenScene() {
 
       <div className="office-wrap">
         <div className="office-label">The Lion&apos;s Den — event floor</div>
+        <div className="office-live-badge" aria-live="polite">
+          <span className="demo-dot" />
+          <strong>DEMO PLAYBACK</strong>
+          <small>telemetry not connected</small>
+        </div>
         <div className="office-stage">
           {officeZones.map((zone) => (
             <div
@@ -147,37 +153,6 @@ export function LionsDenScene() {
             </div>
           ))}
 
-          <svg className="path-layer" viewBox="0 0 100 100" aria-hidden="true">
-            {navigationEdges.map((edge) => {
-              const start = navigationNodes.find((node) => node.id === edge.from);
-              const end = navigationNodes.find((node) => node.id === edge.to);
-              if (!start || !end) return null;
-              return (
-                <line
-                  key={`${edge.from}-${edge.to}`}
-                  x1={start.x}
-                  y1={start.y}
-                  x2={end.x}
-                  y2={end.y}
-                  className="path-edge"
-                />
-              );
-            })}
-            <polyline
-              points={pathToPolyline(activePath, navigationNodes)}
-              className="active-path"
-            />
-            {navigationNodes.map((node) => (
-              <circle
-                key={node.id}
-                cx={node.x}
-                cy={node.y}
-                r={activePath.includes(node.id) ? 1.25 : 0.65}
-                className={activePath.includes(node.id) ? "node active-node" : "node"}
-              />
-            ))}
-          </svg>
-
           {lionsDenAgents.map((agent) => {
             const snapshot =
               snapshots.find((item) => item.agentId === agent.id) ??
@@ -191,28 +166,40 @@ export function LionsDenScene() {
               navigationNodes,
               agent.id === activeEvent.agentId ? progress : 0,
             );
+            const lookAhead = interpolatePathPosition(
+              path.length > 0 ? path : [agent.homeNodeId],
+              navigationNodes,
+              agent.id === activeEvent.agentId ? Math.min(progress + 0.03, 1) : 0,
+            );
             const selected = selectedAgentId === agent.id;
+            const moving = agent.id === activeEvent.agentId && activeAgentIsMoving;
+            const direction = lookAhead.x >= position.x ? 1 : -1;
 
             return (
               <button
                 key={agent.id}
                 type="button"
-                className={`agent-sprite ${selected ? "selected" : ""}`}
+                className={`agent-sprite ${selected ? "selected" : ""} ${moving ? "walking" : "idle"}`}
                 style={{
                   left: `${position.x}%`,
                   top: `${position.y}%`,
+                  zIndex: Math.round(position.y),
                   ["--agent-accent" as string]: agent.accent,
+                  ["--agent-direction" as string]: direction,
                 }}
                 onClick={() => setSelectedAgentId(agent.id)}
                 aria-label={`Inspect ${agent.name}`}
               >
-                <Image
-                  src={agent.sprite}
-                  alt=""
-                  width={92}
-                  height={124}
-                  sizes="92px"
-                />
+                <span className="agent-avatar">
+                  <Image
+                    src={agent.id === "atlas" ? "/live-sprites/atlas-live.png" : agent.id === "hunter" ? "/live-sprites/hunter-live.png" : agent.id === "micah" ? "/live-sprites/micah-live.png" : "/live-sprites/david-live.png"}
+                    alt=""
+                    width={92}
+                    height={124}
+                    sizes="92px"
+                  />
+                  {moving ? <span className="walk-shadow" aria-hidden="true" /> : null}
+                </span>
                 <span className={`agent-state agent-state-${statusTone(snapshot.state)}`}>
                   {stateLabels[snapshot.state]}
                 </span>
@@ -220,31 +207,6 @@ export function LionsDenScene() {
             );
           })}
 
-          <div className="mission-board">
-            <span>Mission</span>
-            <strong>Stop losing revenue between inquiry and follow-up.</strong>
-            <small>Stage: {activeEvent.eventType.replaceAll("_", " ")}</small>
-          </div>
-
-          <div className="command-board">
-            <span>Command board</span>
-            <div>
-              <strong>17</strong>
-              <small>lead signals</small>
-            </div>
-            <div>
-              <strong>5</strong>
-              <small>drafts waiting</small>
-            </div>
-            <div>
-              <strong>3</strong>
-              <small>follow-ups due</small>
-            </div>
-            <div>
-              <strong>2</strong>
-              <small>approvals</small>
-            </div>
-          </div>
         </div>
 
         <div className="office-controls">
@@ -261,7 +223,7 @@ export function LionsDenScene() {
           >
             Restart mission
           </button>
-          <span>Event source: demo adapter now, live Supabase/WebSocket adapter next.</span>
+          <span>Demo playback only. No private client telemetry is exposed here.</span>
         </div>
       </div>
 
@@ -308,7 +270,7 @@ export function LionsDenScene() {
 
       <div className="activity-feed">
         <div className="feed-title">
-          <span>Live work feed</span>
+          <span>Demo event feed</span>
           <strong>{activeEvent.occurredAt}</strong>
         </div>
         {demoWorkEvents.map((event, index) => {

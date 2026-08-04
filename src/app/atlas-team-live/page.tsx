@@ -5,9 +5,9 @@ import { LionsDenScene } from "@/components/lions-den/lions-den-scene";
 import { lionsDenAgents } from "@/lib/lions-den/demo-scenario";
 
 export const metadata: Metadata = {
-  title: "The Lion's Den | Atlas For Entrepreneurs",
+  title: "Atlas Team Demo | Atlas For Entrepreneurs",
   description:
-    "A sales-safe Atlas office preview where business assignments, approvals, and handoffs become visible.",
+    "A sales-safe Atlas office demo where business assignments, approvals, and handoffs become visible.",
 };
 
 export default function AtlasTeamLivePage() {
@@ -18,7 +18,7 @@ export default function AtlasTeamLivePage() {
           <span>A</span>
           <strong>
             Atlas Tiny Office
-            <small>Live product preview</small>
+            <small>Public demo playback</small>
           </strong>
         </Link>
         <div>
@@ -78,9 +78,9 @@ export default function AtlasTeamLivePage() {
             researcher, a content builder, and a CRM organizer all moving around
             one business goal.
           </p>
-          <a href="/assessment" className="primary-cta">
+          <Link href="/assessment" className="primary-cta">
             Let Atlas find my revenue leak
-          </a>
+          </Link>
         </div>
         <div className="why-grid">
           <article>
@@ -107,7 +107,7 @@ export default function AtlasTeamLivePage() {
           <span>Your next move</span>
           <h2>Find the growth leak before buying another tool.</h2>
         </div>
-        <a href="/assessment">Start free assessment</a>
+        <Link href="/assessment">Start free assessment</Link>
       </section>
 
       <footer className="live-footer">

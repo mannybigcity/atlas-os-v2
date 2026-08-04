@@ -4,6 +4,8 @@ type SurfaceShellProps = {
   eyebrow: string;
   title: string;
   description: string;
+  className?: string;
+  contentClassName?: string;
   children?: ReactNode;
 };
 
@@ -11,11 +13,13 @@ export function SurfaceShell({
   eyebrow,
   title,
   description,
+  className = "",
+  contentClassName = "",
   children,
 }: SurfaceShellProps) {
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10">
-      <section className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+    <main className={`min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8 ${className}`}>
+      <section className="mx-auto max-w-7xl rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
           {eyebrow}
         </p>
@@ -25,7 +29,7 @@ export function SurfaceShell({
         <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
           {description}
         </p>
-        {children ? <div className="mt-8">{children}</div> : null}
+        {children ? <div className={`mt-8 ${contentClassName}`}>{children}</div> : null}
       </section>
     </main>
   );

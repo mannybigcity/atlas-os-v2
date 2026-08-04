@@ -83,9 +83,9 @@ export function ClientAiConsole({
             Ask a scoped role, keep the boundary visible.
           </h3>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-            Choose one role, ask one concrete question, and Atlas will either
-            answer from the workspace or reroute the question back to Atlas if
-            it falls outside that lane.
+            Choose one approved tool, ask one concrete question, and the
+            workspace will either answer from your data or reroute the question
+            to the coordinator if it falls outside that lane.
           </p>
         </div>
 
@@ -271,7 +271,7 @@ export function ClientAiConsole({
 
           {requests.length === 0 ? (
             <p className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm leading-6 text-slate-600">
-              No AI requests have been logged yet. Ask Atlas to create the first
+              No tool requests have been logged yet. Ask the coordinator to create the first
               workspace response.
             </p>
           ) : (

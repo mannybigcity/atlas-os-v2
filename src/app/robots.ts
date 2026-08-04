@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/client/", "/lions-den/", "/homepage-v2/"],
+      disallow: ["/client/", "/lions-den/"],
     },
     sitemap: "https://atlasforentrepreneurs.com/sitemap.xml",
   };

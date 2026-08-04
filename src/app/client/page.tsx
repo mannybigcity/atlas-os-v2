@@ -1,9 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { SurfaceShell } from "@/components/surface-shell";
+import { ClientPortalShell } from "@/components/client-portal-shell";
 import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
-import { signOut } from "@/server/auth/actions";
 import {
   getClientWorkspaceContext,
 } from "@/server/client-workspace/context";
@@ -12,7 +11,7 @@ import { getClientDashboardData } from "@/server/client-dashboard/queries";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Client Command Center | Atlas For Entrepreneurs",
+  title: "Client Workspace",
   robots: { index: false, follow: false },
 };
 
@@ -63,15 +62,15 @@ export default async function ClientDashboardPage({
     : null;
 
   return (
-    <SurfaceShell
-      description="A protected client workspace for QTIME that keeps the 30-day priority, approvals, calendar, pipeline, and scoped AI requests visible without exposing owner-only secrets or costs."
-      eyebrow={isClientPreview ? "Client preview" : "Client command center"}
-      title={primaryOrganization?.name ?? "Client workspace"}
+    <ClientPortalShell
+      description="A private workspace for priorities, approvals, projects, follow-up, files, reports, and approved tools—scoped to your organization."
+      eyebrow={isClientPreview ? "Client preview" : "Private client workspace"}
+      organizationName={primaryOrganization?.name}
     >
       <div className="space-y-4">
         {params?.status === "welcome" ? (
           <StatusAlert>
-            Welcome to Atlas. Your private workspace is ready.
+            Your private workspace is ready.
           </StatusAlert>
         ) : null}
 
@@ -82,18 +81,18 @@ export default async function ClientDashboardPage({
         ) : null}
 
         {params?.pilot === "review_saved" || params?.content === "review_saved" ? (
-          <StatusAlert>Your review was saved for Atlas.</StatusAlert>
+          <StatusAlert>Your review was saved.</StatusAlert>
         ) : null}
 
         {params?.pilot === "review_error" || params?.content === "review_error" ? (
           <StatusAlert tone="rose">
-            That review could not be saved. Try again or message Atlas.
+            That review could not be saved. Try again or message your workspace team.
           </StatusAlert>
         ) : null}
 
         {previewOrganization?.setupRequired ? (
           <StatusAlert tone="rose">
-            Atlas could not load the requested client preview. Confirm the
+            We could not load the requested client preview. Confirm the
             organization slug and workspace access.
           </StatusAlert>
         ) : null}
@@ -118,7 +117,7 @@ export default async function ClientDashboardPage({
 
         {memberships.setupRequired ? (
           <StatusAlert tone="rose">
-            Atlas could not load workspace access. Contact Atlas so we can
+            We could not load workspace access. Contact your workspace team so we can
             restore the account.
           </StatusAlert>
         ) : null}
@@ -126,7 +125,7 @@ export default async function ClientDashboardPage({
         {!memberships.setupRequired && memberships.data.length === 0 ? (
           <StatusAlert tone="amber">
             Your login is active, but a business workspace has not been assigned
-            yet. Contact Atlas and we will connect it.
+            yet. Contact your workspace team and we will connect it.
           </StatusAlert>
         ) : null}
 
@@ -136,21 +135,10 @@ export default async function ClientDashboardPage({
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Link
-          className="rounded-full border border-slate-300 px-5 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-          href="/"
-        >
+        <Link className="rounded-full border border-slate-300 px-5 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" href="/">
           Public site
         </Link>
-        <form action={signOut}>
-          <button
-            className="w-full rounded-full bg-slate-950 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
-            type="submit"
-          >
-            Sign out
-          </button>
-        </form>
       </div>
-    </SurfaceShell>
+    </ClientPortalShell>
   );
 }

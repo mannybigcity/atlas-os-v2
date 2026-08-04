@@ -25,13 +25,16 @@ The current foundation includes:
 - Client and Super Admin surfaces
 - Business profiles and threaded note conversations
 - Super Admin attention inbox and organization activity history
+- Sales CRM and approval-gated follow-up records
+- Additive organization-scoped project/mission and cash-ledger foundation
 - Production-pilot deployment and onboarding documentation
 
 Still intentionally excluded:
 
-- Billing
+- Billing and payment processing
+- Payment-provider webhooks, fulfillment, and verified production cash records
 - AI integrations
-- CRM, documents, and broad task-management features
+- Document synchronization and broad task-management automation
 - Extra UI/component libraries
 
 ## Getting started
@@ -47,6 +50,9 @@ Run the development server:
 ```bash
 npm run dev
 ```
+
+On Windows PowerShell, use `npm.cmd run dev` if the PowerShell npm shim is
+blocked.
 
 Open http://localhost:3000.
 
@@ -64,5 +70,6 @@ supabase/migrations/  Reviewed database migrations and RLS policies
 
 ## Next recommended step
 
-Complete the production pilot checklist, verify tenant isolation with a second
-organization, and onboard the first controlled founding customer.
+Apply and verify the reviewed Supabase migrations through the approved
+workflow, then complete the production pilot checklist. The operations
+registry migration creates no records and is not proof of live application.

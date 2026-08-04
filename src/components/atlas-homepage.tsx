@@ -136,17 +136,11 @@ function PrimaryCta({ className = "" }: { className?: string }) {
   );
 }
 
-export function AtlasHomepage({ preview = false }: { preview?: boolean }) {
-  const homeHref = preview ? "/homepage-v2" : "/";
+export function AtlasHomepage() {
+  const homeHref = "/";
 
   return (
     <div className="min-h-screen overflow-hidden bg-white text-[#071b42]">
-      {preview ? (
-        <div className="bg-[#f5b932] px-4 py-2 text-center text-[10px] font-black uppercase tracking-[0.16em] text-[#071b42]">
-          Private homepage review route
-        </div>
-      ) : null}
-
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#061631]/95 text-white backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-[84rem] items-center justify-between gap-3 px-5 py-3 sm:px-7">
           <Link className="flex items-center gap-3" href={homeHref}>

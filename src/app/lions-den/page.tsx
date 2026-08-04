@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { SurfaceShell } from "@/components/surface-shell";
 import { AdminPilotWorkspace } from "@/components/admin-pilot-workspace";
+import { CommandCenterOverview } from "@/components/command-center-overview";
 import { formatDateTime } from "@/lib/format";
 import {
   acknowledgeAttentionRequest,
@@ -25,6 +26,12 @@ import {
   getOrganizationsForSuperAdmin,
 } from "@/server/organizations/queries";
 import { getPilotWorkspace } from "@/server/pilot/queries";
+import { getRecentAgentRuns } from "@/server/agents/queries";
+import { getObsidianVaultSnapshot } from "@/server/brain/obsidian";
+import { getSalesProspects } from "@/server/sales/queries";
+import { getOperationsSnapshot } from "@/server/operations/queries";
+import { SurfaceTargetHud } from "@/components/surface-target-hud";
+import { getHudTarget } from "@/lib/hud-targets";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +48,7 @@ type LionsDenPageProps = {
     message?: string;
     pilot?: string;
     profile?: string;
+    hud?: string;
   }>;
 };
 
@@ -50,6 +58,12 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
   const organizations = await getOrganizationsForSuperAdmin();
   const clientAccess = await getClientAccessRoster();
   const assessments = await getBusinessAssessments();
+  const [sales, agentRuns, brain, operations] = await Promise.all([
+    getSalesProspects(),
+    getRecentAgentRuns(50),
+    getObsidianVaultSnapshot(),
+    getOperationsSnapshot(),
+  ]);
   const pilotWorkspaces = await Promise.all(
     organizations.data.map(async (organization) => ({
       organization,
@@ -75,16 +89,43 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
 
   return (
     <SurfaceShell
-      description="The secure internal operations surface for Atlas Super Admin users, intentionally isolated from the client dashboard."
+      className="lions-den-surface"
+      contentClassName="lions-den-content"
+      description="Your private operating center for decisions, revenue, client health, and the next action that matters."
       eyebrow="Super Admin"
       title="The Lion's Den"
     >
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-        Signed in as Super Admin {user.email}. Privileged access is enforced
-        server-side.
+      <SurfaceTargetHud target={getHudTarget(params?.hud)} />
+      <div className="lions-den-topline">
+        <div>
+          <p className="lions-den-kicker">ATLAS OS · Personal command center</p>
+          <h2>Good morning. Here is what needs your attention.</h2>
+          <p>Live workspace view · {user.email}</p>
+        </div>
+        <div className="lions-den-top-actions">
+          <Link href="/lions-den/brain">Second brain <span>↗</span></Link>
+          <Link href="/lions-den/sales">CRM / sales <span>↗</span></Link>
+          <Link href="/lions-den/missions">Projects &amp; missions <span>↗</span></Link>
+          <Link href="/lions-den/cash">Cash ledger <span>↗</span></Link>
+          <form action={signOut}><button type="submit">Sign out</button></form>
+        </div>
       </div>
 
-      <section className="mt-5 rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white">
+      <div className="lions-den-metrics" aria-label="Workspace summary">
+        <MetricCard label="New opportunities" value={String(newAssessmentCount)} tone="gold" detail="Business assessments" />
+        <MetricCard label="Open attention" value={String(openRequestCount)} tone="blue" detail="Client requests" />
+        <MetricCard label="Organizations" value={String(organizations.data.length)} tone="violet" detail="Connected workspaces" />
+        <MetricCard label="System status" value="Ready" tone="green" detail="Server-side access enforced" />
+      </div>
+
+      <CommandCenterOverview
+        agents={agentRuns}
+        brain={brain}
+        operations={operations}
+        sales={sales}
+      />
+
+      <section className="lions-den-command mt-5 rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">
@@ -105,12 +146,6 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
               href="/lions-den/agents"
             >
               Open Agent Command
-            </Link>
-            <Link
-              className="inline-flex justify-center rounded-full border border-white/20 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
-              href="/atlas-team-live"
-            >
-              Public live preview
             </Link>
           </div>
         </div>
@@ -903,6 +938,26 @@ function AdminProfileField({
         name={name}
       />
     </label>
+  );
+}
+
+function MetricCard({
+  detail,
+  label,
+  tone,
+  value,
+}: {
+  detail: string;
+  label: string;
+  tone: "blue" | "gold" | "green" | "violet";
+  value: string;
+}) {
+  return (
+    <div className={`lions-den-metric lions-den-metric-${tone}`}>
+      <div className="lions-den-metric-label">{label}</div>
+      <div className="lions-den-metric-value">{value}</div>
+      <div className="lions-den-metric-detail">{detail}</div>
+    </div>
   );
 }
 

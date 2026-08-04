@@ -94,20 +94,6 @@ export default async function LionDenAgentsPage() {
             Cost estimates are tracked per workflow.
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
-            Public preview
-          </p>
-          <Link
-            className="mt-3 inline-flex rounded-full bg-[#1246a0] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#0a2f78]"
-            href="/atlas-team-live"
-          >
-            View sales preview
-          </Link>
-          <p className="mt-3 text-sm text-slate-600">
-            Shows the team working without exposing client data.
-          </p>
-        </div>
       </div>
 
       <section className="mt-8">

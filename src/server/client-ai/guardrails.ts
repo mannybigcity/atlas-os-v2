@@ -103,38 +103,38 @@ const blockedPatterns = [
 export const clientAiRoleSpecs: ClientAiRoleSpec[] = [
   {
     role: "atlas",
-    label: "Atlas Coordinator",
-    title: "ATLAS",
+    label: "Workspace Coordinator",
+    title: "Coordinator",
     summary:
-      "Coordinate the client workspace, identify the next move, and keep approvals explicit.",
-    promptHint: "Ask Atlas to coordinate the workspace or identify the next move.",
+      "Coordinate the workspace, identify the next move, and keep approvals explicit.",
+    promptHint: "Ask the coordinator to organize the workspace or identify the next move.",
     markdownPath: path.join("docs", "client-ai", "atlas.md"),
   },
   {
     role: "hunter",
-    label: "Hunter Research",
-    title: "HUNTER",
+    label: "Growth Research",
+    title: "Growth Research",
     summary:
       "Research prospects and opportunities already in the workspace and identify missing facts.",
-    promptHint: "Ask Hunter to review prospects, fit, or lead research.",
+    promptHint: "Ask Growth Research to review prospects, fit, or lead research.",
     markdownPath: path.join("docs", "client-ai", "hunter.md"),
   },
   {
     role: "micah",
-    label: "Micah Drafts",
-    title: "MICAH",
+    label: "Content Studio",
+    title: "Content Studio",
     summary:
       "Draft captions, content calendars, and creative direction for human review.",
-    promptHint: "Ask Micah for draft content or content planning.",
+    promptHint: "Ask Content Studio for draft content or content planning.",
     markdownPath: path.join("docs", "client-ai", "micah.md"),
   },
   {
     role: "david",
-    label: "David CRM",
-    title: "DAVID",
+    label: "Follow-up Desk",
+    title: "Follow-up Desk",
     summary:
       "Report on follow-up, review status, and the next action the client should see.",
-    promptHint: "Ask David about CRM status, follow-up, or review queues.",
+    promptHint: "Ask the Follow-up Desk about CRM status, follow-up, or review queues.",
     markdownPath: path.join("docs", "client-ai", "david.md"),
   },
 ];
@@ -174,7 +174,7 @@ export function decideClientAiRoute(input: {
       routedTo: "atlas",
       scopeStatus: "declined",
       reason:
-        "That request asks Atlas to take an external or credentialed action, which is not allowed here.",
+        "That request asks the workspace team to take an external or credentialed action, which is not allowed here.",
       blocked: true,
     };
   }
@@ -195,7 +195,7 @@ export function decideClientAiRoute(input: {
       routedTo: "atlas",
       scopeStatus: "rerouted",
       reason:
-        "That is a coordination question, so Atlas should handle it instead of a narrower specialist.",
+        "That is a coordination question, so the coordinator should handle it instead of a narrower tool.",
       blocked: false,
     };
   }
@@ -219,7 +219,7 @@ export function decideClientAiRoute(input: {
       routedTo: "atlas",
       scopeStatus: "rerouted",
       reason:
-        "That is outside this role's scope. Ask Atlas to coordinate it or switch to the right specialist.",
+        "That is outside this tool's scope. Ask the coordinator to handle it or switch to the right tool.",
       blocked: false,
     };
   }
@@ -230,7 +230,7 @@ export function decideClientAiRoute(input: {
       routedTo: "atlas",
       scopeStatus: "rerouted",
       reason:
-        "That is outside this role's scope. Ask Atlas to coordinate it or switch to the right specialist.",
+        "That is outside this tool's scope. Ask the coordinator to handle it or switch to the right tool.",
       blocked: false,
     };
   }
@@ -241,7 +241,7 @@ export function decideClientAiRoute(input: {
       routedTo: "atlas",
       scopeStatus: "rerouted",
       reason:
-        "That is outside this role's scope. Ask Atlas to coordinate it or switch to the right specialist.",
+        "That is outside this tool's scope. Ask the coordinator to handle it or switch to the right tool.",
       blocked: false,
     };
   }

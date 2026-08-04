@@ -13,6 +13,10 @@ type ClientWorkspaceSearchParams = {
   previewOrg?: string;
 };
 
+function isSafeOrganizationSlug(value: string) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && value.length <= 80;
+}
+
 export type ClientWorkspaceContext = {
   user: User;
   isSuperAdmin: boolean;
@@ -42,8 +46,11 @@ export async function getClientWorkspaceContext(
 ): Promise<ClientWorkspaceContext> {
   const user = await requireUser(nextPath);
   const isSuperAdmin = isSuperAdminEmail(user.email);
-  const previewOrgSlug = isSuperAdmin
+  const requestedPreviewOrgSlug = isSuperAdmin
     ? String(searchParams?.previewOrg ?? "").trim().toLowerCase()
+    : "";
+  const previewOrgSlug = isSafeOrganizationSlug(requestedPreviewOrgSlug)
+    ? requestedPreviewOrgSlug
     : "";
   const previewOrganization = previewOrgSlug
     ? await getOrganizationBySlugForSuperAdmin(previewOrgSlug)

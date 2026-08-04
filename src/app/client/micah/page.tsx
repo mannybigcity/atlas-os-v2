@@ -10,7 +10,7 @@ import { getContentStudio } from "@/server/content-studio/queries";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "MICAH Social Media | Atlas For Entrepreneurs",
+  title: "Content Studio | Client Workspace",
   robots: { index: false, follow: false },
 };
 
@@ -36,14 +36,14 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
   return (
     <ClientWorkspaceScreen
       backHref={clientWorkspaceHref("/client", previewOrgSlug)}
-      description="MICAH prepares social images, captions, campaign directions, and post drafts for review before anything goes public."
-      eyebrow="MICAH"
+      description="Content Studio prepares social images, captions, campaign directions, and post drafts for review before anything goes public."
+      eyebrow="Content Studio"
+      organizationName={primaryOrganization?.name}
       previewMode={isClientPreview}
-      title={`${primaryOrganization?.name ?? "Client"} Social Media`}
     >
       {studio?.setupRequired ? (
         <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
-          MICAH is preparing the Content Studio for this workspace.
+          Content Studio is preparing this workspace.
         </div>
       ) : null}
 
