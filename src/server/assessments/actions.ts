@@ -115,6 +115,28 @@ export async function submitBusinessAssessment(formData: FormData) {
     !consentToContact;
 
   if (invalid) {
+    console.error("Assessment validation failed", {
+      businessDescription: businessDescription.length >= 10,
+      idealCustomer: idealCustomer.length >= 3,
+      customerSources: customerSources.length > 0,
+      biggestChallenge: allowed.challenges.has(biggestChallenge),
+      ninetyDayGoal: ninetyDayGoal.length >= 5,
+      evaluationAreas: evaluationAreas.length > 0,
+      businessSize: allowed.businessSizes.has(businessSize),
+      aiTools: aiTools.length > 0,
+      improvementTiming: allowed.timing.has(improvementTiming),
+      monthlyLeadVolume: allowed.monthlyLeadVolumes.has(monthlyLeadVolume),
+      followUpSpeed: allowed.followUpSpeeds.has(followUpSpeed),
+      pilotBudget: allowed.pilotBudgets.has(pilotBudget),
+      preferredContactMethod: allowed.contactPreferences.has(preferredContactMethod),
+      contactName: contactName.length >= 2,
+      contactEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail),
+      contactPhone: contactPhone.length >= 7,
+      businessName: businessName.length >= 2,
+      website: websiteInput.length === 0 || Boolean(website),
+      socialMedia: socialMedia.length === 0 || socialMedia.length >= 3,
+      consentToContact,
+    });
     redirect("/assessment?error=missing_information");
   }
 
@@ -173,3 +195,4 @@ export async function submitBusinessAssessment(formData: FormData) {
 
   redirect("/assessment?status=received");
 }
+

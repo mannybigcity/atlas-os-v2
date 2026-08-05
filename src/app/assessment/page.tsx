@@ -93,7 +93,7 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
             <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#c48713]">Free revenue leak assessment</p>
             <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-6xl">Find the revenue leak costing you the most.</h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              Show Atlas how leads arrive, what happens after the first call, and where the owner gets pulled back in. Manny will review the answers and identify the strongest practical starting point.
+              Show Atlas how leads arrive, what happens after the first call, and where the owner gets pulled back in. The Atlas team will review the answers and identify the strongest practical starting point.
             </p>
             <p className="mt-4 text-sm font-semibold text-[#1246a0]">About 7 minutes. No payment required.</p>
           </div>
@@ -105,7 +105,7 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#167151]">Assessment received</p>
               <h2 className="mt-3 text-3xl font-bold">Thank you. Your growth assessment is in.</h2>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-                Manny will review your lead flow, follow-up, marketing, and goals. If Atlas is a good fit, you will receive one clear recommended starting point before any payment is requested.
+                The Atlas team will review your lead flow, follow-up, marketing, and goals. If Atlas is a good fit, you will receive one clear recommended starting point before any payment is requested.
               </p>
               <Link className="mt-8 inline-flex rounded-full bg-[#1246a0] px-6 py-3 font-semibold text-white hover:bg-[#0a2f78]" href="/">Return to the Atlas home page</Link>
             </section>
@@ -151,7 +151,7 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
               <Question number="11" title="How fast do new leads usually get a follow-up?">
                 <div className="grid gap-3 sm:grid-cols-2">{followUpSpeeds.map(([value, label]) => <Choice key={value} label={label} name="followUpSpeed" type="radio" value={value} />)}</div>
               </Question>
-              <Question number="12" title="If Atlas is a fit, what budget range should Manny design around?" help="This is not a payment screen. It keeps the recommendation realistic.">
+              <Question number="12" title="If Atlas is a fit, what investment range would you be comfortable with?" help="This is not a payment screen. It keeps the recommendation realistic.">
                 <div className="grid gap-3 sm:grid-cols-2">{pilotBudgets.map(([value, label]) => <Choice key={value} label={label} name="pilotBudget" type="radio" value={value} />)}</div>
               </Question>
               <Question number="13" title="What's the best way to reach you?">
@@ -195,3 +195,5 @@ function Field({ label, name, type = "text", required = true, placeholder }: { l
 
   return <label className="block text-sm font-semibold text-[#16325c]">{label}<input autoComplete={autoComplete} className="field mt-2" inputMode={name === "website" ? "url" : undefined} maxLength={name === "contactEmail" ? 320 : 250} name={name} placeholder={placeholder} required={required} type={type} /></label>;
 }
+
+
