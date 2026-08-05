@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getHudTarget } from "./hud-targets.ts";
+import { getHudTarget } from "./hud-targets";
 
 test("allowlists explicit HUD targets to real Atlas surfaces", () => {
   assert.equal(getHudTarget("qtime-productions")?.href, "/client?previewOrg=qtime-productions");
@@ -9,3 +9,4 @@ test("allowlists explicit HUD targets to real Atlas surfaces", () => {
   assert.equal(getHudTarget("cash-ledger")?.href, "/lions-den/cash");
   assert.equal(getHudTarget("unsupported-report"), null);
 });
+

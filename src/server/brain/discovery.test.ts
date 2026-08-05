@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   buildObsidianRelationshipGraph,
   discoverObsidianLinks,
-} from "./discovery.ts";
+} from "./discovery";
 import type { OrganizationSummary } from "@/server/organizations/queries";
 import type { SalesProspect } from "@/server/sales/queries";
 
@@ -150,3 +150,4 @@ function note(path: string) {
     size: 100,
   };
 }
+

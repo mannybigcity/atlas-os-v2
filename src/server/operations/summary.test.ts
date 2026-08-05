@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { summarizeOperations } from "./summary.ts";
+import { summarizeOperations } from "./summary";
 
 test("summarizes open work and only verified settled cash", () => {
   const result = summarizeOperations({
@@ -57,3 +57,4 @@ test("empty operations stay empty and truthful", () => {
     },
   );
 });
+

@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   formatMinorAmount,
   getOperationsSurfaceState,
-} from "./presentation.ts";
+} from "./presentation";
 
 test("operations surfaces distinguish setup, empty, and connected states", () => {
   assert.equal(getOperationsSurfaceState(true, 0), "needs-input");
@@ -16,3 +16,4 @@ test("minor-unit amounts remain exact and readable", () => {
   assert.equal(formatMinorAmount("-250000", "USD"), "USD -2,500.00");
   assert.equal(formatMinorAmount("not-a-number", "USD"), "USD unavailable");
 });
+
