@@ -177,7 +177,7 @@ export async function submitBusinessAssessment(formData: FormData) {
     redirect("/assessment?error=submit_failed");
   }
 
-  await sendAssessmentNotification({
+  const notificationResult = await sendAssessmentNotification({
     id: assessmentId,
     businessName,
     contactName,
@@ -193,6 +193,9 @@ export async function submitBusinessAssessment(formData: FormData) {
     createdAt: submittedAt,
   });
 
+  console.info("Assessment notification result", notificationResult);
+
   redirect("/assessment?status=received");
 }
+
 

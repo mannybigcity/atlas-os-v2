@@ -88,17 +88,7 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
     <>
       <SiteHeader active="assessment" />
       <main className="min-h-screen bg-[#f6f9ff] text-[#071b42]">
-        <section className="border-b border-[#dce6f5] bg-white">
-          <div className="mx-auto max-w-4xl px-6 py-14 text-center sm:py-20">
-            <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-6xl">Find the revenue leak costing you the most.</h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              Show Atlas how leads arrive, what happens after the first call, and where the owner gets pulled back in. The Atlas team will review the answers and identify the strongest practical starting point.
-            </p>
-            <p className="mt-4 text-sm font-semibold text-[#1246a0]">About 7 minutes. No payment required.</p>
-          </div>
-        </section>
-
-        <div className="mx-auto max-w-4xl px-6 py-12">
+<div className="mx-auto max-w-4xl px-6 py-12">
           {received ? (
             <section aria-live="polite" className="rounded-3xl border border-[#b8e2cf] bg-white p-8 shadow-sm sm:p-12">
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#167151]">Assessment received</p>
@@ -194,6 +184,7 @@ function Field({ label, name, type = "text", required = true, placeholder }: { l
 
   return <label className="block text-sm font-semibold text-[#16325c]">{label}<input autoComplete={autoComplete} className="field mt-2" inputMode={name === "website" ? "url" : undefined} maxLength={name === "contactEmail" ? 320 : 250} name={name} placeholder={placeholder} required={required} type={type} /></label>;
 }
+
 
 
 
