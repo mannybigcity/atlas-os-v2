@@ -1,191 +1,136 @@
-"use client";
+import Image from "next/image";
 
-import { useState } from "react";
-
-const views = [
-  {
-    id: "leads",
-    tab: "Lead control",
-    eyebrow: "Revenue leak found",
-    priority: "Follow up on three open estimates before noon.",
-    description:
-      "Atlas puts every opportunity, owner, and next date in one place so warm customers do not disappear into texts and memory.",
-    metrics: [
-      ["New requests", "8", "+3 today"],
-      ["Open estimates", "4", "$12.8k value"],
-      ["Needs follow-up", "3", "Due today"],
-    ],
-    rows: [
-      ["New customer estimate", "2 days open", "Call today", "High"],
-      ["First appointment request", "Form received", "Text tomorrow", "Next"],
-      ["Service-plan renewal", "Warm customer", "Email Friday", "Next"],
-    ],
-  },
-  {
-    id: "marketing",
-    tab: "Marketing plan",
-    eyebrow: "This week’s campaign",
-    priority: "Turn one customer problem into five useful local posts.",
-    description:
-      "Atlas connects content to the jobs you want more of, then keeps every draft private until you approve it.",
-    metrics: [
-      ["Posts planned", "5", "One weekly theme"],
-      ["Drafts ready", "3", "Waiting on review"],
-      ["Offers active", "1", "Seasonal campaign"],
-    ],
-    rows: [
-      ["Get ready for the busy season", "Facebook + Instagram", "Ready to review", "Draft"],
-      ["3 signs it is time to book", "Google Business", "Copy approved", "Ready"],
-      ["Customer service reminder", "Email", "Needs offer", "Next"],
-    ],
-  },
-  {
-    id: "focus",
-    tab: "Owner focus",
-    eyebrow: "30-day growth priority",
-    priority: "Increase estimate follow-up before buying more leads.",
-    description:
-      "Atlas turns scattered ideas into one measurable priority, a short action list, and a weekly review the owner can actually use.",
-    metrics: [
-      ["Primary goal", "1", "Clear owner"],
-      ["Actions open", "4", "Two this week"],
-      ["Decisions waiting", "2", "Owner approval"],
-    ],
-    rows: [
-      ["Write the follow-up sequence", "DAVID", "Due Tuesday", "Active"],
-      ["Review lost estimates", "ATLAS", "Due Wednesday", "Active"],
-      ["Approve seasonal campaign", "MICAH", "Due Friday", "Review"],
-    ],
-  },
+const steps = [
+  ["Lead found", "Website form", "#1246a0"],
+  ["Context loaded", "Recent work + notes", "#f0bf43"],
+  ["Follow-up queued", "Text + email draft", "#137454"],
+  ["Deal moving", "Next action assigned", "#0f4aa5"],
 ] as const;
 
-type ViewId = (typeof views)[number]["id"];
+const businesses = [
+  ["RidgeLine Roofing", "Active", "$12.4k"],
+  ["Summit Electric", "Active", "$8.2k"],
+  ["Northline HVAC", "Needs follow-up", "$5.9k"],
+  ["Harbor Plumbing", "Proposal sent", "$9.7k"],
+] as const;
 
 export function AtlasProductPreview() {
-  const [activeId, setActiveId] = useState<ViewId>("leads");
-  const active = views.find((view) => view.id === activeId) ?? views[0];
-
   return (
-    <div className="relative mx-auto w-full max-w-2xl">
-      <div className="absolute -inset-8 rounded-[3rem] bg-[radial-gradient(circle_at_20%_10%,rgba(45,116,255,0.24),transparent_38%),radial-gradient(circle_at_80%_80%,rgba(245,183,50,0.20),transparent_40%)] blur-2xl" />
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#091a38] p-2 shadow-[0_35px_90px_rgba(3,12,30,0.42)] sm:p-3">
-        <div className="rounded-[1.5rem] border border-white/10 bg-[#f5f8fd] text-[#071b42]">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dbe5f4] px-5 py-4 sm:px-6">
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1246a0] text-sm font-black text-white">
-                A
-              </span>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
-                  Atlas workspace
-                </p>
-                <p className="mt-0.5 text-sm font-bold">Sample Service Company</p>
-              </div>
-            </div>
-            <span className="rounded-full border border-[#c7d8f0] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#527096]">
-              Interactive preview
-            </span>
+    <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.12)]">
+      <div className="border-b border-slate-200 bg-[#fbfcfe] px-5 py-4 sm:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1246a0]">
+              Atlas workspace
+            </p>
+            <p className="mt-1 text-sm font-bold text-[#071b42]">
+              Lead follow-up, jobs, and next actions
+            </p>
           </div>
+          <span className="rounded-full border border-[#dbe5f1] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#4f6a86]">
+            Mockup
+          </span>
+        </div>
+      </div>
 
-          <div
-            aria-label="Atlas product preview"
-            className="grid grid-cols-3 border-b border-[#dbe5f4] bg-white px-2 pt-2"
-            role="tablist"
-          >
-            {views.map((view) => {
-              const selected = active.id === view.id;
-              return (
-                <button
-                  aria-controls="atlas-preview-panel"
-                  aria-selected={selected}
-                  className={`rounded-t-xl border-b-2 px-2 py-3 text-xs font-black transition sm:text-sm ${
-                    selected
-                      ? "border-[#1246a0] bg-[#f5f8fd] text-[#1246a0]"
-                      : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-[#071b42]"
-                  }`}
-                  id={`atlas-preview-tab-${view.id}`}
-                  key={view.id}
-                  onClick={() => setActiveId(view.id)}
-                  role="tab"
-                  type="button"
-                >
-                  {view.tab}
-                </button>
-              );
-            })}
-          </div>
+      <div className="grid gap-3 p-4 sm:p-5">
+        <div className="grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="relative min-h-[24rem] overflow-hidden rounded-[1.6rem] bg-[#f3f7ff]">
+            <Image
+              alt="Contractors and small business owners in a working collage"
+              className="object-cover"
+              fill
+              priority
+              sizes="(min-width: 1024px) 48vw, 100vw"
+              src="/atlas-hero-collage.png"
+            />
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/25 via-transparent to-transparent" />
 
-          <div
-            aria-labelledby={`atlas-preview-tab-${active.id}`}
-            className="p-4 sm:p-6"
-            id="atlas-preview-panel"
-            role="tabpanel"
-          >
-            <div className="rounded-2xl bg-[#0d3f94] p-5 text-white sm:p-6">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ffd068]">
-                  {active.eyebrow}
-                </p>
-                <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-blue-100">
-                  This week
-                </span>
-              </div>
-              <h3 className="mt-4 max-w-xl text-2xl font-black leading-tight sm:text-3xl">
-                {active.priority}
-              </h3>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-blue-100">
-                {active.description}
+            <div className="absolute left-4 top-4 rounded-2xl border border-white/70 bg-white/90 px-4 py-3 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
+                New lead
               </p>
+              <p className="mt-1 text-sm font-bold text-[#071b42]">Roof repair request</p>
+              <p className="mt-1 text-xs text-slate-500">Sent from the website 8 min ago</p>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {active.metrics.map(([label, value, note]) => (
+            <div className="absolute bottom-4 left-4 right-4 grid gap-3 sm:grid-cols-3">
+              {steps.map(([title, detail, tint]) => (
                 <div
-                  className="rounded-2xl border border-[#dbe5f4] bg-white p-4"
-                  key={label}
+                  className="rounded-2xl border border-white/70 bg-white/92 px-3 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur"
+                  key={title}
                 >
-                  <p className="text-[9px] font-black uppercase tracking-[0.13em] text-slate-500">
-                    {label}
-                  </p>
-                  <p className="mt-2 text-3xl font-black tracking-tight text-[#071b42]">
-                    {value}
-                  </p>
-                  <p className="mt-1 text-[11px] font-semibold text-[#527096]">
-                    {note}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tint }} />
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                      {title}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-sm font-bold text-[#071b42]">{detail}</p>
                 </div>
               ))}
             </div>
+          </div>
 
-            <div className="mt-4 overflow-hidden rounded-2xl border border-[#dbe5f4] bg-white">
-              <div className="flex items-center justify-between border-b border-[#e4ebf5] px-4 py-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#1246a0]">
-                  Work queue
+          <div className="grid gap-3">
+            {[
+              ["Today at a glance", "14", "leads needing attention"],
+              ["Follow-ups due", "6", "ready to send or call"],
+              ["Deals in motion", "9", "opportunities progressing"],
+            ].map(([label, value, detail]) => (
+              <article
+                className="rounded-[1.4rem] border border-slate-200 bg-[#fbfcfe] p-4 shadow-[0_12px_28px_rgba(15,23,42,0.03)]"
+                key={label}
+              >
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                  {label}
                 </p>
-                <p className="text-[10px] font-bold text-slate-400">OWNER REVIEW</p>
-              </div>
-              <div className="divide-y divide-[#edf1f7]">
-                {active.rows.map(([title, context, next, status]) => (
-                  <div
-                    className="grid gap-2 px-4 py-3 text-xs sm:grid-cols-[1.35fr_0.85fr_0.75fr_auto] sm:items-center"
-                    key={title}
-                  >
-                    <p className="font-bold text-[#071b42]">{title}</p>
-                    <p className="text-slate-500">{context}</p>
-                    <p className="font-semibold text-[#527096]">{next}</p>
-                    <span className="w-fit rounded-full bg-[#eef4ff] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#1246a0]">
-                      {status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+                <p className="mt-3 text-3xl font-black tracking-[-0.05em] text-[#071b42]">
+                  {value}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{detail}</p>
+              </article>
+            ))}
+
+            <article className="rounded-[1.4rem] border border-slate-200 bg-[#071b42] p-4 text-white shadow-[0_12px_28px_rgba(7,27,66,0.18)]">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f0bf43]">
+                Next move
+              </p>
+              <p className="mt-3 text-xl font-black tracking-[-0.04em]">
+                Follow up on the warm lead before it cools off.
+              </p>
+              <p className="mt-2 text-sm leading-6 text-blue-100/80">
+                Atlas keeps the contact, context, and next action in one place so the owner can move fast.
+              </p>
+            </article>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-[9px] font-black uppercase tracking-[0.14em] text-blue-100/70">
-          <span>Illustrative product view</span>
-          <span>Nothing sends without approval</span>
+        <div className="grid gap-px overflow-hidden rounded-[1.4rem] border border-slate-200 bg-slate-200 sm:grid-cols-4">
+          {businesses.map(([name, status, value]) => (
+            <article className="bg-white px-4 py-3" key={name}>
+              <p className="text-sm font-black text-[#071b42]">{name}</p>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-[#1246a0]">{status}</span>
+                <span className="text-sm font-black text-[#071b42]">{value}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[
+            ["Lead source", "Website + referral"],
+            ["Current action", "Quote review"],
+            ["Business value", "$41,000 pipeline"],
+          ].map(([label, value]) => (
+            <article className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3" key={label}>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                {label}
+              </p>
+              <p className="mt-2 text-sm font-bold text-[#071b42]">{value}</p>
+            </article>
+          ))}
         </div>
       </div>
     </div>

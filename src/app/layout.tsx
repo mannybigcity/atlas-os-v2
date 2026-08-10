@@ -1,12 +1,23 @@
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/site-footer";
+import { Fraunces, Manrope } from "next/font/google";
+import { RouteFooter } from "@/components/route-footer";
 import "./globals.css";
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-body",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://atlasforentrepreneurs.com"),
-  title: "Atlas For Entrepreneurs | Service Business Growth OS",
+  title: "Atlas For Entrepreneurs | Find More Leads, Follow Up Faster, Close More Deals",
   description:
-    "A practical growth operating system for owner-led service businesses. Organize leads, follow-up, marketing, and the next priority in one private workspace.",
+    "Atlas helps entrepreneurs find customers, keep opportunity context attached, follow up faster, and move more deals forward in one private workflow.",
 };
 
 export default function RootLayout({
@@ -15,10 +26,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html className={`${manrope.variable} ${fraunces.variable}`} lang="en">
       <body>
         {children}
-        <SiteFooter />
+        <RouteFooter />
       </body>
     </html>
   );

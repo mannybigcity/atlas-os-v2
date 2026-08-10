@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { AtlasHomepage } from "@/components/atlas-homepage";
 
 export const metadata: Metadata = {
-  title: "Atlas for Service Businesses | Lead Follow-Up & Growth OS",
+  title: "Atlas For Entrepreneurs | Find More Leads, Follow Up Faster, Close More Deals",
   description:
-    "Atlas helps owner-led service businesses organize leads, follow up on opportunities, keep marketing moving, and focus on the next growth priority.",
+    "Atlas helps contractors and small business owners keep leads, follow-up, and open jobs organized so nothing slips through the cracks.",
   alternates: {
     canonical: "/",
   },
@@ -13,16 +13,14 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Atlas | The Growth OS for Owner-Led Service Businesses",
-    description:
-      "Stop losing customers between the first call and the follow-up. Start with a free service-business growth assessment.",
+    title: "Atlas For Entrepreneurs",
+    description: "Find more leads, follow up faster, and close more deals.",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Atlas | The Growth OS for Owner-Led Service Businesses",
-    description:
-      "Leads, follow-up, practical marketing, and one clear growth priority for owner-led service businesses.",
+    title: "Atlas For Entrepreneurs",
+    description: "Find more leads, follow up faster, and close more deals.",
   },
 };
 

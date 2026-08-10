@@ -19,6 +19,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    useTypeScriptCli: true,
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

@@ -36,7 +36,7 @@ import { getHudTarget } from "@/lib/hud-targets";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "The Lion's Den | Atlas For Entrepreneurs",
+  title: "Client Dashboard | Atlas For Entrepreneurs",
   robots: { index: false, follow: false },
 };
 
@@ -93,7 +93,7 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
       contentClassName="lions-den-content"
       description="Your private operating center for decisions, revenue, client health, and the next action that matters."
       eyebrow="Super Admin"
-      title="The Lion's Den"
+      title="Client Dashboard"
     >
       <SurfaceTargetHud target={getHudTarget(params?.hud)} />
       <div className="lions-den-topline">

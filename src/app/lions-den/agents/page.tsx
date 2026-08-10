@@ -64,7 +64,7 @@ export default async function LionDenAgentsPage() {
   return (
     <SurfaceShell
       description="A visible command surface for the Atlas agent roster. This shows the roles, budgets, approval boundaries, and real ledger activity when agent workflows run."
-      eyebrow="The Lion's Den"
+      eyebrow="Client Dashboard"
       title="Atlas Agent Command"
     >
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">

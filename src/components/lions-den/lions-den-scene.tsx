@@ -107,12 +107,12 @@ export function LionsDenScene() {
   );
 
   return (
-    <section className="lions-shell" aria-label="Atlas Lion's Den public demo playback">
+    <section className="lions-shell" aria-label="Atlas Client Dashboard public playback">
       <div className="lions-copy">
-        <span className="tiny-tag">Demo event playback</span>
+        <span className="tiny-tag">Public workflow playback</span>
         <h1>Watch Atlas and the team move the work.</h1>
         <p>
-          This is the sales-safe version of the Lion&apos;s Den. The room is
+          This is the sales-safe version of the Client Dashboard. The room is
           powered by assignment events, approval gates, and handoffs, not random
           walking.
         </p>
@@ -125,16 +125,16 @@ export function LionsDenScene() {
           </Link>
         </div>
         <p className="lions-note">
-          Public mode uses demo data. Private client work stays behind login and
+          Public mode uses sample data. Private client work stays behind login and
           approval.
         </p>
       </div>
 
       <div className="office-wrap">
-        <div className="office-label">The Lion&apos;s Den — event floor</div>
+        <div className="office-label">Client Dashboard event floor</div>
         <div className="office-live-badge" aria-live="polite">
           <span className="demo-dot" />
-          <strong>DEMO PLAYBACK</strong>
+          <strong>PUBLIC PLAYBACK</strong>
           <small>telemetry not connected</small>
         </div>
         <div className="office-stage">
@@ -223,7 +223,7 @@ export function LionsDenScene() {
           >
             Restart mission
           </button>
-          <span>Demo playback only. No private client telemetry is exposed here.</span>
+          <span>Public playback only. No private client telemetry is exposed here.</span>
         </div>
       </div>
 
