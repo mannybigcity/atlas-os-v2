@@ -100,14 +100,6 @@ const pageData = {
     highlights: ["Volume pricing", "Repeat orders", "Dedicated support"],
     nextSteps: ["Add quote workflows.", "Track size breakdowns and approvals.", "Keep pricing configurable."],
   },
-  pricing: {
-    eyebrow: "Pricing",
-    title: "Pricing",
-    summary:
-      "Clear quantity tiers, no minimums, and a pricing model that can move into configuration later.",
-    highlights: ["One of One", "Small Group", "Event and Business"],
-    nextSteps: ["Replace placeholder prices with admin data later.", "Keep revision pricing configurable.", "Show quantity-based savings clearly."],
-  },
   gallery: {
     eyebrow: "Showcase",
     title: "Gallery",

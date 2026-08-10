@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 type SiteHeaderProps = {
-  active?: "home" | "assessment" | "login";
+  active?: "home" | "pricing" | "assessment" | "login";
 };
 
 export function SiteHeader({ active }: SiteHeaderProps) {
@@ -10,7 +10,7 @@ export function SiteHeader({ active }: SiteHeaderProps) {
     [
       "rounded-full px-3 py-2 text-sm font-medium transition",
       active === name
-        ? "bg-[#1246a0] text-white"
+        ? "bg-[#1246a0] !text-white hover:bg-[#0a2f78] hover:!text-white"
         : "text-[#16325c] hover:bg-[#eef4ff] hover:text-[#0a2f78]",
     ].join(" ");
 
@@ -54,6 +54,9 @@ export function SiteHeader({ active }: SiteHeaderProps) {
               Home
             </Link>
           )}
+          <Link className={linkClass("pricing")} href="/pricing">
+            Pricing
+          </Link>
           <Link className={linkClass("assessment")} href="/assessment">
             <span className="sm:hidden">Snapshot</span>
             <span className="hidden sm:inline">Company snapshot</span>

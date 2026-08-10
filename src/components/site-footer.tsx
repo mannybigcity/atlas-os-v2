@@ -2,6 +2,7 @@ import Link from "next/link";
 
 const exploreLinks = [
   { href: "/", label: "Home" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/assessment", label: "Company snapshot" },
   { href: "/login", label: "Client login" },
 ];
