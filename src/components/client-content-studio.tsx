@@ -89,7 +89,8 @@ export function ClientContentStudio({
             const source = imageSource(draft);
             return (
               <article
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+                className="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+                id={`draft-${draft.id}`}
                 key={draft.id}
               >
                 {source ? (
