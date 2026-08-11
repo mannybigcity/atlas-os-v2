@@ -332,7 +332,7 @@ export function BusinessAssessmentForm({ error }: Props) {
             </div>
           </SectionCard>
 
-          <aside className="space-y-4">
+          <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
             <div className="rounded-[1.75rem] border border-[#cfdcf0] bg-[#071b42] p-5 text-white shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.16)]">
               <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#f7cc62]">
                 Completion
@@ -352,18 +352,15 @@ export function BusinessAssessmentForm({ error }: Props) {
                   {completeCount}/{sections.length}
                 </div>
               </div>
-              <div
-                aria-hidden="true"
-                className="mt-4 h-2 rounded-full bg-white/12"
-              >
+              <div aria-hidden="true" className="mt-4 h-2 rounded-full bg-white/12">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-[#f7cc62] to-[#df9815] transition-[width] duration-300"
                   style={{ width: `${percent}%` }}
                 />
               </div>
               <p className="mt-4 text-sm leading-6 text-white/78">
-                Complete the company snapshot to see if Atlas is the right fit
-                and unlock a 7-day free trial review option.
+                Complete the company snapshot to see if Atlas is the right fit and
+                unlock a 7-day free trial review option.
               </p>
             </div>
 
@@ -509,9 +506,7 @@ export function BusinessAssessmentForm({ error }: Props) {
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
-                <p className="text-sm font-semibold text-[#16325c]">
-                  New leads per month
-                </p>
+                <p className="text-sm font-semibold text-[#16325c]">New leads per month</p>
                 <div className="mt-3 grid gap-3">
                   {monthlyLeadVolumes.map(([value, label]) => (
                     <Choice
@@ -541,9 +536,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                 </div>
               </div>
               <div>
-                <p className="text-sm font-semibold text-[#16325c]">
-                  Budget range
-                </p>
+                <p className="text-sm font-semibold text-[#16325c]">Budget range</p>
                 <div className="mt-3 grid gap-3">
                   {pilotBudgets.map(([value, label]) => (
                     <Choice
@@ -569,11 +562,7 @@ export function BusinessAssessmentForm({ error }: Props) {
           <div className="grid gap-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField label="Your name" name="contactName" />
-              <TextField
-                label="Your title (optional)"
-                name="contactTitle"
-                required={false}
-              />
+              <TextField label="Your title (optional)" name="contactTitle" required={false} />
               <TextField label="Email" name="contactEmail" type="email" />
               <TextField label="Phone" name="contactPhone" type="tel" />
               <div className="sm:col-span-2">
@@ -655,28 +644,18 @@ export function BusinessAssessmentForm({ error }: Props) {
       </form>
 
       <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-        <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-white p-5 shadow-[0_1.25rem_2.75rem_rgba(6,27,82,.08)]">
-          <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#1246a0]">
-            What you get
+        <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-[#071b42] p-5 text-white shadow-[0_1.25rem_2.75rem_rgba(6,27,82,.08)]">
+          <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#f7cc62]">
+            Need the product preview?
           </p>
-          <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-            <li>Clearer understanding of the company and customer profile.</li>
-            <li>Practical next-step recommendation based on the answers.</li>
-            <li>A review of whether the business is ready for a 7-day trial.</li>
-          </ul>
-        </div>
-        <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-[#f7fbff] p-5">
-          <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#1246a0]">
-            Need to see the product first?
-          </p>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            You can review the public Client Dashboard before submitting.
+          <p className="mt-3 text-sm leading-6 text-white/75">
+            Review the public preview before you submit the assessment.
           </p>
           <Link
-            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-[#2a5abd] px-5 text-sm font-black text-[#06266d] transition hover:bg-white"
-            href="/atlas-team-live"
+            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-black text-[#06266d] transition hover:bg-[#f5f7fb]"
+            href="/atlas-preview"
           >
-            View Client Dashboard
+            See ATLAS in Action
           </Link>
         </div>
       </aside>

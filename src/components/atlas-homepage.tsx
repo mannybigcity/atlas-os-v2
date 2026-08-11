@@ -243,7 +243,7 @@ export function AtlasHomepage() {
               <h1 id="atlas-title"><span>{t.headline[0]}</span><strong>{t.headline[1]}</strong></h1>
               <p className="atlas-hero-lede">{t.heroCopy}</p>
               <div className="atlas-hero-actions">
-                <Link className="atlas-button gold" href="/atlas-team-live">{t.primary}</Link>
+                <Link className="atlas-button gold" href="/atlas-preview">{t.primary}</Link>
                 <a className="atlas-button outline" href="#how">{t.secondary}</a>
               </div>
             </div>

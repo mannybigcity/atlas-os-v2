@@ -62,7 +62,7 @@ export default function PricingPage() {
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   className="inline-flex items-center justify-center rounded-full bg-[#f5b932] px-7 py-4 text-sm font-black !text-[#071b42] shadow-[0_14px_34px_rgba(245,185,50,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ffd064] hover:!text-[#071b42]"
-                  href="/atlas-team-live"
+                  href="/atlas-preview"
                 >
                   See ATLAS in Action
                   <span aria-hidden="true" className="ml-2 text-lg leading-none">
