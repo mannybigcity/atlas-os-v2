@@ -3,9 +3,9 @@ import { SiteHeader } from "@/components/site-header";
 import { AtlasPreviewJourney } from "@/components/atlas-preview-journey";
 
 export const metadata: Metadata = {
-  title: "Atlas Preview | Atlas",
+  title: "See How Atlas Helps | Atlas",
   description:
-    "A guided preview of the Atlas operating experience before the client workspace.",
+    "See how Atlas helps you turn daily business activity into clear priorities, stronger follow-up, and measurable growth.",
 };
 
 export default function AtlasPreviewPage() {

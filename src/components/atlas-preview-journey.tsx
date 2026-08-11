@@ -5,41 +5,41 @@ import { useMemo, useState } from "react";
 const steps = [
   {
     id: "assessment",
-    label: "1. Assessment",
-    title: "Start with the real business problem.",
+    label: "1. Business visibility",
+    title: "See the business clearly.",
     description:
-      "Atlas asks a short, practical set of questions so the workspace starts with context, not a blank slate.",
-    panelTitle: "Assessment received",
+      "Atlas starts with the company, the customer, and the work already moving through the business.",
+    panelTitle: "Business context",
     panelBody:
-      "The owner told Atlas what the business does, where customers come from, and what needs attention first.",
-    chips: ["Lead source", "Goals", "Social links"],
-    metricLabel: "Review status",
-    metricValue: "Ready",
+      "Share what you do, where leads come from, and what needs attention first so Atlas can organize the work around the business.",
+    chips: ["Company", "Customers", "Attention"],
+    metricLabel: "Starts with",
+    metricValue: "Context",
   },
   {
     id: "workspace",
-    label: "2. Private workspace",
-    title: "Show a sample workspace before asking for a decision.",
+    label: "2. Stronger follow-up",
+    title: "Keep every opportunity moving.",
     description:
-      "The preview looks and feels like the finished product, but the actions stay limited until the owner chooses to continue.",
-    panelTitle: "Sample workspace",
+      "Atlas keeps opportunities visible so next steps do not get lost in a crowded inbox or a busy day.",
+    panelTitle: "Opportunity visibility",
     panelBody:
-      "Atlas organizes leads, drafts, and next steps into one private place so the owner can see how the system would help.",
-    chips: ["Priority", "Drafts", "Follow-up"],
-    metricLabel: "Actions available",
-    metricValue: "3",
+      "Leads, reminders, and next steps stay organized in one place so the follow-up process stays clear and consistent.",
+    chips: ["Leads", "Follow-up", "Reminders"],
+    metricLabel: "Focus",
+    metricValue: "Priority",
   },
   {
     id: "decision",
-    label: "3. Decide",
-    title: "Convert only after the value is visible.",
+    label: "3. Clear next step",
+    title: "Turn activity into growth decisions.",
     description:
-      "Once Atlas has enough signal, the next step becomes simple: continue into the paid version or stop with no pressure.",
-    panelTitle: "Next step",
+      "Atlas shows what deserves attention next so the owner can move from scattered activity to a more focused operating rhythm.",
+    panelTitle: "Growth direction",
     panelBody:
-      "Atlas shows the scope, the expected work, and the approved cost before anything paid begins.",
-    chips: ["Scope", "Price", "Approval"],
-    metricLabel: "Decision",
+      "See the priorities, the open opportunities, and the next move before the work expands into something larger.",
+    chips: ["Priorities", "Opportunities", "Next step"],
+    metricLabel: "Outcome",
     metricValue: "Clear",
   },
 ] as const;
@@ -58,15 +58,16 @@ export function AtlasPreviewJourney() {
         <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#ffd068]">
-              Guided preview
+              Atlas workspace
             </p>
             <h2 className="mt-4 max-w-xl text-4xl font-black tracking-[-0.04em] sm:text-5xl">
-              Keep people leaning in by revealing Atlas in layers.
+              See how ATLAS helps you turn daily business activity into clear
+              priorities, stronger follow-up, and measurable growth.
             </h2>
             <p className="mt-5 max-w-xl text-lg leading-8 text-blue-100">
-              This is the exact kind of curiosity loop that makes a visitor want to
-              keep going. They see a real problem, a private workspace, and a clean
-              decision point before any paid work starts.
+              Atlas helps service businesses make sense of the work already in
+              motion: who needs follow-up, what needs attention, and which
+              opportunity should move first.
             </p>
 
             <div className="mt-8 space-y-3">
@@ -111,19 +112,19 @@ export function AtlasPreviewJourney() {
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dce6f5] pb-4">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1246a0]">
-                      Atlas private preview
+                      Atlas customer view
                     </p>
                     <p className="mt-1 text-sm font-bold">{current.panelTitle}</p>
                   </div>
                   <span className="rounded-full border border-[#dce6f5] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#1246a0]">
-                    Sample mode
+                    Customer view
                   </span>
                 </div>
 
                 <div className="mt-5 rounded-3xl bg-[#0a3b91] p-5 text-white">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ffd068]">
-                      Preview state
+                      Business visibility
                     </p>
                     <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">
                       {current.metricLabel}
@@ -144,17 +145,27 @@ export function AtlasPreviewJourney() {
                         {chip}
                       </p>
                       <p className="mt-2 text-xl font-black text-[#071b42]">
-                        {chip === "Scope" ? "Approved" : chip === "Price" ? "$" : "On"}
+                        {{
+                          Company: "Set",
+                          Customers: "Clear",
+                          Attention: "Focused",
+                          Leads: "Tracked",
+                          "Follow-up": "Queued",
+                          Reminders: "Visible",
+                          Priorities: "Named",
+                          Opportunities: "Open",
+                          "Next step": "Ready",
+                        }[chip]}
                       </p>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-[#dce6f5] bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-black uppercase tracking-[0.15em] text-[#1246a0]">
-                      {current.metricLabel}
-                    </p>
+                  <div className="mt-5 rounded-2xl border border-[#dce6f5] bg-white p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-black uppercase tracking-[0.15em] text-[#1246a0]">
+                        {current.metricLabel}
+                      </p>
                     <span className="rounded-full bg-[#fff4d7] px-2.5 py-1 text-[10px] font-bold text-[#8b5d00]">
                       Atlas
                     </span>
@@ -162,10 +173,10 @@ export function AtlasPreviewJourney() {
                   <div className="mt-3 flex items-center justify-between gap-4">
                     <p className="text-sm font-bold text-[#071b42]">
                       {current.id === "assessment"
-                        ? "The first questions tell Atlas what to look for."
+                        ? "Atlas starts by understanding the company and the context behind the work."
                         : current.id === "workspace"
-                          ? "The preview shows how the system would organize the work."
-                          : "The owner sees the offer before any paid action begins."}
+                          ? "The workspace keeps opportunities and follow-up visible in one place."
+                          : "The next step becomes clearer when priorities and opportunities are organized together."}
                     </p>
                     <span className="rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-black text-[#1246a0]">
                       {current.metricValue}
@@ -175,9 +186,9 @@ export function AtlasPreviewJourney() {
               </div>
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 px-2 text-[11px] font-bold uppercase tracking-[0.12em] text-blue-100">
-                <span>Curiosity loop</span>
-                <span>Private preview</span>
-                <span>Clear decision</span>
+                <span>Business visibility</span>
+                <span>Follow-up clarity</span>
+                <span>Next steps</span>
               </div>
             </div>
           </div>
