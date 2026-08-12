@@ -64,13 +64,15 @@ export default async function ClientDashboardPage({
   return (
     <ClientPortalShell
       description="A private workspace for priorities, approvals, projects, follow-up, files, reports, and approved tools—scoped to your organization."
-      eyebrow={isClientPreview ? "Client preview" : "Private client workspace"}
+      eyebrow={isClientPreview ? "Atlas CRM" : "Private CRM"}
       organizationName={primaryOrganization?.name}
+      fullWidth
+      showOverviewLink={false}
     >
       <div className="space-y-4">
         {params?.status === "welcome" ? (
           <StatusAlert>
-            Your private workspace is ready.
+            The CRM workspace is ready.
           </StatusAlert>
         ) : null}
 
@@ -101,17 +103,6 @@ export default async function ClientDashboardPage({
           <StatusAlert tone="amber">
             No organization was found for preview slug &ldquo;{previewOrgSlug}
             &rdquo;.
-          </StatusAlert>
-        ) : null}
-
-        {isClientPreview ? (
-          <StatusAlert tone="blue">
-            <p className="font-semibold">Viewer mode</p>
-            <p className="mt-1">
-              You are seeing the client command center in read-only mode. Review
-              and edit controls stay off here so you can audit the experience
-              without acting as the client.
-            </p>
           </StatusAlert>
         ) : null}
 

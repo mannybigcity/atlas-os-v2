@@ -15,6 +15,7 @@ type ClientQTimeDashboardProps = {
 type TrendPoint = {
   label: string;
   value: number;
+  href?: string;
 };
 
 type FollowUpCard = {
@@ -33,6 +34,7 @@ type FollowUpCard = {
 };
 
 type CalendarItem = {
+  id: string;
   kind: "check-in" | "ad request" | "follow-up";
   date: string;
   title: string;
@@ -67,8 +69,66 @@ function statusTone(value: string) {
 }
 
 function stageLabel(value: string) {
-  const pretty = value.replaceAll("_", " ");
-  return pretty.charAt(0).toUpperCase() + pretty.slice(1);
+  const labels: Record<string, string> = {
+    researching: "Researching",
+    qualified: "Qualified",
+    needs_client_input: "Needs Input",
+    ready_for_follow_up: "Ready",
+    follow_up_queued: "Ready",
+    contacted: "Contacted",
+    responded: "Responded",
+    won: "Won",
+    lost: "Lost",
+  };
+
+  return labels[value] ?? value.replaceAll("_", " ");
+}
+
+function stageLensHref(focusStage: string, previewOrgSlug: string | null) {
+  const search = previewOrgSlug
+    ? `?previewOrg=${encodeURIComponent(previewOrgSlug)}&focus=${encodeURIComponent(focusStage)}#stage-lens`
+    : `?focus=${encodeURIComponent(focusStage)}#stage-lens`;
+
+  return `/clients${search}`;
+}
+
+function metadataString(metadata: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return null;
+}
+
+function draftReviewHref(
+  draft: {
+    id: string;
+    imageUrl: string | null;
+    imageSvg: string | null;
+    metadata: Record<string, unknown>;
+  },
+  previewOrgSlug: string | null,
+) {
+  const explicitHref = metadataString(draft.metadata, [
+    "reviewHref",
+    "review_url",
+    "reviewUrl",
+    "sourceHref",
+    "source_href",
+    "sourceUrl",
+    "source_url",
+    "href",
+    "url",
+  ]);
+
+  if (explicitHref) {
+    return explicitHref;
+  }
+
+  return `${clientWorkspaceHref("/client/micah", previewOrgSlug ?? undefined)}#draft-${draft.id}`;
 }
 
 function formatShortDate(value: string) {
@@ -116,7 +176,7 @@ function MetricTile({
 }) {
   return (
     <article className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
         {label}
       </p>
       <p className="mt-3 text-3xl font-semibold tracking-[-0.06em] text-slate-950">
@@ -145,7 +205,7 @@ function MiniBars({
     <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
             {title}
           </p>
           <p className="mt-2 text-sm leading-6 text-slate-600">{subtitle}</p>
@@ -153,20 +213,41 @@ function MiniBars({
       </div>
       <div className="mt-4 space-y-3">
         {points.map((point) => (
-          <div className="grid grid-cols-[3rem_1fr_2.5rem] items-center gap-3" key={point.label}>
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              {point.label}
-            </p>
-            <div className="h-2 overflow-hidden rounded-full bg-white ring-1 ring-slate-200">
-              <div
-                className={`h-full rounded-full ${fillClass}`}
-                style={{ width: `${(point.value / max) * 100}%` }}
-              />
+          point.href ? (
+            <Link
+              className="grid grid-cols-[6.5rem_1fr_2.5rem] items-center gap-3 rounded-2xl border border-transparent px-2 py-1 text-left transition hover:border-[#5672f0] hover:bg-white"
+              href={point.href}
+              key={point.label}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                {point.label}
+              </p>
+              <div className="h-2 overflow-hidden rounded-full bg-white ring-1 ring-slate-200">
+                <div
+                  className={`h-full rounded-full ${fillClass}`}
+                  style={{ width: `${(point.value / max) * 100}%` }}
+                />
+              </div>
+              <p className="text-right text-sm font-semibold text-slate-950">
+                {point.value}
+              </p>
+            </Link>
+          ) : (
+            <div className="grid grid-cols-[6.5rem_1fr_2.5rem] items-center gap-3" key={point.label}>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                {point.label}
+              </p>
+              <div className="h-2 overflow-hidden rounded-full bg-white ring-1 ring-slate-200">
+                <div
+                  className={`h-full rounded-full ${fillClass}`}
+                  style={{ width: `${(point.value / max) * 100}%` }}
+                />
+              </div>
+              <p className="text-right text-sm font-semibold text-slate-950">
+                {point.value}
+              </p>
             </div>
-            <p className="text-right text-sm font-semibold text-slate-950">
-              {point.value}
-            </p>
-          </div>
+          )
         ))}
       </div>
     </div>
@@ -227,7 +308,7 @@ function SectionShell({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p
-            className={`text-[11px] font-black uppercase tracking-[0.2em] ${
+            className={`text-xs font-black uppercase tracking-[0.16em] ${
               tone === "ink" ? "text-white" : "text-[#5672f0]"
             }`}
           >
@@ -403,6 +484,7 @@ export function ClientQTimeDashboard({
   const pipeline = dashboard.opportunityPipeline.setupRequired
     ? null
     : dashboard.opportunityPipeline.data;
+  const allPipeline = pipeline?.opportunities ?? [];
   const notes = dashboard.notes.setupRequired ? [] : dashboard.notes.data;
   const activity = dashboard.activity.setupRequired ? [] : dashboard.activity.data;
   const aiRequests = dashboard.aiRequests.setupRequired
@@ -417,7 +499,7 @@ export function ClientQTimeDashboard({
     ...notes.filter((item) => item.attentionRequested),
   ];
 
-  const openPipeline = (pipeline?.opportunities ?? []).filter((opportunity) =>
+  const openPipeline = allPipeline.filter((opportunity) =>
     [
       "researching",
       "qualified",
@@ -435,10 +517,7 @@ export function ClientQTimeDashboard({
 
   const recentActivity = activity.slice(0, 7);
   const recentAiRequests = aiRequests.slice(0, 5);
-  const weeklyActivityCount = dashboard.weeklyCounts.activity;
-  const weeklyAiCount = dashboard.weeklyCounts.aiRequests;
   const readyReviewCount = approvalQueue.length;
-  const openPipelineCount = openPipeline.length;
   const followUpCount = readyForFollowUp.length;
   const contentDraftCount = contentStudio?.drafts.length ?? 0;
 
@@ -455,173 +534,126 @@ export function ClientQTimeDashboard({
 
   const followUps = buildFollowUps(readyForFollowUp, noteSummary);
   const topFollowUps = followUps.slice(0, 2);
-  const micahWorkspaceHref = clientWorkspaceHref("/client/micah", workspace.previewOrgSlug);
   const davidWorkspaceHref = clientWorkspaceHref("/client/david", workspace.previewOrgSlug);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayQueue = openPipeline.filter((opportunity) => {
-    if (!opportunity.nextActionDue) {
-      return false;
-    }
-
-    const dueDate = new Date(opportunity.nextActionDue);
-    dueDate.setHours(0, 0, 0, 0);
-    return dueDate.getTime() === today.getTime();
-  });
-  const overdue = openPipeline.filter((opportunity) => {
-    if (!opportunity.nextActionDue) {
-      return false;
-    }
-
-    const dueDate = new Date(opportunity.nextActionDue);
-    dueDate.setHours(0, 0, 0, 0);
-    return dueDate.getTime() < today.getTime();
-  });
   const activityTrend = buildDailySeries(recentActivity, "occurredAt");
   const requestTrend = buildDailySeries(recentAiRequests, "createdAt");
   const openAiReady = hasServerIntegrationSecret("OPENAI_API_KEY");
 
   const pipelineStages = [
     {
+      key: "researching",
       label: "Researching",
-      count: openPipeline.filter((item) => item.stage === "researching").length,
+      count: allPipeline.filter((item) => item.stage === "researching").length,
     },
     {
+      key: "qualified",
       label: "Qualified",
-      count: openPipeline.filter((item) => item.stage === "qualified").length,
+      count: allPipeline.filter((item) => item.stage === "qualified").length,
     },
     {
-      label: "Needs input",
-      count: openPipeline.filter((item) => item.stage === "needs_client_input").length,
+      key: "needs_client_input",
+      label: "Needs Input",
+      count: allPipeline.filter((item) => item.stage === "needs_client_input").length,
     },
     {
+      key: "ready_for_follow_up",
       label: "Ready",
-      count: openPipeline.filter((item) =>
+      count: allPipeline.filter((item) =>
         ["ready_for_follow_up", "follow_up_queued"].includes(item.stage),
       ).length,
     },
     {
+      key: "contacted",
       label: "Contacted",
-      count: openPipeline.filter((item) => item.stage === "contacted").length,
+      count: allPipeline.filter((item) => item.stage === "contacted").length,
     },
     {
+      key: "responded",
       label: "Responded",
-      count: openPipeline.filter((item) => item.stage === "responded").length,
-    },
-  ];
-
-  const pipelineConversion = [
-    {
-      label: "Ready / open",
-      value: openPipelineCount > 0 ? Math.round((followUpCount / openPipelineCount) * 100) : 0,
+      count: allPipeline.filter((item) => item.stage === "responded").length,
     },
     {
-      label: "Contacted / open",
-      value: openPipelineCount > 0
-        ? Math.round(
-            (openPipeline.filter((item) => item.stage === "contacted").length /
-              openPipelineCount) *
-              100,
-          )
-        : 0,
+      key: "won",
+      label: "Won",
+      count: allPipeline.filter((item) => item.stage === "won").length,
     },
     {
-      label: "Responded / open",
-      value: openPipelineCount > 0
-        ? Math.round(
-            (openPipeline.filter((item) => item.stage === "responded").length /
-              openPipelineCount) *
-              100,
-          )
-        : 0,
+      key: "lost",
+      label: "Lost",
+      count: allPipeline.filter((item) => item.stage === "lost").length,
     },
-  ];
+  ].map((stage) => ({
+    ...stage,
+    href: stageLensHref(stage.key, workspace.previewOrgSlug),
+  }));
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-5 xl:grid-cols-[1.08fr_0.92fr]">
-        <article className="rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,rgba(86,114,240,0.18),transparent_26%),linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)] p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-          <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="shrink-0">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#5672f0]">
-                Q Time Productions
-              </p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.06em] text-slate-950 sm:text-4xl">
-                Customer Relations Manager
-              </h2>
-            </div>
-          </div>
-
-            <QTimeAskAtlasCard
-              enabled={openAiReady}
-              organizationId={organization?.id ?? ""}
-              workspaceName={organization?.name ?? "Q Time Productions"}
-            />
-          </div>
-        </article>
-
-        <div className="flex flex-col gap-5">
-          <article className="order-2 rounded-[2rem] border border-slate-900 bg-[linear-gradient(180deg,#09111d_0%,#111b2c_100%)] p-5 text-white shadow-[0_20px_60px_rgba(15,23,42,0.18)]">
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-white">
-              Weekly scorecard
+      <section className="rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,rgba(86,114,240,0.18),transparent_26%),linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)] p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5672f0]">
+              {organization?.name ?? "Q Time Productions"}
             </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">
-                  Review
-                </p>
-                <p className="mt-3 text-3xl font-semibold tracking-[-0.06em] text-white">
-                  {readyReviewCount}
-                </p>
-              </div>
-              <div className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">
-                  Follow-ups
-                </p>
-                <p className="mt-3 text-3xl font-semibold tracking-[-0.06em] text-white">
-                  {followUpCount}
-                </p>
-              </div>
-              <div className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">
-                  Activity
-                </p>
-                <p className="mt-3 text-3xl font-semibold tracking-[-0.06em] text-white">
-                  {weeklyActivityCount}
-                </p>
-              </div>
-              <div className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">
-                  AI
-                </p>
-                <p className="mt-3 text-3xl font-semibold tracking-[-0.06em] text-white">
-                  {weeklyAiCount}
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 space-y-3">
-              {pipelineConversion.map((item) => (
-                <div className="rounded-[1.2rem] border border-white/10 bg-white/5 p-3" key={item.label}>
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-white">{item.label}</p>
-                    <p className="text-sm font-semibold text-white">{item.value}%</p>
-                  </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-[#d8b15a]"
-                      style={{ width: `${item.value}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </article>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.06em] text-slate-950 sm:text-4xl">
+              Customer Relations Manager
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+              One dashboard for approvals, pipeline, follow-up, calendar, activity, and Ask Atlas.
+            </p>
+          </div>
 
-          <article className="order-1 rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]" id="follow-up-dates">
+          <nav aria-label="QTime navigation" className="grid gap-2 sm:grid-cols-2 xl:min-w-[30rem]">
+            {[
+              ["Overview", "#overview", String(openPipeline.length)],
+              ["Approvals", "#approvals", String(readyReviewCount)],
+              ["Pipeline", "#pipeline", String(openPipeline.length)],
+              ["Calendar", "#calendar", String(contentDraftCount + followUpCount)],
+              ["Activity", "#activity", String(recentActivity.length)],
+              ["Notes", "#notes", String(notes.length)],
+            ].map(([label, href, value]) =>
+              String(href).startsWith("#") ? (
+                <a
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-[#5672f0] hover:bg-slate-50"
+                  href={String(href)}
+                  key={String(label)}
+                >
+                  <span>{label}</span>
+                  <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-bold uppercase tracking-[0.1em] text-slate-600">
+                    {value}
+                  </span>
+                </a>
+              ) : (
+                <Link
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-[#5672f0] hover:bg-slate-50"
+                  href={String(href)}
+                  key={String(label)}
+                >
+                  <span>{label}</span>
+                  <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-bold uppercase tracking-[0.1em] text-slate-600">
+                    {value}
+                  </span>
+                </Link>
+              ),
+            )}
+          </nav>
+        </div>
+
+        <div className="mt-5">
+          <QTimeAskAtlasCard
+            enabled={openAiReady}
+            organizationId={organization?.id ?? ""}
+            workspaceName={organization?.name ?? "Q Time Productions"}
+          />
+        </div>
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[1.16fr_0.84fr]">
+        <div className="space-y-5">
+          <article className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]" id="follow-up-dates">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#5672f0]">
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-[#5672f0]">
                   Follow-up Desk
                 </p>
                 <h3 className="mt-2 text-lg font-semibold tracking-[-0.04em] text-slate-950">
@@ -629,7 +661,7 @@ export function ClientQTimeDashboard({
                 </h3>
               </div>
               <Link
-                className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
+                className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
                 href={davidWorkspaceHref}
               >
                 Open Follow-up Desk
@@ -714,7 +746,7 @@ export function ClientQTimeDashboard({
                                 {item.title}
                               </h4>
                             </div>
-                            <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-amber-800">
+                            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-amber-800">
                               input needed
                             </span>
                           </div>
@@ -728,9 +760,11 @@ export function ClientQTimeDashboard({
                     }
 
                     if ("campaign" in item) {
+                      const reviewHref = draftReviewHref(item, workspace.previewOrgSlug);
                       return (
-                        <article
-                          className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                        <Link
+                          className="block rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-[#5672f0] hover:bg-white"
+                          href={reviewHref}
                           key={item.id}
                         >
                           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -743,7 +777,7 @@ export function ClientQTimeDashboard({
                               </h4>
                             </div>
                             <span
-                              className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusTone(item.status)}`}
+                              className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] ${statusTone(item.status)}`}
                             >
                               {humanize(item.status)}
                             </span>
@@ -751,7 +785,7 @@ export function ClientQTimeDashboard({
                           <p className="mt-3 text-sm leading-6 text-slate-600">
                             {item.caption ?? item.headline ?? "No caption provided."}
                           </p>
-                        </article>
+                        </Link>
                       );
                     }
 
@@ -763,13 +797,13 @@ export function ClientQTimeDashboard({
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
                             <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5672f0]">
-                              Pilot
+                              Client work
                             </p>
                             <h4 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950">
                               {item.title}
                             </h4>
                           </div>
-                          <span className="rounded-full bg-blue-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-800">
+                          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-blue-800">
                             review
                           </span>
                         </div>
@@ -810,7 +844,7 @@ export function ClientQTimeDashboard({
                             </h4>
                           </div>
                           <span
-                            className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusTone(opportunity.stage)}`}
+                            className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] ${statusTone(opportunity.stage)}`}
                           >
                             {stageLabel(opportunity.stage)}
                           </span>
@@ -835,18 +869,20 @@ export function ClientQTimeDashboard({
                   points={pipelineStages.map((stage) => ({
                     label: stage.label,
                     value: stage.count,
+                    href: stage.href,
                   }))}
-                  subtitle="Stage totals."
-                  title="Conversion bars"
+                  subtitle="Ordered stage totals."
+                  title="Pipeline stages"
                 />
                 <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
                     Stage totals
                   </p>
                   <div className="mt-4 space-y-3">
                     {pipelineStages.map((stage) => (
-                      <div
-                        className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3"
+                      <Link
+                        className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-white hover:shadow-sm"
+                        href={stage.href}
                         key={stage.label}
                       >
                         <p className="text-sm font-semibold text-slate-950">
@@ -855,7 +891,7 @@ export function ClientQTimeDashboard({
                         <p className="text-sm font-semibold text-slate-700">
                           {stage.count}
                         </p>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -889,7 +925,7 @@ export function ClientQTimeDashboard({
                             {event.title}
                           </h4>
                         </div>
-                        <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-600 ring-1 ring-slate-200">
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-slate-600 ring-1 ring-slate-200">
                           {formatDateTime(event.occurredAt)}
                         </span>
                       </div>
@@ -925,7 +961,7 @@ export function ClientQTimeDashboard({
                           </h4>
                         </div>
                         <span
-                          className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusTone(draft.status)}`}
+                          className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] ${statusTone(draft.status)}`}
                         >
                           {humanize(draft.status)}
                         </span>
@@ -956,18 +992,18 @@ export function ClientQTimeDashboard({
                   <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-4">
                     <p className="text-sm font-semibold text-white">Queue clear.</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Link
+                      <a
                         className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold !text-slate-950 transition hover:bg-slate-100 hover:!text-slate-950 focus:!text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         href="#pipeline"
                       >
                         Open Pipeline
-                      </Link>
-                      <Link
+                      </a>
+                      <a
                         className="rounded-full border border-white/15 bg-transparent px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/10"
                         href="#calendar"
                       >
                         Schedule follow-up
-                      </Link>
+                      </a>
                     </div>
                   </div>
                 )
@@ -997,7 +1033,7 @@ export function ClientQTimeDashboard({
                       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_0.92fr]">
                         <div className="space-y-3">
                           <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white">
+                            <p className="text-xs font-black uppercase tracking-[0.14em] text-white">
                               Objective
                             </p>
                             <p className="mt-2 text-sm leading-6 text-white">
@@ -1005,7 +1041,7 @@ export function ClientQTimeDashboard({
                             </p>
                           </div>
                           <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white">
+                            <p className="text-xs font-black uppercase tracking-[0.14em] text-white">
                               Prior activity / notes
                             </p>
                             <p className="mt-2 text-sm leading-6 text-white">
@@ -1018,7 +1054,7 @@ export function ClientQTimeDashboard({
                         </div>
 
                         <div className="space-y-3 rounded-2xl border border-[#d8b15a]/20 bg-[#f9f3e3] p-4 text-slate-950">
-                          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8b6b17]">
+                          <p className="text-xs font-black uppercase tracking-[0.14em] text-[#8b6b17]">
                             Suggested action
                           </p>
                           <p className="text-sm leading-6 text-slate-800">
@@ -1079,6 +1115,7 @@ export function ClientQTimeDashboard({
                   ...(plan?.nextCheckInAt
                     ? [
                         {
+                          id: `check-in-${plan.nextCheckInAt}`,
                           kind: "check-in" as const,
                           date: plan.nextCheckInAt,
                           title: "Next check-in",
@@ -1088,16 +1125,18 @@ export function ClientQTimeDashboard({
                       ]
                     : []),
                   ...(contentStudio?.drafts ?? []).map((draft) => ({
+                    id: `content-${draft.id}`,
                     kind: "ad request" as const,
                     date: `${draft.draftDate}T00:00:00.000Z`,
-                    title: `${draft.campaign} review`,
-                    detail: draft.title,
-                    href: `${micahWorkspaceHref}#draft-${draft.id}`,
-                    ctaLabel: "Add request",
+                    title: draft.title,
+                    detail: draft.caption ?? draft.headline ?? draft.campaign,
+                    href: draftReviewHref(draft, workspace.previewOrgSlug),
+                    ctaLabel: "Open review",
                   })),
                   ...readyForFollowUp
                     .filter((opportunity) => Boolean(opportunity.nextActionDue))
                     .map((opportunity) => ({
+                      id: `follow-up-${opportunity.id}`,
                       kind: "follow-up" as const,
                       date: `${opportunity.nextActionDue}T00:00:00.000Z`,
                       title: `${opportunity.name} follow-up`,
@@ -1108,12 +1147,12 @@ export function ClientQTimeDashboard({
               )
                 .sort((left, right) => left.date.localeCompare(right.date))
                 .slice(0, 6)
-                .map((item, index) =>
+                .map((item) =>
                   item.href ? (
                     <Link
                       className="block rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-[#5672f0] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
                       href={item.href}
-                      key={`${item.kind}-${item.date}-${item.title}-${index}`}
+                      key={item.id}
                       aria-label={`Open ${item.title}`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -1125,7 +1164,7 @@ export function ClientQTimeDashboard({
                             {item.title}
                           </h4>
                         </div>
-                        <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-700 ring-1 ring-slate-200">
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-slate-700 ring-1 ring-slate-200">
                           {formatShortDate(item.date)}
                         </span>
                       </div>
@@ -1141,7 +1180,7 @@ export function ClientQTimeDashboard({
                   ) : (
                     <article
                       className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                      key={`${item.kind}-${item.date}-${item.title}-${index}`}
+                      key={item.id}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -1152,7 +1191,7 @@ export function ClientQTimeDashboard({
                             {item.title}
                           </h4>
                         </div>
-                        <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-700 ring-1 ring-slate-200">
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-slate-700 ring-1 ring-slate-200">
                           {formatShortDate(item.date)}
                         </span>
                       </div>
@@ -1194,7 +1233,7 @@ export function ClientQTimeDashboard({
                             {item.title}
                           </h4>
                         </div>
-                        <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-amber-800">
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-amber-800">
                           {item.attentionRequested ? "attention" : "reference"}
                         </span>
                       </div>

@@ -16,6 +16,7 @@ import { getClientDashboardData } from "@/server/client-dashboard/queries";
 import {
   decideClientAiRoute,
   getClientAiRoleSpec,
+  isBusinessRelevantPrompt,
   type ClientAiRole,
 } from "@/server/client-ai/guardrails";
 import {
@@ -23,6 +24,7 @@ import {
   type ClientAiActionState,
   type ClientAiResponse,
 } from "@/server/client-ai/types";
+import { getClientAiDailyQuestionCount, starterDailyQuestionLimit } from "@/server/client-ai/queries";
 
 const clientAiResponseSchema = {
   type: "object",
@@ -307,6 +309,29 @@ async function logClientAiRequest(input: {
   };
 }
 
+function unloggedClientAiResponse(input: {
+  status: "success" | "blocked" | "failed";
+  role: ClientAiRole;
+  routedTo: ClientAiRole | null;
+  scopeStatus: ClientAiActionState["scopeStatus"];
+  answer: string;
+  nextStep: string;
+  missingInputs?: string[];
+}): ClientAiActionState {
+  return {
+    status: input.status,
+    role: input.role,
+    routedTo: input.routedTo,
+    scopeStatus: input.scopeStatus,
+    requestId: null,
+    createdAt: null,
+    answer: input.answer,
+    nextStep: input.nextStep,
+    missingInputs: input.missingInputs ?? [],
+    error: null,
+  };
+}
+
 export async function submitClientAiRequest(
   _previousState: ClientAiActionState,
   formData: FormData,
@@ -335,6 +360,7 @@ export async function submitClientAiRequest(
   }
 
   const role = roleValue as ClientAiRole;
+  const scopeMode = String(formData.get("scopeMode") ?? "").trim();
 
   if (prompt.length < 2) {
     return {
@@ -352,6 +378,46 @@ export async function submitClientAiRequest(
       role,
       error: "Keep the request under 1,200 characters.",
     };
+  }
+
+  if (scopeMode === "business_only" && !isBusinessRelevantPrompt(prompt)) {
+    const response =
+      "I can only answer questions about your business, clients, follow-up, content, prospects, or operations in this workspace.";
+
+    try {
+      const logged = await logClientAiRequest({
+        organizationId,
+        requestedBy: user.id,
+        role,
+        scopeStatus: "declined",
+        status: "blocked",
+        prompt,
+        response,
+        routedTo: role,
+      });
+
+      return {
+        status: "blocked",
+        role,
+        routedTo: role,
+        scopeStatus: "declined",
+        requestId: logged.id,
+        createdAt: logged.createdAt,
+        answer: response,
+        nextStep: "Ask a question about your business or your customer work.",
+        missingInputs: [],
+        error: null,
+      };
+    } catch {
+      return unloggedClientAiResponse({
+        status: "blocked",
+        role,
+        routedTo: role,
+        scopeStatus: "declined",
+        answer: response,
+        nextStep: "Ask a question about your business or your customer work.",
+      });
+    }
   }
 
   const memberships = await getUserMemberships(user.id);
@@ -416,12 +482,19 @@ export async function submitClientAiRequest(
         error: null,
       };
     } catch {
-      return {
-        ...initialClientAiActionState,
-        status: "failed",
+      return unloggedClientAiResponse({
+        status: "blocked",
         role,
-        error: "The request could not be saved to the workspace log.",
-      };
+        routedTo: decision.routedTo,
+        scopeStatus: decision.scopeStatus,
+        answer: response,
+        nextStep:
+          decision.scopeStatus === "declined"
+            ? "Ask the coordinator to handle a safe workspace question."
+            : "Add the missing input and try again.",
+        missingInputs:
+          decision.scopeStatus === "needs_input" ? ["A clear question"] : [],
+      });
     }
   }
 
@@ -457,12 +530,14 @@ export async function submitClientAiRequest(
         error: null,
       };
     } catch {
-      return {
-        ...initialClientAiActionState,
-        status: "failed",
+      return unloggedClientAiResponse({
+        status: "success",
         role,
-        error: "The reroute response could not be logged.",
-      };
+        routedTo: resolvedRole,
+        scopeStatus: decision.scopeStatus,
+        answer: response,
+        nextStep: "Switch to the coordinator for a workspace-wide answer.",
+      });
     }
   }
 
@@ -532,12 +607,14 @@ export async function submitClientAiRequest(
         error: null,
       };
     } catch {
-      return {
-        ...initialClientAiActionState,
-        status: "failed",
+      return unloggedClientAiResponse({
+        status: error instanceof IntegrationConfigurationError ? "blocked" : "failed",
         role,
-        error: "The request failed and could not be logged.",
-      };
+        routedTo: resolvedRole,
+        scopeStatus: "in_scope",
+        answer: response,
+        nextStep: "Try again after checking the server configuration.",
+      });
     }
   }
 
@@ -572,11 +649,33 @@ export async function submitClientAiRequest(
       error: null,
     };
   } catch {
+    return unloggedClientAiResponse({
+      status: "success",
+      role,
+      routedTo: resolvedRole,
+      scopeStatus: decision.scopeStatus,
+      answer: result.value.answer,
+      nextStep: result.value.nextStep,
+      missingInputs: result.value.missingInputs,
+    });
+  }
+
+  const dailyUsage = await getClientAiDailyQuestionCount(organizationId);
+  if (dailyUsage.error) {
     return {
       ...initialClientAiActionState,
       status: "failed",
       role,
-      error: "The response was generated, but it could not be saved to the workspace log.",
+      error: "Workspace question usage could not be verified. Try again shortly.",
+    };
+  }
+
+  if (dailyUsage.count >= starterDailyQuestionLimit) {
+    return {
+      ...initialClientAiActionState,
+      status: "blocked",
+      role,
+      error: "Today’s 10 included workspace questions have been used. Higher-tier limits are not active yet.",
     };
   }
 }

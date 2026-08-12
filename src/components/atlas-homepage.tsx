@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { SiteHeader } from "@/components/site-header";
 
 type Language = "en" | "es";
 
@@ -30,7 +31,6 @@ type LandingCopy = {
   denCta: string;
   closingTitle: [string, string];
   closingCopy: string;
-  closingBenefits: string[];
   stats: { value: string; label: string }[];
   bottomCta: string;
 };
@@ -52,33 +52,13 @@ function IndustryGlyph({ index }: { index: number }) {
   return <svg aria-hidden="true" className="atlas-audience-svg" viewBox="0 0 24 24">{glyphs[index % glyphs.length]}</svg>;
 }
 
-function WorkflowGlyph({ index }: { index: number }) {
-  const common = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    strokeWidth: 2.2,
-  };
-
-  const glyphs = [
-    <><circle {...common} cx="11" cy="11" r="5.75" /><path {...common} d="M15.2 15.2 19 19" /></>,
-    <><path {...common} d="M5.5 7.5A3 3 0 0 1 8.5 4.5h7a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H13l-3.5 3v-3H8.5a3 3 0 0 1-3-3z" /><path {...common} d="M8 8.5h8" /><path {...common} d="M8 11h5" /></>,
-    <><path {...common} d="M6 8a6.5 6.5 0 0 1 11.2-1.8" /><path {...common} d="M16.5 5.8 17.8 8l2.2-1.3" /><path {...common} d="M18 16a6.5 6.5 0 0 1-11.2 1.8" /><path {...common} d="M7.5 18.2 6.2 16 4 17.3" /></>,
-    <><path {...common} d="m6.5 12.5 3.2 3.2 7.8-7.8" /><circle {...common} cx="12" cy="12" r="7" /></>,
-    <><path {...common} d="M5 16.5 9 12l3 2.6 6-8.1" /><path {...common} d="M16.8 6.5H18.5v1.7" /><path {...common} d="M18 18.5H6" /></>,
-  ];
-
-  return <svg aria-hidden="true" className="atlas-workflow-svg" viewBox="0 0 24 24">{glyphs[index % glyphs.length]}</svg>;
-}
-
 const copy: Record<Language, LandingCopy> = {
   en: {
     eyebrow: "ATLAS FOR ENTREPRENEURS",
     headline: ["YOU CARRY THE FAMILY.", "ATLAS CARRIES THE BUSINESS."],
     heroCopy:
       "Your AI business partner that helps small businesses find more prospects, follow up faster, and close more deals, so you can be there for what matters most.",
-    primary: "SEE ATLAS IN ACTION",
+    primary: "HOW ATLAS WORKS",
     secondary: "BUILD MY ATLAS",
     nav: {
       how: "How ATLAS Works",
@@ -129,7 +109,6 @@ const copy: Record<Language, LandingCopy> = {
     closingTitle: ["RUN THE BUSINESS.", "MAKE IT TO THE MOMENTS THAT MATTER."],
     closingCopy:
       "ATLAS handles the work that pulls you away: calls, follow-ups, schedules, and more, so you can focus on your customers and your family.",
-    closingBenefits: ["More time with family", "Less stress. More control.", "Stronger business. Better life."],
     stats: [
       { value: "24/7", label: "Always working" },
       { value: "0", label: "Missed leads" },
@@ -140,14 +119,14 @@ const copy: Record<Language, LandingCopy> = {
   },
   es: {
     eyebrow: "ATLAS PARA EMPRENDEDORES",
-    headline: ["TÃƒÆ’Ã…Â¡ CARGAS CON LA FAMILIA.", "ATLAS CARGA CON EL NEGOCIO."],
+    headline: ["TÚ CARGAS CON LA FAMILIA.", "ATLAS CARGA CON EL NEGOCIO."],
     heroCopy:
-      "Tu socio de negocios con IA ayuda a las pequeÃƒÆ’Ã‚Â±as empresas a encontrar mÃƒÆ’Ã‚Â¡s prospectos, dar seguimiento mÃƒÆ’Ã‚Â¡s rÃƒÆ’Ã‚Â¡pido y cerrar mÃƒÆ’Ã‚Â¡s ventas, para que puedas estar presente en lo que mÃƒÆ’Ã‚Â¡s importa.",
-    primary: "VER ATLAS EN ACCIÃƒÆ’Ã¢â‚¬Å“N",
+      "Tu socio de negocios con IA ayuda a las pequeñas empresas a encontrar más prospectos, dar seguimiento más rápido y cerrar más ventas, para que puedas estar presente en lo que más importa.",
+    primary: "CÓMO FUNCIONA ATLAS",
     secondary: "CREAR MI ATLAS",
     nav: {
-      how: "CÃƒÆ’Ã‚Â³mo funciona ATLAS",
-      who: "Para quiÃƒÆ’Ã‚Â©n es",
+      how: "Cómo funciona ATLAS",
+      who: "Para quién es",
       dashboard: "Client Dashboard",
       pricing: "Precios",
       resources: "Recursos",
@@ -155,31 +134,31 @@ const copy: Record<Language, LandingCopy> = {
       action: "Client Dashboard",
     },
     principles: [
-      "Hecho para pequeÃƒÆ’Ã‚Â±as empresas",
+      "Hecho para pequeñas empresas",
       "IA con responsabilidad",
-      "AprobaciÃƒÆ’Ã‚Â³n humana cuando importa",
-      "Un sistema. MÃƒÆ’Ã‚Âºltiples asistentes de IA.",
+      "Aprobación humana cuando importa",
+      "Un sistema. Múltiples asistentes de IA.",
     ],
-    peopleTitle: "HECHO PARA QUIENES CONSTRUYEN, ENSEÃƒÆ’Ã¢â‚¬ËœAN, SIRVEN, VENDEN, ACTÃƒÆ’Ã…Â¡AN Y PROVEEN.",
+    peopleTitle: "HECHO PARA QUIENES CONSTRUYEN, ENSEÑAN, SIRVEN, VENDEN, ACTÚAN Y PROVEEN.",
     people: [
       { name: "Plomeros", mark: "PL" },
-      { name: "DueÃƒÆ’Ã‚Â±os de HVAC", mark: "HV" },
+      { name: "Dueños de HVAC", mark: "HV" },
       { name: "Barberos", mark: "BR" },
       { name: "Profesores de piano", mark: "PI" },
-      { name: "Instructores de nataciÃƒÆ’Ã‚Â³n", mark: "SW" },
+      { name: "Instructores de natación", mark: "SW" },
       { name: "Agentes inmobiliarios", mark: "RE" },
       { name: "DJs y organizadores", mark: "DJ" },
     ],
-    howTitle: "CÃƒÆ’Ã¢â‚¬Å“MO FUNCIONA ATLAS PARA TU NEGOCIO",
+    howTitle: "CÓMO FUNCIONA ATLAS PARA TU NEGOCIO",
     workflow: [
       { title: "Encuentra", body: "ATLAS encuentra y atrae nuevos prospectos y oportunidades.", mark: "01" },
       { title: "Responde", body: "ATLAS responde llamadas, chats y captura cada prospecto.", mark: "02" },
-      { title: "Da seguimiento", body: "ATLAS da seguimiento, envÃƒÆ’Ã‚Â­a recordatorios y mantiene activos a los prospectos.", mark: "03" },
-      { title: "Cierra", body: "ATLAS ayuda a agendar citas y a cerrar mÃƒÆ’Ã‚Â¡s ventas.", mark: "04" },
-      { title: "Crece", body: "ATLAS obtiene reseÃƒÆ’Ã‚Â±as, recupera clientes e impulsa el crecimiento.", mark: "05" },
+      { title: "Da seguimiento", body: "ATLAS da seguimiento, envía recordatorios y mantiene activos a los prospectos.", mark: "03" },
+      { title: "Cierra", body: "ATLAS ayuda a agendar citas y a cerrar más ventas.", mark: "04" },
+      { title: "Crece", body: "ATLAS obtiene reseñas, recupera clientes e impulsa el crecimiento.", mark: "05" },
     ],
-    denTitle: "LA GUARIDA DEL LEÃƒÆ’Ã¢â‚¬Å“N",
-    denCopy: "Tu centro de mando. Mira lo que ATLAS estÃƒÆ’Ã‚Â¡ haciendo, lo que necesita tu atenciÃƒÆ’Ã‚Â³n y lo que sigue.",
+    denTitle: "CLIENT DASHBOARD",
+    denCopy: "Tu centro de mando. Mira lo que ATLAS está haciendo, lo que necesita tu atención y lo que sigue.",
     denPoints: [
       "Actividad en vivo y rendimiento de IA",
       "Citas y seguimientos",
@@ -187,18 +166,17 @@ const copy: Record<Language, LandingCopy> = {
       "Tareas y recordatorios",
       "Reportes que impulsan decisiones",
     ],
-    denCta: "ENTRA A LA GUARIDA DEL LEÃƒÆ’Ã¢â‚¬Å“N",
+    denCta: "ENTRA AL CLIENT DASHBOARD",
     closingTitle: ["MANEJA EL NEGOCIO.", "LLEGA A LOS MOMENTOS QUE IMPORTAN."],
     closingCopy:
-      "ATLAS se encarga del trabajo que te aleja: llamadas, seguimientos, agendas y mÃƒÆ’Ã‚Â¡s, para que puedas enfocarte en tus clientes y tu familia.",
-    closingBenefits: ["MÃƒÆ’Ã‚Â¡s tiempo con la familia", "Menos estrÃƒÆ’Ã‚Â©s. MÃƒÆ’Ã‚Â¡s control.", "Negocio mÃƒÆ’Ã‚Â¡s fuerte. Mejor vida."],
+      "ATLAS se encarga del trabajo que te aleja: llamadas, seguimientos, agendas y más, para que puedas enfocarte en tus clientes y tu familia.",
     stats: [
       { value: "24/7", label: "Siempre trabajando" },
       { value: "0", label: "Prospectos perdidos" },
-      { value: "+", label: "MÃƒÆ’Ã‚Â¡s ventas" },
-      { value: "TÃƒÆ’Ã…Â¡", label: "Mantienes el control" },
+      { value: "+", label: "Más ventas" },
+      { value: "TÚ", label: "Mantienes el control" },
     ],
-    bottomCta: "EMPEZAR EVALUACIÃƒÆ’Ã¢â‚¬Å“N GRATIS",
+    bottomCta: "EMPEZAR EVALUACIÓN GRATIS",
   },
 };
 
@@ -222,7 +200,7 @@ function DashboardPreview({ language }: { language: Language }) {
       </aside>
       <div className="atlas-dashboard-main">
         <div className="atlas-dashboard-greeting">
-          <div><strong>{spanish ? "Buenos dÃƒÆ’Ã‚Â­as, Manny" : "Good morning, Manny"}</strong><small>{spanish ? "Esto es lo que estÃƒÆ’Ã‚Â¡ pasando hoy." : "Here is what is happening today."}</small></div>
+          <div><strong>{spanish ? "Buenos días, Manny" : "Good morning, Manny"}</strong><small>{spanish ? "Esto es lo que está pasando hoy." : "Here is what is happening today."}</small></div>
           <span className="atlas-notification">3</span>
         </div>
         <div className="atlas-dashboard-metrics">
@@ -255,28 +233,7 @@ export function AtlasHomepage() {
 
   return (
     <div className="atlas-site">
-      <header className="atlas-header">
-        <div className="atlas-wrap atlas-header-inner">
-          <Link className="atlas-brand" href="/" aria-label="Atlas For Entrepreneurs home">
-            <Image alt="Atlas lion logo" src="/brand/atlas-logo.png" width={720} height={720} priority />
-            <span><b>ATLAS</b><small>{language === "es" ? "GUÃƒÆ’Ã‚ÂA. CRECE. VIVE MÃƒÆ’Ã‚ÂS." : "GUIDE. GROW. LIVE MORE."}</small></span>
-          </Link>
-          <nav className="atlas-primary-nav" aria-label="Primary navigation">
-            <a href="#how">{t.nav.how}</a>
-            <a href="#who">{t.nav.who}</a>
-            <a href="#pricing">{t.nav.pricing}</a>
-            <a href="#resources">{t.nav.resources}</a>
-          </nav>
-          <div className="atlas-header-actions">
-            <div className="atlas-language" aria-label="Language selection">
-              <button className={language === "en" ? "active" : ""} type="button" onClick={() => setLanguage("en")}>EN</button>
-              <button className={language === "es" ? "active" : ""} type="button" onClick={() => setLanguage("es")}>ES</button>
-            </div>
-            <Link className="atlas-login" href="/atlas-team-live">{t.nav.dashboard}</Link>
-            <Link className="atlas-top-cta" href="/login">{t.nav.login}</Link>
-          </div>
-        </div>
-      </header>
+      <SiteHeader active="home" />
 
       <main>
         <section className="atlas-hero-section" aria-labelledby="atlas-title">
@@ -286,7 +243,7 @@ export function AtlasHomepage() {
               <h1 id="atlas-title"><span>{t.headline[0]}</span><strong>{t.headline[1]}</strong></h1>
               <p className="atlas-hero-lede">{t.heroCopy}</p>
               <div className="atlas-hero-actions">
-                <Link className="atlas-button gold" href="/atlas-team-live">{t.primary}</Link>
+                <Link className="atlas-button gold" href="/assessment">{t.primary}</Link>
                 <a className="atlas-button outline" href="#how">{t.secondary}</a>
               </div>
             </div>
@@ -322,8 +279,8 @@ export function AtlasHomepage() {
           <h2 id="workflow-title">{t.howTitle}</h2>
           <div className="atlas-workflow-grid">
             {t.workflow.map((step, index) => <article key={step.title}>
-              <span className="atlas-workflow-symbol" role="img" aria-label={`${step.title} workflow marker`}>
-                <WorkflowGlyph index={index} />
+              <span className="atlas-workflow-symbol" aria-hidden="true">
+                <span className="atlas-workflow-count">{step.mark}</span>
               </span>
               <p>{step.body}</p>
             </article>)}
@@ -340,12 +297,11 @@ export function AtlasHomepage() {
           <DashboardPreview language={language} />
         </section>
 
-        <section className="atlas-family-section" id="pricing" aria-labelledby="family-title">
+        <section className="atlas-family-section" id="family" aria-labelledby="family-title">
           <div className="atlas-wrap atlas-family-grid">
             <div className="atlas-family-copy">
               <h2 id="family-title"><span>{t.closingTitle[0]}</span><strong>{t.closingTitle[1]}</strong></h2>
               <p>{t.closingCopy}</p>
-              <div className="atlas-family-benefits">{t.closingBenefits.map((benefit) => <span key={benefit}>{benefit}</span>)}</div>
             </div>
             <div className="atlas-family-art">
               <Image
@@ -359,13 +315,13 @@ export function AtlasHomepage() {
           </div>
         </section>
 
-        <section className="atlas-outcome-section atlas-wrap" id="resources">
+        <section className="atlas-outcome-section" id="resources">
           <div className="atlas-outcome-stats">{t.stats.map((stat) => <article key={stat.label}><strong>{stat.value}</strong><span>{stat.label}</span></article>)}</div>
           <Link className="atlas-outcome-cta" href="/assessment"><span>{t.bottomCta}</span><span aria-hidden="true" className="atlas-outcome-arrow">→</span></Link>
         </section>
       </main>
 
-      <aside className="atlas-bottom-bar"><div className="atlas-wrap"><span>ATLAS</span><strong>{language === "es" ? "TÃƒÆ’Ã…Â¡ LIDERAS. ATLAS TE RESPALDA." : "YOU LEAD. ATLAS HAS YOUR BACK."}</strong><Link href="/assessment">{t.bottomCta}</Link></div></aside>
+      <aside className="atlas-bottom-bar"><div className="atlas-wrap"><span>ATLAS</span><strong>{language === "es" ? "TÚ LIDERAS. ATLAS TE RESPALDA." : "YOU LEAD. ATLAS HAS YOUR BACK."}</strong><Link href="/assessment">{t.bottomCta}</Link></div></aside>
     </div>
   );
 }

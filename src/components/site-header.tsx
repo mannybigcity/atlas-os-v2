@@ -2,10 +2,17 @@ import Image from "next/image";
 import Link from "next/link";
 
 type SiteHeaderProps = {
-  active?: "home" | "pricing" | "assessment" | "login";
+  active?: "home" | "pricing" | "snapshot" | "login";
 };
 
 export function SiteHeader({ active }: SiteHeaderProps) {
+  const navItems = [
+    { href: "/", label: "Home", name: "home" },
+    { href: "/pricing", label: "Pricing", name: "pricing" },
+    { href: "/assessment", label: "Assessment", name: "snapshot" },
+    { href: "/login", label: "Client Login", name: "login" },
+  ] as const;
+
   const linkClass = (name: SiteHeaderProps["active"]) =>
     [
       "rounded-full px-3 py-2 text-sm font-medium transition",
@@ -30,41 +37,23 @@ export function SiteHeader({ active }: SiteHeaderProps) {
             <span className="block text-lg font-bold tracking-tight">
               Atlas For Entrepreneurs
             </span>
-            <span className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1246a0] sm:block">
+            <span className="hidden text-xs font-semibold uppercase tracking-[0.12em] text-[#1246a0] sm:block">
               Service Business Growth OS
             </span>
           </span>
         </Link>
 
         <nav aria-label="Primary navigation" className="flex items-center gap-2">
-          {active === "home" ? (
-            <>
-              <a className="hidden rounded-full px-3 py-2 text-sm font-medium text-[#16325c] transition hover:bg-[#eef4ff] hover:text-[#0a2f78] sm:block" href="#how-it-works">
-                How it works
-              </a>
-              <Link className="hidden rounded-full px-3 py-2 text-sm font-medium text-[#16325c] transition hover:bg-[#eef4ff] hover:text-[#0a2f78] md:block" href="/login">
-                Client login
-              </Link>
-              <a className="hidden rounded-full px-3 py-2 text-sm font-medium text-[#16325c] transition hover:bg-[#eef4ff] hover:text-[#0a2f78] md:block" href="#founding-pilot">
-                30-day sprint
-              </a>
-            </>
-          ) : (
-            <Link className={linkClass("home")} href="/">
-              Home
+          {navItems.map((item) => (
+            <Link
+              aria-current={active === item.name ? "page" : undefined}
+              className={linkClass(item.name)}
+              href={item.href}
+              key={item.name}
+            >
+              {item.label}
             </Link>
-          )}
-          <Link className={linkClass("pricing")} href="/pricing">
-            Pricing
-          </Link>
-          <Link className={linkClass("assessment")} href="/assessment">
-            <span className="sm:hidden">Snapshot</span>
-            <span className="hidden sm:inline">Company snapshot</span>
-          </Link>
-          <Link className={linkClass("login")} href="/login">
-            <span className="hidden sm:inline">Client login</span>
-            <span className="sm:hidden">Login</span>
-          </Link>
+          ))}
         </nav>
       </div>
     </header>

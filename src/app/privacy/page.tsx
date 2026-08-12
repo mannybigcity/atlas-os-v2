@@ -129,8 +129,8 @@ export default function PrivacyPage() {
           providers appropriate to the information and proposed workflow.
         </p>
         <p>
-          When an authorized Atlas administrator deliberately runs the HUNTER
-          local-business preview, Atlas sends the entered business type and service
+          When an authorized Atlas administrator deliberately runs the local-business
+          discovery preview, Atlas sends the entered business type and service
           area to Google Places API. Result content is displayed transiently for
           verification and is not automatically copied into the Atlas CRM. Google
           may process request and usage information under the{" "}

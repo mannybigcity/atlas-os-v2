@@ -1,10 +1,11 @@
+import { ClientAiConsole } from "@/components/client-ai-console";
 import { formatDateTime } from "@/lib/format";
-import { reviewPilotDeliverable } from "@/server/pilot/actions";
+import type { ClientAiRequest } from "@/server/client-ai/queries";
 import type { PilotWorkspace } from "@/server/pilot/queries";
 
 type ClientPilotWorkspaceProps = {
   organizationId: string;
-  canReview: boolean;
+  aiRequests: ClientAiRequest[];
   workspace: PilotWorkspace;
 };
 
@@ -12,12 +13,16 @@ function label(value: string) {
   return value.replaceAll("_", " ");
 }
 
+function isLegacyFollowUpText(value: string | null | undefined) {
+  return /pilot|test|review workflow|draft deliverable/i.test(String(value ?? ""));
+}
+
 function workMessageTitle(
   messageKind: "work_sent" | "approved" | "changes_requested",
   authorDisplayName: string,
 ) {
   if (messageKind === "work_sent") {
-    return `${authorDisplayName} sent work for review`;
+    return `${authorDisplayName} sent an update`;
   }
 
   return messageKind === "approved"
@@ -27,87 +32,121 @@ function workMessageTitle(
 
 export function ClientPilotWorkspace({
   organizationId,
-  canReview,
+  aiRequests,
   workspace,
 }: ClientPilotWorkspaceProps) {
+  const nextCheckIn = workspace.plan?.nextCheckInAt
+    ? formatDateTime(workspace.plan.nextCheckInAt)
+    : "Not scheduled yet";
+  const followUpActions = workspace.actions.filter(
+    (action) => !isLegacyFollowUpText(action.title) && !isLegacyFollowUpText(action.description),
+  );
+  const visibleDeliverables = workspace.deliverables.filter(
+    (deliverable) =>
+      !isLegacyFollowUpText(deliverable.title) &&
+      !isLegacyFollowUpText(deliverable.summary) &&
+      !isLegacyFollowUpText(deliverable.body),
+  );
+  const followUpCount = followUpActions.length;
+  const noteCount = visibleDeliverables.reduce(
+    (total, deliverable) => total + deliverable.messages.length,
+    0,
+  );
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
-            Founding Pilot
+            Follow-up Desk
           </p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
             Work &amp; Messages
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Your 30-day plan, focused actions, work to review, and every
-            response in one place.
+            Follow-up notes, next check-ins, and business messages tied to the
+            CRM, without the review clutter.
           </p>
         </div>
-        <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
-          {workspace.plan?.status ?? "not started"}
-        </span>
+        <div className="flex flex-wrap gap-2">
+          <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+            {workspace.plan?.status ?? "not started"}
+          </span>
+          <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
+            {followUpCount} follow-ups
+          </span>
+          <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
+            {noteCount} notes
+          </span>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-            30-day goal
+            Follow-up notes
           </p>
-          <p className="mt-3 text-lg font-semibold leading-7 text-slate-950">
-            {workspace.plan?.thirtyDayGoal ?? "Atlas has not published the pilot goal yet."}
-          </p>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            <span className="font-semibold text-slate-800">Success means: </span>
-            {workspace.plan?.successDefinition ?? "Not defined yet."}
-          </p>
+          <div className="mt-3 space-y-3">
+            {followUpActions.slice(0, 3).map((action) => (
+              <article className="rounded-2xl border border-slate-200 bg-white p-4" key={action.id}>
+                <p className="text-sm font-semibold text-slate-950">{action.title}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  {action.description ?? "No note added yet."}
+                </p>
+                <p className="mt-2 text-xs font-medium text-slate-500">
+                  {action.ownerLabel ? `Owner: ${action.ownerLabel}` : "No owner"}
+                  {action.dueDate ? ` · Due ${action.dueDate}` : ""}
+                </p>
+              </article>
+            ))}
+            {followUpActions.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm leading-6 text-slate-600">
+                No follow-up notes have been added yet.
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
             Next check-in
           </p>
-          <p className="mt-3 text-lg font-semibold text-slate-950">
-            {workspace.plan?.nextCheckInAt
-              ? formatDateTime(workspace.plan.nextCheckInAt)
-              : "Not scheduled yet"}
-          </p>
+          <p className="mt-3 text-lg font-semibold text-slate-950">{nextCheckIn}</p>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Atlas will use this check-in to review progress, decisions, and the
-            next focused move.
+            Use this as the reminder for the next review, check-in, or follow-up
+            conversation.
           </p>
         </div>
       </div>
 
       <div className="mt-6">
-        <h3 className="text-lg font-semibold text-slate-950">Priorities and actions</h3>
-        {workspace.actions.length === 0 ? (
+        <h3 className="text-lg font-semibold text-slate-950">Prospects to contact</h3>
+        {followUpActions.length === 0 ? (
           <p className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-            No pilot actions have been published yet.
+            No follow-up work has been published yet.
           </p>
         ) : (
           <div className="mt-3 grid gap-3 md:grid-cols-3">
-            {workspace.actions.map((action) => (
+            {followUpActions.map((action) => (
               <article
                 className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
                 key={action.id}
               >
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
-                    Priority {action.priority}
+                    Follow-up
                   </span>
-                  <span className="rounded-full bg-white px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500 ring-1 ring-slate-200">
+                  <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-slate-500 ring-1 ring-slate-200">
                     {label(action.status)}
                   </span>
                 </div>
                 <h4 className="mt-3 font-semibold text-slate-950">{action.title}</h4>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {action.description ?? "No additional detail."}
+                  {action.description ?? "No follow-up note provided."}
                 </p>
                 <p className="mt-3 text-xs leading-5 text-slate-500">
-                  Owner: {action.ownerLabel ?? "To be assigned"}
-                  {action.dueDate ? ` · Due ${action.dueDate}` : ""}
+                  {action.ownerLabel ? `Owner: ${action.ownerLabel}` : "No owner"}
+                  {action.dueDate ? ` · Check-in ${action.dueDate}` : ""}
                 </p>
               </article>
             ))}
@@ -116,14 +155,14 @@ export function ClientPilotWorkspace({
       </div>
 
       <div className="mt-6">
-        <h3 className="text-lg font-semibold text-slate-950">Work for your review</h3>
-        {workspace.deliverables.length === 0 ? (
+        <h3 className="text-lg font-semibold text-slate-950">Messages</h3>
+        {visibleDeliverables.length === 0 ? (
           <p className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-            Nothing is ready for your review yet.
+            No messages have been logged yet.
           </p>
         ) : (
           <div className="mt-3 space-y-4">
-            {workspace.deliverables.map((deliverable) => (
+            {visibleDeliverables.map((deliverable) => (
               <article
                 className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
                 key={deliverable.id}
@@ -143,6 +182,15 @@ export function ClientPilotWorkspace({
                 {deliverable.body ? (
                   <div className="mt-4 whitespace-pre-wrap rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-700">
                     {deliverable.body}
+                  </div>
+                ) : null}
+
+                {deliverable.review ? (
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+                    <p className="font-semibold">Review note</p>
+                    <p className="mt-1">
+                      {deliverable.review.note ?? "No review note provided."}
+                    </p>
                   </div>
                 ) : null}
 
@@ -177,45 +225,23 @@ export function ClientPilotWorkspace({
                     ))}
                   </div>
                 ) : null}
-
-                {deliverable.status === "ready_for_review" && canReview ? (
-                  <form action={reviewPilotDeliverable} className="mt-4 space-y-3">
-                    <input name="organizationId" type="hidden" value={organizationId} />
-                    <input name="deliverableId" type="hidden" value={deliverable.id} />
-                    <label className="block">
-                      <span className="text-sm font-medium text-slate-700">
-                        New message
-                      </span>
-                      <textarea
-                        className="mt-2 min-h-20 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                        name="note"
-                        placeholder="Write a new message about this version."
-                      />
-                    </label>
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <button
-                        className="rounded-full bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
-                        name="decision"
-                        type="submit"
-                        value="approved"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                        name="decision"
-                        type="submit"
-                        value="changes_requested"
-                      >
-                        Request changes
-                      </button>
-                    </div>
-                  </form>
-                ) : null}
               </article>
             ))}
           </div>
         )}
+      </div>
+
+      <div className="mt-6">
+        <ClientAiConsole
+          businessOnly
+          defaultRole="david"
+          fixedRole="david"
+          organizationId={organizationId}
+          previewMode={false}
+          requests={aiRequests}
+          title="Business AI"
+          description="Ask for follow-up help, customer messaging, or CRM guidance."
+        />
       </div>
     </section>
   );

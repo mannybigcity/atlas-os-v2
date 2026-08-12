@@ -4,7 +4,7 @@ const exactAllowedRedirectPaths = new Set([
   "/set-password",
 ]);
 
-const allowedRedirectRoots = ["/client", "/lions-den"];
+const allowedRedirectRoots = ["/client", "/clients", "/lions-den"];
 
 function isAllowedRedirectPath(value: string) {
   if (exactAllowedRedirectPaths.has(value)) {

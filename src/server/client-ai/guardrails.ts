@@ -27,6 +27,8 @@ const roleKeywordSets: Record<ClientAiRole, string[]> = {
     "coordination",
     "next move",
     "next step",
+    "what's next",
+    "whats next",
     "missing input",
     "approval",
     "workflow",
@@ -103,29 +105,29 @@ const blockedPatterns = [
 export const clientAiRoleSpecs: ClientAiRoleSpec[] = [
   {
     role: "atlas",
-    label: "Workspace Coordinator",
-    title: "Coordinator",
+    label: "Customer Relations",
+    title: "Customer Relations",
     summary:
-      "Coordinate the workspace, identify the next move, and keep approvals explicit.",
-    promptHint: "Ask the coordinator to organize the workspace or identify the next move.",
+      "Manage the CRM, identify the next move, and keep approvals explicit.",
+    promptHint: "Ask Customer Relations to organize the workspace or identify the next move.",
     markdownPath: path.join("docs", "client-ai", "atlas.md"),
   },
   {
     role: "hunter",
-    label: "Growth Research",
-    title: "Growth Research",
+    label: "Prospect Research",
+    title: "Prospect Research",
     summary:
       "Research prospects and opportunities already in the workspace and identify missing facts.",
-    promptHint: "Ask Growth Research to review prospects, fit, or lead research.",
+    promptHint: "Ask Prospect Research to review prospects, fit, or lead research.",
     markdownPath: path.join("docs", "client-ai", "hunter.md"),
   },
   {
     role: "micah",
-    label: "Content Studio",
-    title: "Content Studio",
+    label: "Content Manager",
+    title: "Content Manager",
     summary:
       "Draft captions, content calendars, and creative direction for human review.",
-    promptHint: "Ask Content Studio for draft content or content planning.",
+    promptHint: "Ask Content Manager for draft content or content planning.",
     markdownPath: path.join("docs", "client-ai", "micah.md"),
   },
   {
@@ -149,6 +151,50 @@ export function isClientAiRole(value: string): value is ClientAiRole {
 
 function includesAny(prompt: string, keywords: string[]) {
   return keywords.some((keyword) => prompt.includes(keyword));
+}
+
+const businessKeywordSets = [
+  "business",
+  "client",
+  "customer",
+  "crm",
+  "lead",
+  "leads",
+  "prospect",
+  "prospects",
+  "follow-up",
+  "follow up",
+  "note",
+  "notes",
+  "message",
+  "messages",
+  "appointment",
+  "appointments",
+  "check-in",
+  "check in",
+  "what's next",
+  "whats next",
+  "pipeline",
+  "quote",
+  "quotes",
+  "estimate",
+  "estimates",
+  "service",
+  "services",
+  "sales",
+  "sale",
+  "content",
+  "campaign",
+  "post",
+  "posts",
+  "account",
+  "accounts",
+  "revenue",
+];
+
+export function isBusinessRelevantPrompt(prompt: string) {
+  const normalized = prompt.trim().toLowerCase();
+  return includesAny(normalized, businessKeywordSets);
 }
 
 export function decideClientAiRoute(input: {

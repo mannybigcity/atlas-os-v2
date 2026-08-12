@@ -15,6 +15,21 @@ export type ClientAiRequest = {
   createdAt: string;
 };
 
+export const starterDailyQuestionLimit = 10;
+
+export async function getClientAiDailyQuestionCount(organizationId: string) {
+  const supabase = await createClient();
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const { count, error } = await supabase
+    .from("organization_ai_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .gte("created_at", startOfToday.toISOString());
+
+  return { count: count ?? 0, error: error?.message ?? null };
+}
+
 type ClientAiRequestRow = {
   id: string;
   organization_id: string;
@@ -68,4 +83,3 @@ export async function getClientAiRequests(
     error: null,
   };
 }
-

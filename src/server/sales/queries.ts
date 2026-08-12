@@ -196,6 +196,53 @@ export async function getSalesProspects(): Promise<
   };
 }
 
+export async function getSalesEvents(limit = 120): Promise<
+  WorkspaceQueryResult<SalesEvent[]>
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("atlas_sales_events")
+    .select(
+      "id, prospect_id, actor_role, event_type, channel, direction, summary, body, metadata, occurred_at",
+    )
+    .order("occurred_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    return { data: [], setupRequired: true, error: error.message };
+  }
+
+  type EventRow = {
+    id: string;
+    prospect_id: string;
+    actor_role: string;
+    event_type: string;
+    channel: string | null;
+    direction: string | null;
+    summary: string;
+    body: string | null;
+    metadata: Record<string, unknown>;
+    occurred_at: string;
+  };
+
+  return {
+    data: ((data ?? []) as EventRow[]).map((row) => ({
+      id: row.id,
+      prospectId: row.prospect_id,
+      actorRole: row.actor_role,
+      eventType: row.event_type,
+      channel: row.channel,
+      direction: row.direction,
+      summary: row.summary,
+      body: row.body,
+      metadata: row.metadata,
+      occurredAt: row.occurred_at,
+    })),
+    setupRequired: false,
+    error: null,
+  };
+}
+
 export type SalesProspectDetail = {
   prospect: SalesProspect;
   sources: SalesProspectSource[];

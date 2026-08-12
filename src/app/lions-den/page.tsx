@@ -729,7 +729,7 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
                   {organization.slug ? (
                     <Link
                       className="w-fit rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
-                      href={`/client?previewOrg=${encodeURIComponent(organization.slug)}`}
+                      href={`/clients?previewOrg=${encodeURIComponent(organization.slug)}`}
                     >
                       View client dashboard
                     </Link>

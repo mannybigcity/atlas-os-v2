@@ -24,12 +24,30 @@ export async function searchHunterProspects(
 ): Promise<HunterSearchState> {
   const user = await requireSuperAdmin("/lions-den/sales");
   const service = String(formData.get("service") ?? "").trim().slice(0, 120);
-  const location = String(formData.get("location") ?? "").trim().slice(0, 160);
+  const zipCode = String(formData.get("zipCode") ?? "").trim().slice(0, 16);
+  const city = String(formData.get("city") ?? "").trim().slice(0, 80);
+  const state = String(formData.get("state") ?? "").trim().slice(0, 32);
+  const radiusMilesRaw = String(formData.get("radiusMiles") ?? "").trim().slice(0, 8);
+  const radiusMiles = radiusMilesRaw ? Number(radiusMilesRaw) : null;
+  const locationParts = [
+    zipCode ? `ZIP code ${zipCode}` : null,
+    city && state ? `${city}, ${state}` : city || state || null,
+  ].filter((part): part is string => Boolean(part));
+  const location = locationParts.join(" or ");
 
   if (service.length < 2 || location.length < 2) {
     return {
       status: "error",
-      message: "Enter both a business type and a city or service area.",
+      message: "Enter a business type plus a ZIP code or city/state.",
+      query: null,
+      places: [],
+    };
+  }
+
+  if (radiusMilesRaw && (!Number.isFinite(radiusMiles) || radiusMiles === null || radiusMiles < 1 || radiusMiles > 250)) {
+    return {
+      status: "error",
+      message: "Radius must be a whole number between 1 and 250 miles.",
       query: null,
       places: [],
     };
@@ -67,7 +85,7 @@ export async function searchHunterProspects(
     };
   }
 
-  const textQuery = `${service} in ${location}`;
+  const textQuery = `${service} in ${location}${radiusMiles ? ` within ${radiusMiles} miles` : ""}`;
 
   try {
     const result = await searchGooglePlacesText({
@@ -90,13 +108,14 @@ export async function searchHunterProspects(
       // List-price exposure after Google's monthly free usage cap. This is
       // intentionally not presented as the actual charged amount.
       estimated_cost_microusd: 32_000,
-      metadata: {
-        query: textQuery,
-        max_results: 10,
-        places_content_persisted: false,
-        list_price_exposure_after_free_cap_usd: 0.032,
-      },
-    });
+        metadata: {
+          query: textQuery,
+          max_results: 10,
+          radius_miles: radiusMiles,
+          places_content_persisted: false,
+          list_price_exposure_after_free_cap_usd: 0.032,
+        },
+      });
 
     if (logError) {
       return {
@@ -128,7 +147,7 @@ export async function searchHunterProspects(
       request_units: error instanceof IntegrationConfigurationError ? 0 : 1,
       initiated_by: user.id,
       error_code: errorCode,
-      metadata: { query: textQuery, places_content_persisted: false },
+      metadata: { query: textQuery, radius_miles: radiusMiles, places_content_persisted: false },
     });
 
     return {

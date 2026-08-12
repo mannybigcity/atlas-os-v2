@@ -1,0 +1,635 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+
+type CalendarContextOption = {
+  id: string;
+  label: string;
+  href: string;
+};
+
+type CalendarSeedItem = {
+  id: string;
+  title: string;
+  notes: string;
+  dateTime: string;
+  reminderOffsetMinutes: number;
+  kind: "event" | "task";
+  contextId: string | null;
+  contextLabel: string | null;
+  contextHref: string | null;
+  source: "follow-up" | "local";
+};
+
+type CalendarDraft = {
+  id: string | null;
+  title: string;
+  notes: string;
+  date: string;
+  time: string;
+  reminderOffsetMinutes: string;
+  kind: "event" | "task";
+  contextId: string;
+};
+
+type ClientsCalendarProps = {
+  contextOptions: CalendarContextOption[];
+  followUpItems: CalendarSeedItem[];
+  storageKey?: string;
+};
+
+const defaultDraft: CalendarDraft = {
+  id: null,
+  title: "",
+  notes: "",
+  date: "",
+  time: "09:00",
+  reminderOffsetMinutes: "120",
+  kind: "task",
+  contextId: "",
+};
+
+function pad(value: number) {
+  return String(value).padStart(2, "0");
+}
+function toLocalDateValue(value: string) {
+  const date = new Date(value);
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function toLocalTimeValue(value: string) {
+  const date = new Date(value);
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function toDateKey(value: string) {
+  const date = new Date(value);
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addDays(date: Date, amount: number) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount);
+}
+
+function startOfWeek(date: Date) {
+  const day = date.getDay();
+  return addDays(startOfDay(date), -day);
+}
+
+function startOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function sameDay(left: Date, right: Date) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
+}
+
+function parseStoredItems(raw: string | null): CalendarSeedItem[] {
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter(Boolean).map((item) => ({
+      id: String(item.id ?? crypto.randomUUID()),
+      title: String(item.title ?? "").slice(0, 200),
+      notes: String(item.notes ?? "").slice(0, 2000),
+      dateTime: String(item.dateTime ?? ""),
+      reminderOffsetMinutes: Number(item.reminderOffsetMinutes ?? 120),
+      kind: item.kind === "event" ? "event" : "task",
+      contextId: item.contextId ? String(item.contextId) : null,
+      contextLabel: item.contextLabel ? String(item.contextLabel) : null,
+      contextHref: item.contextHref ? String(item.contextHref) : null,
+      source: "local",
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function formatMonthLabel(date: Date) {
+  return new Intl.DateTimeFormat("en", {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatShortDate(date: Date) {
+  return new Intl.DateTimeFormat("en", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function toDateKeyFromDate(date: Date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+export function ClientsCalendar({
+  contextOptions,
+  followUpItems,
+  storageKey = "atlas-clients-calendar-v1",
+}: ClientsCalendarProps) {
+  const [hydrated, setHydrated] = useState(false);
+  const [view, setView] = useState<"month" | "week" | "day" | "year">("month");
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [draft, setDraft] = useState<CalendarDraft>(defaultDraft);
+  const [localItems, setLocalItems] = useState<CalendarSeedItem[]>([]);
+
+  useEffect(() => {
+    try {
+      setLocalItems(parseStoredItems(window.localStorage.getItem(storageKey)));
+    } finally {
+      setHydrated(true);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    window.localStorage.setItem(storageKey, JSON.stringify(localItems));
+  }, [hydrated, localItems, storageKey]);
+
+  const allItems = useMemo(
+    () =>
+      [...followUpItems, ...localItems]
+        .filter((item) => Boolean(item.dateTime))
+        .sort((left, right) => new Date(left.dateTime).getTime() - new Date(right.dateTime).getTime()),
+    [followUpItems, localItems],
+  );
+
+  const selectedKey = toDateKeyFromDate(selectedDate);
+  const selectedItems = allItems.filter((item) => toDateKey(item.dateTime) === selectedKey);
+  const weekStart = startOfWeek(selectedDate);
+  const monthStart = startOfMonth(selectedDate);
+  const monthDays = Array.from({ length: 42 }, (_, index) => addDays(monthStart, -monthStart.getDay() + index));
+  const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
+  const yearMonths = Array.from({ length: 12 }, (_, index) => ({
+    date: new Date(selectedDate.getFullYear(), index, 1),
+    monthIndex: index,
+  }));
+
+  function submitDraft(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!draft.title.trim() || !draft.date || !draft.time) {
+      return;
+    }
+
+    const context = contextOptions.find((item) => item.id === draft.contextId) ?? null;
+    const localRecord: CalendarSeedItem = {
+      id: draft.id ?? crypto.randomUUID(),
+      title: draft.title.trim().slice(0, 200),
+      notes: draft.notes.trim().slice(0, 2000),
+      dateTime: new Date(`${draft.date}T${draft.time}:00`).toISOString(),
+      reminderOffsetMinutes: Number(draft.reminderOffsetMinutes || "120"),
+      kind: draft.kind,
+      contextId: context?.id ?? null,
+      contextLabel: context?.label ?? null,
+      contextHref: context?.href ?? null,
+      source: "local",
+    };
+
+    setLocalItems((current) => {
+      const next = current.filter((item) => item.id !== localRecord.id);
+      next.push(localRecord);
+      return next.sort((left, right) => new Date(left.dateTime).getTime() - new Date(right.dateTime).getTime());
+    });
+    setDraft(defaultDraft);
+  }
+
+  function editItem(item: CalendarSeedItem) {
+    setDraft({
+      id: item.id,
+      title: item.title,
+      notes: item.notes,
+      date: toLocalDateValue(item.dateTime),
+      time: toLocalTimeValue(item.dateTime),
+      reminderOffsetMinutes: String(item.reminderOffsetMinutes),
+      kind: item.kind,
+      contextId: item.contextId ?? "",
+    });
+    setSelectedDate(new Date(item.dateTime));
+    setView("day");
+  }
+
+  function removeItem(id: string) {
+    setLocalItems((current) => current.filter((item) => item.id !== id));
+    if (draft.id === id) {
+      setDraft(defaultDraft);
+    }
+  }
+
+  function toggleCompleted(id: string) {
+    setLocalItems((current) =>
+      current.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              notes: item.notes ? `${item.notes}\n\nMarked complete locally.` : "Marked complete locally.",
+            }
+          : item,
+      ),
+    );
+  }
+
+  const viewLabel = useMemo(() => {
+    if (view === "month") return formatMonthLabel(selectedDate);
+    if (view === "year") return String(selectedDate.getFullYear());
+    if (view === "week") return `${formatShortDate(weekStart)} - ${formatShortDate(addDays(weekStart, 6))}`;
+    return formatShortDate(selectedDate);
+  }, [selectedDate, view, weekStart]);
+
+  const yearViewItems = useMemo(
+    () =>
+      yearMonths.map((month) => ({
+        label: formatMonthLabel(month.date),
+        monthIndex: month.monthIndex,
+        count: allItems.filter(
+          (item) =>
+            new Date(item.dateTime).getFullYear() === month.date.getFullYear() &&
+            new Date(item.dateTime).getMonth() === month.date.getMonth(),
+        ).length,
+      })),
+    [allItems, yearMonths],
+  );
+
+  const gridViewItems = useMemo(() => {
+    const dates = view === "week" ? weekDays : view === "month" ? monthDays : [selectedDate];
+    return dates.map((date) => ({
+      date,
+      items: allItems.filter((item) => sameDay(new Date(item.dateTime), date)),
+    }));
+  }, [allItems, monthDays, selectedDate, view, weekDays]);
+
+  return (
+    <section className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_12px_36px_rgba(15,23,42,0.05)]">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#5672f0]">
+            Calendar
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">
+            Month, Week, Day, Year
+          </h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Device-local reminders only. Follow-up items from the CRM appear here,
+            and you can add or edit your own reminder state without pretending it
+            is synced to email or SMS.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {(["month", "week", "day", "year"] as const).map((item) => (
+            <button
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                view === item
+                  ? "bg-[#5672f0] text-white"
+                  : "border border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+              }`}
+              key={item}
+              onClick={() => setView(item)}
+              type="button"
+            >
+            {item.charAt(0).toUpperCase() + item.slice(1)}
+          </button>
+        ))}
+      </div>
+      </div>
+
+      <div className="mt-5 grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h4 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">
+              {viewLabel}
+            </h4>
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 ring-1 ring-slate-200">
+              {allItems.length} items
+            </span>
+          </div>
+
+          {view === "year" ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {yearViewItems.map((month) => (
+                <button
+                  className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-[#5672f0] hover:shadow-sm"
+                  key={month.label}
+                  onClick={() =>
+                    setSelectedDate(
+                      new Date(selectedDate.getFullYear(), month.monthIndex, 1),
+                    )
+                  }
+                  type="button"
+                >
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#5672f0]">
+                    Month
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{month.label}</p>
+                  <p className="mt-2 text-sm text-slate-600">{month.count} items</p>
+                </button>
+              ))}
+            </div>
+          ) : view === "month" ? (
+            <div className="mt-4 grid grid-cols-7 gap-2">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
+                <div className="px-2 py-1 text-center text-[11px] font-black uppercase tracking-[0.16em] text-slate-500" key={label}>
+                  {label}
+                </div>
+              ))}
+              {gridViewItems.map(({ date, items }) => {
+                const active = sameDay(date, selectedDate);
+                return (
+                  <button
+                    className={`min-h-28 rounded-2xl border p-2 text-left transition ${
+                      active
+                        ? "border-[#5672f0] bg-white shadow-sm"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                    }`}
+                    key={date.toISOString()}
+                    onClick={() => setSelectedDate(date)}
+                    type="button"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-sm font-semibold text-slate-950">
+                        {date.getDate()}
+                      </span>
+                      {items.length ? (
+                        <span className="rounded-full bg-[#eef3ff] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5672f0]">
+                          {items.length}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      {items.slice(0, 2).map((item) => (
+                        <p className="truncate rounded-lg bg-slate-50 px-2 py-1 text-[11px] text-slate-700" key={item.id}>
+                          {item.title}
+                        </p>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
+              {gridViewItems.map(({ date, items }) => (
+                <button
+                  className={`rounded-2xl border p-3 text-left transition ${
+                    sameDay(date, selectedDate)
+                      ? "border-[#5672f0] bg-white shadow-sm"
+                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                  }`}
+                  key={date.toISOString()}
+                  onClick={() => setSelectedDate(date)}
+                  type="button"
+                >
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+                    {formatShortDate(date)}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">{items.length} items</p>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {view !== "year" ? (
+            <div className="mt-4 space-y-3">
+              {selectedItems.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm leading-6 text-slate-600">
+                  No items on this date yet.
+                </div>
+              ) : (
+                selectedItems.map((item) => (
+                  <article className="rounded-2xl border border-slate-200 bg-white p-4" key={item.id}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5672f0]">
+                          {item.kind}
+                        </p>
+                        <h5 className="mt-2 text-sm font-semibold text-slate-950">{item.title}</h5>
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+                        {formatTime(item.dateTime)}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">{item.notes}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-[#eef3ff] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5672f0]">
+                        Reminder {item.reminderOffsetMinutes}m before
+                      </span>
+                      {item.contextHref ? (
+                        <Link
+                          className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
+                          href={item.contextHref}
+                        >
+                          Open context
+                        </Link>
+                      ) : null}
+                      {item.source === "local" ? (
+                        <>
+                          <button
+                            className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
+                            onClick={() => editItem(item)}
+                            type="button"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-800 transition hover:bg-emerald-100"
+                            onClick={() => toggleCompleted(item.id)}
+                            type="button"
+                          >
+                            Mark done
+                          </button>
+                          <button
+                            className="rounded-full border border-rose-300 bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-800 transition hover:bg-rose-100"
+                            onClick={() => removeItem(item.id)}
+                            type="button"
+                          >
+                            Remove
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="space-y-4">
+          <form className="rounded-[1.4rem] border border-slate-200 bg-white p-4" onSubmit={submitDraft}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#5672f0]">
+                  Device-local reminder
+                </p>
+                <h4 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950">
+                  {draft.id ? "Edit calendar item" : "Create calendar item"}
+                </h4>
+              </div>
+              {draft.id ? (
+                <button
+                  className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
+                  onClick={() => setDraft(defaultDraft)}
+                  type="button"
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              <Field
+                label="Title"
+                name="title"
+                onChange={(value) => setDraft((current) => ({ ...current, title: value }))}
+                value={draft.title}
+              />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field
+                  label="Date"
+                  name="date"
+                  onChange={(value) => setDraft((current) => ({ ...current, date: value }))}
+                  type="date"
+                  value={draft.date}
+                />
+                <Field
+                  label="Time"
+                  name="time"
+                  onChange={(value) => setDraft((current) => ({ ...current, time: value }))}
+                  type="time"
+                  value={draft.time}
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Select
+                  label="Kind"
+                  onChange={(value) => setDraft((current) => ({ ...current, kind: value === "event" ? "event" : "task" }))}
+                  options={[
+                    { label: "Task", value: "task" },
+                    { label: "Event", value: "event" },
+                  ]}
+                  value={draft.kind}
+                />
+                <Field
+                  label="Reminder offset minutes"
+                  name="reminderOffsetMinutes"
+                  onChange={(value) => setDraft((current) => ({ ...current, reminderOffsetMinutes: value }))}
+                  type="number"
+                  value={draft.reminderOffsetMinutes}
+                />
+              </div>
+              <Select
+                label="Context"
+                onChange={(value) => setDraft((current) => ({ ...current, contextId: value }))}
+                options={[{ label: "No context", value: "" }, ...contextOptions.map((item) => ({ label: item.label, value: item.id }))]}
+                value={draft.contextId}
+              />
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">Notes</span>
+                <textarea
+                  className="mt-2 min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-[#5672f0] focus:ring-4 focus:ring-[#dfe7ff]"
+                  onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))}
+                  value={draft.notes}
+                />
+              </label>
+              <button
+                className="rounded-full bg-[#5672f0] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#465fd1]"
+                type="submit"
+              >
+                {draft.id ? "Update local reminder" : "Save local reminder"}
+              </button>
+            </div>
+          </form>
+
+          <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+              What is stored locally
+            </p>
+            <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+              <li>Calendar reminders are saved only on this device.</li>
+              <li>Follow-up dates from the CRM are read from the live workspace.</li>
+              <li>No email, SMS, or provider integration is triggered here.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export const ClientCalendar = ClientsCalendar;
+
+function Field({
+  label,
+  name,
+  onChange,
+  type = "text",
+  value,
+}: {
+  label: string;
+  name: string;
+  onChange: (value: string) => void;
+  type?: string;
+  value: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-medium text-slate-700">{label}</span>
+      <input
+        className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-[#5672f0] focus:ring-4 focus:ring-[#dfe7ff]"
+        name={name}
+        onChange={(event) => onChange(event.target.value)}
+        type={type}
+        value={value}
+      />
+    </label>
+  );
+}
+
+function Select({
+  label,
+  options,
+  onChange,
+  value,
+}: {
+  label: string;
+  options: Array<{ label: string; value: string }>;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-medium text-slate-700">{label}</span>
+      <select
+        className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-[#5672f0] focus:ring-4 focus:ring-[#dfe7ff]"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        {options.map((item) => (
+          <option key={item.value} value={item.value}>
+            {item.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}

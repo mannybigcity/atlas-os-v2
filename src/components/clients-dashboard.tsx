@@ -575,25 +575,11 @@ export function ClientCrmDashboard({
   const qtimeOrganization = organizations.find((org) => org.slug === "qtime-productions") ?? null;
   const qtimeWorkspace = previewWorkspace?.isClientPreview ? previewWorkspace : null;
   const qtimeDashboard = qtimeWorkspace && previewDashboard ? previewDashboard : null;
+  const qtimePreviewActive = selectedPanel === "qtime" && previewOrganization?.slug === "qtime-productions";
   const qtimeCommandCenter =
     qtimeOrganization && qtimeWorkspace && qtimeDashboard ? (
-      <section
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]"
-        id="qtime-command-center"
-      >
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#5672f0]">
-              {previewOrganization?.name ?? qtimeOrganization.name}
-            </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.06em] text-slate-950 sm:text-4xl">
-              Customer Relations Manager
-            </h2>
-          </div>
-        </div>
-        <div className="mt-5">
-          <ClientQTimeDashboard workspace={qtimeWorkspace} dashboard={qtimeDashboard} />
-        </div>
+      <section id="qtime-command-center">
+        <ClientQTimeDashboard workspace={qtimeWorkspace} dashboard={qtimeDashboard} />
       </section>
     ) : null;
 
@@ -657,18 +643,31 @@ export function ClientCrmDashboard({
             ["Calendar", "#calendar", String(calendarItems.length)],
             ["Approvals", "#approvals", String(approvalsQueue.length)],
             ["Activity", "/clients?panel=activity#activity", String(visibleActivity.length)],
-          ].map(([label, href, value]) => (
-            <Link
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-              href={String(href)}
-              key={String(label)}
-            >
-              <span>{label}</span>
-              <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-white/80">
-                {value}
-              </span>
-            </Link>
-          ))}
+          ].map(([label, href, value]) =>
+            String(href).startsWith("#") ? (
+              <a
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                href={String(href)}
+                key={String(label)}
+              >
+                <span>{label}</span>
+                <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-white/80">
+                  {value}
+                </span>
+              </a>
+            ) : (
+              <Link
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                href={String(href)}
+                key={String(label)}
+              >
+                <span>{label}</span>
+                <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-white/80">
+                  {value}
+                </span>
+              </Link>
+            ),
+          )}
         </nav>
       </aside>
 
@@ -685,7 +684,9 @@ export function ClientCrmDashboard({
                 The fortune is in the follow-up.
               </h2>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[22rem]">
+          </div>
+          {!qtimePreviewActive ? (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:min-w-[22rem]">
               <MetricCard
                 href="#clients"
                 label="Clients"
@@ -710,7 +711,7 @@ export function ClientCrmDashboard({
                 note="Waiting for review."
               />
             </div>
-          </div>
+          ) : null}
           {activeFocusStage ? (
             <div className="mt-5">
               <StageFocusPanel
@@ -797,12 +798,12 @@ export function ClientCrmDashboard({
                     Last 7 days
                   </h3>
                 </div>
-                <Link
-                  className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
-                  href="#activity"
-                >
-                  Timeline
-                </Link>
+              <a
+                className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
+                href="#activity"
+              >
+                Timeline
+              </a>
               </div>
               <div className="mt-4">{chartBars({ items: activitySeries })}</div>
             </article>
@@ -1183,9 +1184,11 @@ export function ClientCrmDashboard({
           </div>
         </section>
 
-        <section id="calendar">
-          <ClientCalendar contextOptions={contextOptions} followUpItems={calendarItems} />
-        </section>
+        {!qtimePreviewActive ? (
+          <section id="calendar">
+            <ClientCalendar contextOptions={contextOptions} followUpItems={calendarItems} />
+          </section>
+        ) : null}
 
         <section className="rounded-[1.8rem] border border-slate-200 bg-white p-6 shadow-[0_12px_36px_rgba(15,23,42,0.05)]" id="approvals">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

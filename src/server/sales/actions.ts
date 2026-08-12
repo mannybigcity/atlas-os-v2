@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireSuperAdmin } from "@/server/auth/guards";
 import {
   salesAssignedRoles,
@@ -23,6 +24,20 @@ const contactBases = new Set([
 function field(formData: FormData, name: string, maxLength: number) {
   const value = String(formData.get(name) ?? "").trim();
   return value ? value.slice(0, maxLength) : null;
+}
+
+function returnToTarget(formData: FormData, fallback: string) {
+  const candidate = String(formData.get("returnTo") ?? "").trim();
+
+  if (!candidate) {
+    return fallback;
+  }
+
+  if (/^\/(?:clients|lions-den\/sales)(?:[?#].*)?$/i.test(candidate)) {
+    return candidate;
+  }
+
+  return fallback;
 }
 
 function normalizeWebUrl(value: string | null) {
@@ -59,8 +74,42 @@ function redirectWithError(path: string, code: string): never {
   redirect(`${path}?crm=${encodeURIComponent(code)}`);
 }
 
+function parseLocalDateTime(
+  dateValue: string | null,
+  timeValue: string | null,
+  fallbackHour = "17",
+) {
+  if (!dateValue) {
+    return null;
+  }
+
+  if (dateValue.includes("T")) {
+    const parsed = new Date(dateValue);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  }
+
+  const time = timeValue && /^\d{2}:\d{2}$/.test(timeValue) ? timeValue : `${fallbackHour}:00`;
+  const parsed = new Date(`${dateValue}T${time}:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function parseOffsetMinutes(formData: FormData, fallback = 120) {
+  const raw = String(formData.get("reminderOffsetMinutes") ?? "").trim();
+  if (!raw) {
+    return fallback;
+  }
+
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 0 || value > 10080) {
+    return fallback;
+  }
+
+  return value;
+}
+
 export async function createSalesProspect(formData: FormData) {
   const user = await requireSuperAdmin("/lions-den/sales");
+  const returnTo = returnToTarget(formData, "/lions-den/sales");
   const businessName = field(formData, "businessName", 250);
   const websiteInput = field(formData, "website", 1000);
   const website = normalizeWebUrl(websiteInput);
@@ -70,19 +119,19 @@ export async function createSalesProspect(formData: FormData) {
   const contactBasis = field(formData, "contactBasis", 50) ?? "unknown";
 
   if (!businessName || businessName.length < 2) {
-    redirectWithError("/lions-den/sales", "business_name_required");
+    redirectWithError(returnTo, "business_name_required");
   }
   if (websiteInput && !website) {
-    redirectWithError("/lions-den/sales", "invalid_website");
+    redirectWithError(returnTo, "invalid_website");
   }
   if (sourceInput && !sourceUrl) {
-    redirectWithError("/lions-den/sales", "invalid_source");
+    redirectWithError(returnTo, "invalid_source");
   }
   if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
-    redirectWithError("/lions-den/sales", "invalid_email");
+    redirectWithError(returnTo, "invalid_email");
   }
   if (!contactBases.has(contactBasis)) {
-    redirectWithError("/lions-den/sales", "invalid_contact_basis");
+    redirectWithError(returnTo, "invalid_contact_basis");
   }
 
   const supabase = await createClient();
@@ -133,11 +182,15 @@ export async function createSalesProspect(formData: FormData) {
     });
   }
 
-  redirect(`/lions-den/sales/${data.id}?crm=created`);
+  redirect(`${returnTo}?crm=created`);
 }
 
 export async function updateSalesProspect(formData: FormData) {
   const user = await requireSuperAdmin("/lions-den/sales");
+  const returnTo = returnToTarget(
+    formData,
+    `/lions-den/sales/${String(formData.get("prospectId") ?? "").trim()}`,
+  );
   const prospectId = field(formData, "prospectId", 36);
   const businessName = field(formData, "businessName", 250);
   const status = field(formData, "status", 50);
@@ -148,30 +201,37 @@ export async function updateSalesProspect(formData: FormData) {
   const fitScoreInput = field(formData, "fitScore", 3);
   const fitScore = fitScoreInput === null ? null : Number(fitScoreInput);
   const nextActionAtInput = field(formData, "nextActionAt", 40);
-  const nextActionAt = nextActionAtInput
-    ? `${nextActionAtInput}T17:00:00.000Z`
-    : null;
+  const nextActionDateInput = field(formData, "nextActionDate", 40);
+  const nextActionTimeInput = field(formData, "nextActionTime", 5);
+  const reminderOffsetMinutes = parseOffsetMinutes(formData, 120);
+  const nextActionAt = parseLocalDateTime(
+    nextActionAtInput ?? nextActionDateInput,
+    nextActionTimeInput,
+  );
 
   if (!prospectId || !uuidPattern.test(prospectId)) {
-    redirectWithError("/lions-den/sales", "invalid_prospect");
+    redirectWithError(returnTo, "invalid_prospect");
   }
   if (!businessName || businessName.length < 2) {
-    redirectWithError(`/lions-den/sales/${prospectId}`, "business_name_required");
+    redirectWithError(returnTo, "business_name_required");
   }
   if (!status || !statuses.has(status) || !assignedRole || !assignedRoles.has(assignedRole)) {
-    redirectWithError(`/lions-den/sales/${prospectId}`, "invalid_stage");
+    redirectWithError(returnTo, "invalid_stage");
   }
   if (websiteInput && !website) {
-    redirectWithError(`/lions-den/sales/${prospectId}`, "invalid_website");
+    redirectWithError(returnTo, "invalid_website");
   }
   if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
-    redirectWithError(`/lions-den/sales/${prospectId}`, "invalid_email");
+    redirectWithError(returnTo, "invalid_email");
   }
   if (fitScore !== null && (!Number.isInteger(fitScore) || fitScore < 0 || fitScore > 100)) {
-    redirectWithError(`/lions-den/sales/${prospectId}`, "invalid_fit_score");
+    redirectWithError(returnTo, "invalid_fit_score");
   }
-  if (nextActionAtInput && !/^\d{4}-\d{2}-\d{2}$/.test(nextActionAtInput)) {
-    redirectWithError(`/lions-den/sales/${prospectId}`, "invalid_next_action_date");
+  if (
+    (nextActionAtInput || nextActionDateInput) &&
+    !nextActionAt
+  ) {
+    redirectWithError(returnTo, "invalid_next_action_date");
   }
 
   const supabase = await createClient();
@@ -183,7 +243,7 @@ export async function updateSalesProspect(formData: FormData) {
       .maybeSingle();
 
     if (!existing?.outreach_approved_at) {
-      redirectWithError(`/lions-den/sales/${prospectId}`, "approval_requires_gate");
+      redirectWithError(returnTo, "approval_requires_gate");
     }
   }
 
@@ -213,16 +273,37 @@ export async function updateSalesProspect(formData: FormData) {
     })
     .eq("id", prospectId);
 
-  redirect(`/lions-den/sales/${prospectId}?crm=${error ? "update_failed" : "updated"}`);
+  if (!error && nextActionAt) {
+    await supabase.from("atlas_sales_events").insert({
+      prospect_id: prospectId,
+      actor_user_id: user.id,
+      actor_role: "david",
+      event_type: "follow_up.scheduled",
+      direction: "internal",
+      summary: "Follow-up scheduled",
+      body: field(formData, "nextAction", 1000) ?? "Next follow-up scheduled",
+      metadata: {
+        reminder_offset_minutes: reminderOffsetMinutes,
+        next_action_at: nextActionAt,
+      },
+      occurred_at: nextActionAt,
+    });
+  }
+
+  redirect(`${returnTo}?crm=${error ? "update_failed" : "updated"}`);
 }
 
 export async function addSalesNote(formData: FormData) {
   const user = await requireSuperAdmin("/lions-den/sales");
+  const returnTo = returnToTarget(
+    formData,
+    `/lions-den/sales/${String(formData.get("prospectId") ?? "").trim()}`,
+  );
   const prospectId = field(formData, "prospectId", 36);
   const body = field(formData, "body", 10000);
 
   if (!prospectId || !uuidPattern.test(prospectId) || !body) {
-    redirectWithError("/lions-den/sales", "invalid_note");
+    redirectWithError(returnTo, "invalid_note");
   }
 
   const supabase = await createClient();
@@ -236,11 +317,15 @@ export async function addSalesNote(formData: FormData) {
     body,
   });
 
-  redirect(`/lions-den/sales/${prospectId}?crm=${error ? "note_failed" : "note_added"}`);
+  redirect(`${returnTo}?crm=${error ? "note_failed" : "note_added"}`);
 }
 
 export async function approveSalesOutreach(formData: FormData) {
   await requireSuperAdmin("/lions-den/sales");
+  const returnTo = returnToTarget(
+    formData,
+    `/lions-den/sales/${String(formData.get("prospectId") ?? "").trim()}`,
+  );
   const prospectId = field(formData, "prospectId", 36);
   const channels = formData
     .getAll("channels")
@@ -248,7 +333,7 @@ export async function approveSalesOutreach(formData: FormData) {
     .filter((value) => ["email", "phone", "sms", "social"].includes(value));
 
   if (!prospectId || !uuidPattern.test(prospectId) || channels.length === 0) {
-    redirectWithError("/lions-den/sales", "approval_requires_channel");
+    redirectWithError(returnTo, "approval_requires_channel");
   }
 
   const supabase = await createClient();
@@ -257,11 +342,15 @@ export async function approveSalesOutreach(formData: FormData) {
     p_channels: channels,
   });
 
-  redirect(`/lions-den/sales/${prospectId}?crm=${error ? "approval_blocked" : "approved"}`);
+  redirect(`${returnTo}?crm=${error ? "approval_blocked" : "approved"}`);
 }
 
 export async function suppressSalesProspect(formData: FormData) {
   const user = await requireSuperAdmin("/lions-den/sales");
+  const returnTo = returnToTarget(
+    formData,
+    `/lions-den/sales/${String(formData.get("prospectId") ?? "").trim()}`,
+  );
   const prospectId = field(formData, "prospectId", 36);
   const reason = field(formData, "reason", 30) ?? "manual";
   const channel = field(formData, "channel", 20) ?? "all";
@@ -272,7 +361,7 @@ export async function suppressSalesProspect(formData: FormData) {
     !["opt_out", "complaint", "hard_bounce", "legal", "manual", "other"].includes(reason) ||
     !["all", "email", "phone", "sms", "social"].includes(channel)
   ) {
-    redirectWithError("/lions-den/sales", "invalid_suppression");
+    redirectWithError(returnTo, "invalid_suppression");
   }
 
   const supabase = await createClient();
@@ -286,5 +375,231 @@ export async function suppressSalesProspect(formData: FormData) {
     created_by: user.id,
   });
 
-  redirect(`/lions-den/sales/${prospectId}?crm=${error ? "suppression_failed" : "suppressed"}`);
+  redirect(`${returnTo}?crm=${error ? "suppression_failed" : "suppressed"}`);
+}
+
+export async function logSalesFollowUp(formData: FormData) {
+  const user = await requireSuperAdmin("/clients");
+  const returnTo = returnToTarget(
+    formData,
+    `/lions-den/sales/${String(formData.get("prospectId") ?? "").trim()}`,
+  );
+  const prospectId = field(formData, "prospectId", 36);
+  const summary = field(formData, "summary", 500) ?? "Follow-up logged";
+  const note = field(formData, "note", 5000);
+  const nextAction = field(formData, "nextAction", 1000);
+  const nextActionAt = parseLocalDateTime(
+    field(formData, "nextActionDate", 40) ?? field(formData, "nextActionAt", 40),
+    field(formData, "nextActionTime", 5),
+  );
+  const reminderOffsetMinutes = parseOffsetMinutes(formData, 120);
+
+  if (!prospectId || !uuidPattern.test(prospectId)) {
+    redirectWithError(returnTo, "invalid_prospect");
+  }
+
+  const supabase = await createClient();
+  const { error: prospectError } = await supabase
+    .from("atlas_sales_prospects")
+    .update({
+      last_contacted_at: new Date().toISOString(),
+      next_action: nextAction,
+      next_action_at: nextActionAt,
+      status: "contacted",
+      updated_by: user.id,
+    })
+    .eq("id", prospectId);
+
+  const { error: eventError } = await supabase.from("atlas_sales_events").insert({
+    prospect_id: prospectId,
+    actor_user_id: user.id,
+    actor_role: "david",
+    event_type: "follow_up.scheduled",
+    direction: "internal",
+    summary,
+    body: note,
+    metadata: {
+      reminder_offset_minutes: reminderOffsetMinutes,
+      next_action: nextAction,
+      next_action_at: nextActionAt,
+    },
+    occurred_at: new Date().toISOString(),
+  });
+
+  redirect(
+    `${returnTo}?crm=${
+      prospectError || eventError ? "follow_up_failed" : "follow_up_logged"
+    }`,
+  );
+}
+
+export async function completeSalesFollowUp(formData: FormData) {
+  const user = await requireSuperAdmin("/clients");
+  const returnTo = returnToTarget(
+    formData,
+    `/lions-den/sales/${String(formData.get("prospectId") ?? "").trim()}`,
+  );
+  const prospectId = field(formData, "prospectId", 36);
+  const summary = field(formData, "summary", 500) ?? "Follow-up completed";
+  const note = field(formData, "note", 5000);
+  const nextAction = field(formData, "nextAction", 1000);
+  const nextActionAt = parseLocalDateTime(
+    field(formData, "nextActionDate", 40) ?? field(formData, "nextActionAt", 40),
+    field(formData, "nextActionTime", 5),
+  );
+
+  if (!prospectId || !uuidPattern.test(prospectId)) {
+    redirectWithError(returnTo, "invalid_prospect");
+  }
+
+  const supabase = await createClient();
+  const { error: prospectError } = await supabase
+    .from("atlas_sales_prospects")
+    .update({
+      last_contacted_at: new Date().toISOString(),
+      next_action: nextAction,
+      next_action_at: nextActionAt,
+      status: "contacted",
+      updated_by: user.id,
+    })
+    .eq("id", prospectId);
+
+  const { error: eventError } = await supabase.from("atlas_sales_events").insert({
+    prospect_id: prospectId,
+    actor_user_id: user.id,
+    actor_role: "david",
+    event_type: "contact.attempted",
+    direction: "internal",
+    summary,
+    body: note,
+    metadata: {
+      completed: true,
+      next_action: nextAction,
+      next_action_at: nextActionAt,
+    },
+    occurred_at: new Date().toISOString(),
+  });
+
+  redirect(
+    `${returnTo}?crm=${
+      prospectError || eventError ? "follow_up_failed" : "follow_up_completed"
+    }`,
+  );
+}
+
+export async function convertSalesProspectToClient(formData: FormData) {
+  const user = await requireSuperAdmin("/clients");
+  const returnTo = returnToTarget(formData, "/clients");
+  const prospectId = field(formData, "prospectId", 36);
+  const targetOrganizationId = field(formData, "targetOrganizationId", 36);
+
+  if (
+    !prospectId ||
+    !uuidPattern.test(prospectId) ||
+    !targetOrganizationId ||
+    !uuidPattern.test(targetOrganizationId)
+  ) {
+    redirectWithError(returnTo, "invalid_conversion");
+  }
+
+  const supabase = await createClient();
+  const [{ data: organization }, { error: prospectError }] = await Promise.all([
+    supabase
+      .from("organizations")
+      .select("id, name, slug")
+      .eq("id", targetOrganizationId)
+      .maybeSingle(),
+    supabase
+      .from("atlas_sales_prospects")
+      .update({
+        converted_organization_id: targetOrganizationId,
+        status: "won",
+        updated_by: user.id,
+      })
+      .eq("id", prospectId),
+  ]);
+
+  if (!organization || prospectError) {
+    redirectWithError(returnTo, "conversion_failed");
+  }
+
+  await supabase.from("atlas_sales_events").insert({
+    prospect_id: prospectId,
+    actor_user_id: user.id,
+    actor_role: "manny",
+    event_type: "prospect.converted",
+    direction: "internal",
+    summary: `Converted to ${organization.name}`,
+    body: organization.slug ? `Linked to client workspace ${organization.slug}.` : null,
+    metadata: {
+      organization_id: organization.id,
+      organization_name: organization.name,
+      organization_slug: organization.slug,
+    },
+    occurred_at: new Date().toISOString(),
+  });
+
+  redirect(`${returnTo}?crm=converted`);
+}
+
+export async function deleteSalesProspect(formData: FormData) {
+  await requireSuperAdmin("/clients");
+  const returnTo = returnToTarget(formData, "/clients");
+  const prospectId = field(formData, "prospectId", 36);
+  const confirmName = field(formData, "confirmName", 250);
+
+  if (!prospectId || !uuidPattern.test(prospectId)) {
+    redirectWithError(returnTo, "invalid_prospect");
+  }
+
+  const supabase = createAdminClient();
+  const { data: prospect, error: prospectLookupError } = await supabase
+    .from("atlas_sales_prospects")
+    .select("id, business_name")
+    .eq("id", prospectId)
+    .maybeSingle();
+
+  if (prospectLookupError || !prospect) {
+    redirectWithError(returnTo, "delete_missing");
+  }
+
+  if (confirmName && confirmName !== prospect.business_name) {
+    redirectWithError(returnTo, "delete_mismatch");
+  }
+
+  const { data: blockingChildren, error: blockingChildrenError } = await supabase
+    .from("atlas_sales_prospects")
+    .select("id")
+    .eq("duplicate_of", prospectId)
+    .limit(1);
+
+  if (blockingChildrenError) {
+    redirectWithError(returnTo, "delete_failed");
+  }
+
+  if ((blockingChildren ?? []).length > 0) {
+    redirectWithError(returnTo, "delete_blocked");
+  }
+
+  const cleanupTargets = [
+    supabase.from("atlas_sales_events").delete().eq("prospect_id", prospectId),
+    supabase.from("atlas_sales_prospect_sources").delete().eq("prospect_id", prospectId),
+    supabase.from("atlas_contact_suppressions").delete().eq("prospect_id", prospectId),
+    supabase.from("atlas_agent_runs").delete().eq("prospect_id", prospectId),
+  ] as const;
+  const cleanupResults = await Promise.all(cleanupTargets);
+  if (cleanupResults.some(({ error }) => Boolean(error))) {
+    redirectWithError(returnTo, "delete_failed");
+  }
+
+  const { error: deleteError } = await supabase
+    .from("atlas_sales_prospects")
+    .delete()
+    .eq("id", prospectId);
+
+  if (deleteError) {
+    redirectWithError(returnTo, "delete_failed");
+  }
+
+  redirect(`${returnTo}?crm=deleted`);
 }

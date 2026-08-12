@@ -117,11 +117,11 @@ export function AtlasChatWidget() {
 
         {previewComplete ? (
           <p className="mt-4 text-sm font-semibold text-[#8b5d00]">
-            Your free preview is complete. Continue with the assessment for a plan built around your business.
+            Your complimentary questions are complete. Continue with the assessment for a plan built around your business.
           </p>
         ) : (
           <p className="mt-4 text-sm leading-6 text-slate-500">
-            Public preview is capped to keep costs low. The paid dashboard can go deeper.
+            Ask a business question to get a focused next move.
           </p>
         )}
 
@@ -136,13 +136,13 @@ export function AtlasChatWidget() {
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <span className="rounded-full bg-[#eef4ff] px-3 py-1.5 text-[11px] font-bold text-[#1246a0]">
+        <span className="rounded-full bg-[#eef4ff] px-3 py-1.5 text-xs font-bold text-[#1246a0]">
           New business
         </span>
-        <span className="rounded-full bg-[#eef4ff] px-3 py-1.5 text-[11px] font-bold text-[#1246a0]">
+        <span className="rounded-full bg-[#eef4ff] px-3 py-1.5 text-xs font-bold text-[#1246a0]">
           Sales help
         </span>
-        <span className="rounded-full bg-[#eef4ff] px-3 py-1.5 text-[11px] font-bold text-[#1246a0]">
+        <span className="rounded-full bg-[#eef4ff] px-3 py-1.5 text-xs font-bold text-[#1246a0]">
           Marketing
         </span>
       </div>

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { ClientMicahIntake } from "@/components/client-micah-intake";
 import { ClientContentStudio } from "@/components/client-content-studio";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import {
   clientWorkspaceHref,
   getClientWorkspaceContext,
 } from "@/server/client-workspace/context";
+import { getClientAiRequests } from "@/server/client-ai/queries";
 import { getContentStudio } from "@/server/content-studio/queries";
 
 export const dynamic = "force-dynamic";
@@ -32,10 +34,13 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
   const studio = primaryOrganization
     ? await getContentStudio(primaryOrganization.id)
     : null;
+  const aiRequests = primaryOrganization
+    ? await getClientAiRequests(primaryOrganization.id, 6)
+    : null;
 
   return (
     <ClientWorkspaceScreen
-      backHref={clientWorkspaceHref("/client", previewOrgSlug)}
+      backHref={clientWorkspaceHref("/clients", previewOrgSlug)}
       description="Content Studio prepares social images, captions, campaign directions, and post drafts for review before anything goes public."
       eyebrow="Content Studio"
       organizationName={primaryOrganization?.name}
@@ -54,11 +59,21 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
       ) : null}
 
       {studio && !studio.setupRequired && primaryOrganization ? (
-        <ClientContentStudio
-          canReview={canEditBusinessProfile}
-          organizationId={primaryOrganization.id}
-          studio={studio.data}
-        />
+        <div className="space-y-5">
+          <ClientMicahIntake
+            organizationId={primaryOrganization.id}
+            previewMode={isClientPreview}
+            recentRequests={
+              aiRequests && !aiRequests.setupRequired ? aiRequests.data : []
+            }
+          />
+
+          <ClientContentStudio
+            canReview={canEditBusinessProfile}
+            organizationId={primaryOrganization.id}
+            studio={studio.data}
+          />
+        </div>
       ) : null}
     </ClientWorkspaceScreen>
   );

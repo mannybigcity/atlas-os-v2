@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -51,8 +52,9 @@ export default function PricingPage() {
                 Pricing
               </p>
               <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[0.94] tracking-[-0.055em] sm:text-6xl lg:text-[4.9rem]">
-                One system to help you find more prospects, follow up faster,
-                and close more deals.
+                <span className="block">Find more prospects.</span>
+                <span className="mt-2 block text-[#ffd068]">Follow up faster.</span>
+                <span className="mt-2 block">Close more deals.</span>
               </h1>
               <p className="mt-7 max-w-2xl text-lg leading-8 text-blue-100/80 sm:text-xl sm:leading-9">
                 Start with the tools your business needs today. Add more automation as you grow.
@@ -60,7 +62,7 @@ export default function PricingPage() {
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   className="inline-flex items-center justify-center rounded-full bg-[#f5b932] px-7 py-4 text-sm font-black !text-[#071b42] shadow-[0_14px_34px_rgba(245,185,50,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ffd064] hover:!text-[#071b42]"
-                  href="/atlas-team-live"
+                  href="/#how"
                 >
                   See ATLAS in Action
                   <span aria-hidden="true" className="ml-2 text-lg leading-none">
@@ -81,38 +83,16 @@ export default function PricingPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-5 shadow-[0_24px_80px_rgba(3,12,30,0.28)] sm:p-6">
-              <div className="rounded-[1.5rem] border border-white/10 bg-[#f7f9fc] p-5 text-[#071b42]">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
-                  What the plans do
-                </p>
-                <h2 className="mt-3 text-3xl font-black tracking-[-0.05em]">
-                  One operating system, scaled by need.
-                </h2>
-                <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                  {atlasPricingPlans.map((plan) => (
-                    <div
-                      className={`rounded-2xl border p-4 ${
-                        plan.featured
-                          ? "border-[#f0c24a] bg-[#fff8df]"
-                          : "border-[#dbe5f4] bg-white"
-                      }`}
-                      key={plan.slug}
-                    >
-                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#527096]">
-                        {plan.name}
-                      </p>
-                      <p className="mt-2 text-2xl font-black tracking-tight">
-                        {money.format(plan.monthlyPrice)}
-                        <span className="text-sm font-semibold text-slate-500">
-                          /mo
-                        </span>
-                      </p>
-                      <p className="mt-2 text-xs leading-5 text-slate-600">{plan.bestFor}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="relative mx-auto flex w-full max-w-md items-end justify-center lg:max-w-none">
+              <div className="absolute bottom-6 h-44 w-44 rounded-full bg-[#f5b932]/20 blur-3xl" />
+              <Image
+                alt="Atlas lion carrying the world"
+                className="relative h-auto w-full max-w-[28rem] object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.35)]"
+                height={1008}
+                priority
+                src="/atlas-holding-globe-tight.png"
+                width={799}
+              />
             </div>
           </div>
         </section>
@@ -130,11 +110,11 @@ export default function PricingPage() {
                   key={plan.slug}
                 >
                   {plan.featured ? (
-                    <span className="absolute right-5 top-5 rounded-full bg-[#f5b932] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#071b42]">
+                    <span className="absolute right-5 top-5 rounded-full bg-[#f5b932] px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-[#071b42]">
                       Most popular
                     </span>
                   ) : null}
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
                     {plan.name}
                   </p>
                   <div className="mt-4 flex items-end gap-2">
@@ -191,18 +171,15 @@ export default function PricingPage() {
             </div>
 
             <section className="mt-8 rounded-[1.8rem] border border-[#d9e4f4] bg-white p-5 shadow-[0_16px_42px_rgba(15,23,42,0.05)] sm:p-6">
-              <div className="flex flex-col gap-2 border-b border-[#e5edf7] pb-5 sm:flex-row sm:items-end sm:justify-between">
+              <div className="border-b border-[#e5edf7] pb-5">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
                     Plan comparison
                   </p>
                   <h2 className="mt-3 text-2xl font-black tracking-[-0.04em] text-[#071b42] sm:text-3xl">
                     What each Atlas plan includes
                   </h2>
                 </div>
-                <p className="text-sm leading-6 text-slate-500">
-                  The table below is the plain-English version of the pricing structure.
-                </p>
               </div>
 
               <div className="mt-5 overflow-x-auto">
@@ -254,7 +231,7 @@ export default function PricingPage() {
             <div className="mt-8 rounded-[1.8rem] border border-[#d9e4f4] bg-white p-6 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
                     Launch offer
                   </p>
                   <h2 className="mt-3 text-3xl font-black tracking-[-0.05em]">
@@ -377,7 +354,7 @@ export default function PricingPage() {
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd068]">
                   {atlasPhoneAiAddOn.label}
                 </p>
-                <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-blue-100">
+                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.1em] text-blue-100">
                   Not operational
                 </span>
               </div>
@@ -437,8 +414,8 @@ export default function PricingPage() {
               </h2>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-blue-100/80">
                 If you want help deciding, start with the business assessment.
-                Amanda and the sales workflow can guide the fit conversation
-                without fabricating pricing or promises.
+                Atlas can guide the fit conversation without fabricating pricing
+                or promises.
               </p>
             </div>
             <div className="text-center lg:text-right">
@@ -458,5 +435,3 @@ export default function PricingPage() {
     </>
   );
 }
-
-

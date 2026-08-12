@@ -46,9 +46,8 @@ export default function ResponsibleAiPage() {
           software, or assisted by AI when included in an approved workflow.
         </p>
         <p>
-          ATLAS, HUNTER, MICAH, and DAVID are names for coordinated business
-          functions—not four human employees and not a claim that every function is
-          fully autonomous. The public assessment is reviewed before a paid scope is
+          Atlas coordinates business functions. It is not a human employee and does
+          not claim that every function is fully autonomous. The public assessment is reviewed before a paid scope is
           recommended. The current website does not automatically send assessment
           submissions to an external AI model.
         </p>

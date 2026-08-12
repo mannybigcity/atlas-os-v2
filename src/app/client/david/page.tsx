@@ -5,6 +5,7 @@ import {
   clientWorkspaceHref,
   getClientWorkspaceContext,
 } from "@/server/client-workspace/context";
+import { getClientAiRequests } from "@/server/client-ai/queries";
 import { getPilotWorkspace } from "@/server/pilot/queries";
 
 export const dynamic = "force-dynamic";
@@ -23,20 +24,18 @@ type DavidPageProps = {
 export default async function DavidPage({ searchParams }: DavidPageProps) {
   const params = await searchParams;
   const workspace = await getClientWorkspaceContext("/client/david", params);
-  const {
-    canEditBusinessProfile,
-    isClientPreview,
-    previewOrgSlug,
-    primaryOrganization,
-  } = workspace;
+  const { isClientPreview, previewOrgSlug, primaryOrganization } = workspace;
+  const aiRequests = primaryOrganization
+    ? await getClientAiRequests(primaryOrganization.id, 8)
+    : null;
   const pilot = primaryOrganization
     ? await getPilotWorkspace(primaryOrganization.id)
     : null;
 
   return (
     <ClientWorkspaceScreen
-      backHref={clientWorkspaceHref("/client", previewOrgSlug)}
-      description="The Follow-up Desk keeps approvals, open work, and CRM-style next actions from getting lost."
+      backHref={clientWorkspaceHref("/clients", previewOrgSlug)}
+      description="The Follow-up Desk keeps follow-up notes, check-ins, and business messages close to the CRM."
       eyebrow="Follow-up Desk"
       organizationName={primaryOrganization?.name}
       previewMode={isClientPreview}
@@ -44,9 +43,9 @@ export default async function DavidPage({ searchParams }: DavidPageProps) {
       <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5 text-sm leading-6 text-indigo-950">
         <p className="font-semibold">The Follow-up Desk keeps next actions visible.</p>
         <p className="mt-1">
-          Today this screen uses the 30-day plan, action queue, work reviews,
-          and approval messages. The deeper CRM table can come next, but this is
-          enough to keep QTime&apos;s first pilot moving.
+          Use this page for follow-up notes, prospect reminders, messages, and
+          the next check-in. The CRM can handle the graphs and recording; this
+          page is the deeper working view.
         </p>
       </div>
 
@@ -64,8 +63,8 @@ export default async function DavidPage({ searchParams }: DavidPageProps) {
 
       {pilot && !pilot.setupRequired && primaryOrganization ? (
         <ClientPilotWorkspace
-          canReview={canEditBusinessProfile}
           organizationId={primaryOrganization.id}
+          aiRequests={aiRequests && !aiRequests.setupRequired ? aiRequests.data : []}
           workspace={pilot.data}
         />
       ) : null}

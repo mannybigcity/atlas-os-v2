@@ -3,7 +3,7 @@ import Image from "next/image";
 const steps = [
   ["Lead found", "Website form", "#1246a0"],
   ["Context loaded", "Recent work + notes", "#f0bf43"],
-  ["Follow-up queued", "Text + email draft", "#137454"],
+  ["Follow-up queued", "Text + email ready", "#137454"],
   ["Deal moving", "Next action assigned", "#0f4aa5"],
 ] as const;
 
@@ -20,16 +20,13 @@ export function AtlasProductPreview() {
       <div className="border-b border-slate-200 bg-[#fbfcfe] px-5 py-4 sm:px-6">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1246a0]">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1246a0]">
               Atlas workspace
             </p>
             <p className="mt-1 text-sm font-bold text-[#071b42]">
               Lead follow-up, jobs, and next actions
             </p>
           </div>
-          <span className="rounded-full border border-[#dbe5f1] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#4f6a86]">
-            Mockup
-          </span>
         </div>
       </div>
 
@@ -47,7 +44,7 @@ export function AtlasProductPreview() {
             <div className="absolute inset-0 bg-gradient-to-tr from-white/25 via-transparent to-transparent" />
 
             <div className="absolute left-4 top-4 rounded-2xl border border-white/70 bg-white/90 px-4 py-3 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
                 New lead
               </p>
               <p className="mt-1 text-sm font-bold text-[#071b42]">Roof repair request</p>
@@ -62,7 +59,7 @@ export function AtlasProductPreview() {
                 >
                   <div className="flex items-center gap-2">
                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tint }} />
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
                       {title}
                     </p>
                   </div>
@@ -82,7 +79,7 @@ export function AtlasProductPreview() {
                 className="rounded-[1.4rem] border border-slate-200 bg-[#fbfcfe] p-4 shadow-[0_12px_28px_rgba(15,23,42,0.03)]"
                 key={label}
               >
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
                   {label}
                 </p>
                 <p className="mt-3 text-3xl font-black tracking-[-0.05em] text-[#071b42]">
@@ -93,7 +90,7 @@ export function AtlasProductPreview() {
             ))}
 
             <article className="rounded-[1.4rem] border border-slate-200 bg-[#071b42] p-4 text-white shadow-[0_12px_28px_rgba(7,27,66,0.18)]">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f0bf43]">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-[#f0bf43]">
                 Next move
               </p>
               <p className="mt-3 text-xl font-black tracking-[-0.04em]">
@@ -125,7 +122,7 @@ export function AtlasProductPreview() {
             ["Business value", "$41,000 pipeline"],
           ].map(([label, value]) => (
             <article className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3" key={label}>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
                 {label}
               </p>
               <p className="mt-2 text-sm font-bold text-[#071b42]">{value}</p>

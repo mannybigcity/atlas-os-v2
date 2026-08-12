@@ -42,7 +42,7 @@ const targets: Record<AtlasHudTargetId, AtlasHudTarget> = {
     title: "QTime Productions",
     status: "Client workspace route",
     description: "Open the scoped QTime workspace route. Access still depends on the authenticated membership and preview guard.",
-    href: "/client?previewOrg=qtime-productions",
+    href: "/clients?previewOrg=qtime-productions",
     linkLabel: "Open QTime workspace",
   },
   "obsidian-graph": {

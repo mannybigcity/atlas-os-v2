@@ -20,7 +20,7 @@ export function HunterSearch() {
   );
 
   return (
-    <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+    <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5" id="hunter-places-search">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
@@ -31,9 +31,9 @@ export function HunterSearch() {
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
             One click makes one bounded Google Places request for up to ten results.
-            Search repair shops, childcare, fitness, pet care, professional services,
-            home services, and other appointment- or relationship-driven businesses.
-            Results stay only in this page session and are not copied into the CRM.
+            Search by ZIP code, city/state, or a radius around a market before the
+            result is reviewed and added to the CRM. Results stay only in this page
+            session and are not copied into the CRM.
           </p>
         </div>
         <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-amber-800">
@@ -41,7 +41,7 @@ export function HunterSearch() {
         </span>
       </div>
 
-      <form action={action} className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <form action={action} className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.2fr_.8fr_.45fr_.45fr_.55fr_auto] sm:items-end">
         <label>
           <span className="text-sm font-medium text-slate-700">Business type</span>
           <input
@@ -52,12 +52,37 @@ export function HunterSearch() {
           />
         </label>
         <label>
-          <span className="text-sm font-medium text-slate-700">City or service area</span>
+          <span className="text-sm font-medium text-slate-700">ZIP code</span>
           <input
             className="mt-2 w-full rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-950"
-            name="location"
-            placeholder="Katy, Texas"
-            required
+            name="zipCode"
+            placeholder="77065"
+          />
+        </label>
+        <label>
+          <span className="text-sm font-medium text-slate-700">City</span>
+          <input
+            className="mt-2 w-full rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-950"
+            name="city"
+            placeholder="Katy"
+          />
+        </label>
+        <label>
+          <span className="text-sm font-medium text-slate-700">State</span>
+          <input
+            className="mt-2 w-full rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-950"
+            name="state"
+            placeholder="TX"
+          />
+        </label>
+        <label>
+          <span className="text-sm font-medium text-slate-700">Radius</span>
+          <input
+            className="mt-2 w-full rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-950"
+            min="1"
+            name="radiusMiles"
+            placeholder="10"
+            type="number"
           />
         </label>
         <button
@@ -119,6 +144,8 @@ export function HunterSearch() {
           <div className="border-t border-slate-200 pt-3 text-xs leading-5 text-slate-500">
             Google Maps local results are ranked using factors including relevance,
             distance, and prominence. Atlas does not persist this result content.
+            Radius is used as a search hint in the query prompt, not a hard
+            geofence clamp.
           </div>
         </div>
       ) : null}

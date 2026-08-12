@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { submitBusinessAssessment } from "@/server/assessments/actions";
 
@@ -109,15 +108,6 @@ function sectionStates(form: HTMLFormElement | null): [boolean, boolean, boolean
       isFilled(data.get("preferredContactMethod")) &&
       data.get("consentToContact") === "yes",
   ];
-}
-
-function ProgressDot({ complete }: { complete: boolean }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`flex h-3 w-3 shrink-0 rounded-full ${complete ? "bg-emerald-500" : "bg-slate-300"}`}
-    />
-  );
 }
 
 function Choice({
@@ -232,7 +222,7 @@ function SectionCard({
     <section className="rounded-[1.75rem] border border-[#dbe6f3] bg-white p-5 shadow-[0_1.25rem_2.75rem_rgba(6,27,82,.08)] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#edf2f8] pb-4">
         <div className="max-w-2xl">
-          <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#1246a0]">
+          <p className="text-xs font-black uppercase tracking-[0.26em] text-[#1246a0]">
             Section {number}
           </p>
           <h2 className="mt-2 text-xl font-black tracking-[-0.05em] text-[#06266d] sm:text-2xl">
@@ -240,8 +230,8 @@ function SectionCard({
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">{helper}</p>
         </div>
-        <span
-          className={`inline-flex min-h-9 items-center rounded-full px-3 text-[11px] font-black uppercase tracking-[0.18em] ${complete ? "bg-emerald-50 text-emerald-700" : "bg-[#eef4ff] text-[#1246a0]"}`}
+          <span
+          className={`inline-flex min-h-9 items-center rounded-full px-3 text-xs font-black uppercase tracking-[0.18em] ${complete ? "bg-emerald-50 text-emerald-700" : "bg-[#eef4ff] text-[#1246a0]"}`}
         >
           {complete ? "Complete" : "In progress"}
         </span>
@@ -288,8 +278,8 @@ export function BusinessAssessmentForm({ error }: Props) {
             role="alert"
           >
             {error === "missing_information"
-              ? "Please complete every required question before sending the company snapshot."
-              : "We could not save the snapshot. Please try again in a moment."}
+              ? "Please complete every required question before sending the business assessment."
+              : "We could not save the assessment. Please try again in a moment."}
           </div>
         ) : null}
 
@@ -302,8 +292,7 @@ export function BusinessAssessmentForm({ error }: Props) {
           type="text"
         />
 
-        <div className="grid gap-6 xl:grid-cols-[1.08fr_.92fr]">
-          <SectionCard
+        <SectionCard
             complete={sections[0]}
             helper="Start with the business story, the offer, and the customer they serve."
             number="01"
@@ -330,68 +319,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                 />
               </div>
             </div>
-          </SectionCard>
-
-          <aside className="space-y-4">
-            <div className="rounded-[1.75rem] border border-[#cfdcf0] bg-[#071b42] p-5 text-white shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.16)]">
-              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#f7cc62]">
-                Completion
-              </p>
-              <div className="mt-4 flex items-end justify-between gap-4">
-                <div>
-                  <div className="text-4xl font-black tracking-[-0.08em]">
-                    {percent}%
-                  </div>
-                  <p className="mt-1 text-sm leading-6 text-white/75">
-                    {currentSection > sections.length
-                      ? "All sections complete"
-                      : `Section ${currentSection} of ${sections.length}`}
-                  </p>
-                </div>
-                <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-white/8 text-sm font-black text-[#f7cc62]">
-                  {completeCount}/{sections.length}
-                </div>
-              </div>
-              <div
-                aria-hidden="true"
-                className="mt-4 h-2 rounded-full bg-white/12"
-              >
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#f7cc62] to-[#df9815] transition-[width] duration-300"
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/78">
-                Complete the company snapshot to see if Atlas is the right fit
-                and unlock a 7-day free trial review option.
-              </p>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-white p-5 shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.08)]">
-              <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#1246a0]">
-                What Atlas learns
-              </p>
-              <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-                <li className="flex gap-3">
-                  <ProgressDot complete={sections[0]} />
-                  <span>How the company operates and who it serves.</span>
-                </li>
-                <li className="flex gap-3">
-                  <ProgressDot complete={sections[1]} />
-                  <span>Where leads come from and what slows follow-up.</span>
-                </li>
-                <li className="flex gap-3">
-                  <ProgressDot complete={sections[2]} />
-                  <span>What growth target, budget, and timing fit best.</span>
-                </li>
-                <li className="flex gap-3">
-                  <ProgressDot complete={sections[3]} />
-                  <span>How Atlas should contact the right person next.</span>
-                </li>
-              </ul>
-            </div>
-          </aside>
-        </div>
+        </SectionCard>
 
         <SectionCard
           complete={sections[1]}
@@ -438,6 +366,14 @@ export function BusinessAssessmentForm({ error }: Props) {
             </div>
           </div>
         </SectionCard>
+
+        <section className="rounded-[1.75rem] border border-[#dbe6f3] bg-white p-5 shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.08)] sm:p-6">
+          <ul className="grid gap-3 text-sm leading-6 text-slate-600 sm:grid-cols-3">
+            <li>Clearer understanding of the company and customer profile.</li>
+            <li>Practical next-step recommendation based on the answers.</li>
+            <li>A review of whether the business is ready for a 7-day trial.</li>
+          </ul>
+        </section>
 
         <SectionCard
           complete={sections[2]}
@@ -616,7 +552,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                 value="yes"
               />
               <span>
-                Atlas may contact me about this company snapshot. My information
+                Atlas may contact me about this business assessment. My information
                 will be used to respond to my request and will not be sold.
               </span>
             </label>
@@ -626,11 +562,8 @@ export function BusinessAssessmentForm({ error }: Props) {
         <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-white p-5 shadow-[0_1.25rem_2.75rem_rgba(6,27,82,.08)] sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#c48713]">
-                Finish and unlock
-              </p>
-              <h2 className="mt-2 text-2xl font-black tracking-[-0.06em] text-[#06266d] sm:text-3xl">
-                Send the company snapshot
+              <h2 className="text-2xl font-black tracking-[-0.06em] text-[#06266d] sm:text-3xl">
+                Send the business assessment
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                 Atlas will review the answers and show the next step, including a
@@ -641,7 +574,7 @@ export function BusinessAssessmentForm({ error }: Props) {
               className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#f4b52f] px-6 text-sm font-black text-[#071b42] shadow-sm transition hover:bg-[#ffc94f]"
               type="submit"
             >
-              Send my company snapshot
+              Send my business assessment
             </button>
           </div>
           <p className="mt-4 text-center text-sm text-slate-500 sm:text-left">
@@ -650,30 +583,30 @@ export function BusinessAssessmentForm({ error }: Props) {
         </div>
       </form>
 
-      <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-        <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-white p-5 shadow-[0_1.25rem_2.75rem_rgba(6,27,82,.08)]">
-          <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#1246a0]">
-            What you get
+      <aside className="lg:sticky lg:top-6 lg:self-start">
+        <div className="rounded-[1.75rem] border border-[#cfdcf0] bg-[#071b42] p-5 text-white shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.16)]">
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-[#f7cc62]">
+            Completion
           </p>
-          <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-            <li>Clearer understanding of the company and customer profile.</li>
-            <li>Practical next-step recommendation based on the answers.</li>
-            <li>A review of whether the business is ready for a 7-day trial.</li>
-          </ul>
-        </div>
-        <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-[#f7fbff] p-5">
-          <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#1246a0]">
-            Need to see the product first?
-          </p>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            You can review the public Client Dashboard before submitting.
-          </p>
-          <Link
-            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-[#2a5abd] px-5 text-sm font-black text-[#06266d] transition hover:bg-white"
-            href="/atlas-team-live"
-          >
-            View Client Dashboard
-          </Link>
+          <div className="mt-4 flex items-end justify-between gap-4">
+            <div>
+              <div className="text-4xl font-black tracking-[-0.08em]">{percent}%</div>
+              <p className="mt-1 text-sm leading-6 text-white/75">
+                {currentSection > sections.length
+                  ? "All sections complete"
+                  : `Section ${currentSection} of ${sections.length}`}
+              </p>
+            </div>
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-white/8 text-sm font-black text-[#f7cc62]">
+              {completeCount}/{sections.length}
+            </div>
+          </div>
+          <div aria-hidden="true" className="mt-4 h-2 rounded-full bg-white/12">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#f7cc62] to-[#df9815] transition-[width] duration-300"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
         </div>
       </aside>
     </div>
