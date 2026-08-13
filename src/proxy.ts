@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { getSupabaseEnv, isSuperAdminEmail } from "@/lib/env";
 
 const protectedRoutes = ["/client", "/clients", "/lions-den", "/security"];
+const privateAtlasHosts = new Set(["app.ramfamatlas.com"]);
 
 function isProtectedPath(pathname: string) {
   return protectedRoutes.some(
@@ -23,6 +24,12 @@ export async function proxy(request: NextRequest) {
   });
 
   const pathname = request.nextUrl.pathname;
+
+  if (privateAtlasHosts.has(request.nextUrl.hostname) && pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
 
   if (!isProtectedPath(pathname)) {
     return response;
