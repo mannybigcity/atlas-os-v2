@@ -35,10 +35,10 @@ export function SiteHeader({ active }: SiteHeaderProps) {
           />
           <span>
             <span className="block text-lg font-bold tracking-tight">
-              Atlas For Entrepreneurs
+              RamFam Atlas OS
             </span>
             <span className="hidden text-xs font-semibold uppercase tracking-[0.12em] text-[#1246a0] sm:block">
-              Service Business Growth OS
+              Private Family Operating System
             </span>
           </span>
         </Link>

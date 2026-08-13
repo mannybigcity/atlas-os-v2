@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { updatePassword } from "@/server/auth/actions";
 
 export const metadata: Metadata = {
-  title: "Choose a New Password | Atlas For Entrepreneurs",
+  title: "Choose a New Password | RamFam Atlas OS",
   robots: { index: false, follow: false },
 };
 

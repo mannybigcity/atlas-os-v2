@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { requestPasswordReset } from "@/server/auth/actions";
 
 export const metadata: Metadata = {
-  title: "Reset Password | Atlas For Entrepreneurs",
+  title: "Reset Password | RamFam Atlas OS",
   robots: { index: false, follow: false },
 };
 
@@ -37,10 +37,10 @@ export default async function ForgotPasswordPage({
             Account recovery
           </p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-            Reset your Atlas password.
+            Reset your RamFam Atlas OS password.
           </h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">
-            Enter your Atlas login email. We will send a secure, one-time link
+            Enter your RamFam Atlas OS login email. We will send a secure, one-time link
             that lets you choose a new password.
           </p>
 

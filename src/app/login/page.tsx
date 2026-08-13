@@ -5,9 +5,9 @@ import { SiteHeader } from "@/components/site-header";
 import { signInWithPassword } from "@/server/auth/actions";
 
 export const metadata: Metadata = {
-  title: "Client Login | Atlas For Entrepreneurs",
+  title: "Secure Login | RamFam Atlas OS",
   description:
-    "Secure sign-in for Atlas clients.",
+    "Secure sign-in for RamFam Atlas OS.",
   robots: { index: false, follow: false },
 };
 
@@ -46,10 +46,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.02fr_.88fr] lg:px-8">
         <div className="rounded-[2rem] border border-[#dde5f0] bg-white p-6 shadow-[0_1.5rem_3.5rem_rgba(6,27,82,.08)] sm:p-8 lg:p-10">
           <h1 className="max-w-xl font-serif text-4xl font-black tracking-[-0.07em] text-[#06266d] sm:text-5xl">
-            Sign in to your Atlas workspace
+            Sign in to RamFam Atlas OS
           </h1>
           <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-            Use your email and password to securely access your client workspace.
+            Use your email and password to securely access your private operating system.
           </p>
         </div>
 
