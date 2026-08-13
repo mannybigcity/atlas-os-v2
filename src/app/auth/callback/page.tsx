@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site-header";
+import { PrivateAtlasAuthHeader } from "@/components/private-atlas-auth-header";
 import { RecoverySessionHandler } from "./recovery-session-handler";
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default async function AuthCallbackPage({
 
   return (
     <>
-      <SiteHeader active="login" />
+      <PrivateAtlasAuthHeader />
       <main className="min-h-[calc(100vh-73px)] bg-slate-50 px-6 py-12">
         <section className="mx-auto max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-700">

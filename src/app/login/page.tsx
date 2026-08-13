@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { SiteHeader } from "@/components/site-header";
+import { PrivateAtlasAuthHeader } from "@/components/private-atlas-auth-header";
 import { signInWithPassword } from "@/server/auth/actions";
 
 export const metadata: Metadata = {
@@ -42,7 +42,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <main className="min-h-screen bg-[#fffdf8]">
-      <SiteHeader active="login" />
+      <PrivateAtlasAuthHeader />
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.02fr_.88fr] lg:px-8">
         <div className="rounded-[2rem] border border-[#dde5f0] bg-white p-6 shadow-[0_1.5rem_3.5rem_rgba(6,27,82,.08)] sm:p-8 lg:p-10">
           <h1 className="max-w-xl font-serif text-4xl font-black tracking-[-0.07em] text-[#06266d] sm:text-5xl">
@@ -98,12 +98,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#2a5abd] px-5 text-sm font-black text-[#06266d] transition hover:bg-[#eef4ff]"
-              href="/#how"
-            >
-              How Atlas Works
-            </Link>
-            <Link
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#d9e2ef] px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50"
               href="/forgot-password"
             >
               Reset password

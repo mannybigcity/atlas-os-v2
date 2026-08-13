@@ -2,9 +2,7 @@ import Link from "next/link";
 
 const exploreLinks = [
   { href: "/", label: "Home" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/assessment", label: "Company snapshot" },
-  { href: "/login", label: "Client login" },
+  { href: "/login", label: "Secure login" },
 ];
 
 const trustLinks = [
@@ -26,13 +24,12 @@ export function SiteFooter() {
 
         <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.3fr_0.75fr_0.95fr_1fr]">
           <div className="max-w-sm">
-            <p className="text-lg font-bold text-white">Atlas For Entrepreneurs</p>
+            <p className="text-lg font-bold text-white">RamFam Atlas OS</p>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#ffd068]">
-              Service Business Growth OS
+              Private Family Operating System
             </p>
             <p className="mt-4 text-sm leading-7 text-slate-200">
-              Lead follow-up, practical marketing, and one clear growth priority
-              for owner-led service businesses.
+              Your secure command center for the family businesses you own and operate.
             </p>
           </div>
 
@@ -45,9 +42,9 @@ export function SiteFooter() {
             </h2>
             <a
               className="mt-4 block break-words text-sm leading-7 text-slate-100 hover:text-white"
-              href="mailto:info@atlasforentrepreneurs.com"
+              href="mailto:atlasforentrepreneurs@gmail.com"
             >
-              info@atlasforentrepreneurs.com
+              atlasforentrepreneurs@gmail.com
             </a>
             <p className="mt-3 text-xs leading-6 text-slate-300">
               For privacy requests, use the subject line &ldquo;Privacy request.&rdquo;
@@ -56,8 +53,8 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs leading-6 text-slate-300 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; 2026 Atlas For Entrepreneurs. All rights reserved.</p>
-          <p>Business results vary. No automatic subscription.</p>
+          <p>&copy; 2026 RamFam Atlas OS. All rights reserved.</p>
+          <p>Private access for authorized family members and operators.</p>
         </div>
       </div>
     </footer>
