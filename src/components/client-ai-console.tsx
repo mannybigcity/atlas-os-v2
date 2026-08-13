@@ -10,7 +10,7 @@ import {
   getClientAiRoleSpec,
   type ClientAiRole,
 } from "@/server/client-ai/guardrails";
-import type { ClientAiRequest } from "@/server/client-ai/queries";
+import type { ClientAiDailyUsage, ClientAiRequest } from "@/server/client-ai/queries";
 import {
   initialClientAiActionState,
   type ClientAiActionState,
@@ -34,6 +34,7 @@ type ClientAiConsoleProps = {
   fixedRole?: ClientAiRole;
   title?: string;
   description?: string;
+  dailyUsage?: ClientAiDailyUsage;
 };
 
 type PreviewResponse = {
@@ -41,6 +42,14 @@ type PreviewResponse = {
   nextStep: string;
   missingInputs: string[];
 };
+
+const defaultClientAiDailyUsage = (): ClientAiDailyUsage => ({
+  plan: "basic",
+  planLabel: "Basic",
+  used: 0,
+  limit: 5,
+  remaining: 5,
+});
 
 function humanize(value: string) {
   return value.replaceAll("_", " ");
@@ -110,6 +119,7 @@ export function ClientAiConsole({
   fixedRole,
   title,
   description,
+  dailyUsage = defaultClientAiDailyUsage(),
 }: ClientAiConsoleProps) {
   const [activeRole, setActiveRole] = useState<ClientAiRole>(fixedRole ?? defaultRole ?? "atlas");
   const [previewPrompt, setPreviewPrompt] = useState("");
@@ -120,6 +130,10 @@ export function ClientAiConsole({
   );
 
   const activeRoleSpec = getClientAiRoleSpec(activeRole);
+  const currentUsage = state.dailyUsage ?? dailyUsage;
+  const usageLabel = currentUsage.limit === null
+    ? `${currentUsage.used} asked today · Unlimited`
+    : `${currentUsage.used} of ${currentUsage.limit} today`;
   const visibleRoleSpecs = businessOnly
     ? clientAiRoleSpecs.filter((spec) => spec.role !== "atlas")
     : clientAiRoleSpecs;
@@ -177,6 +191,7 @@ export function ClientAiConsole({
         </div>
 
         <div className="grid gap-2 sm:grid-cols-4 lg:w-[31rem]">
+          <UsageChip label="Ask Atlas today" value={usageLabel} tone="blue" />
           <UsageChip label="Recent" value={requestCounts.total} />
           <UsageChip label="Done" value={requestCounts.succeeded} tone="emerald" />
           <UsageChip label="Rerouted" value={requestCounts.rerouted} tone="amber" />
@@ -336,7 +351,9 @@ export function ClientAiConsole({
                   {pending ? "Thinking..." : "Ask this role"}
                 </button>
                 <p className="text-xs leading-5 text-slate-500">
-                  Nothing here can browse, publish, contact, or spend.
+                  {currentUsage.limit === null
+                    ? "Unlimited questions today."
+                    : `${currentUsage.remaining} question${currentUsage.remaining === 1 ? "" : "s"} remaining today.`}
                 </p>
               </div>
             </form>
@@ -524,14 +541,15 @@ function UsageChip({
   tone = "slate",
 }: {
   label: string;
-  value: number;
-  tone?: "slate" | "emerald" | "amber" | "rose";
+  value: number | string;
+  tone?: "slate" | "emerald" | "amber" | "rose" | "blue";
 }) {
   const tones = {
     slate: "border-slate-200 bg-slate-50 text-slate-950",
     emerald: "border-emerald-200 bg-emerald-50 text-emerald-900",
     amber: "border-amber-200 bg-amber-50 text-amber-900",
     rose: "border-rose-200 bg-rose-50 text-rose-900",
+    blue: "border-blue-200 bg-blue-50 text-blue-900",
   };
 
   return (

@@ -10,6 +10,7 @@ type ClientPortalShellProps = {
   children: ReactNode;
   fullWidth?: boolean;
   showOverviewLink?: boolean;
+  workspaces?: Array<{ name: string; slug: string }>;
 };
 
 export function ClientPortalShell({
@@ -19,6 +20,7 @@ export function ClientPortalShell({
   children,
   fullWidth = false,
   showOverviewLink = true,
+  workspaces = [],
 }: ClientPortalShellProps) {
   const portalName = getClientPortalName(organizationName);
 
@@ -39,6 +41,7 @@ export function ClientPortalShell({
               </p>
             </div>
             <nav aria-label="Workspace actions" className="flex flex-wrap gap-2">
+              {workspaces.length > 1 ? workspaces.map((workspace) => <Link className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${workspace.name === organizationName ? "border-slate-950 bg-slate-950 text-white" : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"}`} href={`/client?workspace=${encodeURIComponent(workspace.slug)}`} key={workspace.slug}>{workspace.name}</Link>) : null}
               {showOverviewLink ? <Link className="rounded-full border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" href="/client">Overview</Link> : null}
               <form action={signOut}>
                 <button className="rounded-full bg-slate-950 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800" type="submit">

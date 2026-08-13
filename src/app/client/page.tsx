@@ -1,12 +1,16 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { ClientAdminDashboard } from "@/components/client-admin-dashboard";
 import { ClientPortalShell } from "@/components/client-portal-shell";
 import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
+import { SisCrmDashboard } from "@/components/sis-crm-dashboard";
 import {
   getClientWorkspaceContext,
 } from "@/server/client-workspace/context";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
+import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
+import { getSisDashboardData } from "@/server/sis-workspace/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +30,7 @@ type ClientDashboardPageProps = {
     previewOrg?: string;
     profile?: string;
     status?: string;
+    workspace?: string;
   }>;
 };
 
@@ -56,9 +61,16 @@ export default async function ClientDashboardPage({
   const workspace = await getClientWorkspaceContext("/client", params);
   const { isClientPreview, memberships, previewOrgSlug, previewOrganization, primaryOrganization } =
     workspace;
+  const organizations = workspace.isSuperAdmin && !isClientPreview && !workspace.selectedWorkspaceSlug
+    ? await getOrganizationsForSuperAdmin()
+    : null;
 
-  const dashboard = primaryOrganization
+  const isSisWorkspace = primaryOrganization?.slug === "sis-custom-creations";
+  const dashboard = primaryOrganization && !isSisWorkspace
     ? await getClientDashboardData(primaryOrganization.id)
+    : null;
+  const sisDashboard = isSisWorkspace
+    ? await getSisDashboardData(primaryOrganization.id)
     : null;
 
   return (
@@ -68,6 +80,7 @@ export default async function ClientDashboardPage({
       organizationName={primaryOrganization?.name}
       fullWidth
       showOverviewLink={false}
+      workspaces={memberships.data.flatMap((membership) => membership.organization ? [{ name: membership.organization.name, slug: membership.organization.slug ?? "" }] : [])}
     >
       <div className="space-y-4">
         {params?.status === "welcome" ? (
@@ -120,7 +133,23 @@ export default async function ClientDashboardPage({
           </StatusAlert>
         ) : null}
 
-        {primaryOrganization && dashboard ? (
+        {organizations ? (
+          organizations.setupRequired ? (
+            <StatusAlert tone="rose">
+              We could not load client workspaces. Try again or contact the Atlas team.
+            </StatusAlert>
+          ) : (
+            <ClientAdminDashboard organizations={organizations.data} />
+          )
+        ) : isSisWorkspace && sisDashboard ? (
+          sisDashboard.setupRequired ? (
+            <StatusAlert tone="rose">
+              We could not load the SIS CRM data layer. The organization exists, but the tenant tables need attention.
+            </StatusAlert>
+          ) : (
+            <SisCrmDashboard dashboard={sisDashboard.data} />
+          )
+        ) : primaryOrganization && dashboard ? (
           <ClientQTimeDashboard workspace={workspace} dashboard={dashboard} />
         ) : null}
       </div>
