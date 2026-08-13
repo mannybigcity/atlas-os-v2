@@ -10,7 +10,7 @@ import {
   getClientAiRoleSpec,
   type ClientAiRole,
 } from "@/server/client-ai/guardrails";
-import type { ClientAiDailyUsage, ClientAiRequest } from "@/server/client-ai/queries";
+import type { ClientAiRequest } from "@/server/client-ai/queries";
 import {
   initialClientAiActionState,
   type ClientAiActionState,
@@ -34,7 +34,11 @@ type ClientAiConsoleProps = {
   fixedRole?: ClientAiRole;
   title?: string;
   description?: string;
-  dailyUsage?: ClientAiDailyUsage;
+  dailyUsage?: {
+    used: number;
+    limit: number | null;
+    remaining: number | null;
+  };
 };
 
 type PreviewResponse = {
@@ -42,14 +46,6 @@ type PreviewResponse = {
   nextStep: string;
   missingInputs: string[];
 };
-
-const defaultClientAiDailyUsage = (): ClientAiDailyUsage => ({
-  plan: "basic",
-  planLabel: "Basic",
-  used: 0,
-  limit: 5,
-  remaining: 5,
-});
 
 function humanize(value: string) {
   return value.replaceAll("_", " ");
@@ -119,7 +115,6 @@ export function ClientAiConsole({
   fixedRole,
   title,
   description,
-  dailyUsage = defaultClientAiDailyUsage(),
 }: ClientAiConsoleProps) {
   const [activeRole, setActiveRole] = useState<ClientAiRole>(fixedRole ?? defaultRole ?? "atlas");
   const [previewPrompt, setPreviewPrompt] = useState("");
@@ -130,10 +125,7 @@ export function ClientAiConsole({
   );
 
   const activeRoleSpec = getClientAiRoleSpec(activeRole);
-  const currentUsage = state.dailyUsage ?? dailyUsage;
-  const usageLabel = currentUsage.limit === null
-    ? `${currentUsage.used} asked today · Unlimited`
-    : `${currentUsage.used} of ${currentUsage.limit} today`;
+  const usageLabel = "Available";
   const visibleRoleSpecs = businessOnly
     ? clientAiRoleSpecs.filter((spec) => spec.role !== "atlas")
     : clientAiRoleSpecs;
@@ -351,9 +343,7 @@ export function ClientAiConsole({
                   {pending ? "Thinking..." : "Ask this role"}
                 </button>
                 <p className="text-xs leading-5 text-slate-500">
-                  {currentUsage.limit === null
-                    ? "Unlimited questions today."
-                    : `${currentUsage.remaining} question${currentUsage.remaining === 1 ? "" : "s"} remaining today.`}
+                  Usage limits are managed by your workspace plan.
                 </p>
               </div>
             </form>
