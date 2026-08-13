@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabaseEnv, isSuperAdminEmail } from "@/lib/env";
 
-const protectedRoutes = ["/client", "/clients", "/lions-den"];
+const protectedRoutes = ["/client", "/clients", "/lions-den", "/security"];
 
 function isProtectedPath(pathname: string) {
   return protectedRoutes.some(
@@ -79,5 +79,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/client/:path*", "/clients/:path*", "/lions-den/:path*"],
+  matcher: ["/client/:path*", "/clients/:path*", "/lions-den/:path*", "/security/:path*"],
 };
