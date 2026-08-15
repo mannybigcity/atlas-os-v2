@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { confirmAuthLink } from "@/server/auth/actions";
 
 type ConfirmRecoveryPageProps = {
   searchParams?: Promise<{
+    code?: string;
     token_hash?: string;
     type?: string;
     next?: string;
@@ -21,6 +23,9 @@ export default async function ConfirmRecoveryPage({
   searchParams,
 }: ConfirmRecoveryPageProps) {
   const params = await searchParams;
+  if (params?.code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(params.code)}&next=/reset-password`);
+  }
   const isInvite = params?.type === "invite";
   const isRecovery = params?.type === "recovery";
   const isValidRequest = Boolean(params?.token_hash) && (isInvite || isRecovery);
