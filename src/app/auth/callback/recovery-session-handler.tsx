@@ -9,7 +9,13 @@ type RecoverySessionHandlerProps = {
 };
 
 function safeClientRedirectPath(value: string | undefined) {
-  if (value === "/reset-password" || value === "/client" || value === "/lions-den") {
+  if (
+    value === "/reset-password" ||
+    value === "/set-password" ||
+    value === "/client" ||
+    value === "/clients" ||
+    value === "/lions-den"
+  ) {
     return value;
   }
 
