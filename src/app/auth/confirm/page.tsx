@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { confirmAuthLink } from "@/server/auth/actions";
 
@@ -23,12 +22,10 @@ export default async function ConfirmRecoveryPage({
   searchParams,
 }: ConfirmRecoveryPageProps) {
   const params = await searchParams;
-  if (params?.code) {
-    redirect(`/auth/callback?code=${encodeURIComponent(params.code)}&next=/reset-password`);
-  }
-  const isInvite = params?.type === "invite";
-  const isRecovery = params?.type === "recovery";
-  const isValidRequest = Boolean(params?.token_hash) && (isInvite || isRecovery);
+  const isInvite = params?.type === "invite" || params?.next === "/set-password";
+  const isRecovery = params?.type === "recovery" || Boolean(params?.code);
+  const isValidRequest =
+    Boolean(params?.code || params?.token_hash) && (isInvite || isRecovery);
   const nextPath = isInvite ? "/set-password" : "/reset-password";
 
   return (
@@ -53,6 +50,11 @@ export default async function ConfirmRecoveryPage({
           <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             {isValidRequest ? (
               <form action={confirmAuthLink}>
+                <input
+                  name="code"
+                  type="hidden"
+                  value={params?.code}
+                />
                 <input
                   name="tokenHash"
                   type="hidden"

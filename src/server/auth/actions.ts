@@ -53,7 +53,7 @@ export async function requestPasswordReset(formData: FormData) {
   const supabase = await createClient();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=/reset-password`,
+    redirectTo: `${origin}/auth/confirm?next=/reset-password`,
   });
 
   if (error) {
@@ -68,9 +68,21 @@ export async function requestPasswordReset(formData: FormData) {
 }
 
 export async function confirmAuthLink(formData: FormData) {
+  const code = String(formData.get("code") ?? "");
   const tokenHash = String(formData.get("tokenHash") ?? "");
   const type = String(formData.get("type") ?? "");
   const nextPath = safeRedirectPath(formData.get("next"));
+
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (error) {
+      redirect("/login?error=auth_callback_failed");
+    }
+
+    redirect(nextPath);
+  }
 
   if (!tokenHash || (type !== "invite" && type !== "recovery")) {
     redirect("/login?error=auth_callback_failed");
