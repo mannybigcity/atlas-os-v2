@@ -11,6 +11,7 @@ type RecoverySessionHandlerProps = {
 function safeClientRedirectPath(value: string | undefined) {
   if (
     value === "/reset-password" ||
+    value === "/set-password" ||
     value === "/client" ||
     value === "/clients" ||
     value === "/lions-den"

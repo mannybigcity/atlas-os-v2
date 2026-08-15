@@ -95,7 +95,7 @@ export async function sendClientLoginEmail(formData: FormData) {
   const requestHeaders = await headers();
   const origin = getSiteUrl(requestHeaders.get("origin"));
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/confirm`,
+    redirectTo: `${origin}/auth/callback?next=/set-password`,
   });
 
   if (error) {
