@@ -3,7 +3,10 @@
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { sendAssessmentNotification } from "@/server/notifications/resend";
+import {
+  sendAssessmentConfirmation,
+  sendAssessmentNotification,
+} from "@/server/notifications/resend";
 
 const allowed = {
   customerSources: new Set([
@@ -223,7 +226,26 @@ export async function submitBusinessAssessment(formData: FormData) {
     createdAt: submittedAt,
   });
 
-  console.info("Assessment notification result", notificationResult);
+  const confirmationResult = await sendAssessmentConfirmation({
+    id: assessmentId,
+    businessName,
+    contactName,
+    contactEmail,
+    contactPhone,
+    businessDescription,
+    idealCustomer,
+    biggestChallenge,
+    ninetyDayGoal,
+    improvementTiming,
+    website,
+    socialMedia: socialMedia || null,
+    createdAt: submittedAt,
+  });
+
+  console.info("Assessment email results", {
+    internal: notificationResult,
+    prospect: confirmationResult,
+  });
 
   redirect("/assessment?status=received");
 }

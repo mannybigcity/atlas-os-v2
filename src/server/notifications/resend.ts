@@ -54,10 +54,11 @@ async function sendEmail(input: {
   text: string;
   replyTo?: string;
   idempotencyKey: string;
+  to?: string[];
 }): Promise<EmailDeliveryResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.ATLAS_NOTIFICATION_FROM?.trim();
-  const to = notificationRecipients();
+  const to = input.to ?? notificationRecipients();
 
   if (!apiKey || !from || to.length === 0) {
     console.info("Atlas email notification skipped because Resend is not configured");
@@ -161,5 +162,46 @@ export async function sendAssessmentNotification(input: AssessmentNotification) 
     text,
     replyTo: input.contactEmail,
     idempotencyKey: `atlas-assessment-${input.id}`,
+  });
+}
+
+export async function sendAssessmentConfirmation(input: AssessmentNotification) {
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://atlasforentrepreneurs.com")
+    .replace(/\/$/, "");
+  const safeBusinessName = escapeHtml(input.businessName);
+  const safeContactName = escapeHtml(input.contactName);
+
+  const subject = `Atlas received your assessment: ${input.businessName}`;
+  const text = [
+    `Hi ${input.contactName},`,
+    "",
+    `We received the company snapshot for ${input.businessName}. Our team will review the answers and recommend the best starting point.`,
+    "",
+    `If the business is a fit, we will follow up with the next step, including a 7-day free trial review option.`,
+    "",
+    `Review the Atlas site: ${siteUrl}`,
+    "",
+    "Atlas For Entrepreneurs",
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#081f49;max-width:680px;margin:auto">
+      <p style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#a57600">Company snapshot received</p>
+      <h1 style="font-size:28px;margin:0 0 18px">Thanks, ${safeContactName}.</h1>
+      <p>We received the company snapshot for <strong>${safeBusinessName}</strong>.</p>
+      <p>Our team will review the answers and recommend the best starting point.</p>
+      <p>If the business is a fit, we will follow up with the next step, including a 7-day free trial review option.</p>
+      <p style="margin-top:26px"><a href="${siteUrl}" style="display:inline-block;background:#1455ad;color:white;text-decoration:none;padding:12px 18px;border-radius:24px">Visit Atlas For Entrepreneurs</a></p>
+      <p style="font-size:12px;color:#607085;margin-top:24px">Assessment ID: ${escapeHtml(input.id)}</p>
+    </div>
+  `;
+
+  return sendEmail({
+    to: [input.contactEmail],
+    subject,
+    html,
+    text,
+    replyTo: process.env.ATLAS_NOTIFICATION_FROM?.trim(),
+    idempotencyKey: `atlas-assessment-confirmation-${input.id}`,
   });
 }
