@@ -368,7 +368,7 @@ function buildFollowUpDraft({
     greeting,
     "",
     `Thank you for sharing ${businessName}'s company snapshot with us. We will review the details and recommend a practical starting point based on the priorities you shared.`,
-    `We noted the current focus as ${challenge.toLowerCase()} and the 90-day goal as ${goal.toLowerCase()}.`,
+    `We noted the current focus as ${challenge.toLowerCase()} and the 90-day goal as ${goal.toLowerCase()}`,
     "",
     "Would you be open to a short conversation about the best next step?",
     "",
