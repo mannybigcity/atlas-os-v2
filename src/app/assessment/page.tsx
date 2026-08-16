@@ -72,11 +72,10 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
                 </div>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  {[
-                    ["Lead flow", "How customers arrive"],
-                    ["Priority", "What needs attention first"],
-                    ["Review", "What Atlas learns next"],
-                  ].map(([title, text]) => (
+                  {(spanish
+                    ? [["Flujo de clientes", "Cómo llegan los clientes"], ["Prioridad", "Qué necesita atención primero"], ["Revisión", "Lo que Atlas aprende después"]]
+                    : [["Lead flow", "How customers arrive"], ["Priority", "What needs attention first"], ["Review", "What Atlas learns next"]]
+                  ).map(([title, text]) => (
                     <div
                       className="rounded-2xl border border-white/10 bg-white/7 p-4"
                       key={title}

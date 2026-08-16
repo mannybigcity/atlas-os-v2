@@ -56,7 +56,7 @@ export function SiteHeader({ active, language = "en", onLanguageChange }: SiteHe
               Atlas For Entrepreneurs
             </span>
             <span className="hidden text-xs font-semibold uppercase tracking-[0.12em] text-[#1246a0] sm:block">
-              Service Business Growth OS
+              {spanish ? "Sistema operativo de crecimiento" : "Service Business Growth OS"}
             </span>
           </span>
         </Link>

@@ -128,11 +128,11 @@ const copy: Record<Language, LandingCopy> = {
     nav: {
       how: "Cómo funciona ATLAS",
       who: "Para quién es",
-      dashboard: "Client Dashboard",
+      dashboard: "Panel del cliente",
       pricing: "Precios",
       resources: "Recursos",
-      login: "Client Login",
-      action: "Client Dashboard",
+      login: "Acceso del cliente",
+      action: "Panel del cliente",
     },
     principles: [
       "Hecho para pequeñas empresas",
@@ -158,7 +158,7 @@ const copy: Record<Language, LandingCopy> = {
       { title: "Cierra", body: "ATLAS ayuda a agendar citas y a cerrar más ventas.", mark: "04" },
       { title: "Crece", body: "ATLAS obtiene reseñas, recupera clientes e impulsa el crecimiento.", mark: "05" },
     ],
-    denTitle: "CLIENT DASHBOARD",
+    denTitle: "PANEL DEL CLIENTE",
     denCopy: "Tu centro de mando. Mira lo que ATLAS está haciendo, lo que necesita tu atención y lo que sigue.",
     denPoints: [
       "Actividad en vivo y rendimiento de IA",
@@ -167,7 +167,7 @@ const copy: Record<Language, LandingCopy> = {
       "Tareas y recordatorios",
       "Reportes que impulsan decisiones",
     ],
-    denCta: "ENTRA AL CLIENT DASHBOARD",
+    denCta: "ENTRA AL PANEL DEL CLIENTE",
     closingTitle: ["MANEJA EL NEGOCIO.", "LLEGA A LOS MOMENTOS QUE IMPORTAN."],
     closingCopy:
       "ATLAS se encarga del trabajo que te aleja: llamadas, seguimientos, agendas y más, para que puedas enfocarte en tus clientes y tu familia.",
@@ -220,7 +220,7 @@ function DashboardPreview({ language }: { language: Language }) {
           <article className="atlas-pipeline-card">
             <h3>{spanish ? "Resumen del pipeline" : "Pipeline overview"}</h3>
             <div className="atlas-donut"><span /></div>
-            <div className="atlas-pipeline-key"><span>New</span><span>Qualified</span><span>Proposal</span></div>
+            <div className="atlas-pipeline-key"><span>{spanish ? "Nuevo" : "New"}</span><span>{spanish ? "Calificado" : "Qualified"}</span><span>{spanish ? "Propuesta" : "Proposal"}</span></div>
           </article>
         </div>
       </div>

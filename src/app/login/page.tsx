@@ -29,12 +29,20 @@ const errorMessages: Record<string, string> = {
   missing_credentials: "Enter both an email and password.",
 };
 
+const errorMessagesSpanish: Record<string, string> = {
+  auth_callback_failed: "No se pudo verificar ese enlace seguro. Solicita una nueva invitación o un correo para restablecer la contraseña.",
+  invitation_expired: "Esa invitación ya no es válida. Pide a Atlas que envíe una nueva invitación.",
+  invalid_credentials: "El correo o la contraseña no fueron aceptados.",
+  missing_auth_code: "Ese enlace seguro está incompleto. Solicita una nueva invitación o un correo para restablecer la contraseña.",
+  missing_credentials: "Escribe un correo y una contraseña.",
+};
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const nextPath = params?.next ?? "";
   const language = normalizeSiteLanguage(params?.lang);
   const spanish = language === "es";
-  const error = params?.error ? errorMessages[params.error] : null;
+  const error = params?.error ? (spanish ? errorMessagesSpanish[params.error] : errorMessages[params.error]) : null;
 
   return (
     <>
@@ -107,7 +115,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                   className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                   id="password"
                   name="password"
-                  placeholder="Password"
+                  placeholder={spanish ? "Contraseña" : "Password"}
                   required
                   type="password"
                 />
@@ -123,7 +131,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <div className="flex flex-col gap-2 text-sm leading-6 text-slate-500">
                 <Link
                   className="font-semibold text-slate-700 hover:text-slate-950"
-                  href="/forgot-password"
+                  href={withSiteLanguage("/forgot-password", language)}
                 >
                   {spanish ? "¿Olvidaste tu contraseña?" : "Forgot your password?"}
                 </Link>

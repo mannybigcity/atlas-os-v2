@@ -35,6 +35,12 @@ export function SiteFooter() {
   const language: SiteLanguage = searchParams.get("lang") === "es" ? "es" : cookieLanguage;
   const spanish = language === "es";
   const link = (href: string) => withSiteLanguage(href, language);
+  const localizedExploreLinks = spanish
+    ? [{ href: "/", label: "Inicio" }, { href: "/assessment", label: "Evaluación del negocio" }, { href: "/login", label: "Acceso del cliente" }]
+    : exploreLinks;
+  const localizedTrustLinks = spanish
+    ? [{ href: "/responsible-ai", label: "IA responsable" }, { href: "/privacy", label: "Política de privacidad" }, { href: "/terms", label: "Términos de uso" }, { href: "/accessibility", label: "Accesibilidad" }]
+    : trustLinks;
   return (
     <footer className="border-t border-[#305ca8] bg-[#071b42] text-blue-100">
       <div className="mx-auto w-full max-w-7xl px-6 py-10 sm:py-12">
@@ -47,15 +53,15 @@ export function SiteFooter() {
           <div className="max-w-sm">
             <p className="text-lg font-bold text-white">Atlas For Entrepreneurs</p>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#ffd068]">
-              Service Business Growth OS
+              {spanish ? "Sistema operativo de crecimiento" : "Service Business Growth OS"}
             </p>
             <p className="mt-4 text-sm leading-6 text-blue-100">
               {spanish ? "Seguimiento de prospectos, marketing práctico y una prioridad clara de crecimiento para negocios de servicios dirigidos por sus dueños." : "Lead follow-up, practical marketing, and one clear growth priority for owner-led service businesses."}
             </p>
           </div>
 
-          <FooterLinks heading={spanish ? "Explorar" : "Explore"} links={exploreLinks.map((item) => ({ ...item, href: link(item.href) }))} />
-          <FooterLinks heading={spanish ? "Confianza y legal" : "Trust & legal"} links={trustLinks.map((item) => ({ ...item, href: link(item.href) }))} />
+          <FooterLinks heading={spanish ? "Explorar" : "Explore"} links={localizedExploreLinks.map((item) => ({ ...item, href: link(item.href) }))} />
+          <FooterLinks heading={spanish ? "Confianza y legal" : "Trust & legal"} links={localizedTrustLinks.map((item) => ({ ...item, href: link(item.href) }))} />
 
           <div>
             <h2 className="text-xs font-black uppercase tracking-[0.18em] text-white">
@@ -74,7 +80,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs leading-5 text-blue-200 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; 2026 Atlas For Entrepreneurs. All rights reserved.</p>
+          <p>&copy; 2026 Atlas For Entrepreneurs. {spanish ? "Todos los derechos reservados." : "All rights reserved."}</p>
           <p>{spanish ? "Los resultados varían. No hay suscripción automática." : "Business results vary. No automatic subscription."}</p>
         </div>
       </div>
