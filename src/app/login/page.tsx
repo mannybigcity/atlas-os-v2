@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { signInWithPassword } from "@/server/auth/actions";
+import { normalizeSiteLanguage, withSiteLanguage } from "@/lib/site-language";
 
 export const metadata: Metadata = {
   title: "Client Login | Atlas For Entrepreneurs",
@@ -13,6 +14,7 @@ type LoginPageProps = {
     error?: string;
     next?: string;
     status?: string;
+    lang?: string;
   }>;
 };
 
@@ -30,30 +32,31 @@ const errorMessages: Record<string, string> = {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const nextPath = params?.next ?? "";
+  const language = normalizeSiteLanguage(params?.lang);
+  const spanish = language === "es";
   const error = params?.error ? errorMessages[params.error] : null;
 
   return (
     <>
-      <SiteHeader active="login" />
+      <SiteHeader active="login" language={language} />
       <main className="min-h-[calc(100vh-73px)] bg-slate-50 px-6 py-12">
         <section className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-700">
-              Secure access
+              {spanish ? "Acceso seguro" : "Secure access"}
             </p>
             <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-              Sign in to your private Atlas workspace.
+              {spanish ? "Inicia sesión en tu espacio privado de Atlas." : "Sign in to your private Atlas workspace."}
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-              Use the email address invited by Atlas and the password you
-              created. Your business workspace is private to your organization.
+              {spanish ? "Usa el correo invitado por Atlas y la contraseña que creaste. Tu espacio de trabajo es privado para tu organización." : "Use the email address invited by Atlas and the password you created. Your business workspace is private to your organization."}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 className="rounded-full border border-slate-300 px-5 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-white"
-                href="/"
+                href={withSiteLanguage("/", language)}
               >
-                Back to public site
+                {spanish ? "Volver al sitio público" : "Back to public site"}
               </Link>
             </div>
           </div>
@@ -70,20 +73,19 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
               {params?.status === "password_updated" ? (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
-                  Password updated. Sign in with your new password.
+                  {spanish ? "Contraseña actualizada. Inicia sesión con tu nueva contraseña." : "Password updated. Sign in with your new password."}
                 </div>
               ) : null}
 
               {params?.status === "invitation_complete" ? (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
-                  Your Atlas account is ready. Sign in with your email and the
-                  password you created.
+                  {spanish ? "Tu cuenta de Atlas está lista. Inicia sesión con tu correo y la contraseña que creaste." : "Your Atlas account is ready. Sign in with your email and the password you created."}
                 </div>
               ) : null}
 
               <div>
                 <label className="text-sm font-medium text-slate-700" htmlFor="email">
-                  Email
+                  {spanish ? "Correo electrónico" : "Email"}
                 </label>
                 <input
                   autoComplete="email"
@@ -98,7 +100,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
               <div>
                 <label className="text-sm font-medium text-slate-700" htmlFor="password">
-                  Password
+                  {spanish ? "Contraseña" : "Password"}
                 </label>
                 <input
                   autoComplete="current-password"
@@ -115,7 +117,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                 type="submit"
               >
-                Sign in
+                {spanish ? "Iniciar sesión" : "Sign in"}
               </button>
 
               <div className="flex flex-col gap-2 text-sm leading-6 text-slate-500">
@@ -123,11 +125,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                   className="font-semibold text-slate-700 hover:text-slate-950"
                   href="/forgot-password"
                 >
-                  Forgot your password?
+                  {spanish ? "¿Olvidaste tu contraseña?" : "Forgot your password?"}
                 </Link>
                 <p>
-                  First time here? Open the newest secure invitation sent by
-                  Atlas to create your password.
+                  {spanish ? "¿Es tu primera vez? Abre la invitación segura más reciente de Atlas para crear tu contraseña." : "First time here? Open the newest secure invitation sent by Atlas to create your password."}
                 </p>
               </div>
             </form>

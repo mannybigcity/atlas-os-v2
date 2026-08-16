@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
+import { withSiteLanguage } from "@/lib/site-language";
 
 type Language = "en" | "es";
 
@@ -227,8 +228,8 @@ function DashboardPreview({ language }: { language: Language }) {
   );
 }
 
-export function AtlasHomepage() {
-  const [language, setLanguage] = useState<Language>("en");
+export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Language }) {
+  const [language, setLanguage] = useState<Language>(initialLanguage);
   const t = copy[language];
 
   return (
@@ -243,7 +244,7 @@ export function AtlasHomepage() {
               <h1 id="atlas-title"><span>{t.headline[0]}</span><strong>{t.headline[1]}</strong></h1>
               <p className="atlas-hero-lede">{t.heroCopy}</p>
               <div className="atlas-hero-actions">
-                <Link className="atlas-button gold" href="/atlas-preview">{t.primary}</Link>
+                <Link className="atlas-button gold" href={withSiteLanguage("/atlas-preview", language)}>{t.primary}</Link>
                 <a className="atlas-button outline" href="#how">{t.secondary}</a>
               </div>
             </div>
@@ -292,7 +293,7 @@ export function AtlasHomepage() {
             <p className="atlas-section-label">{t.denTitle}</p>
             <h2 id="den-title">{t.denCopy}</h2>
             <ul>{t.denPoints.map((point) => <li key={point}>{point}</li>)}</ul>
-            <Link className="atlas-button gold compact" href="/login">{t.denCta}</Link>
+            <Link className="atlas-button gold compact" href={withSiteLanguage("/login", language)}>{t.denCta}</Link>
           </div>
           <DashboardPreview language={language} />
         </section>
@@ -317,11 +318,11 @@ export function AtlasHomepage() {
 
         <section className="atlas-outcome-section" id="resources">
           <div className="atlas-outcome-stats">{t.stats.map((stat) => <article key={stat.label}><strong>{stat.value}</strong><span>{stat.label}</span></article>)}</div>
-          <Link className="atlas-outcome-cta" href="/assessment"><span>{t.bottomCta}</span><span aria-hidden="true" className="atlas-outcome-arrow">→</span></Link>
+          <Link className="atlas-outcome-cta" href={withSiteLanguage("/assessment", language)}><span>{t.bottomCta}</span><span aria-hidden="true" className="atlas-outcome-arrow">→</span></Link>
         </section>
       </main>
 
-      <aside className="atlas-bottom-bar"><div className="atlas-wrap"><span>ATLAS</span><strong>{language === "es" ? "TÚ LIDERAS. ATLAS TE RESPALDA." : "YOU LEAD. ATLAS HAS YOUR BACK."}</strong><Link href="/assessment">{t.bottomCta}</Link></div></aside>
+      <aside className="atlas-bottom-bar"><div className="atlas-wrap"><span>ATLAS</span><strong>{language === "es" ? "TÚ LIDERAS. ATLAS TE RESPALDA." : "YOU LEAD. ATLAS HAS YOUR BACK."}</strong><Link href={withSiteLanguage("/assessment", language)}>{t.bottomCta}</Link></div></aside>
     </div>
   );
 }

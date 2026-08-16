@@ -9,6 +9,7 @@ import {
   atlasPricingFaqs,
   atlasPricingPlans,
 } from "@/lib/pricing";
+import { normalizeSiteLanguage, withSiteLanguage } from "@/lib/site-language";
 
 export const metadata: Metadata = {
   title: "Pricing | Atlas For Entrepreneurs",
@@ -36,10 +37,18 @@ const money = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-export default function PricingPage() {
+const pricingSpanish: Record<string, string> = {
+  "Solo owners / very small businesses": "Dueños solos / negocios muy pequeños", "Growing local businesses": "Negocios locales en crecimiento", "Established teams": "Equipos establecidos", "Monthly usage allowance": "Uso mensual incluido", "Larger monthly usage allowance": "Mayor uso mensual incluido", "Largest monthly usage allowance": "Mayor nivel de uso mensual", "Choose START": "Elegir START", "Choose GROW": "Elegir GROW", "Choose COMMAND": "Elegir COMMAND", "Future capacity": "Capacidad futura", "Expanded automation as the workflow matures": "Automatización ampliada a medida que madure el flujo", "Higher usage capacity as the business grows": "Mayor capacidad a medida que crece el negocio", "Everything in START": "Todo lo de START", "Everything in GROW": "Todo lo de GROW", "Basic HUNTER prospect discovery": "Descubrimiento básico de prospectos con HUNTER", "Basic MICAH content studio": "Estudio básico de contenido MICAH", "Basic DAVID follow-up desk": "Centro básico de seguimiento DAVID", "Business assessment": "Evaluación del negocio", "Opportunity tracking": "Seguimiento de oportunidades", "Activity / attention center": "Centro de actividad y atención", "Monthly AI allowance": "Uso mensual de IA", "Standard support": "Soporte estándar", "Expanded HUNTER prospect discovery": "Descubrimiento ampliado de prospectos con HUNTER", "Full Sales Command workflow": "Flujo completo de Sales Command", "Stronger follow-up capability": "Seguimiento más sólido", "Full MICAH content studio": "Estudio completo de contenido MICAH", "Growth reporting": "Reportes de crecimiento", "Expanded workflows and integrations": "Flujos e integraciones ampliados", "Priority support": "Soporte prioritario", "Higher usage limits": "Límites de uso mayores", "Multi-user team support": "Soporte para equipos multiusuario", "Executive reporting": "Reportes ejecutivos", "Advanced workflows": "Flujos avanzados", "Priority onboarding": "Incorporación prioritaria", "Future automation privileges": "Acceso a automatización futura", "Preferred pricing and allowance for ATLAS Phone AI": "Precio y uso preferente para ATLAS Phone AI",
+};
+
+export default async function PricingPage({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
+  const language = normalizeSiteLanguage((await searchParams).lang);
+  const spanish = language === "es";
+  const t = (english: string, spanishText: string) => (spanish ? spanishText : english);
+  const pt = (value: string) => (spanish ? pricingSpanish[value] ?? value : value);
   return (
     <>
-      <SiteHeader active="pricing" />
+      <SiteHeader active="pricing" language={language} />
       <main className="bg-[#061631] text-white">
         <section className="relative isolate overflow-hidden">
           <div className="absolute inset-0 -z-20 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:48px_48px]" />
@@ -49,37 +58,37 @@ export default function PricingPage() {
           <div className="mx-auto grid w-full max-w-[84rem] gap-10 px-6 py-16 sm:px-7 sm:py-20 lg:grid-cols-[1.02fr_0.98fr] lg:items-end lg:py-24">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[#ffd068]">
-                Pricing
+                {t("Pricing", "Precios")}
               </p>
               <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[0.94] tracking-[-0.055em] sm:text-6xl lg:text-[4.9rem]">
-                <span className="block">Find more prospects.</span>
-                <span className="mt-2 block text-[#ffd068]">Follow up faster.</span>
-                <span className="mt-2 block">Close more deals.</span>
+                <span className="block">{t("Find more prospects.", "Encuentra más prospectos.")}</span>
+                <span className="mt-2 block text-[#ffd068]">{t("Follow up faster.", "Da seguimiento más rápido.")}</span>
+                <span className="mt-2 block">{t("Close more deals.", "Cierra más ventas.")}</span>
               </h1>
               <p className="mt-7 max-w-2xl text-lg leading-8 text-blue-100/80 sm:text-xl sm:leading-9">
-                Start with the tools your business needs today. Add more automation as you grow.
+                {t("Start with the tools your business needs today. Add more automation as you grow.", "Comienza con las herramientas que tu negocio necesita hoy. Agrega más automatización al crecer.")}
               </p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   className="inline-flex items-center justify-center rounded-full bg-[#f5b932] px-7 py-4 text-sm font-black !text-[#071b42] shadow-[0_14px_34px_rgba(245,185,50,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ffd064] hover:!text-[#071b42]"
-                  href="/atlas-preview"
+                  href={withSiteLanguage("/atlas-preview", language)}
                 >
-                  See ATLAS in Action
+                  {t("See ATLAS in Action", "Ver ATLAS en acción")}
                   <span aria-hidden="true" className="ml-2 text-lg leading-none">
                     &rarr;
                   </span>
                 </Link>
                 <Link
                   className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/[0.05] px-7 py-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-white/10"
-                  href="/assessment"
+                  href={withSiteLanguage("/assessment", language)}
                 >
-                  Start Your Business Assessment
+                  {t("Start Your Business Assessment", "Comenzar evaluación del negocio")}
                 </Link>
               </div>
               <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-blue-100/70">
-                <span>Monthly usage allowance included</span>
-                <span>Human approval before external action</span>
-                <span>Founding business launch offer available by review</span>
+                <span>{t("Monthly usage allowance included", "Incluye uso mensual")}</span>
+                <span>{t("Human approval before external action", "Aprobación humana antes de acciones externas")}</span>
+                <span>{t("Founding business launch offer available by review", "Oferta inicial disponible mediante revisión")}</span>
               </div>
             </div>
 
@@ -111,7 +120,7 @@ export default function PricingPage() {
                 >
                   {plan.featured ? (
                     <span className="absolute right-5 top-5 rounded-full bg-[#f5b932] px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-[#071b42]">
-                      Most popular
+                      {t("Most popular", "Más popular")}
                     </span>
                   ) : null}
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
@@ -121,39 +130,39 @@ export default function PricingPage() {
                     <p className="text-5xl font-black tracking-[-0.06em]">
                       {money.format(plan.monthlyPrice)}
                     </p>
-                    <p className="pb-2 text-sm font-semibold text-slate-500">/month</p>
+                    <p className="pb-2 text-sm font-semibold text-slate-500">{spanish ? "/mes" : "/month"}</p>
                   </div>
                   <p className="mt-4 text-sm font-semibold text-[#16325c]">
-                    {plan.bestFor}
+                    {pt(plan.bestFor)}
                   </p>
                   <div className="mt-5 rounded-2xl border border-[#dce5f1] bg-[#f8fbff] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#527096]">
-                    {plan.usageAllowance}
+                    {pt(plan.usageAllowance)}
                   </div>
                   <ul className="mt-6 space-y-3 text-sm leading-6 text-slate-700">
                     {plan.features.map((feature) => (
                       <li className="flex gap-3" key={feature}>
                         <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#f5b932]" />
-                        <span>{feature}</span>
+                        <span>{pt(feature)}</span>
                       </li>
                     ))}
                   </ul>
                   <div className="mt-6 border-t border-[#e7edf6] pt-5">
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-[#527096]">
-                      Future capacity
+                      {t("Future capacity", "Capacidad futura")}
                     </p>
                     <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
                       {plan.futureFeatures.map((item) => (
-                        <li key={item}>- {item}</li>
+                        <li key={item}>- {pt(item)}</li>
                       ))}
                     </ul>
                   </div>
                   <div className="mt-7 flex items-center justify-between gap-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                       {plan.availability === "available"
-                        ? "Available now"
+                        ? t("Available now", "Disponible ahora")
                         : plan.availability === "launch_offer"
-                          ? "Launch offer"
-                          : "Coming soon"}
+                          ? t("Launch offer", "Oferta inicial")
+                          : t("Coming soon", "Próximamente")}
                     </p>
                     <Link
                       className={`rounded-full px-4 py-2.5 text-sm font-black transition ${
@@ -161,9 +170,9 @@ export default function PricingPage() {
                           ? "bg-[#071b42] !text-white hover:bg-[#0a2f78] hover:!text-white"
                           : "bg-[#f5b932] !text-[#071b42] hover:bg-[#ffd064] hover:!text-[#071b42]"
                       }`}
-                      href="/assessment"
+                      href={withSiteLanguage("/assessment", language)}
                     >
-                      {plan.cta}
+                      {pt(plan.cta)}
                     </Link>
                   </div>
                 </article>
@@ -174,10 +183,10 @@ export default function PricingPage() {
               <div className="border-b border-[#e5edf7] pb-5">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
-                    Plan comparison
+                    {t("Plan comparison", "Comparación de planes")}
                   </p>
                   <h2 className="mt-3 text-2xl font-black tracking-[-0.04em] text-[#071b42] sm:text-3xl">
-                    What each Atlas plan includes
+                    {t("What each Atlas plan includes", "Qué incluye cada plan de Atlas")}
                   </h2>
                 </div>
               </div>
@@ -232,7 +241,7 @@ export default function PricingPage() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
-                    Launch offer
+                    {t("Launch offer", "Oferta inicial")}
                   </p>
                   <h2 className="mt-3 text-3xl font-black tracking-[-0.05em]">
                     {atlasFoundingBusinessOffer.name}
@@ -258,7 +267,7 @@ export default function PricingPage() {
           <div className="mx-auto grid w-full max-w-[84rem] gap-10 px-6 py-20 sm:px-7 sm:py-24 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
-                What Atlas replaces or simplifies
+                {t("What Atlas replaces or simplifies", "Lo que Atlas reemplaza o simplifica")}
               </p>
               <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
                 Fewer disconnected tools. More coordinated work.
@@ -339,7 +348,7 @@ export default function PricingPage() {
           <div className="mx-auto grid w-full max-w-[84rem] gap-8 px-6 py-20 sm:px-7 sm:py-24 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd068]">
-                Coming soon
+                {t("Coming soon", "Próximamente")}
               </p>
               <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
                 ATLAS FRONT DESK is the future phone layer.
@@ -377,7 +386,7 @@ export default function PricingPage() {
           <div className="mx-auto w-full max-w-[84rem] px-6 py-20 sm:px-7 sm:py-24">
             <div className="text-center">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
-                FAQ
+                {t("FAQ", "Preguntas frecuentes")}
               </p>
               <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
                 Straight answers before you start.
@@ -407,7 +416,7 @@ export default function PricingPage() {
           <div className="relative mx-auto grid w-full max-w-[84rem] gap-10 px-6 py-20 sm:px-7 sm:py-24 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd068]">
-                Next move
+                {t("Next move", "Siguiente paso")}
               </p>
               <h2 className="mt-4 max-w-4xl text-4xl font-black leading-[1.02] tracking-[-0.045em] sm:text-6xl">
                 Choose the plan that matches your growth stage.
@@ -421,9 +430,9 @@ export default function PricingPage() {
             <div className="text-center lg:text-right">
               <Link
                 className="inline-flex items-center justify-center rounded-full bg-[#f5b932] px-7 py-4 text-sm font-black !text-[#071b42] shadow-[0_14px_34px_rgba(245,185,50,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ffd064] hover:!text-[#071b42]"
-                href="/assessment"
+                href={withSiteLanguage("/assessment", language)}
               >
-                Start Your Business Assessment
+                {t("Start Your Business Assessment", "Comenzar evaluación del negocio")}
               </Link>
               <p className="mt-4 text-xs font-semibold text-blue-100/70">
                 No automatic subscription. No unsupported feature claims.

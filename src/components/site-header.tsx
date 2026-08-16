@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-
-type SiteLanguage = "en" | "es";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
 
 type SiteHeaderProps = {
   active?: "home" | "pricing" | "assessment" | "login";
@@ -12,7 +13,17 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({ active, language = "en", onLanguageChange }: SiteHeaderProps) {
-  const spanish = language === "es";
+  const router = useRouter();
+  const pathname = usePathname();
+  const [currentLanguage, setCurrentLanguage] = useState(language);
+  const spanish = currentLanguage === "es";
+  const languagePath = (nextLanguage: SiteLanguage) => {
+    const params = new URLSearchParams(window.location.search);
+    if (nextLanguage === "es") params.set("lang", "es");
+    else params.delete("lang");
+    const query = params.toString();
+    return query ? `${pathname}?${query}` : pathname;
+  };
   const navItems = [
     { href: "/", label: spanish ? "Inicio" : "Home", name: "home" },
     { href: "/pricing", label: spanish ? "Precios" : "Pricing", name: "pricing" },
@@ -55,19 +66,26 @@ export function SiteHeader({ active, language = "en", onLanguageChange }: SiteHe
             <Link
               aria-current={active === item.name ? "page" : undefined}
               className={linkClass(item.name)}
-              href={item.href}
+              href={withSiteLanguage(item.href, currentLanguage)}
               key={item.name}
             >
               {item.label}
             </Link>
           ))}
-          {onLanguageChange ? (
-            <div aria-label="Language selection" className="atlas-language" role="group">
+          <div aria-label={spanish ? "Selección de idioma" : "Language selection"} className="atlas-language" role="group">
               <button
                 aria-label="English"
                 aria-pressed={!spanish}
                 className={!spanish ? "active" : ""}
-                onClick={() => onLanguageChange("en")}
+                onClick={() => {
+                  setCurrentLanguage("en");
+                  document.cookie = "atlas_language=en; path=/; max-age=31536000; samesite=lax";
+                  window.dispatchEvent(new Event("atlas-language-change"));
+                  if (onLanguageChange) {
+                    onLanguageChange("en");
+                    window.history.replaceState(null, "", languagePath("en"));
+                  } else router.push(languagePath("en"));
+                }}
                 type="button"
               >
                 EN
@@ -76,13 +94,20 @@ export function SiteHeader({ active, language = "en", onLanguageChange }: SiteHe
                 aria-label="Español"
                 aria-pressed={spanish}
                 className={spanish ? "active" : ""}
-                onClick={() => onLanguageChange("es")}
+                onClick={() => {
+                  setCurrentLanguage("es");
+                  document.cookie = "atlas_language=es; path=/; max-age=31536000; samesite=lax";
+                  window.dispatchEvent(new Event("atlas-language-change"));
+                  if (onLanguageChange) {
+                    onLanguageChange("es");
+                    window.history.replaceState(null, "", languagePath("es"));
+                  } else router.push(languagePath("es"));
+                }}
                 type="button"
               >
                 ES
               </button>
             </div>
-          ) : null}
         </nav>
       </div>
     </header>

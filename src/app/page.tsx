@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AtlasHomepage } from "@/components/atlas-homepage";
+import { normalizeSiteLanguage } from "@/lib/site-language";
 
 export const metadata: Metadata = {
   title: "Atlas for Service Businesses | Lead Follow-Up & Growth OS",
@@ -26,6 +27,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
-  return <AtlasHomepage />;
+export default async function Home({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
+  const params = await searchParams;
+  return <AtlasHomepage initialLanguage={normalizeSiteLanguage(params.lang)} />;
 }

@@ -78,6 +78,18 @@ const contactPreferences = [
 
 type Props = {
   error?: string;
+  language?: "en" | "es";
+};
+
+const spanishLabels: Record<string, string> = {
+  Referrals: "Referidos", "Walk-ins": "Clientes sin cita", Networking: "Networking", "Repeat customers": "Clientes recurrentes", "Paid ads": "Anuncios pagados", Other: "Otro",
+  "Finding more customers": "Encontrar más clientes", "Getting customers to buy": "Lograr que los clientes compren", "Not enough time": "No hay suficiente tiempo", "Too much manual work": "Demasiado trabajo manual", Hiring: "Contratación", "Cash flow": "Flujo de efectivo", Marketing: "Marketing", "Keeping customers": "Retener clientes", "Growing the business": "Hacer crecer el negocio",
+  Sales: "Ventas", Operations: "Operaciones", "Customer service": "Servicio al cliente", Pricing: "Precios", Automation: "Automatización", AI: "IA", Website: "Sitio web", Branding: "Marca", Finance: "Finanzas", Technology: "Tecnología",
+  "Under 10 new leads per month": "Menos de 10 prospectos nuevos al mes", "10-25 new leads per month": "10-25 prospectos nuevos al mes", "26-75 new leads per month": "26-75 prospectos nuevos al mes", "76+ new leads per month": "76+ prospectos nuevos al mes", "Not sure yet": "Todavía no estoy seguro",
+  "Same day": "El mismo día", "1-2 days": "1-2 días", "3-7 days": "3-7 días", "When someone remembers": "Cuando alguien se acuerda", "We are not tracking it yet": "Todavía no lo estamos midiendo",
+  "Under $500": "Menos de $500", "$500-$1,500": "$500-$1,500", "$1,500-$3,000": "$1,500-$3,000", "$3,000+": "$3,000+", "I need a recommendation": "Necesito una recomendación",
+  "Phone call": "Llamada", Email: "Correo electrónico", "Text message": "Mensaje de texto",
+  "Start with the business story, the offer, and the customer they serve.": "Comienza con la historia del negocio, la oferta y el cliente al que sirve.", "Tell us about the company": "Cuéntanos sobre el negocio", "What do you provide, who do you serve, and where do you operate?": "¿Qué ofreces, a quién sirves y dónde operas?", "Who is the ideal customer?": "¿Quién es el cliente ideal?", "Describe the best-fit customer in one or two sentences.": "Describe al cliente ideal en una o dos frases.", "Business name": "Nombre del negocio", "All sections complete": "Todas las secciones completas", "Complete the company snapshot to see if Atlas is the right fit and unlock a 7-day free trial review option.": "Completa la evaluación para saber si Atlas es adecuado y desbloquear una opción de revisión de prueba gratis por 7 días.", "How the company operates and who it serves.": "Cómo opera el negocio y a quién sirve.", "Where leads come from and what slows follow-up.": "De dónde vienen los prospectos y qué retrasa el seguimiento.", "What growth target, budget, and timing fit best.": "Qué meta, presupuesto y plazo de crecimiento encajan mejor.", "How Atlas should contact the right person next.": "Cómo debe contactar Atlas a la persona correcta.",
 };
 
 function isFilled(value: FormDataEntryValue | null) {
@@ -252,7 +264,9 @@ function SectionCard({
   );
 }
 
-export function BusinessAssessmentForm({ error }: Props) {
+export function BusinessAssessmentForm({ error, language = "en" }: Props) {
+  const spanish = language === "es";
+  const tr = (value: string) => (spanish ? spanishLabels[value] ?? value : value);
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const formRef = useRef<HTMLFormElement | null>(null);
   const [sections, setSections] = useState<[boolean, boolean, boolean, boolean]>([
@@ -312,25 +326,25 @@ export function BusinessAssessmentForm({ error }: Props) {
         <div className="grid gap-6 xl:grid-cols-[1.08fr_.92fr]">
           <SectionCard
             complete={sections[0]}
-            helper="Start with the business story, the offer, and the customer they serve."
+            helper={tr("Start with the business story, the offer, and the customer they serve.")}
             number="01"
-            title="Company basics"
+            title={spanish ? "Datos básicos del negocio" : "Company basics"}
           >
             <div className="grid gap-4">
               <TextAreaField
-                label="Tell us about the company"
+                label={tr("Tell us about the company")}
                 name="businessDescription"
-                placeholder="What do you provide, who do you serve, and where do you operate?"
+                placeholder={tr("What do you provide, who do you serve, and where do you operate?")}
               />
               <TextAreaField
-                label="Who is the ideal customer?"
+                label={tr("Who is the ideal customer?")}
                 name="idealCustomer"
-                placeholder="Describe the best-fit customer in one or two sentences."
+                placeholder={tr("Describe the best-fit customer in one or two sentences.")}
               />
               <div className="grid gap-4 sm:grid-cols-2">
-                <TextField label="Business name" name="businessName" />
+                <TextField label={tr("Business name")} name="businessName" />
                 <TextField
-                  label="Website"
+                  label={tr("Website")}
                   name="website"
                   placeholder="example.com"
                   required={false}
@@ -342,7 +356,7 @@ export function BusinessAssessmentForm({ error }: Props) {
           <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
             <div className="rounded-[1.75rem] border border-[#cfdcf0] bg-[#071b42] p-5 text-white shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.16)]">
               <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#f7cc62]">
-                Completion
+                {spanish ? "Progreso" : "Completion"}
               </p>
               <div className="mt-4 flex items-end justify-between gap-4">
                 <div>
@@ -351,7 +365,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                   </div>
                   <p className="mt-1 text-sm leading-6 text-white/75">
                     {currentSection > sections.length
-                      ? "All sections complete"
+                      ? tr("All sections complete")
                       : `Section ${currentSection} of ${sections.length}`}
                   </p>
                 </div>
@@ -366,31 +380,30 @@ export function BusinessAssessmentForm({ error }: Props) {
                 />
               </div>
               <p className="mt-4 text-sm leading-6 text-white/78">
-                Complete the company snapshot to see if Atlas is the right fit and
-                unlock a 7-day free trial review option.
+                {tr("Complete the company snapshot to see if Atlas is the right fit and unlock a 7-day free trial review option.")}
               </p>
             </div>
 
             <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-white p-5 shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.08)]">
               <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#1246a0]">
-                What Atlas learns
+                {spanish ? "Lo que Atlas aprende" : "What Atlas learns"}
               </p>
               <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
                 <li className="flex gap-3">
                   <ProgressDot complete={sections[0]} />
-                  <span>How the company operates and who it serves.</span>
+                  <span>{tr("How the company operates and who it serves.")}</span>
                 </li>
                 <li className="flex gap-3">
                   <ProgressDot complete={sections[1]} />
-                  <span>Where leads come from and what slows follow-up.</span>
+                  <span>{tr("Where leads come from and what slows follow-up.")}</span>
                 </li>
                 <li className="flex gap-3">
                   <ProgressDot complete={sections[2]} />
-                  <span>What growth target, budget, and timing fit best.</span>
+                  <span>{tr("What growth target, budget, and timing fit best.")}</span>
                 </li>
                 <li className="flex gap-3">
                   <ProgressDot complete={sections[3]} />
-                  <span>How Atlas should contact the right person next.</span>
+                  <span>{tr("How Atlas should contact the right person next.")}</span>
                 </li>
               </ul>
             </div>
@@ -401,7 +414,7 @@ export function BusinessAssessmentForm({ error }: Props) {
           complete={sections[1]}
           helper="Show how customers arrive, what slows the handoff, and where Atlas should help first."
           number="02"
-          title="Customer flow and priorities"
+          title={spanish ? "Flujo de clientes y prioridades" : "Customer flow and priorities"}
         >
           <div className="grid gap-4">
             <div>
@@ -410,7 +423,7 @@ export function BusinessAssessmentForm({ error }: Props) {
               </p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {customerSources.map(([value, label]) => (
-                  <Choice key={value} label={label} name="customerSources" value={value} />
+                  <Choice key={value} label={tr(label)} name="customerSources" value={value} />
                 ))}
               </div>
             </div>
@@ -422,7 +435,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                 {challenges.map(([value, label]) => (
                   <Choice
                     key={value}
-                    label={label}
+                    label={tr(label)}
                     name="biggestChallenge"
                     type="radio"
                     value={value}
@@ -436,7 +449,7 @@ export function BusinessAssessmentForm({ error }: Props) {
               </p>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 {evaluationAreas.map(([value, label]) => (
-                  <Choice key={value} label={label} name="evaluationAreas" value={value} />
+                  <Choice key={value} label={tr(label)} name="evaluationAreas" value={value} />
                 ))}
               </div>
             </div>
@@ -447,7 +460,7 @@ export function BusinessAssessmentForm({ error }: Props) {
           complete={sections[2]}
           helper="Capture the next 90 days so Atlas can recommend the right first move."
           number="03"
-          title="Growth plan"
+          title={spanish ? "Plan de crecimiento" : "Growth plan"}
         >
           <div className="grid gap-4">
             <TextAreaField
@@ -518,7 +531,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                   {monthlyLeadVolumes.map(([value, label]) => (
                     <Choice
                       key={value}
-                      label={label}
+                      label={tr(label)}
                       name="monthlyLeadVolume"
                       type="radio"
                       value={value}
@@ -534,7 +547,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                   {followUpSpeeds.map(([value, label]) => (
                     <Choice
                       key={value}
-                      label={label}
+                      label={tr(label)}
                       name="followUpSpeed"
                       type="radio"
                       value={value}
@@ -548,7 +561,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                   {pilotBudgets.map(([value, label]) => (
                     <Choice
                       key={value}
-                      label={label}
+                      label={tr(label)}
                       name="pilotBudget"
                       type="radio"
                       value={value}
@@ -564,7 +577,7 @@ export function BusinessAssessmentForm({ error }: Props) {
           complete={sections[3]}
           helper="Give Atlas the best contact and the consent needed to follow up."
           number="04"
-          title="Contact and consent"
+          title={spanish ? "Contacto y consentimiento" : "Contact and consent"}
         >
           <div className="grid gap-5">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -589,7 +602,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                 {contactPreferences.map(([value, label]) => (
                   <Choice
                     key={value}
-                    label={label}
+                    label={tr(label)}
                     name="preferredContactMethod"
                     type="radio"
                     value={value}
@@ -627,7 +640,7 @@ export function BusinessAssessmentForm({ error }: Props) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#c48713]">
-                Finish and unlock
+                {spanish ? "Termina y desbloquea" : "Finish and unlock"}
               </p>
               <h2 className="mt-2 text-2xl font-black tracking-[-0.06em] text-[#06266d] sm:text-3xl">
                 Send the company snapshot
@@ -661,7 +674,7 @@ export function BusinessAssessmentForm({ error }: Props) {
       <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
         <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-[#071b42] p-5 text-white shadow-[0_1.25rem_2.75rem_rgba(6,27,82,.08)]">
           <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#f7cc62]">
-            Need the product preview?
+            {spanish ? "¿Necesitas ver el producto?" : "Need the product preview?"}
           </p>
           <p className="mt-3 text-sm leading-6 text-white/75">
             Review the public preview before you submit the assessment.

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { BusinessAssessmentForm } from "@/components/business-assessment-form";
+import { normalizeSiteLanguage, withSiteLanguage } from "@/lib/site-language";
 
 export const metadata: Metadata = {
   title: "Company Snapshot | Atlas",
@@ -11,37 +12,37 @@ export const metadata: Metadata = {
 };
 
 type PageProps = {
-  searchParams: Promise<{ error?: string; status?: string }>;
+  searchParams: Promise<{ error?: string; status?: string; lang?: string }>;
 };
 
 export default async function AssessmentPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const received = params.status === "received";
+  const language = normalizeSiteLanguage(params.lang);
+  const spanish = language === "es";
 
   return (
     <>
-      <SiteHeader active="assessment" />
+      <SiteHeader active="assessment" language={language} />
       <main className="min-h-screen bg-[#f6f9ff] text-[#071b42]">
         <section className="border-b border-[#dce6f5] bg-white">
           <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.02fr_.98fr] lg:items-center lg:px-8 lg:py-16">
             <div className="max-w-2xl">
               <p className="text-sm font-black uppercase tracking-[0.25em] text-[#c48713]">
-                Company snapshot
+                {spanish ? "Evaluación del negocio" : "Company snapshot"}
               </p>
               <h1 className="mt-4 max-w-xl text-5xl font-black tracking-[-0.085em] text-[#06266d] sm:text-6xl lg:text-7xl">
-                Tell Atlas about the business.
+                {spanish ? "Cuéntale a Atlas sobre tu negocio." : "Tell Atlas about the business."}
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-                Share the company story, customer flow, and growth goals so Atlas
-                can recommend the right next step.
+                {spanish ? "Comparte la historia del negocio, el flujo de clientes y tus metas para que Atlas recomiende el siguiente paso." : "Share the company story, customer flow, and growth goals so Atlas can recommend the right next step."}
               </p>
               <p className="mt-4 max-w-xl text-sm leading-6 text-slate-500">
-                Finish the snapshot to unlock a 7-day free trial review option if
-                the business is a fit.
+                {spanish ? "Completa la evaluación para desbloquear una opción de revisión de prueba gratis por 7 días si el negocio encaja." : "Finish the snapshot to unlock a 7-day free trial review option if the business is a fit."}
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                {["4 sections", "No credit card", "Human review", "Company focused"].map(
+                {(spanish ? ["4 secciones", "Sin tarjeta", "Revisión humana", "Enfocada en tu negocio"] : ["4 sections", "No credit card", "Human review", "Company focused"]).map(
                   (item) => (
                     <span
                       className="rounded-full border border-[#dbe6f3] bg-[#f8fbff] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#1246a0]"
@@ -98,26 +99,23 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
           {received ? (
             <section className="rounded-[1.75rem] border border-[#b8e2cf] bg-white p-8 shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.08)] sm:p-12">
               <p className="text-sm font-black uppercase tracking-[0.2em] text-[#167151]">
-                Company snapshot received
+                {spanish ? "Evaluación recibida" : "Company snapshot received"}
               </p>
               <h2 className="mt-3 text-3xl font-black tracking-[-0.06em] text-[#06266d] sm:text-4xl">
-                Thank you. Atlas has the company details.
+                {spanish ? "Gracias. Atlas ya tiene los datos del negocio." : "Thank you. Atlas has the company details."}
               </h2>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-                We will review the answers and recommend the best starting
-                point. Your company snapshot is now in the Atlas review queue;
-                if the fit is right, you will see the next step, including a
-                7-day free trial review option.
+                {spanish ? "Revisaremos tus respuestas y recomendaremos el mejor punto de partida. Tu evaluación ya está en la cola de revisión de Atlas; si encaja, verás el siguiente paso, incluida una opción de revisión de prueba gratis por 7 días." : "We will review the answers and recommend the best starting point. Your company snapshot is now in the Atlas review queue; if the fit is right, you will see the next step, including a 7-day free trial review option."}
               </p>
               <Link
                 className="mt-8 inline-flex rounded-full bg-[#1246a0] px-6 py-3 font-black text-white hover:bg-[#0a2f78]"
-                href="/"
+                href={withSiteLanguage("/", language)}
               >
-                Return to the Atlas home page
+                {spanish ? "Volver al inicio de Atlas" : "Return to the Atlas home page"}
               </Link>
             </section>
           ) : (
-            <BusinessAssessmentForm error={params.error} />
+            <BusinessAssessmentForm error={params.error} language={language} />
           )}
         </div>
       </main>
