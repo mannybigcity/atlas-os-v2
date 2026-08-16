@@ -359,8 +359,8 @@ function buildFollowUpDraft({
   ninetyDayGoal: unknown;
 }) {
   const greeting = contactName?.trim() ? `Hi ${contactName.trim()},` : "Hello,";
-  const challenge = formatFact(biggestChallenge);
-  const goal = formatFact(ninetyDayGoal);
+  const challenge = formatFact(biggestChallenge).replace(/[.!?]+$/, "");
+  const goal = formatFact(ninetyDayGoal).replace(/[.!?]+$/, "");
 
   return [
     `Subject: A practical next step for ${businessName}`,
