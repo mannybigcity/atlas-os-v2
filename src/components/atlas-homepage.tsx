@@ -228,12 +228,12 @@ function DashboardPreview({ language }: { language: Language }) {
 }
 
 export function AtlasHomepage() {
-  const [language] = useState<Language>("en");
+  const [language, setLanguage] = useState<Language>("en");
   const t = copy[language];
 
   return (
     <div className="atlas-site">
-      <SiteHeader active="home" />
+      <SiteHeader active="home" language={language} onLanguageChange={setLanguage} />
 
       <main>
         <section className="atlas-hero-section" aria-labelledby="atlas-title">

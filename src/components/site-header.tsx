@@ -1,16 +1,23 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 
+type SiteLanguage = "en" | "es";
+
 type SiteHeaderProps = {
   active?: "home" | "pricing" | "assessment" | "login";
+  language?: SiteLanguage;
+  onLanguageChange?: (language: SiteLanguage) => void;
 };
 
-export function SiteHeader({ active }: SiteHeaderProps) {
+export function SiteHeader({ active, language = "en", onLanguageChange }: SiteHeaderProps) {
+  const spanish = language === "es";
   const navItems = [
-    { href: "/", label: "Home", name: "home" },
-    { href: "/pricing", label: "Pricing", name: "pricing" },
-    { href: "/assessment", label: "Assessment", name: "assessment" },
-    { href: "/login", label: "Client Login", name: "login" },
+    { href: "/", label: spanish ? "Inicio" : "Home", name: "home" },
+    { href: "/pricing", label: spanish ? "Precios" : "Pricing", name: "pricing" },
+    { href: "/assessment", label: spanish ? "Evaluación" : "Assessment", name: "assessment" },
+    { href: "/login", label: spanish ? "Acceso del cliente" : "Client Login", name: "login" },
   ] as const;
 
   const linkClass = (name: SiteHeaderProps["active"]) =>
@@ -43,7 +50,7 @@ export function SiteHeader({ active }: SiteHeaderProps) {
           </span>
         </Link>
 
-        <nav aria-label="Primary navigation" className="flex items-center gap-2">
+        <nav aria-label={spanish ? "Navegación principal" : "Primary navigation"} className="flex items-center gap-2">
           {navItems.map((item) => (
             <Link
               aria-current={active === item.name ? "page" : undefined}
@@ -54,6 +61,28 @@ export function SiteHeader({ active }: SiteHeaderProps) {
               {item.label}
             </Link>
           ))}
+          {onLanguageChange ? (
+            <div aria-label="Language selection" className="atlas-language" role="group">
+              <button
+                aria-label="English"
+                aria-pressed={!spanish}
+                className={!spanish ? "active" : ""}
+                onClick={() => onLanguageChange("en")}
+                type="button"
+              >
+                EN
+              </button>
+              <button
+                aria-label="Español"
+                aria-pressed={spanish}
+                className={spanish ? "active" : ""}
+                onClick={() => onLanguageChange("es")}
+                type="button"
+              >
+                ES
+              </button>
+            </div>
+          ) : null}
         </nav>
       </div>
     </header>
