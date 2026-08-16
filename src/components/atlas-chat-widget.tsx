@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { askAtlasPreview } from "@/server/atlas-chat/actions";
 
@@ -56,12 +57,12 @@ export function AtlasChatWidget() {
                 ? "Thinking..."
                 : "Ask Atlas"}
           </button>
-          <a
+          <Link
             className="rounded-full border-2 border-[#d9a522] bg-white px-7 py-4 text-center text-sm font-black text-[#16325c] hover:bg-[#fff9e8]"
             href="/assessment"
           >
             Start free assessment
-          </a>
+          </Link>
         </div>
       </form>
 
@@ -125,12 +126,12 @@ export function AtlasChatWidget() {
         )}
 
         {showAssessmentCta ? (
-          <a
+          <Link
             className="mt-4 inline-flex rounded-full bg-[#f5bd2e] px-6 py-3 text-sm font-black text-[#071b42] shadow-sm transition hover:bg-[#ffd05a]"
             href="/assessment"
           >
             Start my free assessment
-          </a>
+          </Link>
         ) : null}
       </div>
 

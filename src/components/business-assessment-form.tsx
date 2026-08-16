@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Script from "next/script";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { submitBusinessAssessment } from "@/server/assessments/actions";
 
@@ -252,6 +253,7 @@ function SectionCard({
 }
 
 export function BusinessAssessmentForm({ error }: Props) {
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const formRef = useRef<HTMLFormElement | null>(null);
   const [sections, setSections] = useState<[boolean, boolean, boolean, boolean]>([
     false,
@@ -275,6 +277,9 @@ export function BusinessAssessmentForm({ error }: Props) {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_21rem]">
+      {turnstileSiteKey ? (
+        <Script async defer src="https://challenges.cloudflare.com/turnstile/v0/api.js" />
+      ) : null}
       <form
         ref={formRef}
         action={submitBusinessAssessment}
@@ -289,7 +294,9 @@ export function BusinessAssessmentForm({ error }: Props) {
           >
             {error === "missing_information"
               ? "Please complete every required question before sending the company snapshot."
-              : "We could not save the snapshot. Please try again in a moment."}
+              : error === "captcha_required"
+                ? "Please complete the security check before sending the company snapshot."
+                : "We could not save the snapshot. Please try again in a moment."}
           </div>
         ) : null}
 
@@ -637,6 +644,14 @@ export function BusinessAssessmentForm({ error }: Props) {
               Send my company snapshot
             </button>
           </div>
+          {turnstileSiteKey ? (
+            <div
+              className="cf-turnstile mt-5"
+              data-sitekey={turnstileSiteKey}
+              data-theme="light"
+              data-turnstile-widget="true"
+            />
+          ) : null}
           <p className="mt-4 text-center text-sm text-slate-500 sm:text-left">
             No charge today. No automatic subscription.
           </p>

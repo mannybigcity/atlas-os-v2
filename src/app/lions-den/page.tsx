@@ -327,6 +327,10 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
                     <LeadDetail label="Business size" value={humanize(assessment.businessSize)} />
                     <LeadDetail label="AI tools" value={assessment.aiTools.map(humanize).join(", ")} />
                     <LeadDetail label="Timing" value={humanize(assessment.improvementTiming)} />
+                    <LeadDetail label="Monthly lead volume" value={humanize(assessment.monthlyLeadVolume)} />
+                    <LeadDetail label="Follow-up speed" value={humanize(assessment.followUpSpeed)} />
+                    <LeadDetail label="Pilot budget" value={humanize(assessment.pilotBudget)} />
+                    <LeadDetail label="Preferred contact" value={humanize(assessment.preferredContactMethod)} />
                     <div className="rounded-2xl border border-slate-200 bg-white p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                         Contact

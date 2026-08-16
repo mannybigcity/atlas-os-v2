@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   LegalList,
   LegalPage,
@@ -97,9 +98,9 @@ export default function ResponsibleAiPage() {
           If a future workflow will send client information to an external AI or data
           provider, Atlas will describe the purpose and approval point before that
           workflow is activated. Additional details appear in the{" "}
-          <a className={legalLinkClass} href="/privacy">
+          <Link className={legalLinkClass} href="/privacy">
             Privacy Policy
-          </a>
+          </Link>
           .
         </p>
       </LegalSection>

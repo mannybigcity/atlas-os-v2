@@ -64,10 +64,40 @@ function normalizeWebsite(value: string) {
   }
 }
 
+async function verifyTurnstileToken(token: string) {
+  const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
+
+  if (!secret && !siteKey && process.env.NODE_ENV !== "production") {
+    return true;
+  }
+
+  if (!secret || !siteKey || !token) {
+    return false;
+  }
+
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ secret, response: token }),
+      cache: "no-store",
+    });
+    const result = (await response.json()) as { success?: boolean };
+    return response.ok && result.success === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function submitBusinessAssessment(formData: FormData) {
   // A human will never see this field. Bots commonly fill it.
   if (textValue(formData, "companyFax", 200)) {
     redirect("/assessment?status=received");
+  }
+
+  if (!(await verifyTurnstileToken(textValue(formData, "cf-turnstile-response", 4096)))) {
+    redirect("/assessment?error=captcha_required");
   }
 
   const businessDescription = textValue(formData, "businessDescription", 3000);
