@@ -41,6 +41,17 @@ const openStatuses = new Set<SalesProspectStatus>([
   "proposal_sent",
 ]);
 
+const pipelineStages: Array<{ status: SalesProspectStatus; label: string }> = [
+  { status: "new", label: "New" },
+  { status: "researching", label: "Researching" },
+  { status: "review_ready", label: "Review ready" },
+  { status: "approved_for_outreach", label: "Approved" },
+  { status: "contacted", label: "Contacted" },
+  { status: "replied", label: "Replied" },
+  { status: "qualified", label: "Qualified" },
+  { status: "proposal_sent", label: "Proposal" },
+];
+
 export default async function SalesPage({ searchParams }: SalesPageProps) {
   await requireSuperAdmin("/lions-den/sales");
   const params = await searchParams;
@@ -84,6 +95,62 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
         <Metric label="Actions scheduled" value={scheduledCount} tone={scheduledCount ? "blue" : "slate"} />
         <Metric label="Outreach approved" value={approvedCount} tone="blue" />
       </div>
+
+      <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+              Pipeline view
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-slate-950">
+              Every prospect has a visible next stage
+            </h2>
+          </div>
+          <p className="text-sm text-slate-500">
+            {prospects.data.length} records · no external action is sent from this view
+          </p>
+        </div>
+        <div className="grid gap-px overflow-x-auto bg-slate-200 md:grid-cols-4 xl:grid-cols-8">
+          {pipelineStages.map((stage) => {
+            const stageProspects = prospects.data.filter(
+              (prospect) => prospect.status === stage.status,
+            );
+
+            return (
+              <div className="min-w-44 bg-slate-50 p-3" key={stage.status}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-600">
+                    {stage.label}
+                  </p>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
+                    {stageProspects.length}
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {stageProspects.length ? (
+                    stageProspects.map((prospect) => (
+                      <Link
+                        className="block rounded-xl border border-slate-200 bg-white p-3 text-sm transition hover:border-blue-300 hover:shadow-sm"
+                        href={`/lions-den/sales/${prospect.id}`}
+                        key={prospect.id}
+                      >
+                        <p className="font-semibold text-slate-950">{prospect.businessName}</p>
+                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">
+                          {prospect.nextAction ?? "Choose next action"}
+                        </p>
+                      </Link>
+                    ))
+                  ) : (
+                    <p className="rounded-xl border border-dashed border-slate-300 px-3 py-4 text-xs leading-5 text-slate-500">
+                      No prospects
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {error ? (
         <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-900">

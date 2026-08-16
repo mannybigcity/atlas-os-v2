@@ -183,7 +183,9 @@ export async function updatePassword(formData: FormData) {
   });
 
   if (error) {
-    redirect("/reset-password?error=update_failed");
+    redirect(
+      `/reset-password?error=${error.code === "same_password" ? "same_password" : "update_failed"}`,
+    );
   }
 
   await supabase.auth.signOut();

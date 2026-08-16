@@ -17,6 +17,7 @@ type ResetPasswordPageProps = {
 const errorMessages: Record<string, string> = {
   missing_password: "Enter and confirm the new password.",
   password_mismatch: "The password fields do not match.",
+  same_password: "Choose a password that is different from your current password.",
   update_failed: "The password could not be updated. Request a new reset link.",
   weak_password:
     "Use at least 12 characters with a lowercase letter, uppercase letter, number, and symbol.",
