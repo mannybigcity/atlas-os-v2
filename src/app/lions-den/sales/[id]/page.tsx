@@ -81,6 +81,16 @@ export default async function ProspectPage({ params, searchParams }: ProspectPag
 
   const { prospect, sources, events, suppressions } = query.data;
   const activeSuppressions = suppressions.filter((item) => !item.liftedAt);
+  const assessmentSource = sources.find(
+    (source) => source.sourceType === "business_assessment",
+  );
+  const assessmentFacts = assessmentSource?.facts ?? {};
+  const followUpDraft = buildFollowUpDraft({
+    businessName: prospect.businessName,
+    contactName: prospect.contactName,
+    biggestChallenge: assessmentFacts.biggest_challenge,
+    ninetyDayGoal: assessmentFacts.ninety_day_goal,
+  });
 
   return (
     <SurfaceShell
@@ -99,6 +109,23 @@ export default async function ProspectPage({ params, searchParams }: ProspectPag
         <Summary label="Next action" value={prospect.nextAction ?? "Not scheduled"} />
         <Summary label="Outreach" value={prospect.outreachApprovedAt ? `Approved: ${prospect.approvedChannels.join(", ")}` : "Not approved"} />
       </div>
+
+      {assessmentSource ? (
+        <section className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+            Assessment qualification
+          </p>
+          <h2 className="mt-2 text-xl font-bold text-slate-950">
+            What the owner said they need
+          </h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Summary label="New leads per month" value={formatFact(assessmentFacts.monthly_lead_volume)} />
+            <Summary label="Follow-up speed" value={formatFact(assessmentFacts.follow_up_speed)} />
+            <Summary label="Budget range" value={formatFact(assessmentFacts.pilot_budget)} />
+            <Summary label="Preferred contact" value={formatFact(assessmentFacts.preferred_contact_method)} />
+          </div>
+        </section>
+      ) : null}
 
       {activeSuppressions.length ? (
         <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-900">
@@ -157,6 +184,28 @@ export default async function ProspectPage({ params, searchParams }: ProspectPag
             Save prospect and next action
           </button>
         </form>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+              Review-ready follow-up
+            </p>
+            <h2 className="mt-2 text-2xl font-bold text-slate-950">
+              Draft the next conversation
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              This is a working draft for human review. Nothing is sent or approved from this card.
+            </p>
+          </div>
+          <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+            Draft only
+          </span>
+        </div>
+        <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-blue-200 bg-white p-4 text-sm leading-6 text-slate-800">
+          {followUpDraft}
+        </pre>
       </section>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
@@ -290,6 +339,43 @@ function getSafeUrl(value: string) {
 }
 
 function humanize(value: string) { const words = value.replaceAll("_", " ").replaceAll(".", " · "); return words.charAt(0).toUpperCase() + words.slice(1); }
+
+function formatFact(value: unknown) {
+  if (typeof value !== "string" || value.length === 0) return "Not captured";
+
+  const normalized = value.replaceAll("_", " ");
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function buildFollowUpDraft({
+  businessName,
+  contactName,
+  biggestChallenge,
+  ninetyDayGoal,
+}: {
+  businessName: string;
+  contactName: string | null;
+  biggestChallenge: unknown;
+  ninetyDayGoal: unknown;
+}) {
+  const greeting = contactName?.trim() ? `Hi ${contactName.trim()},` : "Hello,";
+  const challenge = formatFact(biggestChallenge);
+  const goal = formatFact(ninetyDayGoal);
+
+  return [
+    `Subject: A practical next step for ${businessName}`,
+    "",
+    greeting,
+    "",
+    `Thank you for sharing ${businessName}'s company snapshot with us. We will review the details and recommend a practical starting point based on the priorities you shared.`,
+    `We noted the current focus as ${challenge.toLowerCase()} and the 90-day goal as ${goal.toLowerCase()}.`,
+    "",
+    "Would you be open to a short conversation about the best next step?",
+    "",
+    "Best,",
+    "Atlas For Entrepreneurs",
+  ].join("\n");
+}
 
 function toDateInput(value: string | null) {
   return value ? value.slice(0, 10) : "";

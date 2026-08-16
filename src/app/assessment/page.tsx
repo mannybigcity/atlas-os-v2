@@ -104,7 +104,7 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
                 Thank you. Atlas has the company details.
               </h2>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-                Manny will review the answers and recommend the best starting
+                We will review the answers and recommend the best starting
                 point. Your company snapshot is now in the Atlas review queue;
                 if the fit is right, you will see the next step, including a
                 7-day free trial review option.
