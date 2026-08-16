@@ -27,10 +27,25 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
-function firstAdminEmail() {
-  return process.env.ATLAS_NOTIFICATION_EMAIL?.trim()
-    || process.env.ATLAS_SUPER_ADMIN_EMAILS?.split(",")[0]?.trim()
-    || "";
+function notificationRecipients() {
+  // Support both recipient variable names so a configuration rename cannot
+  // silently disable assessment notifications.
+  const configuredRecipients =
+    process.env.ATLAS_NOTIFICATION_EMAILS?.trim() ||
+    process.env.ATLAS_NOTIFICATION_EMAIL?.trim() ||
+    process.env.ATLAS_SUPER_ADMIN_EMAILS?.trim() ||
+    "";
+
+  const recipients = configuredRecipients
+    .split(",")
+    .map((address) => address.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (recipients.length === 0 || recipients.some((address) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address))) {
+    return [];
+  }
+
+  return [...new Set(recipients)];
 }
 
 async function sendEmail(input: {
@@ -42,9 +57,9 @@ async function sendEmail(input: {
 }): Promise<EmailDeliveryResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.ATLAS_NOTIFICATION_FROM?.trim();
-  const to = firstAdminEmail();
+  const to = notificationRecipients();
 
-  if (!apiKey || !from || !to) {
+  if (!apiKey || !from || to.length === 0) {
     console.info("Atlas email notification skipped because Resend is not configured");
     return { sent: false, reason: "not_configured" };
   }
@@ -60,7 +75,7 @@ async function sendEmail(input: {
       },
       body: JSON.stringify({
         from,
-        to: [to],
+        to,
         subject: input.subject,
         html: input.html,
         text: input.text,

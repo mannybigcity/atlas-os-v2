@@ -31,7 +31,7 @@ Required variables already used by production:
 Optional notification variables:
 
 - `RESEND_API_KEY`
-- `ATLAS_NOTIFICATION_EMAIL`
+- `ATLAS_NOTIFICATION_EMAILS`
 - `ATLAS_NOTIFICATION_FROM`
 - `SUPABASE_SERVICE_ROLE_KEY` — required only for the scheduled private chat digest
 
