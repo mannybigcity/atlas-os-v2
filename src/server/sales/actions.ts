@@ -145,12 +145,14 @@ export async function createSalesTask(formData: FormData) {
   const taskType = field(formData, "taskType", 30) ?? "follow_up";
   const dueInput = field(formData, "dueAt", 40);
   const dueAt = dueInput ? `${dueInput}T17:00:00.000Z` : null;
+  const returnToInput = field(formData, "returnTo", 200);
+  const returnTo = returnToInput?.startsWith("/lions-den/sales") ? returnToInput : `/lions-den/sales/${prospectId ?? ""}`;
   if (!prospectId || !uuidPattern.test(prospectId) || !title || title.length < 2 || !taskTypes.has(taskType) || (dueInput && !/^\d{4}-\d{2}-\d{2}$/.test(dueInput))) {
-    redirectWithError(`/lions-den/sales/${prospectId ?? ""}`, "invalid_task");
+    redirectWithError(returnTo, "invalid_task");
   }
   const supabase = await createClient();
   const { error } = await supabase.from("atlas_sales_tasks").insert({ prospect_id: prospectId, title, details, task_type: taskType, due_at: dueAt, assigned_role: "david", created_by: user.id, updated_by: user.id });
-  redirect(`/lions-den/sales/${prospectId}?crm=${error ? "task_failed" : "task_created"}`);
+  redirect(`${returnTo}?crm=${error ? "task_failed" : "task_created"}`);
 }
 
 export async function completeSalesTask(formData: FormData) {

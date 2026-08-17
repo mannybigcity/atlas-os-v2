@@ -3,7 +3,7 @@
 import { requireSuperAdmin } from "@/server/auth/guards";
 import { generateStructuredText } from "@/server/integrations/openai-responses";
 import { IntegrationConfigurationError, IntegrationRequestError } from "@/server/integrations/errors";
-import { getSalesProspects } from "@/server/sales/queries";
+import { getSalesProspects, getSalesTasks } from "@/server/sales/queries";
 
 export type SalesAiState = {
   status: "idle" | "success" | "error";
@@ -42,6 +42,7 @@ export async function askSalesAssistant(
   }
 
   const prospects = await getSalesProspects();
+  const tasks = await getSalesTasks();
   const context = prospects.data.map((prospect) => ({
     business: prospect.businessName,
     stage: prospect.status,
@@ -49,6 +50,13 @@ export async function askSalesAssistant(
     nextAction: prospect.nextAction,
     due: prospect.nextActionAt,
     fit: prospect.fitScore,
+  }));
+  const taskContext = tasks.data.map((task) => ({
+    title: task.title,
+    type: task.taskType,
+    status: task.status,
+    due: task.dueAt,
+    prospectId: task.prospectId,
   }));
 
   try {
@@ -63,7 +71,7 @@ export async function askSalesAssistant(
         "Give concise, practical guidance and identify missing information when needed.",
         "Return only JSON.",
       ].join("\n"),
-      input: JSON.stringify({ userQuestion: prompt, crm: context }),
+      input: JSON.stringify({ userQuestion: prompt, crm: context, tasks: taskContext }),
       parse: (value) => {
         if (!value || typeof value !== "object" || !("answer" in value)) throw new Error("invalid");
         const answer = String((value as { answer: unknown }).answer).trim();
