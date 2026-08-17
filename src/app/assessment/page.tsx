@@ -94,7 +94,7 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
           </div>
         </section>
 
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <div className="mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
           {received ? (
             <section className="rounded-[1.75rem] border border-[#b8e2cf] bg-white p-8 shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.08)] sm:p-12">
               <p className="text-sm font-black uppercase tracking-[0.2em] text-[#167151]">

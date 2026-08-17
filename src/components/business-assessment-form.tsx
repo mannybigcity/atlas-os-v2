@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import Script from "next/script";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { submitBusinessAssessment } from "@/server/assessments/actions";
@@ -294,7 +293,7 @@ export function BusinessAssessmentForm({ error, language = "en" }: Props) {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_21rem]">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(24rem,28rem)]">
       {turnstileSiteKey ? (
         <Script async defer src="https://challenges.cloudflare.com/turnstile/v0/api.js" />
       ) : null}
@@ -358,61 +357,6 @@ export function BusinessAssessmentForm({ error, language = "en" }: Props) {
             </div>
           </SectionCard>
 
-          <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-            <div className="rounded-[1.75rem] border border-[#cfdcf0] bg-[#071b42] p-5 text-white shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.16)]">
-              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#f7cc62]">
-                {spanish ? "Progreso" : "Completion"}
-              </p>
-              <div className="mt-4 flex items-end justify-between gap-4">
-                <div>
-                  <div className="text-4xl font-black tracking-[-0.08em]">
-                    {percent}%
-                  </div>
-                  <p className="mt-1 text-sm leading-6 text-white/75">
-                    {currentSection > sections.length
-                      ? tr("All sections complete")
-                      : spanish ? `Sección ${currentSection} de ${sections.length}` : `Section ${currentSection} of ${sections.length}`}
-                  </p>
-                </div>
-                <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-white/8 text-sm font-black text-[#f7cc62]">
-                  {completeCount}/{sections.length}
-                </div>
-              </div>
-              <div aria-hidden="true" className="mt-4 h-2 rounded-full bg-white/12">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#f7cc62] to-[#df9815] transition-[width] duration-300"
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
-              <p className="mt-4 text-sm leading-6 text-white/78">
-                {tr("Complete the company snapshot to see if Atlas is the right fit and unlock a 7-day free trial review option.")}
-              </p>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-white p-5 shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.08)]">
-              <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#1246a0]">
-                {spanish ? "Lo que Atlas aprende" : "What Atlas learns"}
-              </p>
-              <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-                <li className="flex gap-3">
-                  <ProgressDot complete={sections[0]} />
-                  <span>{tr("How the company operates and who it serves.")}</span>
-                </li>
-                <li className="flex gap-3">
-                  <ProgressDot complete={sections[1]} />
-                  <span>{tr("Where leads come from and what slows follow-up.")}</span>
-                </li>
-                <li className="flex gap-3">
-                  <ProgressDot complete={sections[2]} />
-                  <span>{tr("What growth target, budget, and timing fit best.")}</span>
-                </li>
-                <li className="flex gap-3">
-                  <ProgressDot complete={sections[3]} />
-                  <span>{tr("How Atlas should contact the right person next.")}</span>
-                </li>
-              </ul>
-            </div>
-          </aside>
         </div>
 
           <SectionCard
@@ -678,19 +622,40 @@ export function BusinessAssessmentForm({ error, language = "en" }: Props) {
       </form>
 
       <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-        <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-[#071b42] p-5 text-white shadow-[0_1.25rem_2.75rem_rgba(6,27,82,.08)]">
-          <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#f7cc62]">
-            {spanish ? "¿Necesitas ver el producto?" : "Need the product preview?"}
+        <div className="rounded-[1.75rem] border border-[#cfdcf0] bg-[#071b42] p-5 text-white shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.16)]">
+          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#f7cc62]">
+            {spanish ? "Progreso" : "Completion"}
           </p>
-          <p className="mt-3 text-sm leading-6 text-white/75">
-            {tr("Review the public preview before you submit the assessment.")}
+          <div className="mt-4 flex items-end justify-between gap-4">
+            <div>
+              <div className="text-4xl font-black tracking-[-0.08em]">{percent}%</div>
+              <p className="mt-1 text-sm leading-6 text-white/75">
+                {currentSection > sections.length
+                  ? tr("All sections complete")
+                  : spanish ? `Sección ${currentSection} de ${sections.length}` : `Section ${currentSection} of ${sections.length}`}
+              </p>
+            </div>
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-white/8 text-sm font-black text-[#f7cc62]">
+              {completeCount}/{sections.length}
+            </div>
+          </div>
+          <div aria-hidden="true" className="mt-4 h-2 rounded-full bg-white/12">
+            <div className="h-full rounded-full bg-gradient-to-r from-[#f7cc62] to-[#df9815] transition-[width] duration-300" style={{ width: `${percent}%` }} />
+          </div>
+          <p className="mt-4 text-sm leading-6 text-white/78">
+            {tr("Complete the company snapshot to see if Atlas is the right fit and unlock a 7-day free trial review option.")}
           </p>
-          <Link
-            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-black text-[#06266d] transition hover:bg-[#f5f7fb]"
-            href="/atlas-preview"
-          >
-            See ATLAS in Action
-          </Link>
+        </div>
+        <div className="rounded-[1.75rem] border border-[#dbe6f3] bg-white p-5 shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.08)]">
+          <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#1246a0]">
+            {spanish ? "Lo que Atlas aprende" : "What Atlas learns"}
+          </p>
+          <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+            <li className="flex gap-3"><ProgressDot complete={sections[0]} /><span>{tr("How the company operates and who it serves.")}</span></li>
+            <li className="flex gap-3"><ProgressDot complete={sections[1]} /><span>{tr("Where leads come from and what slows follow-up.")}</span></li>
+            <li className="flex gap-3"><ProgressDot complete={sections[2]} /><span>{tr("What growth target, budget, and timing fit best.")}</span></li>
+            <li className="flex gap-3"><ProgressDot complete={sections[3]} /><span>{tr("How Atlas should contact the right person next.")}</span></li>
+          </ul>
         </div>
       </aside>
     </div>
