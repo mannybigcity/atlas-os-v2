@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getSiteUrl, isSuperAdminEmail } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
-import { ensureTrialProfile } from "@/server/trials/profile";
+import { ensureTrialProfile, getTrialProfile } from "@/server/trials/profile";
 
 export async function signInWithPassword(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -28,6 +28,10 @@ export async function signInWithPassword(formData: FormData) {
   }
 
   if (typeof requestedNext !== "string" || requestedNext.length === 0) {
+    if (await getTrialProfile(data.user.id)) {
+      redirect("/starter");
+    }
+
     redirect(isSuperAdminEmail(data.user.email) ? "/lions-den" : "/client");
   }
 
