@@ -67,7 +67,7 @@ export default async function ProspectPage({ params, searchParams }: ProspectPag
 
   if (query.setupRequired || !query.data) {
     return (
-      <SurfaceShell
+      <SurfaceShell wide
         description="Apply the private Atlas Sales CRM migration before opening prospect records."
         eyebrow="Atlas Revenue Operations"
         title="CRM setup required"
@@ -93,11 +93,15 @@ export default async function ProspectPage({ params, searchParams }: ProspectPag
   });
 
   return (
-    <SurfaceShell
+    <SurfaceShell wide
       description="Research, qualify, approve, and follow up from one audited record. Nothing leaves Atlas merely because a field or draft exists."
       eyebrow={`${prospect.assignedRole.toUpperCase()} · ${humanize(prospect.status)}`}
       title={prospect.businessName}
     >
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+        <Link className="text-sm font-semibold text-blue-700 hover:underline" href="/lions-den/sales">← Sales Command</Link>
+        <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-500"><span className="rounded-full bg-slate-100 px-3 py-1">{prospect.contactEmail ?? "No email"}</span><span className="rounded-full bg-slate-100 px-3 py-1">{prospect.contactPhone ?? "No phone"}</span></div>
+      </div>
       {notice ? (
         <div className={`rounded-2xl border p-4 text-sm leading-6 ${notice.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-rose-200 bg-rose-50 text-rose-900"}`}>
           {notice.text}

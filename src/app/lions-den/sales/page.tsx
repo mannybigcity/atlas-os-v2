@@ -7,7 +7,7 @@ import { HunterSearch } from "@/components/hunter-search";
 import { formatDateTime } from "@/lib/format";
 import { requireSuperAdmin } from "@/server/auth/guards";
 import { createSalesProspect } from "@/server/sales/actions";
-import { getSalesProspects, type SalesProspect, type SalesProspectStatus } from "@/server/sales/queries";
+import { getRecentSalesActivity, getSalesProspects, type SalesActivityItem, type SalesProspect, type SalesProspectStatus } from "@/server/sales/queries";
 import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
 import { getContentStudio } from "@/server/content-studio/queries";
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
@@ -34,6 +34,7 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
   await requireSuperAdmin("/lions-den/sales");
   const params = await searchParams;
   const result = await getSalesProspects();
+  const activityResult = await getRecentSalesActivity(result.data);
   const organizations = await getOrganizationsForSuperAdmin();
   const workspaces: CrmWorkspace[] = await Promise.all(organizations.data.map(async (organization) => ({
     organization,
@@ -77,7 +78,7 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
 
           <section className="rounded-xl border border-slate-200 bg-white" id="prospects"><SectionHeader eyebrow="Contacts" title="All prospects" count={String(filtered.length) + " records"} /><div className="divide-y divide-slate-100">{filtered.map((prospect) => <Link className="grid gap-2 px-4 py-3 hover:bg-slate-50 md:grid-cols-[1.3fr_1fr_1.4fr_1fr] md:items-center" href={"/lions-den/sales/" + prospect.id} key={prospect.id}><div><p className="font-semibold text-slate-950">{prospect.businessName}</p><p className="text-xs text-slate-500">{prospect.contactName ?? prospect.industry ?? "No contact details"}</p></div><Badge status={prospect.status} /><p className="truncate text-sm text-slate-600">{prospect.nextAction ?? "Choose next action"}</p><p className="text-sm text-slate-500">{prospect.nextActionAt ? formatDateTime(prospect.nextActionAt) : "No date"}</p></Link>)}</div></section>
 
-          <section className="rounded-xl border border-slate-200 bg-white" id="notes"><SectionHeader eyebrow="Notes & activity" title="Record history lives with the prospect." count="Open a record to view" /><p className="p-5 text-sm leading-6 text-slate-600">Each prospect record includes its research source, notes, approval history, suppression checks, and sales events. Select a contact above to work in its activity timeline.</p></section>
+          <section className="rounded-xl border border-slate-200 bg-white" id="notes"><SectionHeader eyebrow="Notes & activity" title="The latest CRM history, at a glance." count={activityResult.data.length ? `${activityResult.data.length} recent events` : "No events yet"} />{activityResult.data.length ? <div className="divide-y divide-slate-100">{activityResult.data.slice(0, 6).map((event) => <ActivityRow event={event} key={event.id} />)}</div> : <p className="p-5 text-sm leading-6 text-slate-600">Notes, approvals, research, and follow-up history will appear here as the team works records.</p>}</section>
 
           <CrmWorkstreams workspaces={workspaces} />
 
@@ -96,6 +97,7 @@ function NavItem({ active, children, href }: { active?: boolean; children: React
 function SectionHeader({ count, eyebrow, title }: { count: string; eyebrow: string; title: string }) { return <div className="flex flex-col gap-1 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">{eyebrow}</p><h2 className="mt-1 text-xl font-bold text-slate-950">{title}</h2></div><span className="text-xs text-slate-500">{count}</span></div>; }
 function Stat({ label, tone = "slate", value }: { label: string; tone?: "slate" | "blue" | "amber"; value: string }) { const classes = { slate: "bg-white border-slate-200", blue: "bg-blue-50 border-blue-200", amber: "bg-amber-50 border-amber-200" }; return <div className={"rounded-xl border p-4 " + classes[tone]}><p className="text-2xl font-bold text-slate-950">{value}</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p></div>; }
 function TaskRow({ overdue, prospect }: { overdue: boolean; prospect: SalesProspect }) { return <Link className="grid gap-2 px-4 py-3 hover:bg-slate-50 sm:grid-cols-[1.2fr_2fr_1fr_auto] sm:items-center" href={"/lions-den/sales/" + prospect.id}><p className="font-semibold text-slate-950">{prospect.businessName}</p><p className="truncate text-sm text-slate-600">{prospect.nextAction ?? "Choose next action"}</p><p className={overdue ? "text-sm font-semibold text-amber-700" : "text-sm text-slate-500"}>{formatDateTime(prospect.nextActionAt)}</p><Badge status={prospect.status} /></Link>; }
+function ActivityRow({ event }: { event: SalesActivityItem }) { return <Link className="grid gap-2 px-4 py-3 hover:bg-slate-50 sm:grid-cols-[1.1fr_1.6fr_1fr_auto] sm:items-center" href={"/lions-den/sales/" + event.prospectId}><div><p className="font-semibold text-slate-950">{event.businessName}</p><p className="text-xs uppercase tracking-[0.1em] text-blue-700">{event.actorRole} · {event.eventType.replaceAll(".", " ")}</p></div><p className="truncate text-sm text-slate-700">{event.summary}</p><p className="truncate text-sm text-slate-500">{event.body ?? "No additional detail"}</p><time className="text-xs text-slate-500">{formatDateTime(event.occurredAt)}</time></Link>; }
 function calendarDays(actions: SalesProspect[]) { const today = new Date(); return [0, 1, 2].map((offset) => { const date = new Date(today); date.setDate(today.getDate() + offset); return { label: offset === 0 ? "Today" : date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }), items: actions.filter((item) => new Date(item.nextActionAt!).toDateString() === date.toDateString()) }; }); }
 function Badge({ status }: { status: SalesProspectStatus }) { return <span className="inline-flex w-fit rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-blue-800">{status.replaceAll("_", " ")}</span>; }
 function Field({ label, name, required, type = "text" }: { label: string; name: string; required?: boolean; type?: string }) { return <label><span className="text-sm font-medium text-slate-700">{label}</span><input className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" name={name} required={required} type={type} /></label>; }

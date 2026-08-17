@@ -203,6 +203,60 @@ export type SalesProspectDetail = {
   suppressions: ContactSuppression[];
 };
 
+export type SalesActivityItem = SalesEvent & {
+  businessName: string;
+};
+
+export async function getRecentSalesActivity(
+  prospects: SalesProspect[],
+): Promise<WorkspaceQueryResult<SalesActivityItem[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("atlas_sales_events")
+    .select(
+      "id, prospect_id, actor_role, event_type, channel, direction, summary, body, metadata, occurred_at",
+    )
+    .order("occurred_at", { ascending: false })
+    .limit(12);
+
+  if (error) {
+    return { data: [], setupRequired: true, error: error.message };
+  }
+
+  const names = new Map(prospects.map((prospect) => [prospect.id, prospect.businessName]));
+  type ActivityRow = {
+    id: string;
+    prospect_id: string;
+    actor_role: string;
+    event_type: string;
+    channel: string | null;
+    direction: string | null;
+    summary: string;
+    body: string | null;
+    metadata: Record<string, unknown>;
+    occurred_at: string;
+  };
+  return {
+    data: ((data ?? []) as ActivityRow[])
+      .filter((event) => names.has(event.prospect_id))
+      .map((event) => ({
+        id: event.id,
+        prospectId: event.prospect_id,
+        actorRole: event.actor_role,
+        eventType: event.event_type,
+        channel: event.channel,
+        direction: event.direction,
+        summary: event.summary,
+        body: event.body,
+        metadata: event.metadata,
+        occurredAt: event.occurred_at,
+        businessName: names.get(event.prospect_id)!,
+      })),
+    setupRequired: false,
+    error: null,
+  };
+}
+
 export async function getSalesProspect(
   prospectId: string,
 ): Promise<WorkspaceQueryResult<SalesProspectDetail | null>> {
