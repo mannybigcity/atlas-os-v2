@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
+import { PrivateAtlasAuthHeader } from "@/components/private-atlas-auth-header";
 import { confirmAuthLink } from "@/server/auth/actions";
 
 type ConfirmRecoveryPageProps = {
@@ -22,22 +22,25 @@ export default async function ConfirmRecoveryPage({
   searchParams,
 }: ConfirmRecoveryPageProps) {
   const params = await searchParams;
+  const isTrial = params?.type === "email";
   const isInvite = params?.type === "invite" || params?.next === "/set-password";
   const isRecovery = params?.type === "recovery" || Boolean(params?.code);
   const isValidRequest =
-    Boolean(params?.code || params?.token_hash) && (isInvite || isRecovery);
-  const nextPath = isInvite ? "/set-password" : "/reset-password";
+    Boolean(params?.code || params?.token_hash) && (isInvite || isRecovery || isTrial);
+  const nextPath = isTrial ? "/starter" : isInvite ? "/set-password" : "/reset-password";
 
   return (
     <>
-      <SiteHeader active="login" />
+      <PrivateAtlasAuthHeader />
       <main className="min-h-[calc(100vh-73px)] bg-slate-50 px-6 py-12">
         <section className="mx-auto max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-700">
             {isInvite ? "Client invitation" : "Secure recovery"}
           </p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-            {isInvite
+            {isTrial
+              ? "Confirm your email to open your Atlas starter workspace."
+              : isInvite
               ? "Welcome to your Atlas workspace."
               : "Continue your password reset."}
           </h1>
@@ -63,7 +66,7 @@ export default async function ConfirmRecoveryPage({
                 <input
                   name="type"
                   type="hidden"
-                  value={isInvite ? "invite" : "recovery"}
+                  value={isTrial ? "email" : isInvite ? "invite" : "recovery"}
                 />
                 <input
                   name="next"
@@ -74,7 +77,7 @@ export default async function ConfirmRecoveryPage({
                   className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   type="submit"
                 >
-                  {isInvite ? "Accept invitation" : "Continue securely"}
+              {isTrial ? "Confirm and open my workspace" : isInvite ? "Accept invitation" : "Continue securely"}
                 </button>
               </form>
             ) : (

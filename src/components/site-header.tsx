@@ -1,34 +1,17 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
 
 type SiteHeaderProps = {
-  active?: "home" | "pricing" | "assessment" | "login";
-  language?: SiteLanguage;
-  onLanguageChange?: (language: SiteLanguage) => void;
+  active?: "home" | "pricing" | "snapshot" | "assessment" | "login";
+  language?: "en" | "es";
 };
 
-export function SiteHeader({ active, language = "en", onLanguageChange }: SiteHeaderProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [currentLanguage, setCurrentLanguage] = useState(language);
-  const spanish = currentLanguage === "es";
-  const languagePath = (nextLanguage: SiteLanguage) => {
-    const params = new URLSearchParams(window.location.search);
-    if (nextLanguage === "es") params.set("lang", "es");
-    else params.delete("lang");
-    const query = params.toString();
-    return query ? `${pathname}?${query}` : pathname;
-  };
+export function SiteHeader({ active }: SiteHeaderProps) {
   const navItems = [
-    { href: "/", label: spanish ? "Inicio" : "Home", name: "home" },
-    { href: "/pricing", label: spanish ? "Precios" : "Pricing", name: "pricing" },
-    { href: "/assessment", label: spanish ? "Evaluación" : "Assessment", name: "assessment" },
-    { href: "/login", label: spanish ? "Acceso del cliente" : "Client Login", name: "login" },
+    { href: "/", label: "Home", name: "home" },
+    { href: "/pricing", label: "Pricing", name: "pricing" },
+    { href: "/assessment", label: "Assessment", name: "snapshot" },
+    { href: "/login", label: "Client Login", name: "login" },
   ] as const;
 
   const linkClass = (name: SiteHeaderProps["active"]) =>
@@ -56,58 +39,28 @@ export function SiteHeader({ active, language = "en", onLanguageChange }: SiteHe
               Atlas For Entrepreneurs
             </span>
             <span className="hidden text-xs font-semibold uppercase tracking-[0.12em] text-[#1246a0] sm:block">
-              {spanish ? "Sistema operativo de crecimiento" : "Service Business Growth OS"}
+              Client Growth Workspace
             </span>
           </span>
         </Link>
 
-        <nav aria-label={spanish ? "Navegación principal" : "Primary navigation"} className="flex items-center gap-2">
+        <nav aria-label="Primary navigation" className="flex items-center gap-2">
           {navItems.map((item) => (
             <Link
               aria-current={active === item.name ? "page" : undefined}
               className={linkClass(item.name)}
-              href={withSiteLanguage(item.href, currentLanguage)}
+              href={item.href}
               key={item.name}
             >
               {item.label}
             </Link>
           ))}
-          <div aria-label={spanish ? "Selección de idioma" : "Language selection"} className="atlas-language" role="group">
-              <button
-                aria-label="English"
-                aria-pressed={!spanish}
-                className={!spanish ? "active" : ""}
-                onClick={() => {
-                  setCurrentLanguage("en");
-                  document.cookie = "atlas_language=en; path=/; max-age=31536000; samesite=lax";
-                  window.dispatchEvent(new Event("atlas-language-change"));
-                  if (onLanguageChange) {
-                    onLanguageChange("en");
-                    window.history.replaceState(null, "", languagePath("en"));
-                  } else router.push(languagePath("en"));
-                }}
-                type="button"
-              >
-                EN
-              </button>
-              <button
-                aria-label="Español"
-                aria-pressed={spanish}
-                className={spanish ? "active" : ""}
-                onClick={() => {
-                  setCurrentLanguage("es");
-                  document.cookie = "atlas_language=es; path=/; max-age=31536000; samesite=lax";
-                  window.dispatchEvent(new Event("atlas-language-change"));
-                  if (onLanguageChange) {
-                    onLanguageChange("es");
-                    window.history.replaceState(null, "", languagePath("es"));
-                  } else router.push(languagePath("es"));
-                }}
-                type="button"
-              >
-                ES
-              </button>
-            </div>
+          <Link
+            className="rounded-full bg-[#f5b932] px-4 py-2 text-sm font-black !text-[#071b42] shadow-[0_8px_20px_rgba(245,185,50,0.2)] transition hover:bg-[#ffd064] hover:!text-[#071b42]"
+            href="/start-trial"
+          >
+            Start 7-day free trial
+          </Link>
         </nav>
       </div>
     </header>

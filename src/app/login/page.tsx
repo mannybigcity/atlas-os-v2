@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site-header";
+import type { ReactNode } from "react";
+import { PrivateAtlasAuthHeader } from "@/components/private-atlas-auth-header";
 import { signInWithPassword } from "@/server/auth/actions";
-import { normalizeSiteLanguage, withSiteLanguage } from "@/lib/site-language";
 
 export const metadata: Metadata = {
   title: "Client Login | Atlas For Entrepreneurs",
+  description:
+    "Secure client sign-in for Atlas For Entrepreneurs.",
   robots: { index: false, follow: false },
 };
 
@@ -14,135 +16,95 @@ type LoginPageProps = {
     error?: string;
     next?: string;
     status?: string;
-    lang?: string;
   }>;
 };
 
-const errorMessages: Record<string, string> = {
-  auth_callback_failed:
-    "That secure email link could not be verified. Request a new invitation or password-reset email.",
-  invitation_expired:
-    "That invitation is no longer valid. Ask Atlas to send a new invitation.",
-  invalid_credentials: "The email or password was not accepted.",
-  missing_auth_code:
-    "That secure email link was incomplete. Request a new invitation or password-reset email.",
-  missing_credentials: "Enter both an email and password.",
-};
+function Alert({
+  tone = "slate",
+  children,
+}: {
+  tone?: "slate" | "amber" | "rose" | "emerald";
+  children: ReactNode;
+}) {
+  const classes = {
+    slate: "border-slate-200 bg-slate-50 text-slate-700",
+    amber: "border-amber-200 bg-amber-50 text-amber-900",
+    rose: "border-rose-200 bg-rose-50 text-rose-900",
+    emerald: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  };
 
-const errorMessagesSpanish: Record<string, string> = {
-  auth_callback_failed: "No se pudo verificar ese enlace seguro. Solicita una nueva invitación o un correo para restablecer la contraseña.",
-  invitation_expired: "Esa invitación ya no es válida. Pide a Atlas que envíe una nueva invitación.",
-  invalid_credentials: "El correo o la contraseña no fueron aceptados.",
-  missing_auth_code: "Ese enlace seguro está incompleto. Solicita una nueva invitación o un correo para restablecer la contraseña.",
-  missing_credentials: "Escribe un correo y una contraseña.",
-};
+  return <div className={`rounded-2xl border p-4 text-sm leading-6 ${classes[tone]}`}>{children}</div>;
+}
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
-  const nextPath = params?.next ?? "";
-  const language = normalizeSiteLanguage(params?.lang);
-  const spanish = language === "es";
-  const error = params?.error ? (spanish ? errorMessagesSpanish[params.error] : errorMessages[params.error]) : null;
+  const nextPath = params?.next ?? "/client";
 
   return (
-    <>
-      <SiteHeader active="login" language={language} />
-      <main className="min-h-[calc(100vh-73px)] bg-slate-50 px-6 py-12">
-        <section className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-700">
-              {spanish ? "Acceso seguro" : "Secure access"}
-            </p>
-            <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-              {spanish ? "Inicia sesión en tu espacio privado de Atlas." : "Sign in to your private Atlas workspace."}
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-              {spanish ? "Usa el correo invitado por Atlas y la contraseña que creaste. Tu espacio de trabajo es privado para tu organización." : "Use the email address invited by Atlas and the password you created. Your business workspace is private to your organization."}
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                className="rounded-full border border-slate-300 px-5 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-white"
-                href={withSiteLanguage("/", language)}
-              >
-                {spanish ? "Volver al sitio público" : "Back to public site"}
-              </Link>
-            </div>
+    <main className="min-h-screen bg-[#fffdf8]">
+      <PrivateAtlasAuthHeader />
+      <section className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.02fr_.88fr] lg:px-8">
+        <div className="rounded-[2rem] border border-[#dde5f0] bg-white p-6 shadow-[0_1.5rem_3.5rem_rgba(6,27,82,.08)] sm:p-8 lg:p-10">
+          <h1 className="max-w-xl font-serif text-4xl font-black tracking-[-0.07em] text-[#06266d] sm:text-5xl">
+            Sign in to Atlas For Entrepreneurs
+          </h1>
+          <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
+            Use your email and password to access your secure client workspace.
+          </p>
+        </div>
+
+        <div className="rounded-[2rem] border border-[#dfe5ef] bg-white p-6 shadow-[0_1.5rem_3.5rem_rgba(6,27,82,.08)] sm:p-8">
+          {params?.error === "missing_credentials" ? (
+            <Alert tone="rose">Enter both email and password.</Alert>
+          ) : null}
+          {params?.error === "invalid_credentials" ? (
+            <Alert tone="rose">The credentials were not accepted.</Alert>
+          ) : null}
+          {params?.error === "auth_callback_failed" ? (
+            <Alert tone="rose">The secure login link could not be completed.</Alert>
+          ) : null}
+          {params?.status === "password_updated" ? (
+            <Alert tone="emerald">Password updated. Sign in again to continue.</Alert>
+          ) : null}
+
+          <form action={signInWithPassword} className="mt-4 space-y-4">
+            <input name="next" type="hidden" value={nextPath} />
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-slate-700">Email</span>
+              <input
+                autoComplete="email"
+                className="w-full rounded-2xl border border-[#d9e2ef] bg-[#fbfcff] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2a5abd] focus:bg-white"
+                name="email"
+                type="email"
+              />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-slate-700">Password</span>
+              <input
+                autoComplete="current-password"
+                className="w-full rounded-2xl border border-[#d9e2ef] bg-[#fbfcff] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2a5abd] focus:bg-white"
+                name="password"
+                type="password"
+              />
+            </label>
+            <button
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#06266d] px-5 text-sm font-black text-white transition hover:bg-[#0a328c]"
+              type="submit"
+            >
+              Sign in
+            </button>
+          </form>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#2a5abd] px-5 text-sm font-black text-[#06266d] transition hover:bg-[#eef4ff]"
+              href="/forgot-password"
+            >
+              Reset password
+            </Link>
           </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <form action={signInWithPassword} className="space-y-5">
-              <input name="next" type="hidden" value={nextPath} />
-
-              {error ? (
-                <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
-                  {error}
-                </div>
-              ) : null}
-
-              {params?.status === "password_updated" ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
-                  {spanish ? "Contraseña actualizada. Inicia sesión con tu nueva contraseña." : "Password updated. Sign in with your new password."}
-                </div>
-              ) : null}
-
-              {params?.status === "invitation_complete" ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
-                  {spanish ? "Tu cuenta de Atlas está lista. Inicia sesión con tu correo y la contraseña que creaste." : "Your Atlas account is ready. Sign in with your email and the password you created."}
-                </div>
-              ) : null}
-
-              <div>
-                <label className="text-sm font-medium text-slate-700" htmlFor="email">
-                  {spanish ? "Correo electrónico" : "Email"}
-                </label>
-                <input
-                  autoComplete="email"
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                  id="email"
-                  name="email"
-                  placeholder="name@example.com"
-                  required
-                  type="email"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-700" htmlFor="password">
-                  {spanish ? "Contraseña" : "Password"}
-                </label>
-                <input
-                  autoComplete="current-password"
-                  className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                  id="password"
-                  name="password"
-                  placeholder={spanish ? "Contraseña" : "Password"}
-                  required
-                  type="password"
-                />
-              </div>
-
-              <button
-                className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                type="submit"
-              >
-                {spanish ? "Iniciar sesión" : "Sign in"}
-              </button>
-
-              <div className="flex flex-col gap-2 text-sm leading-6 text-slate-500">
-                <Link
-                  className="font-semibold text-slate-700 hover:text-slate-950"
-                  href={withSiteLanguage("/forgot-password", language)}
-                >
-                  {spanish ? "¿Olvidaste tu contraseña?" : "Forgot your password?"}
-                </Link>
-                <p>
-                  {spanish ? "¿Es tu primera vez? Abre la invitación segura más reciente de Atlas para crear tu contraseña." : "First time here? Open the newest secure invitation sent by Atlas to create your password."}
-                </p>
-              </div>
-            </form>
-          </div>
-        </section>
-      </main>
-    </>
+        </div>
+      </section>
+    </main>
   );
 }

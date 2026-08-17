@@ -1,14 +1,8 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useSyncExternalStore } from "react";
-import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
 
 const exploreLinks = [
   { href: "/", label: "Home" },
-  { href: "/assessment", label: "Revenue leak assessment" },
-  { href: "/login", label: "Client login" },
+  { href: "/login", label: "Secure login" },
 ];
 
 const trustLinks = [
@@ -19,73 +13,48 @@ const trustLinks = [
 ];
 
 export function SiteFooter() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const cookieLanguage = useSyncExternalStore(
-    (onStoreChange) => {
-      window.addEventListener("atlas-language-change", onStoreChange);
-      window.addEventListener("popstate", onStoreChange);
-      return () => {
-        window.removeEventListener("atlas-language-change", onStoreChange);
-        window.removeEventListener("popstate", onStoreChange);
-      };
-    },
-    () => (window.location.search.includes("lang=es") || document.cookie.includes("atlas_language=es") ? "es" : "en"),
-    () => "en",
-  ) as SiteLanguage;
-  if (pathname.startsWith("/lions-den/sales")) {
-    return null;
-  }
-  const language: SiteLanguage = searchParams.get("lang") === "es" ? "es" : cookieLanguage;
-  const spanish = language === "es";
-  const link = (href: string) => withSiteLanguage(href, language);
-  const localizedExploreLinks = spanish
-    ? [{ href: "/", label: "Inicio" }, { href: "/assessment", label: "Evaluación del negocio" }, { href: "/login", label: "Acceso del cliente" }]
-    : exploreLinks;
-  const localizedTrustLinks = spanish
-    ? [{ href: "/responsible-ai", label: "IA responsable" }, { href: "/privacy", label: "Política de privacidad" }, { href: "/terms", label: "Términos de uso" }, { href: "/accessibility", label: "Accesibilidad" }]
-    : trustLinks;
   return (
-    <footer className="border-t border-[#305ca8] bg-[#071b42] text-blue-100">
+    <footer className="border-t border-[#305ca8] bg-[#071b42] text-slate-200">
       <div className="mx-auto w-full max-w-7xl px-6 py-10 sm:py-12">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm leading-6 text-blue-50 sm:px-6">
-          <span className="font-bold text-white">{spanish ? "Creado para la confianza:" : "Built for trust:"}</span>{" "}
-          {spanish ? "espacios de trabajo privados, aprobación humana antes de acciones externas, controles claros de costos y evaluaciones que no se venden." : "private workspaces, human approval before external action, clear cost controls, and assessment information that is not sold."}
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm leading-7 text-slate-100 sm:px-6">
+          <span className="font-bold text-white">Built for trust:</span>{" "}
+          private workspaces, human approval before external action, clear cost
+          controls, and assessment information that is not sold.
         </div>
 
-        <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_0.7fr_0.9fr_1fr]">
+        <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.3fr_0.75fr_0.95fr_1fr]">
           <div className="max-w-sm">
             <p className="text-lg font-bold text-white">Atlas For Entrepreneurs</p>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#ffd068]">
-              {spanish ? "Sistema operativo de crecimiento" : "Service Business Growth OS"}
+              Client Growth Workspace
             </p>
-            <p className="mt-4 text-sm leading-6 text-blue-100">
-              {spanish ? "Seguimiento de prospectos, marketing práctico y una prioridad clara de crecimiento para negocios de servicios dirigidos por sus dueños." : "Lead follow-up, practical marketing, and one clear growth priority for owner-led service businesses."}
+            <p className="mt-4 text-sm leading-7 text-slate-200">
+              Your secure command center for the family businesses you own and operate.
             </p>
           </div>
 
-          <FooterLinks heading={spanish ? "Explorar" : "Explore"} links={localizedExploreLinks.map((item) => ({ ...item, href: link(item.href) }))} />
-          <FooterLinks heading={spanish ? "Confianza y legal" : "Trust & legal"} links={localizedTrustLinks.map((item) => ({ ...item, href: link(item.href) }))} />
+          <FooterLinks heading="Explore" links={exploreLinks} />
+          <FooterLinks heading="Trust & legal" links={trustLinks} />
 
           <div>
             <h2 className="text-xs font-black uppercase tracking-[0.18em] text-white">
-              {spanish ? "Contacto" : "Contact"}
+              Contact
             </h2>
             <a
-              className="mt-4 block break-words text-sm leading-6 hover:text-white"
-              href="mailto:info@atlasforentrepreneurs.com"
+              className="mt-4 block break-words text-sm leading-7 text-slate-100 hover:text-white"
+              href="mailto:atlasforentrepreneurs@gmail.com"
             >
-              info@atlasforentrepreneurs.com
+              atlasforentrepreneurs@gmail.com
             </a>
-            <p className="mt-3 text-xs leading-5 text-blue-200">
-              {spanish ? "Para solicitudes de privacidad, usa el asunto “Solicitud de privacidad.”" : "For privacy requests, use the subject line “Privacy request.”"}
+            <p className="mt-3 text-xs leading-6 text-slate-300">
+              For privacy requests, use the subject line &ldquo;Privacy request.&rdquo;
             </p>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs leading-5 text-blue-200 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; 2026 Atlas For Entrepreneurs. {spanish ? "Todos los derechos reservados." : "All rights reserved."}</p>
-          <p>{spanish ? "Los resultados varían. No hay suscripción automática." : "Business results vary. No automatic subscription."}</p>
+        <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs leading-6 text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+          <p>&copy; 2026 Atlas For Entrepreneurs. All rights reserved.</p>
+          <p>Secure access for authorized clients and operators.</p>
         </div>
       </div>
     </footer>

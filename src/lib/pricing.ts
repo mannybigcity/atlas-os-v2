@@ -57,9 +57,9 @@ export const atlasPricingPlans: AtlasPricingPlan[] = [
     availability: "available",
     features: [
       "CRM / Sales Command",
-      "Basic HUNTER prospect discovery",
-      "Basic MICAH content studio",
-      "Basic DAVID follow-up desk",
+      "Lead generation tools",
+      "Social media content tools",
+      "Customer relationship management",
       "Business assessment",
       "Opportunity tracking",
       "Activity / attention center",
@@ -82,10 +82,10 @@ export const atlasPricingPlans: AtlasPricingPlan[] = [
     availability: "available",
     features: [
       "Everything in START",
-      "Expanded HUNTER prospect discovery",
+      "Expanded lead generation",
       "Full Sales Command workflow",
       "Stronger follow-up capability",
-      "Full MICAH content studio",
+      "Full social media content tools",
       "Growth reporting",
       "Expanded workflows and integrations",
       "Priority support",
@@ -178,7 +178,7 @@ export const atlasPricingFaqs: AtlasPricingFaq[] = [
   {
     question: "Does Atlas generate social content?",
     answer:
-      "Yes, Atlas includes content drafting support through MICAH. Drafts still need human review before anything goes live.",
+      "Yes, Atlas includes content drafting support. Drafts still need human review before anything goes live.",
   },
   {
     question: "Does Atlas replace my employees?",

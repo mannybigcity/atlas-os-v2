@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site-header";
+import { PrivateAtlasAuthHeader } from "@/components/private-atlas-auth-header";
 import { updatePassword } from "@/server/auth/actions";
 
 export const metadata: Metadata = {
@@ -17,7 +17,6 @@ type ResetPasswordPageProps = {
 const errorMessages: Record<string, string> = {
   missing_password: "Enter and confirm the new password.",
   password_mismatch: "The password fields do not match.",
-  same_password: "Choose a password that is different from your current password.",
   update_failed: "The password could not be updated. Request a new reset link.",
   weak_password:
     "Use at least 12 characters with a lowercase letter, uppercase letter, number, and symbol.",
@@ -31,7 +30,7 @@ export default async function ResetPasswordPage({
 
   return (
     <>
-      <SiteHeader active="login" />
+      <PrivateAtlasAuthHeader />
       <main className="min-h-[calc(100vh-73px)] bg-slate-50 px-6 py-12">
         <section className="mx-auto max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-700">

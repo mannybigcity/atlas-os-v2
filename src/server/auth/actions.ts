@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getSiteUrl, isSuperAdminEmail } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
+import { ensureTrialProfile } from "@/server/trials/profile";
 
 export async function signInWithPassword(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -27,7 +28,7 @@ export async function signInWithPassword(formData: FormData) {
   }
 
   if (typeof requestedNext !== "string" || requestedNext.length === 0) {
-    redirect(isSuperAdminEmail(data.user.email) ? "/lions-den/sales" : "/client");
+    redirect(isSuperAdminEmail(data.user.email) ? "/lions-den" : "/client");
   }
 
   redirect(nextPath);
@@ -84,7 +85,7 @@ export async function confirmAuthLink(formData: FormData) {
     redirect(nextPath);
   }
 
-  if (!tokenHash || (type !== "invite" && type !== "recovery")) {
+  if (!tokenHash || (type !== "invite" && type !== "recovery" && type !== "email")) {
     redirect("/login?error=auth_callback_failed");
   }
 
@@ -97,14 +98,85 @@ export async function confirmAuthLink(formData: FormData) {
         })
       : await supabase.auth.verifyOtp({
           token_hash: tokenHash,
-          type: "recovery",
+          type: type === "email" ? "email" : "recovery",
         });
 
   if (error) {
     redirect("/login?error=auth_callback_failed");
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (type === "email" && user) {
+    const profile = await ensureTrialProfile(user.id, {
+      ...user.user_metadata,
+      email: user.email,
+    });
+
+    if (!profile.ok) {
+      redirect("/start-trial?error=profile_setup");
+    }
+  }
+
   redirect(nextPath);
+}
+
+function trialValue(value: FormDataEntryValue | null, max: number) {
+  return String(value ?? "").trim().slice(0, max);
+}
+
+export async function startTrial(formData: FormData) {
+  const fullName = trialValue(formData.get("fullName"), 160);
+  const businessName = trialValue(formData.get("businessName"), 200);
+  const email = trialValue(formData.get("email"), 320).toLowerCase();
+  const phone = trialValue(formData.get("phone"), 40);
+  const businessType = trialValue(formData.get("businessType"), 100);
+  const primaryGrowthGoal = trialValue(formData.get("primaryGrowthGoal"), 1000);
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  const consent = formData.get("consent") === "on";
+
+  if (
+    !fullName || !businessName || !email || !phone || !businessType ||
+    !primaryGrowthGoal || !consent || !password || password !== confirmPassword
+  ) {
+    redirect("/start-trial?error=validation");
+  }
+
+  if (!passwordMeetsPolicy(password)) {
+    redirect("/start-trial?error=weak_password");
+  }
+
+  const requestHeaders = await headers();
+  const origin = getSiteUrl(requestHeaders.get("origin"));
+  const supabase = await createClient();
+  const consentAt = new Date().toISOString();
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${origin}/auth/confirm?type=email&next=/starter`,
+      data: {
+        full_name: fullName,
+        business_name: businessName,
+        email,
+        phone,
+        business_type: businessType,
+        primary_growth_goal: primaryGrowthGoal,
+        terms_accepted_at: consentAt,
+        privacy_accepted_at: consentAt,
+      },
+    },
+  });
+
+  if (error) {
+    console.error("Atlas trial signup failed", { code: error.code, status: error.status });
+    redirect("/start-trial?error=signup_failed");
+  }
+
+  redirect("/start-trial?status=check_email");
 }
 
 function passwordMeetsPolicy(password: string) {
@@ -183,9 +255,7 @@ export async function updatePassword(formData: FormData) {
   });
 
   if (error) {
-    redirect(
-      `/reset-password?error=${error.code === "same_password" ? "same_password" : "update_failed"}`,
-    );
+    redirect("/reset-password?error=update_failed");
   }
 
   await supabase.auth.signOut();
