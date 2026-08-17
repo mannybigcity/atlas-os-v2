@@ -8,11 +8,14 @@ import { generateMicahSocialSample } from "@/server/micah/actions";
 import {
   addSalesNote,
   approveSalesOutreach,
+  completeSalesTask,
+  createSalesTask,
   suppressSalesProspect,
   updateSalesProspect,
 } from "@/server/sales/actions";
 import {
   getSalesProspect,
+  getSalesTasksForProspect,
   salesAssignedRoles,
   salesProspectStatuses,
 } from "@/server/sales/queries";
@@ -54,6 +57,10 @@ const noticeMessages: Record<string, { tone: "success" | "error"; text: string }
   openai_not_configured: { tone: "error", text: "OPENAI_API_KEY is not configured in the server deployment environment." },
   micah_generation_failed: { tone: "error", text: "MICAH could not generate a valid draft. The failed run was recorded; try again later." },
   micah_record_failed: { tone: "error", text: "The draft returned, but Atlas could not atomically record it. Nothing was published." },
+  task_created: { tone: "success", text: "Task added to the CRM calendar." },
+  task_completed: { tone: "success", text: "Task marked complete." },
+  task_failed: { tone: "error", text: "The task could not be saved." },
+  invalid_task: { tone: "error", text: "Enter a valid task and due date." },
 };
 
 export default async function ProspectPage({ params, searchParams }: ProspectPageProps) {
@@ -80,6 +87,7 @@ export default async function ProspectPage({ params, searchParams }: ProspectPag
   }
 
   const { prospect, sources, events, suppressions } = query.data;
+  const tasksQuery = await getSalesTasksForProspect(prospect.id);
   const activeSuppressions = suppressions.filter((item) => !item.liftedAt);
   const assessmentSource = sources.find(
     (source) => source.sourceType === "business_assessment",
@@ -188,6 +196,12 @@ export default async function ProspectPage({ params, searchParams }: ProspectPag
             Save prospect and next action
           </button>
         </form>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5" id="tasks">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">CRM tasks & calendar</p><h2 className="mt-2 text-2xl font-bold text-slate-950">Plan the next move</h2><p className="mt-2 text-sm text-slate-600">Tasks stay internal until you choose an approved action elsewhere.</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{tasksQuery.data.filter((task) => task.status === "open").length} open</span></div>
+        {tasksQuery.data.length ? <div className="mt-4 space-y-2">{tasksQuery.data.map((task) => <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between" key={task.id}><div><p className="font-semibold text-slate-950">{task.title}</p><p className="text-xs text-slate-500">{task.taskType.replaceAll("_", " ")} · {task.dueAt ? formatDateTime(task.dueAt) : "No due date"} · {task.status}</p></div>{task.status === "open" ? <form action={completeSalesTask}><input name="taskId" type="hidden" value={task.id} /><input name="prospectId" type="hidden" value={prospect.id} /><button className="rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100" type="submit">Mark complete</button></form> : null}</div>)}</div> : null}
+        <form action={createSalesTask} className="mt-4 grid gap-3 sm:grid-cols-[1.4fr_0.8fr_0.8fr_auto]"><input name="prospectId" type="hidden" value={prospect.id} /><input className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm" name="title" placeholder="Task title" required /><select className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm" defaultValue="follow_up" name="taskType"><option value="follow_up">Follow-up</option><option value="call">Call</option><option value="email">Email</option><option value="meeting">Meeting</option><option value="research">Research</option><option value="review">Review</option></select><input className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm" name="dueAt" type="date" /><button className="rounded-full bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800" type="submit">Add task</button></form>
       </section>
 
       <section className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5">

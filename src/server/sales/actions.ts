@@ -11,6 +11,7 @@ import {
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const statuses = new Set<string>(salesProspectStatuses);
 const assignedRoles = new Set<string>(salesAssignedRoles);
+const taskTypes = new Set(["follow_up", "call", "email", "meeting", "research", "review", "other"]);
 const contactBases = new Set([
   "inbound_consent",
   "public_business_contact",
@@ -134,6 +135,32 @@ export async function createSalesProspect(formData: FormData) {
   }
 
   redirect(`/lions-den/sales/${data.id}?crm=created`);
+}
+
+export async function createSalesTask(formData: FormData) {
+  const user = await requireSuperAdmin("/lions-den/sales");
+  const prospectId = field(formData, "prospectId", 36);
+  const title = field(formData, "title", 250);
+  const details = field(formData, "details", 5000);
+  const taskType = field(formData, "taskType", 30) ?? "follow_up";
+  const dueInput = field(formData, "dueAt", 40);
+  const dueAt = dueInput ? `${dueInput}T17:00:00.000Z` : null;
+  if (!prospectId || !uuidPattern.test(prospectId) || !title || title.length < 2 || !taskTypes.has(taskType) || (dueInput && !/^\d{4}-\d{2}-\d{2}$/.test(dueInput))) {
+    redirectWithError(`/lions-den/sales/${prospectId ?? ""}`, "invalid_task");
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("atlas_sales_tasks").insert({ prospect_id: prospectId, title, details, task_type: taskType, due_at: dueAt, assigned_role: "david", created_by: user.id, updated_by: user.id });
+  redirect(`/lions-den/sales/${prospectId}?crm=${error ? "task_failed" : "task_created"}`);
+}
+
+export async function completeSalesTask(formData: FormData) {
+  const user = await requireSuperAdmin("/lions-den/sales");
+  const taskId = field(formData, "taskId", 36);
+  const prospectId = field(formData, "prospectId", 36);
+  if (!taskId || !uuidPattern.test(taskId) || !prospectId || !uuidPattern.test(prospectId)) redirectWithError(`/lions-den/sales/${prospectId ?? ""}`, "invalid_task");
+  const supabase = await createClient();
+  const { error } = await supabase.from("atlas_sales_tasks").update({ status: "completed", completed_at: new Date().toISOString(), updated_by: user.id }).eq("id", taskId).eq("prospect_id", prospectId);
+  redirect(`/lions-den/sales/${prospectId}?crm=${error ? "task_failed" : "task_completed"}`);
 }
 
 export async function updateSalesProspect(formData: FormData) {

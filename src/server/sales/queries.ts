@@ -203,6 +203,47 @@ export type SalesProspectDetail = {
   suppressions: ContactSuppression[];
 };
 
+export type SalesTaskStatus = "open" | "completed" | "cancelled";
+export type SalesTaskType = "follow_up" | "call" | "email" | "meeting" | "research" | "review" | "other";
+export type SalesTask = {
+  id: string;
+  prospectId: string;
+  title: string;
+  details: string | null;
+  taskType: SalesTaskType;
+  status: SalesTaskStatus;
+  dueAt: string | null;
+  completedAt: string | null;
+  assignedRole: SalesAssignedRole;
+  createdAt: string;
+};
+
+type SalesTaskRow = {
+  id: string; prospect_id: string; title: string; details: string | null;
+  task_type: SalesTaskType; status: SalesTaskStatus; due_at: string | null;
+  completed_at: string | null; assigned_role: SalesAssignedRole; created_at: string;
+};
+
+const taskColumns = "id, prospect_id, title, details, task_type, status, due_at, completed_at, assigned_role, created_at";
+
+function mapTask(row: SalesTaskRow): SalesTask {
+  return { id: row.id, prospectId: row.prospect_id, title: row.title, details: row.details, taskType: row.task_type, status: row.status, dueAt: row.due_at, completedAt: row.completed_at, assignedRole: row.assigned_role, createdAt: row.created_at };
+}
+
+export async function getSalesTasks(): Promise<WorkspaceQueryResult<SalesTask[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("atlas_sales_tasks").select(taskColumns).order("due_at", { ascending: true, nullsFirst: false }).limit(250);
+  if (error) return { data: [], setupRequired: true, error: error.message };
+  return { data: ((data ?? []) as SalesTaskRow[]).map(mapTask), setupRequired: false, error: null };
+}
+
+export async function getSalesTasksForProspect(prospectId: string): Promise<WorkspaceQueryResult<SalesTask[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("atlas_sales_tasks").select(taskColumns).eq("prospect_id", prospectId).order("due_at", { ascending: true, nullsFirst: false });
+  if (error) return { data: [], setupRequired: true, error: error.message };
+  return { data: ((data ?? []) as SalesTaskRow[]).map(mapTask), setupRequired: false, error: null };
+}
+
 export type SalesActivityItem = SalesEvent & {
   businessName: string;
 };
