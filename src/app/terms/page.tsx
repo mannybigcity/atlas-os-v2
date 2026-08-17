@@ -95,10 +95,8 @@ export default function TermsPage() {
           unless a separate workflow expressly authorizes it.
         </p>
         <p>
-          The functional names ATLAS, HUNTER, MICAH, and DAVID describe coordinated
-          business roles and workflows. They are not human employees, and their use
-          does not mean that every described capability is autonomous or available
-          in every plan. See{" "}
+          Atlas coordinates business workflows. It is not a human employee, and
+          not every capability is autonomous or available in every plan. See{" "}
           <Link className={legalLinkClass} href="/responsible-ai">
             Responsible AI & Human Review
           </Link>

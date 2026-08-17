@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site-header";
+import { PrivateAtlasAuthHeader } from "@/components/private-atlas-auth-header";
 import { requestPasswordReset } from "@/server/auth/actions";
 
 export const metadata: Metadata = {
@@ -30,17 +30,17 @@ export default async function ForgotPasswordPage({
 
   return (
     <>
-      <SiteHeader active="login" />
+      <PrivateAtlasAuthHeader />
       <main className="min-h-[calc(100vh-73px)] bg-slate-50 px-6 py-12">
         <section className="mx-auto max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-700">
             Account recovery
           </p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-            Reset your Atlas password.
+            Reset your Atlas For Entrepreneurs password.
           </h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">
-            Enter your Atlas login email. We will send a secure, one-time link
+            Enter your Atlas For Entrepreneurs login email. We will send a secure, one-time link
             that lets you choose a new password.
           </p>
 

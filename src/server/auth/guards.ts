@@ -31,7 +31,7 @@ export async function requireSuperAdmin(nextPath = "/lions-den") {
   const user = await requireUser(nextPath);
 
   if (!isSuperAdminEmail(user.email)) {
-    redirect("/client?access=denied");
+    redirect("/clients?access=denied");
   }
 
   return user;
