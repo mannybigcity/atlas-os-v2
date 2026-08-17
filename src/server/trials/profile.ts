@@ -1,4 +1,5 @@
-import { createServiceClient } from "@/lib/supabase/service";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 
 export type TrialProfileInput = {
   fullName: string;
@@ -13,7 +14,11 @@ function clean(value: unknown, max: number) {
   return String(value ?? "").trim().slice(0, max);
 }
 
-export async function ensureTrialProfile(userId: string, metadata: Record<string, unknown>) {
+export async function ensureTrialProfile(
+  userId: string,
+  metadata: Record<string, unknown>,
+  client?: SupabaseClient,
+) {
   const fullName = clean(metadata.full_name, 160);
   const businessName = clean(metadata.business_name, 200);
   const email = clean(metadata.email, 320).toLowerCase();
@@ -25,8 +30,8 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
     return { ok: false as const, error: "missing_profile" };
   }
 
-  const service = createServiceClient();
-  const { data: existing, error: lookupError } = await service
+  const supabase = client ?? (await createClient());
+  const { data: existing, error: lookupError } = await supabase
     .from("atlas_trial_profiles")
     .select("user_id")
     .eq("user_id", userId)
@@ -41,7 +46,7 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
     return { ok: true as const };
   }
 
-  const { error } = await service.from("atlas_trial_profiles").insert({
+  const { error } = await supabase.from("atlas_trial_profiles").insert({
     user_id: userId,
     full_name: fullName,
     business_name: businessName,
@@ -62,8 +67,8 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
 }
 
 export async function getTrialProfile(userId: string) {
-  const service = createServiceClient();
-  const { data, error } = await service
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("atlas_trial_profiles")
     .select("full_name,business_name,trial_started_at,trial_ends_at")
     .eq("user_id", userId)

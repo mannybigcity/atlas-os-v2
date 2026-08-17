@@ -94,7 +94,7 @@ export async function confirmAuthLink(formData: FormData) {
       const profile = await ensureTrialProfile(user.id, {
         ...user.user_metadata,
         email: user.email,
-      });
+      }, supabase);
 
       if (!profile.ok) {
         redirect("/start-trial?error=profile_setup");
@@ -132,7 +132,7 @@ export async function confirmAuthLink(formData: FormData) {
     const profile = await ensureTrialProfile(user.id, {
       ...user.user_metadata,
       email: user.email,
-    });
+    }, supabase);
 
     if (!profile.ok) {
       redirect("/start-trial?error=profile_setup");
