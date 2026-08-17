@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
 
@@ -19,6 +19,7 @@ const trustLinks = [
 ];
 
 export function SiteFooter() {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const cookieLanguage = useSyncExternalStore(
     (onStoreChange) => {
@@ -32,6 +33,9 @@ export function SiteFooter() {
     () => (window.location.search.includes("lang=es") || document.cookie.includes("atlas_language=es") ? "es" : "en"),
     () => "en",
   ) as SiteLanguage;
+  if (pathname.startsWith("/lions-den/sales")) {
+    return null;
+  }
   const language: SiteLanguage = searchParams.get("lang") === "es" ? "es" : cookieLanguage;
   const spanish = language === "es";
   const link = (href: string) => withSiteLanguage(href, language);

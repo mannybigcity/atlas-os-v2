@@ -6,6 +6,7 @@ type SurfaceShellProps = {
   description: string;
   className?: string;
   contentClassName?: string;
+  wide?: boolean;
   children?: ReactNode;
 };
 
@@ -15,11 +16,12 @@ export function SurfaceShell({
   description,
   className = "",
   contentClassName = "",
+  wide = false,
   children,
 }: SurfaceShellProps) {
   return (
     <main className={`min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8 ${className}`}>
-      <section className="mx-auto max-w-7xl rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+      <section className={`mx-auto rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8 ${wide ? "max-w-none" : "max-w-7xl"}`}>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
           {eyebrow}
         </p>

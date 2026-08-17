@@ -27,7 +27,7 @@ export async function signInWithPassword(formData: FormData) {
   }
 
   if (typeof requestedNext !== "string" || requestedNext.length === 0) {
-    redirect(isSuperAdminEmail(data.user.email) ? "/lions-den" : "/client");
+    redirect(isSuperAdminEmail(data.user.email) ? "/lions-den/sales" : "/client");
   }
 
   redirect(nextPath);
