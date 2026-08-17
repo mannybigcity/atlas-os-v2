@@ -1,11 +1,16 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { SalesAssistantPanel } from "@/components/sales-assistant-panel";
+import { CrmWorkstreams, type CrmWorkspace } from "@/components/crm-workstreams";
 import { SurfaceShell } from "@/components/surface-shell";
+import { HunterSearch } from "@/components/hunter-search";
 import { formatDateTime } from "@/lib/format";
 import { requireSuperAdmin } from "@/server/auth/guards";
 import { createSalesProspect } from "@/server/sales/actions";
 import { getSalesProspects, type SalesProspect, type SalesProspectStatus } from "@/server/sales/queries";
+import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
+import { getContentStudio } from "@/server/content-studio/queries";
+import { getOpportunityPipeline } from "@/server/opportunities/queries";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Atlas CRM | Atlas For Entrepreneurs", robots: { index: false, follow: false } };
@@ -29,6 +34,12 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
   await requireSuperAdmin("/lions-den/sales");
   const params = await searchParams;
   const result = await getSalesProspects();
+  const organizations = await getOrganizationsForSuperAdmin();
+  const workspaces: CrmWorkspace[] = await Promise.all(organizations.data.map(async (organization) => ({
+    organization,
+    studio: await getContentStudio(organization.id),
+    pipeline: await getOpportunityPipeline(organization.id),
+  })));
   const query = params?.q?.trim().toLowerCase() ?? "";
   const selectedStatus = stages.some((stage) => stage.status === params?.status) ? params?.status as SalesProspectStatus : "all";
   const allProspects = result.data;
@@ -48,7 +59,7 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
         <nav className="border-r border-slate-200 bg-white p-4" aria-label="CRM navigation">
           <p className="px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Workspace</p>
           <div className="mt-3 grid gap-1 text-sm font-semibold">
-            <NavItem href="#today" active>Today&apos;s Work</NavItem><NavItem href="#pipeline">Pipeline</NavItem><NavItem href="#calendar">Calendar</NavItem><NavItem href="#tasks">Tasks &amp; Follow-ups</NavItem><NavItem href="#prospects">Contacts</NavItem><NavItem href="#notes">Notes &amp; Activity</NavItem>
+            <NavItem href="#today" active>Today&apos;s Work</NavItem><NavItem href="#pipeline">Pipeline</NavItem><NavItem href="#calendar">Calendar</NavItem><NavItem href="#tasks">Tasks &amp; Follow-ups</NavItem><NavItem href="#prospects">Contacts</NavItem><NavItem href="#notes">Notes &amp; Activity</NavItem><NavItem href="#workstreams">MICAH + HUNTER</NavItem><NavItem href="#hunter-finder">Run lead finder</NavItem>
           </div>
           <div className="mt-8 border-t border-slate-200 pt-4"><p className="px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Admin</p><Link className="mt-3 block rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100" href="/lions-den">Lion&apos;s Den</Link></div>
         </nav>
@@ -67,6 +78,10 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
           <section className="rounded-xl border border-slate-200 bg-white" id="prospects"><SectionHeader eyebrow="Contacts" title="All prospects" count={String(filtered.length) + " records"} /><div className="divide-y divide-slate-100">{filtered.map((prospect) => <Link className="grid gap-2 px-4 py-3 hover:bg-slate-50 md:grid-cols-[1.3fr_1fr_1.4fr_1fr] md:items-center" href={"/lions-den/sales/" + prospect.id} key={prospect.id}><div><p className="font-semibold text-slate-950">{prospect.businessName}</p><p className="text-xs text-slate-500">{prospect.contactName ?? prospect.industry ?? "No contact details"}</p></div><Badge status={prospect.status} /><p className="truncate text-sm text-slate-600">{prospect.nextAction ?? "Choose next action"}</p><p className="text-sm text-slate-500">{prospect.nextActionAt ? formatDateTime(prospect.nextActionAt) : "No date"}</p></Link>)}</div></section>
 
           <section className="rounded-xl border border-slate-200 bg-white" id="notes"><SectionHeader eyebrow="Notes & activity" title="Record history lives with the prospect." count="Open a record to view" /><p className="p-5 text-sm leading-6 text-slate-600">Each prospect record includes its research source, notes, approval history, suppression checks, and sales events. Select a contact above to work in its activity timeline.</p></section>
+
+          <CrmWorkstreams workspaces={workspaces} />
+
+          <details className="rounded-xl border border-slate-200 bg-white" id="hunter-finder"><summary className="cursor-pointer list-none p-4 font-bold text-slate-950">＋ Run HUNTER lead finder <span className="ml-2 text-xs font-normal text-slate-500">Real search with safety cap and approval boundary</span></summary><div className="border-t border-slate-200 p-4"><HunterSearch /></div></details>
 
           <details className="rounded-xl border border-slate-200 bg-white" id="intake"><summary className="cursor-pointer list-none p-4 font-bold text-slate-950">＋ Add a researched prospect <span className="ml-2 text-xs font-normal text-slate-500">HUNTER intake · no auto-send</span></summary><div className="border-t border-slate-200 p-4"><form action={createSalesProspect} className="grid gap-4 sm:grid-cols-2"><Field label="Business name" name="businessName" required /><Field label="Business category" name="industry" /><Field label="City" name="city" /><Field label="State / region" name="region" /><Field label="Business website" name="website" /><Field label="Public source URL" name="sourceUrl" type="url" /><Field label="Contact name" name="contactName" /><Field label="Business email" name="contactEmail" type="email" /><Field label="Business phone" name="contactPhone" type="tel" /><Field label="Social profile" name="socialMedia" /><label className="sm:col-span-2"><span className="text-sm font-medium text-slate-700">Contact basis</span><select className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" defaultValue="public_business_contact" name="contactBasis"><option value="public_business_contact">Public business contact</option><option value="referral">Referral</option><option value="prior_relationship">Prior relationship</option><option value="inbound_consent">Inbound consent</option><option value="customer">Current customer</option><option value="unknown">Not verified yet</option></select></label><button className="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white sm:col-span-2" type="submit">Add to research queue</button></form></div></details>
         </main>
