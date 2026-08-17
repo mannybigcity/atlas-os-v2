@@ -8,6 +8,7 @@ import {
   type OrganizationSummary,
   type WorkspaceQueryResult,
 } from "@/server/organizations/queries";
+import { getTrialProfile } from "@/server/trials/profile";
 
 type ClientWorkspaceSearchParams = {
   previewOrg?: string;
@@ -45,6 +46,10 @@ export async function getClientWorkspaceContext(
   searchParams?: ClientWorkspaceSearchParams,
 ): Promise<ClientWorkspaceContext> {
   const user = await requireUser(nextPath);
+  if (await getTrialProfile(user.id)) {
+    redirect("/starter");
+  }
+
   const isSuperAdmin = isSuperAdminEmail(user.email);
   const requestedPreviewOrgSlug = isSuperAdmin
     ? String(searchParams?.previewOrg ?? "").trim().toLowerCase()
