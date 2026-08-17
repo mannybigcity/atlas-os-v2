@@ -86,6 +86,21 @@ export async function confirmAuthLink(formData: FormData) {
       redirect("/login?error=auth_callback_failed");
     }
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (type === "email" && user) {
+      const profile = await ensureTrialProfile(user.id, {
+        ...user.user_metadata,
+        email: user.email,
+      });
+
+      if (!profile.ok) {
+        redirect("/start-trial?error=profile_setup");
+      }
+    }
+
     redirect(nextPath);
   }
 
