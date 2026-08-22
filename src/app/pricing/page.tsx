@@ -9,6 +9,7 @@ import {
   atlasPricingFaqs,
   atlasPricingPlans,
 } from "@/lib/pricing";
+import { getAtlasSprintPaymentLink } from "@/lib/payment-links";
 
 export const metadata: Metadata = {
   title: "Pricing | Atlas For Entrepreneurs",
@@ -37,6 +38,8 @@ const money = new Intl.NumberFormat("en-US", {
 });
 
 export default function PricingPage() {
+  const sprintPaymentLink = getAtlasSprintPaymentLink();
+
   return (
     <>
       <SiteHeader active="pricing" />
@@ -62,9 +65,11 @@ export default function PricingPage() {
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   className="inline-flex items-center justify-center rounded-full bg-[#f5b932] px-7 py-4 text-sm font-black !text-[#071b42] shadow-[0_14px_34px_rgba(245,185,50,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ffd064] hover:!text-[#071b42]"
-                  href="/#how"
+                  href={sprintPaymentLink ?? "/pricing#launch-offer"}
+                  rel={sprintPaymentLink ? "noreferrer" : undefined}
+                  target={sprintPaymentLink ? "_blank" : undefined}
                 >
-                  See ATLAS in Action
+                  Start My 30-Day Sprint
                   <span aria-hidden="true" className="ml-2 text-lg leading-none">
                     &rarr;
                   </span>
@@ -237,7 +242,7 @@ export default function PricingPage() {
               </div>
             </section>
 
-            <div className="mt-8 rounded-[1.8rem] border border-[#d9e4f4] bg-white p-6 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+            <div className="mt-8 rounded-[1.8rem] border border-[#d9e4f4] bg-white p-6 shadow-[0_16px_42px_rgba(15,23,42,0.05)]" id="launch-offer">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
@@ -252,11 +257,35 @@ export default function PricingPage() {
                 </div>
                 <div className="rounded-2xl border border-[#f0c24a] bg-[#fff8df] px-5 py-4 text-sm text-[#4b3800]">
                   <p className="font-black uppercase tracking-[0.16em]">
-                    Limited pilot
+                    One-time founding price
                   </p>
-                  <p className="mt-2 font-semibold">
-                    {atlasFoundingBusinessOffer.term} term, {atlasFoundingBusinessOffer.limit}.
-                  </p>
+                  <p className="mt-2 text-4xl font-black">$500</p>
+                  <p className="mt-1 font-semibold">{atlasFoundingBusinessOffer.term}. {atlasFoundingBusinessOffer.limit}.</p>
+                </div>
+              </div>
+              <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#527096]">Includes</p>
+                  <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-600 sm:grid-cols-2">
+                    <li>Focused business and revenue-leak assessment</li>
+                    <li>One agreed measurable 30-day goal</li>
+                    <li>One private Atlas workspace</li>
+                    <li>Opportunity and follow-up pipeline</li>
+                    <li>One approved follow-up sequence or marketing asset set</li>
+                    <li>Weekly owner check-ins and a day-30 review</li>
+                  </ul>
+                  <p className="mt-4 text-xs leading-5 text-slate-500">Human approval is required before external action. Phone AI, ad spend, paid third-party software, unlimited consulting, and guaranteed results are not included.</p>
+                </div>
+                <div className="text-center lg:text-right">
+                  <a
+                    className="inline-flex rounded-full bg-[#f5b932] px-6 py-3 text-sm font-black !text-[#071b42] transition hover:bg-[#ffd064] hover:!text-[#071b42]"
+                    href={sprintPaymentLink ?? "/assessment?offer=30-day-sprint"}
+                    rel={sprintPaymentLink ? "noreferrer" : undefined}
+                    target={sprintPaymentLink ? "_blank" : undefined}
+                  >
+                    {sprintPaymentLink ? "Start My 30-Day Sprint" : "Request My 30-Day Sprint"}
+                  </a>
+                  {!sprintPaymentLink ? <p className="mt-2 max-w-xs text-xs leading-5 text-slate-500">Payment checkout is not configured in this environment yet.</p> : null}
                 </div>
               </div>
             </div>

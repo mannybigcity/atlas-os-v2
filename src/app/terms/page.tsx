@@ -242,7 +242,7 @@ export default function TermsPage() {
         <p>
           Questions may be sent to{" "}
           <a className={legalLinkClass} href="mailto:hello@siscustomcreations.com">
-            hello@siscustomcreations.com
+            atlasforentrepreneurs@gmail.com
           </a>
           .
         </p>

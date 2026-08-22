@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AtlasHomepage } from "@/components/atlas-homepage";
+import { getAtlasSprintPaymentLink } from "@/lib/payment-links";
 
 export const metadata: Metadata = {
   title: "Atlas For Entrepreneurs | Find More Leads, Follow Up Faster, Close More Deals",
@@ -25,5 +26,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <AtlasHomepage />;
+  return <AtlasHomepage paymentLink={getAtlasSprintPaymentLink()} />;
 }

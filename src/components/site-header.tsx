@@ -23,18 +23,18 @@ export function SiteHeader({ active }: SiteHeaderProps) {
 
   return (
     <header className="border-b border-[#dce6f5] bg-white">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link className="flex items-center gap-3 leading-tight text-[#071b42]" href="/">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
+        <Link className="flex min-w-0 items-center gap-2 leading-tight text-[#071b42]" href="/">
           <Image
             alt="Atlas lion and mountain logo"
-            className="h-14 w-14 object-contain"
+            className="h-10 w-10 shrink-0 object-contain sm:h-14 sm:w-14"
             height={720}
             priority
             src="/brand/atlas-logo.png"
             width={720}
           />
-          <span>
-            <span className="block text-lg font-bold tracking-tight">
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-bold tracking-tight sm:text-lg">
               Atlas For Entrepreneurs
             </span>
             <span className="hidden text-xs font-semibold uppercase tracking-[0.12em] text-[#1246a0] sm:block">
@@ -43,7 +43,7 @@ export function SiteHeader({ active }: SiteHeaderProps) {
           </span>
         </Link>
 
-        <nav aria-label="Primary navigation" className="flex items-center gap-2">
+        <nav aria-label="Primary navigation" className="hidden items-center gap-2 lg:flex">
           {navItems.map((item) => (
             <Link
               aria-current={active === item.name ? "page" : undefined}
@@ -59,6 +59,20 @@ export function SiteHeader({ active }: SiteHeaderProps) {
             href="/start-trial"
           >
             Start 7-day free trial
+          </Link>
+        </nav>
+        <nav aria-label="Mobile navigation" className="flex shrink-0 items-center gap-2 lg:hidden">
+          <Link
+            className="rounded-full bg-[#f5b932] px-3 py-2 text-xs font-black !text-[#071b42] transition hover:bg-[#ffd064] hover:!text-[#071b42]"
+            href="/assessment"
+          >
+            Get started
+          </Link>
+          <Link
+            className="rounded-full border border-[#1246a0] px-3 py-2 text-xs font-black text-[#1246a0] transition hover:bg-[#eef4ff]"
+            href="/login"
+          >
+            Log in
           </Link>
         </nav>
       </div>

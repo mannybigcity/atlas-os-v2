@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
 import { SiteHeader } from "@/components/site-header";
 
 type Language = "en" | "es";
@@ -36,6 +36,7 @@ type LandingCopy = {
 };
 
 function IndustryGlyph({ index }: { index: number }) {
+  /* eslint-disable react/jsx-key -- glyphs are selected as a single SVG child, not mapped directly. */
   const common = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, strokeWidth: 2.4 };
   const glyphs = [
     <path {...common} d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a6 6 0 0 1-8.3 7.1l-7.9 7.9a2.1 2.1 0 0 1-3-3l7.9-7.9a6 6 0 0 1 7.1-8.3z" />,
@@ -49,7 +50,9 @@ function IndustryGlyph({ index }: { index: number }) {
     <><path {...common} d="M14 9.5V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3M4 9a5 5 0 0 1 8 4M5 21h14" /></>,
     <><path {...common} d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" /></>,
   ];
-  return <svg aria-hidden="true" className="atlas-audience-svg" viewBox="0 0 24 24">{glyphs[index % glyphs.length]}</svg>;
+  const glyph = <svg aria-hidden="true" className="atlas-audience-svg" viewBox="0 0 24 24">{glyphs[index % glyphs.length]}</svg>;
+  /* eslint-enable react/jsx-key */
+  return glyph;
 }
 
 const copy: Record<Language, LandingCopy> = {
@@ -57,9 +60,9 @@ const copy: Record<Language, LandingCopy> = {
     eyebrow: "ATLAS FOR ENTREPRENEURS",
     headline: ["YOU CARRY THE FAMILY.", "ATLAS CARRIES THE BUSINESS."],
     heroCopy:
-      "Your AI business partner that helps small businesses find more prospects, follow up faster, and close more deals, so you can be there for what matters most.",
-    primary: "HOW ATLAS WORKS",
-    secondary: "BUILD MY ATLAS",
+      "Your owner-controlled business workspace for organizing prospects, follow-up, pipeline, and approved next actions, so you can stay focused on what matters most.",
+    primary: "START MY 30-DAY SPRINT",
+    secondary: "START BUSINESS ASSESSMENT",
     nav: {
       how: "How ATLAS Works",
       who: "Who It's For",
@@ -90,29 +93,29 @@ const copy: Record<Language, LandingCopy> = {
     ],
     howTitle: "HOW ATLAS WORKS FOR YOUR BUSINESS",
     workflow: [
-      { title: "Find", body: "ATLAS finds and attracts new prospects and opportunities.", mark: "01" },
-      { title: "Respond", body: "ATLAS answers calls, chats, and captures every lead.", mark: "02" },
-      { title: "Follow up", body: "ATLAS follows up, sends reminders, and keeps leads warm.", mark: "03" },
-      { title: "Close", body: "ATLAS helps book appointments and close more deals.", mark: "04" },
-      { title: "Grow", body: "ATLAS gets reviews, brings back customers, and fuels growth.", mark: "05" },
+      { title: "Find", body: "Organize prospects and opportunities around the business goal.", mark: "01" },
+      { title: "Respond", body: "Keep notes, tasks, and owner-approved follow-up drafts in one place.", mark: "02" },
+      { title: "Follow up", body: "See reminders and next actions before opportunities go cold.", mark: "03" },
+      { title: "Close", body: "Keep pipeline context visible while you make the customer decisions.", mark: "04" },
+      { title: "Grow", body: "Draft focused marketing content with human review before anything goes live.", mark: "05" },
     ],
     denTitle: "CLIENT DASHBOARD",
     denCopy: "Your command center. See what ATLAS is doing, what needs your attention, and what is coming next.",
     denPoints: [
-      "Live activity and AI performance",
-      "Appointments and follow-ups",
-      "Opportunities in pipeline",
+      "Owner-approved work and next actions",
+      "Follow-up status and reminders",
+      "Opportunity pipeline visibility",
       "Tasks and reminders",
-      "Reports that drive decisions",
+      "Notes, activity, and account usage",
     ],
     denCta: "ENTER THE CLIENT DASHBOARD",
     closingTitle: ["RUN THE BUSINESS.", "MAKE IT TO THE MOMENTS THAT MATTER."],
     closingCopy:
-      "ATLAS handles the work that pulls you away: calls, follow-ups, schedules, and more, so you can focus on your customers and your family.",
+      "ATLAS organizes the work that gets scattered: prospects, follow-up, pipeline, tasks, and approved drafts, so you can focus on your customers and your family.",
     stats: [
-      { value: "24/7", label: "Always working" },
-      { value: "0", label: "Missed leads" },
-      { value: "+", label: "More deals" },
+      { value: "GOAL", label: "One focused 30-day goal" },
+      { value: "WORKSPACE", label: "One private client workspace" },
+      { value: "CONTROL", label: "No automatic renewal" },
       { value: "YOU", label: "Stay in control" },
     ],
     bottomCta: "START FREE ASSESSMENT",
@@ -121,9 +124,9 @@ const copy: Record<Language, LandingCopy> = {
     eyebrow: "ATLAS PARA EMPRENDEDORES",
     headline: ["TÚ CARGAS CON LA FAMILIA.", "ATLAS CARGA CON EL NEGOCIO."],
     heroCopy:
-      "Tu socio de negocios con IA ayuda a las pequeñas empresas a encontrar más prospectos, dar seguimiento más rápido y cerrar más ventas, para que puedas estar presente en lo que más importa.",
-    primary: "CÓMO FUNCIONA ATLAS",
-    secondary: "CREAR MI ATLAS",
+      "Tu espacio de trabajo con IA y control del propietario para organizar prospectos, seguimientos, oportunidades y próximos pasos aprobados, para que puedas enfocarte en lo que más importa.",
+    primary: "EMPEZAR MI SPRINT DE 30 DÍAS",
+    secondary: "EMPEZAR EVALUACIÓN DEL NEGOCIO",
     nav: {
       how: "Cómo funciona ATLAS",
       who: "Para quién es",
@@ -151,40 +154,56 @@ const copy: Record<Language, LandingCopy> = {
     ],
     howTitle: "CÓMO FUNCIONA ATLAS PARA TU NEGOCIO",
     workflow: [
-      { title: "Encuentra", body: "ATLAS encuentra y atrae nuevos prospectos y oportunidades.", mark: "01" },
-      { title: "Responde", body: "ATLAS responde llamadas, chats y captura cada prospecto.", mark: "02" },
-      { title: "Da seguimiento", body: "ATLAS da seguimiento, envía recordatorios y mantiene activos a los prospectos.", mark: "03" },
-      { title: "Cierra", body: "ATLAS ayuda a agendar citas y a cerrar más ventas.", mark: "04" },
-      { title: "Crece", body: "ATLAS obtiene reseñas, recupera clientes e impulsa el crecimiento.", mark: "05" },
+      { title: "Organiza", body: "Organiza prospectos y oportunidades alrededor de una meta del negocio.", mark: "01" },
+      { title: "Responde", body: "Mantén notas, tareas y borradores de seguimiento aprobados en un solo lugar.", mark: "02" },
+      { title: "Da seguimiento", body: "Mira recordatorios y próximos pasos antes de que se enfríen las oportunidades.", mark: "03" },
+      { title: "Avanza", body: "Mantén visible el contexto del pipeline mientras tomas las decisiones con clientes.", mark: "04" },
+      { title: "Crece", body: "Crea borradores de marketing enfocados con revisión humana antes de publicar.", mark: "05" },
     ],
     denTitle: "CLIENT DASHBOARD",
     denCopy: "Tu centro de mando. Mira lo que ATLAS está haciendo, lo que necesita tu atención y lo que sigue.",
     denPoints: [
-      "Actividad en vivo y rendimiento de IA",
-      "Citas y seguimientos",
-      "Oportunidades en el pipeline",
+      "Trabajo aprobado por el propietario y próximos pasos",
+      "Estado de seguimientos y recordatorios",
+      "Visibilidad de oportunidades en el pipeline",
       "Tareas y recordatorios",
-      "Reportes que impulsan decisiones",
+      "Notas, actividad y uso de la cuenta",
     ],
     denCta: "ENTRA AL CLIENT DASHBOARD",
     closingTitle: ["MANEJA EL NEGOCIO.", "LLEGA A LOS MOMENTOS QUE IMPORTAN."],
     closingCopy:
-      "ATLAS se encarga del trabajo que te aleja: llamadas, seguimientos, agendas y más, para que puedas enfocarte en tus clientes y tu familia.",
+      "ATLAS organiza el trabajo que se dispersa: prospectos, seguimientos, oportunidades, tareas y borradores aprobados, para que puedas enfocarte en tus clientes y tu familia.",
     stats: [
-      { value: "24/7", label: "Siempre trabajando" },
-      { value: "0", label: "Prospectos perdidos" },
-      { value: "+", label: "Más ventas" },
+      { value: "META", label: "Una meta enfocada de 30 días" },
+      { value: "ESPACIO", label: "Un espacio de trabajo privado" },
+      { value: "CONTROL", label: "Sin renovación automática" },
       { value: "TÚ", label: "Mantienes el control" },
     ],
     bottomCta: "EMPEZAR EVALUACIÓN GRATIS",
   },
 };
 
+function getStoredLanguage(): Language {
+  if (typeof window === "undefined") return "en";
+  const saved = window.localStorage.getItem("afe-language");
+  return saved === "es" ? "es" : "en";
+}
+
+function subscribeToLanguage(onChange: () => void) {
+  if (typeof window === "undefined") return () => undefined;
+  window.addEventListener("storage", onChange);
+  window.addEventListener("afe-language-change", onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener("afe-language-change", onChange);
+  };
+}
+
 function DashboardPreview({ language }: { language: Language }) {
   const spanish = language === "es";
 
   return (
-    <div className="atlas-dashboard" aria-label={spanish ? "Vista previa del panel de clientes" : "Client Dashboard preview"}>
+    <div className="atlas-dashboard" aria-label={spanish ? "Panel de clientes" : "Client Dashboard"}>
       <aside className="atlas-dashboard-sidebar">
         <div className="atlas-dashboard-wordmark"><span>A</span> ATLAS</div>
         <div className="atlas-dashboard-nav">
@@ -200,26 +219,22 @@ function DashboardPreview({ language }: { language: Language }) {
       </aside>
       <div className="atlas-dashboard-main">
         <div className="atlas-dashboard-greeting">
-          <div><strong>{spanish ? "Buenos días, Manny" : "Good morning, Manny"}</strong><small>{spanish ? "Esto es lo que está pasando hoy." : "Here is what is happening today."}</small></div>
-          <span className="atlas-notification">3</span>
+          <div><strong>{spanish ? "Tu espacio de trabajo" : "Your workspace"}</strong><small>{spanish ? "Aquí verás tus próximos pasos." : "Your next actions will appear here."}</small></div>
         </div>
         <div className="atlas-dashboard-metrics">
-          <article><strong>23</strong><span>{spanish ? "Nuevos prospectos" : "New leads"}</span></article>
-          <article><strong>7</strong><span>{spanish ? "Citas agendadas" : "Appointments"}</span></article>
-          <article><strong>12</strong><span>{spanish ? "Seguimientos" : "Follow-ups"}</span></article>
-          <article><strong>$18,450</strong><span>{spanish ? "En pipeline" : "In pipeline"}</span></article>
+          <article><strong>—</strong><span>{spanish ? "Prospectos" : "Leads"}</span></article>
+          <article><strong>—</strong><span>{spanish ? "Oportunidades" : "Opportunities"}</span></article>
+          <article><strong>—</strong><span>{spanish ? "Seguimientos" : "Follow-ups"}</span></article>
+          <article><strong>—</strong><span>{spanish ? "Valor disponible" : "Value when available"}</span></article>
         </div>
         <div className="atlas-dashboard-lower">
           <article className="atlas-activity-card">
             <h3>{spanish ? "Actividad reciente" : "Recent activity"}</h3>
-            <p><i />{spanish ? "Nuevo prospecto desde el sitio web" : "New lead from website"}<small>2m</small></p>
-            <p><i />{spanish ? "Cita agendada" : "Appointment booked"}<small>12m</small></p>
-            <p><i />{spanish ? "Seguimiento enviado" : "Follow-up sent"}<small>28m</small></p>
+            <p className="atlas-dashboard-empty">{spanish ? "No hay actividad reciente." : "No recent activity."}</p>
           </article>
           <article className="atlas-pipeline-card">
             <h3>{spanish ? "Resumen del pipeline" : "Pipeline overview"}</h3>
-            <div className="atlas-donut"><span /></div>
-            <div className="atlas-pipeline-key"><span>New</span><span>Qualified</span><span>Proposal</span></div>
+            <p className="atlas-dashboard-empty">{spanish ? "Tu pipeline está listo para tu primera oportunidad." : "Your pipeline is ready for your first opportunity."}</p>
           </article>
         </div>
       </div>
@@ -227,9 +242,14 @@ function DashboardPreview({ language }: { language: Language }) {
   );
 }
 
-export function AtlasHomepage() {
-  const [language, setLanguage] = useState<Language>("en");
+export function AtlasHomepage({ paymentLink }: { paymentLink: string | null }) {
+  const language = useSyncExternalStore(subscribeToLanguage, getStoredLanguage, () => "en") as Language;
   const t = copy[language];
+
+  function changeLanguage(nextLanguage: Language) {
+    window.localStorage.setItem("afe-language", nextLanguage);
+    window.dispatchEvent(new Event("afe-language-change"));
+  }
 
   return (
     <div className="atlas-site">
@@ -240,11 +260,28 @@ export function AtlasHomepage() {
           <div className="atlas-wrap atlas-hero-grid">
             <div className="atlas-hero-copy">
               <p className="atlas-kicker">{t.eyebrow}</p>
+              <div aria-label="Language" className="mb-5 flex gap-2" role="group">
+                {(["en", "es"] as const).map((option) => (
+                  <button
+                    aria-pressed={language === option}
+                    className="rounded-full border border-current px-3 py-1 text-xs font-black uppercase tracking-[0.14em] transition hover:bg-white/10"
+                    key={option}
+                    onClick={() => changeLanguage(option)}
+                    type="button"
+                  >
+                    {option === "en" ? "English" : "Español"}
+                  </button>
+                ))}
+              </div>
               <h1 id="atlas-title"><span>{t.headline[0]}</span><strong>{t.headline[1]}</strong></h1>
               <p className="atlas-hero-lede">{t.heroCopy}</p>
               <div className="atlas-hero-actions">
-                <Link className="atlas-button gold" href="/assessment">{t.primary}</Link>
-                <a className="atlas-button outline" href="#how">{t.secondary}</a>
+                {paymentLink ? (
+                  <a className="atlas-button gold" href={paymentLink} rel="noreferrer" target="_blank">{t.primary}</a>
+                ) : (
+                  <Link className="atlas-button gold" href="/pricing#launch-offer">{t.primary}</Link>
+                )}
+                <Link className="atlas-button outline" href="/assessment">{t.secondary}</Link>
               </div>
             </div>
             <div className="atlas-hero-art" aria-label="Atlas carries the business">

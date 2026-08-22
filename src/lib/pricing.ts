@@ -30,7 +30,7 @@ export type AtlasPricingFaq = {
 export type AtlasLaunchOffer = {
   label: string;
   name: string;
-  monthlyPrice: number;
+  price: number;
   summary: string;
   term: string;
   limit: string;
@@ -209,12 +209,12 @@ export const atlasPricingFaqs: AtlasPricingFaq[] = [
 
 export const atlasFoundingBusinessOffer: AtlasLaunchOffer = {
   label: "Launch offer",
-  name: "FOUNDING BUSINESS",
-  monthlyPrice: 149,
+  name: "ATLAS 30-DAY REVENUE RESCUE SPRINT",
+  price: 500,
   summary:
-    "$149/month for 12 months for the first 10 qualified pilot businesses.",
-  term: "12 months",
-  limit: "First 10 qualified pilot businesses",
+    "A focused, human-led 30-day sprint to identify one revenue leak, agree on one measurable goal, and make the next actions visible.",
+  term: "One-time payment",
+  limit: "No automatic renewal",
 };
 
 export const atlasPhoneAiAddOn: AtlasFutureAddOn = {
