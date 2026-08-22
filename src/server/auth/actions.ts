@@ -73,36 +73,33 @@ export async function confirmAuthLink(formData: FormData) {
   const tokenHash = String(formData.get("tokenHash") ?? "");
   const type = String(formData.get("type") ?? "");
   const nextPath = safeRedirectPath(formData.get("next"));
+  const supabase = await createClient();
 
   if (code) {
-    const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
       redirect("/login?error=auth_callback_failed");
     }
+  } else {
+    if (!tokenHash || (type !== "invite" && type !== "recovery" && type !== "email")) {
+      redirect("/login?error=auth_callback_failed");
+    }
 
-    redirect(nextPath);
-  }
+    const { error } =
+      type === "invite"
+        ? await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: "invite",
+          })
+        : await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: type === "email" ? "email" : "recovery",
+          });
 
-  if (!tokenHash || (type !== "invite" && type !== "recovery" && type !== "email")) {
-    redirect("/login?error=auth_callback_failed");
-  }
-
-  const supabase = await createClient();
-  const { error } =
-    type === "invite"
-      ? await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: "invite",
-        })
-      : await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: type === "email" ? "email" : "recovery",
-        });
-
-  if (error) {
-    redirect("/login?error=auth_callback_failed");
+    if (error) {
+      redirect("/login?error=auth_callback_failed");
+    }
   }
 
   const {

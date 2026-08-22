@@ -2,6 +2,7 @@ const exactAllowedRedirectPaths = new Set([
   "/",
   "/reset-password",
   "/set-password",
+  "/starter",
 ]);
 
 const allowedRedirectRoots = ["/client", "/clients", "/lions-den"];
