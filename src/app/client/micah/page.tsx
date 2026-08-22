@@ -40,7 +40,7 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
 
   return (
     <ClientWorkspaceScreen
-      backHref={clientWorkspaceHref("/clients", previewOrgSlug)}
+      backHref={clientWorkspaceHref("/client", previewOrgSlug)}
       description="Content Studio prepares social images, captions, campaign directions, and post drafts for review before anything goes public."
       eyebrow="Content Studio"
       organizationName={primaryOrganization?.name}

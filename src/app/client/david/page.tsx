@@ -37,7 +37,7 @@ export default async function DavidPage({ searchParams }: DavidPageProps) {
 
   return (
     <ClientWorkspaceScreen
-      backHref={clientWorkspaceHref("/clients", previewOrgSlug)}
+      backHref={clientWorkspaceHref("/client", previewOrgSlug)}
       description="The Follow-up Desk keeps follow-up notes, check-ins, and business messages close to the CRM."
       eyebrow="Follow-up Desk"
       organizationName={primaryOrganization?.name}

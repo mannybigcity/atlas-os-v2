@@ -89,7 +89,7 @@ function stageLensHref(focusStage: string, previewOrgSlug: string | null) {
     ? `?previewOrg=${encodeURIComponent(previewOrgSlug)}&focus=${encodeURIComponent(focusStage)}#stage-lens`
     : `?focus=${encodeURIComponent(focusStage)}#stage-lens`;
 
-  return `/clients${search}`;
+  return `/client${search}`;
 }
 
 function metadataString(metadata: Record<string, unknown>, keys: string[]) {

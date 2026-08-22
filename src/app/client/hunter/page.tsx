@@ -39,7 +39,7 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
 
   return (
     <ClientWorkspaceScreen
-      backHref={clientWorkspaceHref("/clients", previewOrgSlug)}
+      backHref={clientWorkspaceHref("/client", previewOrgSlug)}
       description="Growth research tracks leads, sponsors, partners, venues, and warm opportunities before they become follow-up."
       eyebrow="Growth research"
       organizationName={primaryOrganization?.name}
