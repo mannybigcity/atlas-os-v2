@@ -1,0 +1,653 @@
+﻿diff --git a/src/app/globals.css b/src/app/globals.css
+index 16f2e07..f24f1d3 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@ body { margin: 0; background: #fff; color: var(--ink); font-family: var(--font-b
+ a { color: inherit; text-decoration: none; }
+ button { font: inherit; }
+ .atlas-site { overflow: clip; background: linear-gradient(180deg, #fff 0%, #fffefb 54%, #f8fafc 100%); }
++.atlas-team-live-shell > .relative > header { display: none; }
+ .atlas-wrap { width: min(1250px, calc(100% - 3rem)); margin-inline: auto; }
+ 
+ .atlas-header { position: relative; z-index: 10; padding: 1.35rem 0 0; background: rgba(255,255,255,.94); }
+@@ -34,10 +35,8 @@ button { font: inherit; }
+ 
+ .atlas-hero-section { position: relative; min-height: 28rem; padding: 2.75rem 0 1.05rem; background: radial-gradient(circle at 66% 49%, rgba(251,216,135,.58), transparent 22rem), linear-gradient(111deg, #fff 9%, #fffdf7 57%, #f9f0d9); }
+ .atlas-hero-section::after { position: absolute; right: -10%; bottom: 0; left: -10%; height: 6.7rem; background: linear-gradient(180deg, transparent, rgba(246,232,196,.5)); content: ""; pointer-events: none; }
+-.atlas-hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; min-height: 27rem; transform-origin: center center; transition: transform .28s ease, filter .28s ease; will-change: transform; }
+-.atlas-hero-section:hover .atlas-hero-grid, .atlas-hero-section:focus-within .atlas-hero-grid { transform: scale(1.045); }
+-.atlas-hero-copy { position: relative; z-index: 2; max-width: 35rem; padding: 1.4rem 0 2.75rem; transition: transform .28s ease, filter .28s ease; transform-origin: left center; will-change: transform; }
+-.atlas-hero-section:hover .atlas-hero-copy, .atlas-hero-section:focus-within .atlas-hero-copy { transform: scale(1.03); }
++.atlas-hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; min-height: 27rem; }
++.atlas-hero-copy { position: relative; z-index: 2; max-width: 35rem; padding: 1.4rem 0 2.75rem; }
+ .atlas-kicker, .atlas-section-label { margin: 0 0 .75rem; color: var(--navy); font-size: .64rem; font-weight: 900; letter-spacing: .2em; }
+ .atlas-hero-copy h1, .atlas-family-copy h2 { margin: 0; color: var(--navy); font-family: var(--font-display); font-size: clamp(3.55rem, 5.55vw, 5.95rem); font-weight: 950; letter-spacing: -.075em; line-height: .91; }
+ .atlas-hero-copy h1 span, .atlas-hero-copy h1 strong, .atlas-family-copy h2 span, .atlas-family-copy h2 strong { display: block; }
+@@ -49,10 +48,11 @@ button { font: inherit; }
+ .atlas-button.gold { background: linear-gradient(135deg, #f4c34e, #df9815); color: #191303; box-shadow: 0 11px 22px rgba(221,150,13,.21); }
+ .atlas-button.outline { border: 1.5px solid #1b4fb1; background: rgba(255,255,255,.72); color: var(--navy); }
+ .atlas-button.compact { min-height: 2.55rem; padding-inline: .95rem; }
+-.atlas-hero-art { position: relative; align-self: stretch; width: calc(100% + max(0px, (100vw - 1250px) / 2)); min-height: 35rem; margin-right: calc(max(0px, (100vw - 1250px) / -2)); overflow: visible; border: 2px solid rgba(233,167,34,.9); border-radius: 1.75rem; background: #fbf4e5; box-shadow: inset 0 0 0 1px rgba(255,255,255,.58), 0 1.3rem 2.6rem rgba(6,27,82,.16); isolation: isolate; transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease; transform-origin: center center; will-change: transform; }
+-.atlas-hero-section:hover .atlas-hero-art, .atlas-hero-section:focus-within .atlas-hero-art { transform: scale(1.065); border-color: rgba(240,191,67,.98); box-shadow: inset 0 0 0 1px rgba(255,255,255,.72), 0 1.8rem 3.8rem rgba(6,27,82,.2), 0 0 0 .35rem rgba(240,191,67,.08); }
++.atlas-hero-art { position: relative; align-self: stretch; width: calc(100% + max(0px, (100vw - 1250px) / 2)); min-height: 35rem; margin-right: calc(max(0px, (100vw - 1250px) / -2)); overflow: visible; border: 2px solid rgba(233,167,34,.9); border-radius: 1.75rem; background: #fbf4e5; box-shadow: inset 0 0 0 1px rgba(255,255,255,.58), 0 1.3rem 2.6rem rgba(6,27,82,.16); isolation: isolate; }
+ .atlas-hero-art > img:not(.atlas-service-collage) { position: absolute; z-index: 4; left: -3.9rem; bottom: -1.95rem; right: auto; width: min(24rem, 42vw); height: auto; filter: drop-shadow(0 0 .6rem rgba(255,255,255,.98)) drop-shadow(0 0 2rem rgba(255,255,255,.85)) drop-shadow(0 1rem 1.1rem rgba(66,48,11,.18)); }
+-.atlas-service-collage { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center center; opacity: 1; filter: saturate(.98) contrast(.99); clip-path: inset(0 round 1.75rem); transform: scale(1.012); transform-origin: center; }
++.atlas-hero-figure { transition: transform .28s ease, filter .28s ease, opacity .28s ease; transform: scale(.82); transform-origin: left bottom; }
++.atlas-hero-figure:hover { transform: scale(1); }
++.atlas-service-collage { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 58%; opacity: 1; filter: saturate(.98) contrast(.99); clip-path: inset(0 round 1.75rem); transform: scale(1); transform-origin: center; }
+ .atlas-hero-art::after { position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, rgba(255,252,246,.08), transparent 34%), linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,245,218,.12)); content: ""; pointer-events: none; }
+ .atlas-sun { position: absolute; z-index: 0; top: 35%; left: 25%; width: 4.8rem; aspect-ratio: 1; border: 1px solid rgba(229,174,49,.5); border-radius: 50%; background: rgba(255,250,208,.68); box-shadow: 0 0 0 1.1rem rgba(255,247,207,.32), 0 0 0 2.25rem rgba(255,247,207,.18); }
+ 
+@@ -75,15 +75,15 @@ button { font: inherit; }
+ .atlas-workflow-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .75rem; perspective: 1400px; }
+ .atlas-workflow-grid article { position: relative; min-height: 10.8rem; border: 1px solid #e0e4eb; border-radius: .6rem; background: #fff; padding: .75rem .75rem 1rem; box-shadow: 0 .6rem 1.1rem rgba(6,27,82,.05); transform-origin: center center; transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease; z-index: 0; }
+ .atlas-workflow-grid article:hover { z-index: 10; transform: scale(1.34); border-color: rgba(240,191,67,.85); background: linear-gradient(180deg, #ffffff 0%, #fffaf0 100%); box-shadow: 0 1.1rem 2.4rem rgba(6,27,82,.16), 0 0 0 .35rem rgba(240,191,67,.08); }
+-.atlas-workflow-grid article:hover .atlas-workflow-symbol { transform: scale(1.55); color: var(--gold); }
++.atlas-workflow-grid article:hover .atlas-workflow-symbol { transform: scale(1.08); border-color: rgba(240,191,67,.85); background: linear-gradient(180deg, #fffef8 0%, #fff6de 100%); }
+ .atlas-workflow-grid article:hover h3 { transform: scale(1.08); }
+ .atlas-workflow-grid article:hover p { font-size: .9rem; line-height: 1.6; color: #16233f; }
+ .atlas-workflow-grid article:hover .atlas-workflow-count { transform: scale(1.24); box-shadow: 0 0 0 .35rem rgba(240,191,67,.14); }
+ .atlas-workflow-grid article:hover::before { position: absolute; inset: -.75rem; border-radius: 1rem; background: radial-gradient(circle at center, rgba(255,255,255,.82), transparent 62%); content: ""; pointer-events: none; z-index: -1; }
+-.atlas-workflow-grid article:not(:last-child)::after { position: absolute; z-index: 2; top: 50%; right: -.67rem; color: var(--gold); content: "â€º"; font-size: 2.55rem; font-weight: 300; line-height: 1; transform: translateY(-50%); }
++.atlas-workflow-grid article:not(:last-child)::after { position: absolute; z-index: 2; top: 50%; right: -.67rem; color: var(--gold); content: "›"; font-size: 2.55rem; font-weight: 300; line-height: 1; transform: translateY(-50%); }
+ .atlas-workflow-count { display: grid; width: 1.55rem; height: 1.55rem; place-items: center; margin: 0 auto .4rem; border-radius: 50%; background: var(--gold); color: #fff; font-size: .52rem; font-weight: 900; }
+-.atlas-workflow-symbol { display: grid; place-items: center; width: 2.55rem; height: 2.55rem; margin: 0 auto .35rem; border: 1px solid #dbe4f0; border-radius: 999px; background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%); color: var(--navy); box-shadow: 0 .35rem .9rem rgba(6,27,82,.05); transition: transform .22s ease, color .22s ease, border-color .22s ease, background-color .22s ease; transform-origin: center center; }
+-.atlas-workflow-svg { width: 1.2rem; height: 1.2rem; }
++.atlas-workflow-symbol { display: grid; place-items: center; width: 2.55rem; height: 2.55rem; margin: 0 auto .35rem; border: 1px solid #dbe4f0; border-radius: 999px; background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%); color: var(--navy); box-shadow: 0 .35rem .9rem rgba(6,27,82,.05); transition: transform .22s ease, border-color .22s ease, background-color .22s ease; transform-origin: center center; }
++.atlas-workflow-symbol .atlas-workflow-count { margin: 0; width: 1.7rem; height: 1.7rem; font-size: .58rem; }
+ .atlas-workflow-grid h3 { margin: .55rem 0 .3rem; color: var(--navy); font-family: var(--font-display); font-size: 1rem; font-weight: 950; text-transform: uppercase; transition: transform .22s ease; transform-origin: center top; }
+ .atlas-workflow-grid p { margin: 0; color: #23304a; font-size: .64rem; font-weight: 620; line-height: 1.42; transition: font-size .22s ease, line-height .22s ease, color .22s ease; }
+ .atlas-live-copy, .atlas-live-demo-card { position: relative; transform-origin: center center; transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease, background-color .24s ease; will-change: transform; }
+@@ -101,7 +101,7 @@ button { font: inherit; }
+ .atlas-den-copy h2 { max-width: 24rem; margin: 0 0 .9rem; color: var(--navy); font-family: var(--font-display); font-size: clamp(1.85rem, 3vw, 2.7rem); font-weight: 900; letter-spacing: -.065em; line-height: .98; }
+ .atlas-den-copy ul { display: grid; gap: .42rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+ .atlas-den-copy li { color: #17243e; font-size: .72rem; font-weight: 650; }
+-.atlas-den-copy li::before { margin-right: .48rem; color: var(--navy); content: "âœ“"; font-weight: 900; }
++.atlas-den-copy li::before { margin-right: .48rem; color: var(--navy); content: "✓"; font-weight: 900; }
+ .atlas-dashboard { display: grid; grid-template-columns: 10rem 1fr; min-width: 0; min-height: 24rem; overflow: hidden; border: 1px solid #dbe2eb; border-radius: .65rem; background: #fff; box-shadow: 0 1.15rem 2rem rgba(6,27,82,.11); }
+ .atlas-dashboard-sidebar { min-height: 24rem; background: linear-gradient(180deg, #083580, #061f60); padding: 1.25rem .9rem; color: #fff; }
+ .atlas-dashboard-wordmark { display: flex; align-items: center; gap: .35rem; margin-bottom: .9rem; font-size: .72rem; font-weight: 850; }
+@@ -118,28 +118,23 @@ button { font: inherit; }
+ 
+ .atlas-family-section { padding: 1.7rem 0 1.5rem; background: linear-gradient(90deg, #fff 0%, #fff 39%, #f4f7fb 39%, #f4f7fb 100%); }
+ .atlas-family-grid { display: grid; grid-template-columns: .7fr 1.3fr; align-items: stretch; gap: 2rem; }
+-.atlas-family-section { position: relative; transform-origin: center center; transition: transform .28s ease, filter .28s ease, box-shadow .28s ease; will-change: transform; cursor: zoom-in; }
+-.atlas-family-section:hover, .atlas-family-section:focus-within { z-index: 4; transform: scale(1.07) translateY(-.1rem); filter: saturate(1.02); box-shadow: 0 1.7rem 3.4rem rgba(6,27,82,.08); }
+-.atlas-family-section:hover .atlas-family-copy, .atlas-family-section:focus-within .atlas-family-copy { transform: scale(1.03); }
+-.atlas-family-section:hover .atlas-family-art, .atlas-family-section:focus-within .atlas-family-art { transform: scale(1.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,.68), 0 1.9rem 3.5rem rgba(6,27,82,.18), 0 0 0 .35rem rgba(240,191,67,.08); }
+-.atlas-family-copy { display: flex; flex-direction: column; justify-content: center; padding: 1rem 0; transform-origin: center center; transition: transform .28s ease; will-change: transform; }
++.atlas-family-section { position: relative; }
++.atlas-family-copy { display: flex; flex-direction: column; justify-content: center; padding: 1rem 0; }
+ .atlas-family-copy h2 { max-width: 25rem; font-size: clamp(2.2rem, 4.1vw, 4.4rem); }
+-.atlas-family-copy p { max-width: 25rem; margin: 1rem 0; color: #34435c; font-size: .78rem; font-weight: 630; line-height: 1.65; }
+-.atlas-family-benefits { display: flex; flex-wrap: wrap; gap: .45rem; }
+-.atlas-family-benefits span { border: 1px solid #dde5f0; border-radius: 99px; background: #fff; padding: .35rem .55rem; color: #244271; font-size: .55rem; font-weight: 800; }
+-.atlas-family-benefits span::before { margin-right: .27rem; color: var(--gold); content: "â—"; }
+-.atlas-family-art { position: relative; overflow: visible; min-height: 32rem; border: 2px solid rgba(233,167,34,.9); border-radius: 1.75rem; background: rgba(255,255,255,.45); box-shadow: inset 0 0 0 1px rgba(255,255,255,.6), 0 1.3rem 2.6rem rgba(6,27,82,.14); backdrop-filter: blur(12px); isolation: isolate; transform-origin: center center; transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease; will-change: transform; }
+-.atlas-family-art > img:first-child { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center center; clip-path: inset(0 round 1.75rem); transform: scale(1.03); transform-origin: center; }
++.atlas-family-copy p { max-width: 30rem; margin: 1.25rem 0; color: #34435c; font-size: clamp(1rem, 1.35vw, 1.2rem); font-weight: 650; line-height: 1.7; }
++.atlas-family-art { position: relative; overflow: visible; min-height: 32rem; border: 2px solid rgba(233,167,34,.9); border-radius: 1.75rem; background: rgba(255,255,255,.45); box-shadow: inset 0 0 0 1px rgba(255,255,255,.6), 0 1.3rem 2.6rem rgba(6,27,82,.14); backdrop-filter: blur(12px); isolation: isolate; }
++.atlas-family-art > img:first-child { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; clip-path: inset(0 round 1.75rem); transform: scale(1); transform-origin: center; }
+ .atlas-family-art::after { position: absolute; z-index: 1; right: 0; bottom: 0; left: 0; height: 44%; background: linear-gradient(180deg, transparent, rgba(4,20,59,.73)); content: ""; }.atlas-family-art div { position: absolute; right: 0; bottom: 0; left: 0; z-index: 5; padding: 1.1rem 1.2rem; }.atlas-family-art b { color: #fff; font-size: .78rem; }.atlas-family-art p { margin: .2rem 0 0; color: rgba(255,255,255,.86); font-size: .64rem; line-height: 1.45; }
+-.atlas-outcome-section { display: grid; grid-template-columns: 1fr 9.5rem; gap: 1rem; padding: 1.2rem 0 4.7rem; }.atlas-outcome-stats { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #e1e6ed; border-radius: .55rem; background: #fff; }.atlas-outcome-stats article { display: grid; place-items: center; min-height: 5rem; border-right: 1px solid #e1e6ed; text-align: center; }.atlas-outcome-stats article:last-child { border-right: 0; }.atlas-outcome-stats strong { color: var(--navy); font-family: var(--font-display); font-size: 1.18rem; }.atlas-outcome-stats span { margin-top: .1rem; color: #52607a; font-size: .55rem; font-weight: 760; }.atlas-outcome-cta { display: grid; place-items: center; align-content: center; border: 1.5px solid var(--gold); border-radius: .55rem; background: #fff; color: var(--navy); text-align: center; }.atlas-outcome-cta span { font-size: .62rem; font-weight: 900; line-height: 1.2; }.atlas-outcome-arrow { margin-top: .35rem; color: var(--gold); font-size: 1.4rem; line-height: 1; }
++.atlas-outcome-section { display: grid; grid-template-columns: 1fr 15rem; gap: 1rem; padding: 1.5rem max(1.5rem, calc((100vw - 1250px) / 2)) 4.7rem; }.atlas-outcome-stats { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #e1e6ed; border-radius: .8rem; background: #fff; }.atlas-outcome-stats article { display: grid; place-items: center; min-height: 6.25rem; border-right: 1px solid #e1e6ed; text-align: center; }.atlas-outcome-stats article:last-child { border-right: 0; }.atlas-outcome-stats strong { color: var(--navy); font-family: var(--font-display); font-size: 1.55rem; }.atlas-outcome-stats span { margin-top: .25rem; color: #52607a; font-size: .85rem; font-weight: 760; }.atlas-outcome-cta { display: grid; place-items: center; align-content: center; border: 1.5px solid var(--gold); border-radius: .8rem; background: var(--gold); color: var(--navy); text-align: center; box-shadow: 0 .8rem 1.8rem rgba(233,167,34,.25); transition: transform .2s ease, background .2s ease, box-shadow .2s ease; }.atlas-outcome-cta:hover, .atlas-outcome-cta:focus-visible { background: var(--gold-light); box-shadow: 0 1.05rem 2.2rem rgba(233,167,34,.38); transform: scale(1.06); }.atlas-outcome-cta span { font-size: .9rem; font-weight: 900; line-height: 1.2; }.atlas-outcome-arrow { margin-top: .35rem; color: var(--navy); font-size: 1.7rem; line-height: 1; }
+ .atlas-hero-figure { position: absolute !important; z-index: 4 !important; left: -4.25rem !important; bottom: -2.1rem !important; right: auto !important; width: min(26rem, 46%) !important; height: auto !important; filter: drop-shadow(0 0 .45rem rgba(255,255,255,.98)) drop-shadow(0 0 1.75rem rgba(255,255,255,.88)) drop-shadow(0 .85rem 1rem rgba(30,23,8,.22)) !important; }
+-.atlas-family-atlas { position: absolute !important; z-index: 4 !important; left: -3.25rem !important; bottom: -1.6rem !important; right: auto !important; width: min(20rem, 34%) !important; height: auto !important; filter: drop-shadow(0 0 .45rem rgba(255,255,255,.98)) drop-shadow(0 0 1.75rem rgba(255,255,255,.88)) drop-shadow(0 .85rem 1rem rgba(30,23,8,.22)) !important; }
++.atlas-family-atlas { position: absolute !important; z-index: 4 !important; right: .9rem !important; bottom: -1.55rem !important; left: auto !important; width: min(18rem, 31%) !important; height: auto !important; filter: drop-shadow(0 0 .45rem rgba(255,255,255,.98)) drop-shadow(0 0 1.75rem rgba(255,255,255,.88)) drop-shadow(0 .85rem 1rem rgba(30,23,8,.22)) !important; transform: scaleX(-1) scale(.82) !important; transform-origin: center bottom !important; transition: transform .28s ease, filter .28s ease, opacity .28s ease !important; }
++.atlas-family-atlas:hover { transform: scaleX(-1) scale(1) !important; }
+ .atlas-bottom-bar { position: relative; z-index: 2; background: linear-gradient(100deg, #06276e, #061b52); color: #fff; }.atlas-bottom-bar > div { display: flex; min-height: 3.35rem; align-items: center; justify-content: center; gap: 2rem; }.atlas-bottom-bar span { color: var(--gold-light); font-family: var(--font-display); font-size: .85rem; font-weight: 900; letter-spacing: .06em; }.atlas-bottom-bar strong { font-family: var(--font-display); font-size: 1.05rem; letter-spacing: .1em; }.atlas-bottom-bar a { border-radius: .3rem; background: var(--gold); padding: .55rem .85rem; color: #171303; font-size: .59rem; font-weight: 900; }
+ 
+ @media (max-width: 1120px) { .atlas-primary-nav { gap: 1rem; }.atlas-primary-nav a:nth-child(4), .atlas-primary-nav a:nth-child(5) { display: none; }.atlas-hero-copy h1 { font-size: clamp(3.1rem, 5.5vw, 4.7rem); }.atlas-audience-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+-@media (max-width: 820px) { .atlas-wrap { width: min(100% - 2rem, 42rem); }.atlas-header { padding-top: .55rem; }.atlas-primary-nav, .atlas-login { display: none; }.atlas-header-actions { margin-left: auto; }.atlas-top-cta { padding-inline: .72rem; }.atlas-hero-section { padding-top: 1rem; }.atlas-hero-grid { grid-template-columns: 1fr; }.atlas-hero-copy { max-width: 38rem; padding-bottom: 0; }.atlas-hero-art { min-height: 27rem; margin-top: -2.2rem; }.atlas-hero-art > img:not(.atlas-service-collage) { left: -1.4rem; bottom: -1.85rem; width: min(18rem, 42vw); } .atlas-service-collage { inset: 0; width: 100%; height: 100%; transform: scale(1.02); }.atlas-sun { top: 24%; left: 30%; }.atlas-principles-grid { grid-template-columns: 1fr 1fr; }.atlas-principles-grid article:nth-child(2) { border-right: 0; }.atlas-principles-grid article:nth-child(-n + 2) { border-bottom: 1px solid #e0e4ea; }.atlas-workflow-grid { grid-template-columns: repeat(3, 1fr); }.atlas-workflow-grid article::after { display: none; }.atlas-workflow-grid article:nth-child(n + 4) { grid-column: span 1; }.atlas-den-section, .atlas-family-grid { grid-template-columns: 1fr; }.atlas-den-copy { max-width: 35rem; }.atlas-family-section { background: #f7f9fc; }.atlas-outcome-section { grid-template-columns: 1fr; padding-bottom: 5rem; }.atlas-outcome-cta { min-height: 3rem; }.atlas-bottom-bar strong { font-size: .74rem; }.atlas-bottom-bar > div { gap: .75rem; }.atlas-bottom-bar span { display: none; }.atlas-den-section:hover, .atlas-den-section:focus-within, .atlas-live-copy:hover, .atlas-live-copy:focus-within, .atlas-live-demo-card:hover, .atlas-live-demo-card:focus-within, .atlas-family-section:hover, .atlas-family-section:focus-within { transform: none; box-shadow: inherit; } }
+-@media (max-width: 540px) { .atlas-wrap { width: min(100% - 1.25rem, 31rem); }.atlas-brand img { width: 3.4rem; height: 3rem; }.atlas-brand b { font-size: 1.5rem; }.atlas-brand small { font-size: .34rem; }.atlas-top-cta { display: none; }.atlas-hero-copy h1 { font-size: clamp(2.85rem, 14.5vw, 4rem); }.atlas-hero-lede { font-size: .82rem; }.atlas-hero-art { min-height: 20rem; margin-top: -1rem; }.atlas-hero-art > img:not(.atlas-service-collage) { left: -.85rem; bottom: -1.25rem; width: min(11rem, 46vw); } .atlas-service-collage { top: 0; opacity: .98; transform: scale(1.01); }.atlas-principles-grid article { min-height: 4.1rem; padding: .65rem; }.atlas-principles-grid span { font-size: .62rem; }.atlas-audience-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; }.atlas-workflow-grid { grid-template-columns: 1fr; }.atlas-workflow-grid article { min-height: auto; padding: .8rem 1rem; }.atlas-workflow-grid article:hover { transform: none; box-shadow: 0 .6rem 1.1rem rgba(6,27,82,.05); }.atlas-workflow-symbol { display: none; }.atlas-workflow-grid h3 { margin-top: 0; }.atlas-dashboard { grid-template-columns: 5.4rem 1fr; }.atlas-dashboard-sidebar { padding: .7rem .35rem; }.atlas-dashboard-nav span { font-size: .43rem; }.atlas-dashboard-main { padding: .6rem; }.atlas-dashboard-metrics { grid-template-columns: repeat(2, 1fr); }.atlas-dashboard-lower { grid-template-columns: 1fr; }.atlas-pipeline-card { display: none; }.atlas-family-art { min-height: 24rem; }.atlas-outcome-stats { grid-template-columns: 1fr 1fr; }.atlas-outcome-stats article:nth-child(2) { border-right: 0; }.atlas-outcome-stats article:nth-child(-n + 2) { border-bottom: 1px solid #e1e6ed; }.atlas-bottom-bar > div { justify-content: space-between; }.atlas-bottom-bar strong { max-width: 13rem; font-size: .6rem; letter-spacing: .04em; }.atlas-bottom-bar a { padding: .45rem .55rem; font-size: .48rem; }.atlas-den-section:hover, .atlas-den-section:focus-within, .atlas-live-copy:hover, .atlas-live-copy:focus-within, .atlas-live-demo-card:hover, .atlas-live-demo-card:focus-within, .atlas-family-section:hover, .atlas-family-section:focus-within { transform: none; box-shadow: inherit; }.atlas-hero-section:hover .atlas-hero-grid, .atlas-hero-section:focus-within .atlas-hero-grid, .atlas-hero-section:hover .atlas-hero-copy, .atlas-hero-section:focus-within .atlas-hero-copy, .atlas-hero-section:hover .atlas-hero-art, .atlas-hero-section:focus-within .atlas-hero-art { transform: none; box-shadow: inherit; } }
++@media (max-width: 820px) { .atlas-wrap { width: min(100% - 2rem, 42rem); }.atlas-header { padding-top: .55rem; }.atlas-primary-nav, .atlas-login { display: none; }.atlas-header-actions { margin-left: auto; }.atlas-top-cta { padding-inline: .72rem; }.atlas-hero-section { padding-top: 1rem; }.atlas-hero-grid { grid-template-columns: 1fr; }.atlas-hero-copy { max-width: 38rem; padding-bottom: 0; }.atlas-hero-art { min-height: 27rem; margin-top: -2.2rem; }.atlas-hero-art > img:not(.atlas-service-collage) { left: -1.4rem; bottom: -1.85rem; width: min(18rem, 42vw); }.atlas-hero-figure { transform: scale(.82); }.atlas-service-collage { inset: 0; width: 100%; height: 100%; transform: scale(1); }.atlas-sun { top: 24%; left: 30%; }.atlas-principles-grid { grid-template-columns: 1fr 1fr; }.atlas-principles-grid article:nth-child(2) { border-right: 0; }.atlas-principles-grid article:nth-child(-n + 2) { border-bottom: 1px solid #e0e4ea; }.atlas-workflow-grid { grid-template-columns: repeat(3, 1fr); }.atlas-workflow-grid article::after { display: none; }.atlas-workflow-grid article:nth-child(n + 4) { grid-column: span 1; }.atlas-den-section, .atlas-family-grid { grid-template-columns: 1fr; }.atlas-den-copy { max-width: 35rem; }.atlas-family-section { background: #f7f9fc; }.atlas-outcome-section { grid-template-columns: 1fr; padding-bottom: 5rem; }.atlas-outcome-cta { min-height: 3rem; }.atlas-bottom-bar strong { font-size: .74rem; }.atlas-bottom-bar > div { gap: .75rem; }.atlas-bottom-bar span { display: none; }.atlas-den-section:hover, .atlas-den-section:focus-within, .atlas-live-copy:hover, .atlas-live-copy:focus-within, .atlas-live-demo-card:hover, .atlas-live-demo-card:focus-within, .atlas-family-section:hover, .atlas-family-section:focus-within { transform: none; box-shadow: inherit; } }
++@media (max-width: 540px) { .atlas-wrap { width: min(100% - 1.25rem, 31rem); }.atlas-brand img { width: 3.4rem; height: 3rem; }.atlas-brand b { font-size: 1.5rem; }.atlas-brand small { font-size: .34rem; }.atlas-top-cta { display: none; }.atlas-hero-copy h1 { font-size: clamp(2.85rem, 14.5vw, 4rem); }.atlas-hero-lede { font-size: .82rem; }.atlas-hero-art { min-height: 20rem; margin-top: -1rem; }.atlas-hero-art > img:not(.atlas-service-collage) { left: -.85rem; bottom: -1.25rem; width: min(11rem, 46vw); }.atlas-hero-figure { transform: scale(.82); }.atlas-service-collage { top: 0; opacity: .98; transform: scale(1); }.atlas-principles-grid article { min-height: 4.1rem; padding: .65rem; }.atlas-principles-grid span { font-size: .62rem; }.atlas-audience-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; }.atlas-workflow-grid { grid-template-columns: 1fr; }.atlas-workflow-grid article { min-height: auto; padding: .8rem 1rem; }.atlas-workflow-grid article:hover { transform: none; box-shadow: 0 .6rem 1.1rem rgba(6,27,82,.05); }.atlas-workflow-symbol { display: none; }.atlas-workflow-grid h3 { margin-top: 0; }.atlas-dashboard { grid-template-columns: 5.4rem 1fr; }.atlas-dashboard-sidebar { padding: .7rem .35rem; }.atlas-dashboard-nav span { font-size: .43rem; }.atlas-dashboard-main { padding: .6rem; }.atlas-dashboard-metrics { grid-template-columns: repeat(2, 1fr); }.atlas-dashboard-lower { grid-template-columns: 1fr; }.atlas-pipeline-card { display: none; }.atlas-family-art { min-height: 24rem; }.atlas-outcome-stats { grid-template-columns: 1fr 1fr; }.atlas-outcome-stats article:nth-child(2) { border-right: 0; }.atlas-outcome-stats article:nth-child(-n + 2) { border-bottom: 1px solid #e1e6ed; }.atlas-bottom-bar > div { justify-content: space-between; }.atlas-bottom-bar strong { max-width: 13rem; font-size: .6rem; letter-spacing: .04em; }.atlas-bottom-bar a { padding: .45rem .55rem; font-size: .48rem; }.atlas-den-section:hover, .atlas-den-section:focus-within, .atlas-live-copy:hover, .atlas-live-copy:focus-within, .atlas-live-demo-card:hover, .atlas-live-demo-card:focus-within, .atlas-family-section:hover, .atlas-family-section:focus-within { transform: none; box-shadow: inherit; } }
+ @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+-@media (max-width: 820px) { .atlas-audience-section h2 { white-space: normal; }.atlas-hero-figure { left: -1.4rem !important; bottom: -1.85rem !important; right: auto !important; width: min(18rem, 42vw) !important; }.atlas-family-atlas { left: -1rem !important; bottom: -1rem !important; right: auto !important; width: min(12rem, 34%) !important; } }
++@media (max-width: 820px) { .atlas-audience-section h2 { white-space: normal; }.atlas-hero-figure { left: -1.4rem !important; bottom: -1.85rem !important; right: auto !important; width: min(18rem, 42vw) !important; }.atlas-family-atlas { right: .5rem !important; bottom: -1rem !important; left: auto !important; width: min(12rem, 34%) !important; } }
+ .atlas-family-art { width: calc(100% + max(0px, (100vw - 1250px) / 2)); margin-right: calc(max(0px, (100vw - 1250px) / -2)); }
+ 
+diff --git a/src/app/pricing/page.tsx b/src/app/pricing/page.tsx
+index 501a88b..bcf80e5 100644
+--- a/src/app/pricing/page.tsx
++++ b/src/app/pricing/page.tsx
+@@ -1,4 +1,5 @@
+ import type { Metadata } from "next";
++import Image from "next/image";
+ import Link from "next/link";
+ import { SiteHeader } from "@/components/site-header";
+ import {
+@@ -51,8 +52,9 @@ export default function PricingPage() {
+                 Pricing
+               </p>
+               <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[0.94] tracking-[-0.055em] sm:text-6xl lg:text-[4.9rem]">
+-                One system to help you find more prospects, follow up faster,
+-                and close more deals.
++                <span className="block">Find more prospects.</span>
++                <span className="mt-2 block text-[#ffd068]">Follow up faster.</span>
++                <span className="mt-2 block">Close more deals.</span>
+               </h1>
+               <p className="mt-7 max-w-2xl text-lg leading-8 text-blue-100/80 sm:text-xl sm:leading-9">
+                 Start with the tools your business needs today. Add more automation as you grow.
+@@ -81,38 +83,16 @@ export default function PricingPage() {
+               </div>
+             </div>
+ 
+-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-5 shadow-[0_24px_80px_rgba(3,12,30,0.28)] sm:p-6">
+-              <div className="rounded-[1.5rem] border border-white/10 bg-[#f7f9fc] p-5 text-[#071b42]">
+-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
+-                  What the plans do
+-                </p>
+-                <h2 className="mt-3 text-3xl font-black tracking-[-0.05em]">
+-                  One operating system, scaled by need.
+-                </h2>
+-                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+-                  {atlasPricingPlans.map((plan) => (
+-                    <div
+-                      className={`rounded-2xl border p-4 ${
+-                        plan.featured
+-                          ? "border-[#f0c24a] bg-[#fff8df]"
+-                          : "border-[#dbe5f4] bg-white"
+-                      }`}
+-                      key={plan.slug}
+-                    >
+-                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#527096]">
+-                        {plan.name}
+-                      </p>
+-                      <p className="mt-2 text-2xl font-black tracking-tight">
+-                        {money.format(plan.monthlyPrice)}
+-                        <span className="text-sm font-semibold text-slate-500">
+-                          /mo
+-                        </span>
+-                      </p>
+-                      <p className="mt-2 text-xs leading-5 text-slate-600">{plan.bestFor}</p>
+-                    </div>
+-                  ))}
+-                </div>
+-              </div>
++            <div className="relative mx-auto flex w-full max-w-md items-end justify-center lg:max-w-none">
++              <div className="absolute bottom-6 h-44 w-44 rounded-full bg-[#f5b932]/20 blur-3xl" />
++              <Image
++                alt="Atlas lion carrying the world"
++                className="relative h-auto w-full max-w-[28rem] object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.35)]"
++                height={1008}
++                priority
++                src="/atlas-holding-globe-tight.png"
++                width={799}
++              />
+             </div>
+           </div>
+         </section>
+@@ -130,11 +110,11 @@ export default function PricingPage() {
+                   key={plan.slug}
+                 >
+                   {plan.featured ? (
+-                    <span className="absolute right-5 top-5 rounded-full bg-[#f5b932] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#071b42]">
++                    <span className="absolute right-5 top-5 rounded-full bg-[#f5b932] px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-[#071b42]">
+                       Most popular
+                     </span>
+                   ) : null}
+-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
++                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
+                     {plan.name}
+                   </p>
+                   <div className="mt-4 flex items-end gap-2">
+@@ -191,18 +171,15 @@ export default function PricingPage() {
+             </div>
+ 
+             <section className="mt-8 rounded-[1.8rem] border border-[#d9e4f4] bg-white p-5 shadow-[0_16px_42px_rgba(15,23,42,0.05)] sm:p-6">
+-              <div className="flex flex-col gap-2 border-b border-[#e5edf7] pb-5 sm:flex-row sm:items-end sm:justify-between">
++              <div className="border-b border-[#e5edf7] pb-5">
+                 <div>
+-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
++                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
+                     Plan comparison
+                   </p>
+                   <h2 className="mt-3 text-2xl font-black tracking-[-0.04em] text-[#071b42] sm:text-3xl">
+                     What each Atlas plan includes
+                   </h2>
+                 </div>
+-                <p className="text-sm leading-6 text-slate-500">
+-                  The table below is the plain-English version of the pricing structure.
+-                </p>
+               </div>
+ 
+               <div className="mt-5 overflow-x-auto">
+@@ -254,7 +231,7 @@ export default function PricingPage() {
+             <div className="mt-8 rounded-[1.8rem] border border-[#d9e4f4] bg-white p-6 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                 <div>
+-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
++                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
+                     Launch offer
+                   </p>
+                   <h2 className="mt-3 text-3xl font-black tracking-[-0.05em]">
+@@ -377,7 +354,7 @@ export default function PricingPage() {
+                 <p className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd068]">
+                   {atlasPhoneAiAddOn.label}
+                 </p>
+-                <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-blue-100">
++                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.1em] text-blue-100">
+                   Not operational
+                 </span>
+               </div>
+@@ -458,5 +435,3 @@ export default function PricingPage() {
+     </>
+   );
+ }
+-
+-
+diff --git a/src/components/atlas-homepage.tsx b/src/components/atlas-homepage.tsx
+index c9fb58c..35348d5 100644
+--- a/src/components/atlas-homepage.tsx
++++ b/src/components/atlas-homepage.tsx
+@@ -3,6 +3,7 @@
+ import Image from "next/image";
+ import Link from "next/link";
+ import { useState } from "react";
++import { SiteHeader } from "@/components/site-header";
+ 
+ type Language = "en" | "es";
+ 
+@@ -30,7 +31,6 @@ type LandingCopy = {
+   denCta: string;
+   closingTitle: [string, string];
+   closingCopy: string;
+-  closingBenefits: string[];
+   stats: { value: string; label: string }[];
+   bottomCta: string;
+ };
+@@ -52,26 +52,6 @@ function IndustryGlyph({ index }: { index: number }) {
+   return <svg aria-hidden="true" className="atlas-audience-svg" viewBox="0 0 24 24">{glyphs[index % glyphs.length]}</svg>;
+ }
+ 
+-function WorkflowGlyph({ index }: { index: number }) {
+-  const common = {
+-    fill: "none",
+-    stroke: "currentColor",
+-    strokeLinecap: "round" as const,
+-    strokeLinejoin: "round" as const,
+-    strokeWidth: 2.2,
+-  };
+-
+-  const glyphs = [
+-    <><circle {...common} cx="11" cy="11" r="5.75" /><path {...common} d="M15.2 15.2 19 19" /></>,
+-    <><path {...common} d="M5.5 7.5A3 3 0 0 1 8.5 4.5h7a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3H13l-3.5 3v-3H8.5a3 3 0 0 1-3-3z" /><path {...common} d="M8 8.5h8" /><path {...common} d="M8 11h5" /></>,
+-    <><path {...common} d="M6 8a6.5 6.5 0 0 1 11.2-1.8" /><path {...common} d="M16.5 5.8 17.8 8l2.2-1.3" /><path {...common} d="M18 16a6.5 6.5 0 0 1-11.2 1.8" /><path {...common} d="M7.5 18.2 6.2 16 4 17.3" /></>,
+-    <><path {...common} d="m6.5 12.5 3.2 3.2 7.8-7.8" /><circle {...common} cx="12" cy="12" r="7" /></>,
+-    <><path {...common} d="M5 16.5 9 12l3 2.6 6-8.1" /><path {...common} d="M16.8 6.5H18.5v1.7" /><path {...common} d="M18 18.5H6" /></>,
+-  ];
+-
+-  return <svg aria-hidden="true" className="atlas-workflow-svg" viewBox="0 0 24 24">{glyphs[index % glyphs.length]}</svg>;
+-}
+-
+ const copy: Record<Language, LandingCopy> = {
+   en: {
+     eyebrow: "ATLAS FOR ENTREPRENEURS",
+@@ -129,7 +109,6 @@ const copy: Record<Language, LandingCopy> = {
+     closingTitle: ["RUN THE BUSINESS.", "MAKE IT TO THE MOMENTS THAT MATTER."],
+     closingCopy:
+       "ATLAS handles the work that pulls you away: calls, follow-ups, schedules, and more, so you can focus on your customers and your family.",
+-    closingBenefits: ["More time with family", "Less stress. More control.", "Stronger business. Better life."],
+     stats: [
+       { value: "24/7", label: "Always working" },
+       { value: "0", label: "Missed leads" },
+@@ -140,14 +119,14 @@ const copy: Record<Language, LandingCopy> = {
+   },
+   es: {
+     eyebrow: "ATLAS PARA EMPRENDEDORES",
+-    headline: ["TÃƒÆ’Ã…Â¡ CARGAS CON LA FAMILIA.", "ATLAS CARGA CON EL NEGOCIO."],
++    headline: ["TÚ CARGAS CON LA FAMILIA.", "ATLAS CARGA CON EL NEGOCIO."],
+     heroCopy:
+-      "Tu socio de negocios con IA ayuda a las pequeÃƒÆ’Ã‚Â±as empresas a encontrar mÃƒÆ’Ã‚Â¡s prospectos, dar seguimiento mÃƒÆ’Ã‚Â¡s rÃƒÆ’Ã‚Â¡pido y cerrar mÃƒÆ’Ã‚Â¡s ventas, para que puedas estar presente en lo que mÃƒÆ’Ã‚Â¡s importa.",
+-    primary: "VER ATLAS EN ACCIÃƒÆ’Ã¢â‚¬Å“N",
++      "Tu socio de negocios con IA ayuda a las pequeñas empresas a encontrar más prospectos, dar seguimiento más rápido y cerrar más ventas, para que puedas estar presente en lo que más importa.",
++    primary: "VER ATLAS EN ACCIÓN",
+     secondary: "CREAR MI ATLAS",
+     nav: {
+-      how: "CÃƒÆ’Ã‚Â³mo funciona ATLAS",
+-      who: "Para quiÃƒÆ’Ã‚Â©n es",
++      how: "Cómo funciona ATLAS",
++      who: "Para quién es",
+       dashboard: "Client Dashboard",
+       pricing: "Precios",
+       resources: "Recursos",
+@@ -155,31 +134,31 @@ const copy: Record<Language, LandingCopy> = {
+       action: "Client Dashboard",
+     },
+     principles: [
+-      "Hecho para pequeÃƒÆ’Ã‚Â±as empresas",
++      "Hecho para pequeñas empresas",
+       "IA con responsabilidad",
+-      "AprobaciÃƒÆ’Ã‚Â³n humana cuando importa",
+-      "Un sistema. MÃƒÆ’Ã‚Âºltiples asistentes de IA.",
++      "Aprobación humana cuando importa",
++      "Un sistema. Múltiples asistentes de IA.",
+     ],
+-    peopleTitle: "HECHO PARA QUIENES CONSTRUYEN, ENSEÃƒÆ’Ã¢â‚¬ËœAN, SIRVEN, VENDEN, ACTÃƒÆ’Ã…Â¡AN Y PROVEEN.",
++    peopleTitle: "HECHO PARA QUIENES CONSTRUYEN, ENSEÑAN, SIRVEN, VENDEN, ACTÚAN Y PROVEEN.",
+     people: [
+       { name: "Plomeros", mark: "PL" },
+-      { name: "DueÃƒÆ’Ã‚Â±os de HVAC", mark: "HV" },
++      { name: "Dueños de HVAC", mark: "HV" },
+       { name: "Barberos", mark: "BR" },
+       { name: "Profesores de piano", mark: "PI" },
+-      { name: "Instructores de nataciÃƒÆ’Ã‚Â³n", mark: "SW" },
++      { name: "Instructores de natación", mark: "SW" },
+       { name: "Agentes inmobiliarios", mark: "RE" },
+       { name: "DJs y organizadores", mark: "DJ" },
+     ],
+-    howTitle: "CÃƒÆ’Ã¢â‚¬Å“MO FUNCIONA ATLAS PARA TU NEGOCIO",
++    howTitle: "CÓMO FUNCIONA ATLAS PARA TU NEGOCIO",
+     workflow: [
+       { title: "Encuentra", body: "ATLAS encuentra y atrae nuevos prospectos y oportunidades.", mark: "01" },
+       { title: "Responde", body: "ATLAS responde llamadas, chats y captura cada prospecto.", mark: "02" },
+-      { title: "Da seguimiento", body: "ATLAS da seguimiento, envÃƒÆ’Ã‚Â­a recordatorios y mantiene activos a los prospectos.", mark: "03" },
+-      { title: "Cierra", body: "ATLAS ayuda a agendar citas y a cerrar mÃƒÆ’Ã‚Â¡s ventas.", mark: "04" },
+-      { title: "Crece", body: "ATLAS obtiene reseÃƒÆ’Ã‚Â±as, recupera clientes e impulsa el crecimiento.", mark: "05" },
++      { title: "Da seguimiento", body: "ATLAS da seguimiento, envía recordatorios y mantiene activos a los prospectos.", mark: "03" },
++      { title: "Cierra", body: "ATLAS ayuda a agendar citas y a cerrar más ventas.", mark: "04" },
++      { title: "Crece", body: "ATLAS obtiene reseñas, recupera clientes e impulsa el crecimiento.", mark: "05" },
+     ],
+-    denTitle: "LA GUARIDA DEL LEÃƒÆ’Ã¢â‚¬Å“N",
+-    denCopy: "Tu centro de mando. Mira lo que ATLAS estÃƒÆ’Ã‚Â¡ haciendo, lo que necesita tu atenciÃƒÆ’Ã‚Â³n y lo que sigue.",
++    denTitle: "CLIENT DASHBOARD",
++    denCopy: "Tu centro de mando. Mira lo que ATLAS está haciendo, lo que necesita tu atención y lo que sigue.",
+     denPoints: [
+       "Actividad en vivo y rendimiento de IA",
+       "Citas y seguimientos",
+@@ -187,18 +166,17 @@ const copy: Record<Language, LandingCopy> = {
+       "Tareas y recordatorios",
+       "Reportes que impulsan decisiones",
+     ],
+-    denCta: "ENTRA A LA GUARIDA DEL LEÃƒÆ’Ã¢â‚¬Å“N",
++    denCta: "ENTRA AL CLIENT DASHBOARD",
+     closingTitle: ["MANEJA EL NEGOCIO.", "LLEGA A LOS MOMENTOS QUE IMPORTAN."],
+     closingCopy:
+-      "ATLAS se encarga del trabajo que te aleja: llamadas, seguimientos, agendas y mÃƒÆ’Ã‚Â¡s, para que puedas enfocarte en tus clientes y tu familia.",
+-    closingBenefits: ["MÃƒÆ’Ã‚Â¡s tiempo con la familia", "Menos estrÃƒÆ’Ã‚Â©s. MÃƒÆ’Ã‚Â¡s control.", "Negocio mÃƒÆ’Ã‚Â¡s fuerte. Mejor vida."],
++      "ATLAS se encarga del trabajo que te aleja: llamadas, seguimientos, agendas y más, para que puedas enfocarte en tus clientes y tu familia.",
+     stats: [
+       { value: "24/7", label: "Siempre trabajando" },
+       { value: "0", label: "Prospectos perdidos" },
+-      { value: "+", label: "MÃƒÆ’Ã‚Â¡s ventas" },
+-      { value: "TÃƒÆ’Ã…Â¡", label: "Mantienes el control" },
++      { value: "+", label: "Más ventas" },
++      { value: "TÚ", label: "Mantienes el control" },
+     ],
+-    bottomCta: "EMPEZAR EVALUACIÃƒÆ’Ã¢â‚¬Å“N GRATIS",
++    bottomCta: "EMPEZAR EVALUACIÓN GRATIS",
+   },
+ };
+ 
+@@ -222,7 +200,7 @@ function DashboardPreview({ language }: { language: Language }) {
+       </aside>
+       <div className="atlas-dashboard-main">
+         <div className="atlas-dashboard-greeting">
+-          <div><strong>{spanish ? "Buenos dÃƒÆ’Ã‚Â­as, Manny" : "Good morning, Manny"}</strong><small>{spanish ? "Esto es lo que estÃƒÆ’Ã‚Â¡ pasando hoy." : "Here is what is happening today."}</small></div>
++          <div><strong>{spanish ? "Buenos días, Manny" : "Good morning, Manny"}</strong><small>{spanish ? "Esto es lo que está pasando hoy." : "Here is what is happening today."}</small></div>
+           <span className="atlas-notification">3</span>
+         </div>
+         <div className="atlas-dashboard-metrics">
+@@ -255,28 +233,7 @@ export function AtlasHomepage() {
+ 
+   return (
+     <div className="atlas-site">
+-      <header className="atlas-header">
+-        <div className="atlas-wrap atlas-header-inner">
+-          <Link className="atlas-brand" href="/" aria-label="Atlas For Entrepreneurs home">
+-            <Image alt="Atlas lion logo" src="/brand/atlas-logo.png" width={720} height={720} priority />
+-            <span><b>ATLAS</b><small>{language === "es" ? "GUÃƒÆ’Ã‚ÂA. CRECE. VIVE MÃƒÆ’Ã‚ÂS." : "GUIDE. GROW. LIVE MORE."}</small></span>
+-          </Link>
+-          <nav className="atlas-primary-nav" aria-label="Primary navigation">
+-            <a href="#how">{t.nav.how}</a>
+-            <a href="#who">{t.nav.who}</a>
+-            <a href="#pricing">{t.nav.pricing}</a>
+-            <a href="#resources">{t.nav.resources}</a>
+-          </nav>
+-          <div className="atlas-header-actions">
+-            <div className="atlas-language" aria-label="Language selection">
+-              <button className={language === "en" ? "active" : ""} type="button" onClick={() => setLanguage("en")}>EN</button>
+-              <button className={language === "es" ? "active" : ""} type="button" onClick={() => setLanguage("es")}>ES</button>
+-            </div>
+-            <Link className="atlas-login" href="/atlas-team-live">{t.nav.dashboard}</Link>
+-            <Link className="atlas-top-cta" href="/login">{t.nav.login}</Link>
+-          </div>
+-        </div>
+-      </header>
++      <SiteHeader active="home" />
+ 
+       <main>
+         <section className="atlas-hero-section" aria-labelledby="atlas-title">
+@@ -322,8 +279,8 @@ export function AtlasHomepage() {
+           <h2 id="workflow-title">{t.howTitle}</h2>
+           <div className="atlas-workflow-grid">
+             {t.workflow.map((step, index) => <article key={step.title}>
+-              <span className="atlas-workflow-symbol" role="img" aria-label={`${step.title} workflow marker`}>
+-                <WorkflowGlyph index={index} />
++              <span className="atlas-workflow-symbol" aria-hidden="true">
++                <span className="atlas-workflow-count">{step.mark}</span>
+               </span>
+               <p>{step.body}</p>
+             </article>)}
+@@ -340,12 +297,11 @@ export function AtlasHomepage() {
+           <DashboardPreview language={language} />
+         </section>
+ 
+-        <section className="atlas-family-section" id="pricing" aria-labelledby="family-title">
++        <section className="atlas-family-section" id="family" aria-labelledby="family-title">
+           <div className="atlas-wrap atlas-family-grid">
+             <div className="atlas-family-copy">
+               <h2 id="family-title"><span>{t.closingTitle[0]}</span><strong>{t.closingTitle[1]}</strong></h2>
+               <p>{t.closingCopy}</p>
+-              <div className="atlas-family-benefits">{t.closingBenefits.map((benefit) => <span key={benefit}>{benefit}</span>)}</div>
+             </div>
+             <div className="atlas-family-art">
+               <Image
+@@ -359,13 +315,13 @@ export function AtlasHomepage() {
+           </div>
+         </section>
+ 
+-        <section className="atlas-outcome-section atlas-wrap" id="resources">
++        <section className="atlas-outcome-section" id="resources">
+           <div className="atlas-outcome-stats">{t.stats.map((stat) => <article key={stat.label}><strong>{stat.value}</strong><span>{stat.label}</span></article>)}</div>
+           <Link className="atlas-outcome-cta" href="/assessment"><span>{t.bottomCta}</span><span aria-hidden="true" className="atlas-outcome-arrow">→</span></Link>
+         </section>
+       </main>
+ 
+-      <aside className="atlas-bottom-bar"><div className="atlas-wrap"><span>ATLAS</span><strong>{language === "es" ? "TÃƒÆ’Ã…Â¡ LIDERAS. ATLAS TE RESPALDA." : "YOU LEAD. ATLAS HAS YOUR BACK."}</strong><Link href="/assessment">{t.bottomCta}</Link></div></aside>
++      <aside className="atlas-bottom-bar"><div className="atlas-wrap"><span>ATLAS</span><strong>{language === "es" ? "TÚ LIDERAS. ATLAS TE RESPALDA." : "YOU LEAD. ATLAS HAS YOUR BACK."}</strong><Link href="/assessment">{t.bottomCta}</Link></div></aside>
+     </div>
+   );
+ }
+diff --git a/src/components/atlas-product-preview.tsx b/src/components/atlas-product-preview.tsx
+index 51bc423..8219e06 100644
+--- a/src/components/atlas-product-preview.tsx
++++ b/src/components/atlas-product-preview.tsx
+@@ -3,7 +3,7 @@ import Image from "next/image";
+ const steps = [
+   ["Lead found", "Website form", "#1246a0"],
+   ["Context loaded", "Recent work + notes", "#f0bf43"],
+-  ["Follow-up queued", "Text + email draft", "#137454"],
++  ["Follow-up queued", "Text + email ready", "#137454"],
+   ["Deal moving", "Next action assigned", "#0f4aa5"],
+ ] as const;
+ 
+@@ -20,16 +20,13 @@ export function AtlasProductPreview() {
+       <div className="border-b border-slate-200 bg-[#fbfcfe] px-5 py-4 sm:px-6">
+         <div className="flex items-center justify-between gap-3">
+           <div>
+-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1246a0]">
++            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1246a0]">
+               Atlas workspace
+             </p>
+             <p className="mt-1 text-sm font-bold text-[#071b42]">
+               Lead follow-up, jobs, and next actions
+             </p>
+           </div>
+-          <span className="rounded-full border border-[#dbe5f1] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#4f6a86]">
+-            Mockup
+-          </span>
+         </div>
+       </div>
+ 
+@@ -47,7 +44,7 @@ export function AtlasProductPreview() {
+             <div className="absolute inset-0 bg-gradient-to-tr from-white/25 via-transparent to-transparent" />
+ 
+             <div className="absolute left-4 top-4 rounded-2xl border border-white/70 bg-white/90 px-4 py-3 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur">
+-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1246a0]">
++              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
+                 New lead
+               </p>
+               <p className="mt-1 text-sm font-bold text-[#071b42]">Roof repair request</p>
+@@ -62,7 +59,7 @@ export function AtlasProductPreview() {
+                 >
+                   <div className="flex items-center gap-2">
+                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tint }} />
+-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
++                    <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                       {title}
+                     </p>
+                   </div>
+@@ -82,7 +79,7 @@ export function AtlasProductPreview() {
+                 className="rounded-[1.4rem] border border-slate-200 bg-[#fbfcfe] p-4 shadow-[0_12px_28px_rgba(15,23,42,0.03)]"
+                 key={label}
+               >
+-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
++                <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+                   {label}
+                 </p>
+                 <p className="mt-3 text-3xl font-black tracking-[-0.05em] text-[#071b42]">
+@@ -93,7 +90,7 @@ export function AtlasProductPreview() {
+             ))}
+ 
+             <article className="rounded-[1.4rem] border border-slate-200 bg-[#071b42] p-4 text-white shadow-[0_12px_28px_rgba(7,27,66,0.18)]">
+-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f0bf43]">
++              <p className="text-xs font-black uppercase tracking-[0.2em] text-[#f0bf43]">
+                 Next move
+               </p>
+               <p className="mt-3 text-xl font-black tracking-[-0.04em]">
+@@ -125,7 +122,7 @@ export function AtlasProductPreview() {
+             ["Business value", "$41,000 pipeline"],
+           ].map(([label, value]) => (
+             <article className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3" key={label}>
+-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
++              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                 {label}
+               </p>
+               <p className="mt-2 text-sm font-bold text-[#071b42]">{value}</p>
+diff --git a/src/components/site-header.tsx b/src/components/site-header.tsx
+index 71b968f..e1bf5b6 100644
+--- a/src/components/site-header.tsx
++++ b/src/components/site-header.tsx
+@@ -2,10 +2,17 @@ import Image from "next/image";
+ import Link from "next/link";
+ 
+ type SiteHeaderProps = {
+-  active?: "home" | "pricing" | "assessment" | "login";
++  active?: "home" | "pricing" | "snapshot" | "login";
+ };
+ 
+ export function SiteHeader({ active }: SiteHeaderProps) {
++  const navItems = [
++    { href: "/", label: "Home", name: "home" },
++    { href: "/pricing", label: "Pricing", name: "pricing" },
++    { href: "/assessment", label: "Assessment", name: "snapshot" },
++    { href: "/login", label: "Client Login", name: "login" },
++  ] as const;
++
+   const linkClass = (name: SiteHeaderProps["active"]) =>
+     [
+       "rounded-full px-3 py-2 text-sm font-medium transition",
+@@ -30,41 +37,23 @@ export function SiteHeader({ active }: SiteHeaderProps) {
+             <span className="block text-lg font-bold tracking-tight">
+               Atlas For Entrepreneurs
+             </span>
+-            <span className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1246a0] sm:block">
++            <span className="hidden text-xs font-semibold uppercase tracking-[0.12em] text-[#1246a0] sm:block">
+               Service Business Growth OS
+             </span>
+           </span>
+         </Link>
+ 
+         <nav aria-label="Primary navigation" className="flex items-center gap-2">
+-          {active === "home" ? (
+-            <>
+-              <a className="hidden rounded-full px-3 py-2 text-sm font-medium text-[#16325c] transition hover:bg-[#eef4ff] hover:text-[#0a2f78] sm:block" href="#how-it-works">
+-                How it works
+-              </a>
+-              <Link className="hidden rounded-full px-3 py-2 text-sm font-medium text-[#16325c] transition hover:bg-[#eef4ff] hover:text-[#0a2f78] md:block" href="/login">
+-                Client login
+-              </Link>
+-              <a className="hidden rounded-full px-3 py-2 text-sm font-medium text-[#16325c] transition hover:bg-[#eef4ff] hover:text-[#0a2f78] md:block" href="#founding-pilot">
+-                30-day sprint
+-              </a>
+-            </>
+-          ) : (
+-            <Link className={linkClass("home")} href="/">
+-              Home
++          {navItems.map((item) => (
++            <Link
++              aria-current={active === item.name ? "page" : undefined}
++              className={linkClass(item.name)}
++              href={item.href}
++              key={item.name}
++            >
++              {item.label}
+             </Link>
+-          )}
+-          <Link className={linkClass("pricing")} href="/pricing">
+-            Pricing
+-          </Link>
+-          <Link className={linkClass("assessment")} href="/assessment">
+-            <span className="sm:hidden">Snapshot</span>
+-            <span className="hidden sm:inline">Company snapshot</span>
+-          </Link>
+-          <Link className={linkClass("login")} href="/login">
+-            <span className="hidden sm:inline">Client login</span>
+-            <span className="sm:hidden">Login</span>
+-          </Link>
++          ))}
+         </nav>
+       </div>
+     </header>
+diff --git a/src/lib/pricing.ts b/src/lib/pricing.ts
+index 93db620..b7eeceb 100644
+--- a/src/lib/pricing.ts
++++ b/src/lib/pricing.ts
+@@ -130,28 +130,13 @@ export const atlasPricingComparisonRows: AtlasPricingComparisonRow[] = [
+     command: "Established teams",
+   },
+   { label: "Users", start: "1-2", grow: "Up to 5", command: "Up to 15" },
+-  { label: "CRM / Sales Command", start: "âœ“", grow: "âœ“", command: "âœ“" },
+-  {
+-    label: "HUNTER prospect discovery",
+-    start: "Limited",
+-    grow: "Expanded",
+-    command: "High-volume",
+-  },
+-  {
+-    label: "MICAH content studio",
+-    start: "Basic",
+-    grow: "Full",
+-    command: "Full + advanced workflows",
+-  },
+-  {
+-    label: "DAVID follow-up desk",
+-    start: "Basic",
+-    grow: "Full",
+-    command: "Full",
+-  },
+-  { label: "Business assessment", start: "âœ“", grow: "âœ“", command: "âœ“" },
+-  { label: "Opportunity tracking", start: "âœ“", grow: "âœ“", command: "âœ“" },
+-  { label: "Activity / attention center", start: "âœ“", grow: "âœ“", command: "âœ“" },
++  { label: "Customer relationship management (CRM)", start: "Included", grow: "Included", command: "Included" },
++  { label: "Lead generation", start: "Limited", grow: "Expanded", command: "High-volume" },
++  { label: "Social media content", start: "Basic", grow: "Full", command: "Full + advanced workflows" },
++  { label: "AI business assistant", start: "Basic", grow: "Full", command: "Full" },
++  { label: "Business assessment", start: "Included", grow: "Included", command: "Included" },
++  { label: "Opportunity tracking", start: "Included", grow: "Included", command: "Included" },
++  { label: "Activity and follow-up center", start: "Included", grow: "Included", command: "Included" },
+   {
+     label: "AI usage",
+     start: "Monthly allowance",

@@ -75,7 +75,16 @@ export default function PricingPage() {
                 >
                   Start Your Business Assessment
                 </Link>
+                <Link
+                  className="inline-flex items-center justify-center rounded-full border border-[#f5b932] bg-transparent px-7 py-4 text-sm font-black text-[#ffd068] transition hover:-translate-y-0.5 hover:bg-[#f5b932]/10"
+                  href="/start-trial"
+                >
+                  Start 7-day free trial
+                </Link>
               </div>
+              <p className="mt-4 text-sm font-semibold text-blue-100/75">
+                No card required. Your seven-day trial starts after the enrollment step is completed.
+              </p>
               <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-blue-100/70">
                 <span>Monthly usage allowance included</span>
                 <span>Human approval before external action</span>

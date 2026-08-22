@@ -5,7 +5,7 @@ import {
   clientWorkspaceHref,
   getClientWorkspaceContext,
 } from "@/server/client-workspace/context";
-import { getClientAiRequests } from "@/server/client-ai/queries";
+import { defaultClientAiDailyUsage, getClientAiDailyUsage, getClientAiRequests } from "@/server/client-ai/queries";
 import { getPilotWorkspace } from "@/server/pilot/queries";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +27,9 @@ export default async function DavidPage({ searchParams }: DavidPageProps) {
   const { isClientPreview, previewOrgSlug, primaryOrganization } = workspace;
   const aiRequests = primaryOrganization
     ? await getClientAiRequests(primaryOrganization.id, 8)
+    : null;
+  const aiUsage = primaryOrganization
+    ? await getClientAiDailyUsage(primaryOrganization.id)
     : null;
   const pilot = primaryOrganization
     ? await getPilotWorkspace(primaryOrganization.id)
@@ -65,6 +68,7 @@ export default async function DavidPage({ searchParams }: DavidPageProps) {
         <ClientPilotWorkspace
           organizationId={primaryOrganization.id}
           aiRequests={aiRequests && !aiRequests.setupRequired ? aiRequests.data : []}
+          aiUsage={aiUsage && !aiUsage.setupRequired ? aiUsage.data : defaultClientAiDailyUsage()}
           workspace={pilot.data}
         />
       ) : null}

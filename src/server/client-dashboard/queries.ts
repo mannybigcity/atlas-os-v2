@@ -5,7 +5,8 @@ import { getOrganizationActivity } from "@/server/activity/queries";
 import type { ContentStudio } from "@/server/content-studio/queries";
 import { getContentStudio } from "@/server/content-studio/queries";
 import type { ClientAiRequest } from "@/server/client-ai/queries";
-import { getClientAiRequests } from "@/server/client-ai/queries";
+import type { ClientAiDailyUsage } from "@/server/client-ai/queries";
+import { getClientAiDailyUsage, getClientAiRequests } from "@/server/client-ai/queries";
 import type { OrganizationNote } from "@/server/notes/queries";
 import { getOrganizationNotes } from "@/server/notes/queries";
 import type { OrganizationOpportunityPipeline } from "@/server/opportunities/queries";
@@ -22,6 +23,7 @@ export type ClientDashboardData = {
   activity: WorkspaceQueryResult<ActivityEvent[]>;
   notes: WorkspaceQueryResult<OrganizationNote[]>;
   aiRequests: WorkspaceQueryResult<ClientAiRequest[]>;
+  aiUsage: WorkspaceQueryResult<ClientAiDailyUsage>;
   weeklyCounts: {
     activity: number;
     aiRequests: number;
@@ -39,6 +41,7 @@ export async function getClientDashboardData(
     activity,
     notes,
     aiRequests,
+    aiUsage,
   ] = await Promise.all([
     getBusinessProfile(organizationId),
     getPilotWorkspace(organizationId),
@@ -47,6 +50,7 @@ export async function getClientDashboardData(
     getOrganizationActivity(organizationId),
     getOrganizationNotes(organizationId),
     getClientAiRequests(organizationId),
+    getClientAiDailyUsage(organizationId),
   ]);
 
   return {
@@ -57,6 +61,7 @@ export async function getClientDashboardData(
     activity,
     notes,
     aiRequests,
+    aiUsage,
     weeklyCounts: {
       activity: countWithinDays(activity.setupRequired ? [] : activity.data, 7, "occurredAt"),
       aiRequests: countWithinDays(aiRequests.setupRequired ? [] : aiRequests.data, 7, "createdAt"),

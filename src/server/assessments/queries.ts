@@ -12,6 +12,10 @@ export type BusinessAssessment = {
   businessSize: string;
   aiTools: string[];
   improvementTiming: string;
+  monthlyLeadVolume: string;
+  followUpSpeed: string;
+  pilotBudget: string;
+  preferredContactMethod: string;
   contactName: string;
   contactEmail: string;
   contactPhone: string;
@@ -34,6 +38,10 @@ type BusinessAssessmentRow = {
   business_size: string;
   ai_tools: string[];
   improvement_timing: string;
+  monthly_lead_volume: string;
+  follow_up_speed: string;
+  pilot_budget: string;
+  preferred_contact_method: string;
   contact_name: string;
   contact_email: string;
   contact_phone: string;
@@ -52,7 +60,7 @@ export async function getBusinessAssessments(): Promise<
   const { data, error } = await supabase
     .from("business_assessment_submissions")
     .select(
-      "id, business_description, ideal_customer, customer_sources, biggest_challenge, ninety_day_goal, evaluation_areas, business_size, ai_tools, improvement_timing, contact_name, contact_email, contact_phone, business_name, website, social_media, status, created_at, updated_at",
+      "id, business_description, ideal_customer, customer_sources, biggest_challenge, ninety_day_goal, evaluation_areas, business_size, ai_tools, improvement_timing, monthly_lead_volume, follow_up_speed, pilot_budget, preferred_contact_method, contact_name, contact_email, contact_phone, business_name, website, social_media, status, created_at, updated_at",
     )
     .order("created_at", { ascending: false })
     .limit(100);
@@ -73,6 +81,10 @@ export async function getBusinessAssessments(): Promise<
       businessSize: row.business_size,
       aiTools: row.ai_tools,
       improvementTiming: row.improvement_timing,
+      monthlyLeadVolume: row.monthly_lead_volume,
+      followUpSpeed: row.follow_up_speed,
+      pilotBudget: row.pilot_budget,
+      preferredContactMethod: row.preferred_contact_method,
       contactName: row.contact_name,
       contactEmail: row.contact_email,
       contactPhone: row.contact_phone,

@@ -68,7 +68,7 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
           </div>
         </section>
 
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <div className="mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
           {received ? (
             <section className="rounded-[1.75rem] border border-[#b8e2cf] bg-white p-8 shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.08)] sm:p-12">
               <p className="text-sm font-black uppercase tracking-[0.2em] text-[#167151]">
@@ -78,9 +78,10 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
                 Thank you. Atlas has the company details.
               </h2>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-                Atlas will review the answers and recommend the best starting
-                point. If the fit is right, you will see the next step, including
-                a 7-day free trial review option.
+                Your answers are saved in Atlas and queued for private CRM review.
+                Atlas will review the company details and recommend the best
+                starting point. If the fit is right, you will see the next step,
+                including a 7-day free trial review option.
               </p>
               <Link
                 className="mt-8 inline-flex rounded-full bg-[#1246a0] px-6 py-3 font-black text-white hover:bg-[#0a2f78]"

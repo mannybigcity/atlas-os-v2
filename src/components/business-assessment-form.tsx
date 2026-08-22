@@ -135,6 +135,14 @@ function Choice({
   );
 }
 
+function QuestionLabel({ children }: { children: ReactNode }) {
+  return (
+    <span className="block rounded-xl bg-[#071b42] px-4 py-3 text-base font-black leading-6 text-white shadow-sm sm:text-lg">
+      {children}
+    </span>
+  );
+}
+
 function TextField({
   label,
   name,
@@ -149,8 +157,8 @@ function TextField({
   required?: boolean;
 }) {
   return (
-    <label className="block text-sm font-semibold text-[#16325c]">
-      <span>{label}</span>
+    <label className="block">
+      <QuestionLabel>{label}</QuestionLabel>
       <input
         autoComplete={
           {
@@ -192,8 +200,8 @@ function TextAreaField({
         : 2000;
 
   return (
-    <label className="block text-sm font-semibold text-[#16325c]">
-      <span>{label}</span>
+    <label className="block">
+      <QuestionLabel>{label}</QuestionLabel>
       <textarea
         className="assessment-field assessment-textarea mt-2"
         maxLength={maxLength}
@@ -264,7 +272,7 @@ export function BusinessAssessmentForm({ error }: Props) {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_21rem]">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(24rem,28rem)]">
       <form
         ref={formRef}
         action={submitBusinessAssessment}
@@ -329,9 +337,7 @@ export function BusinessAssessmentForm({ error }: Props) {
         >
           <div className="grid gap-4">
             <div>
-              <p className="text-sm font-semibold text-[#16325c]">
-                Where do most customers come from?
-              </p>
+              <QuestionLabel>Where do most customers come from?</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {customerSources.map(([value, label]) => (
                   <Choice key={value} label={label} name="customerSources" value={value} />
@@ -339,9 +345,7 @@ export function BusinessAssessmentForm({ error }: Props) {
               </div>
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#16325c]">
-                What is the biggest challenge right now?
-              </p>
+              <QuestionLabel>What is the biggest challenge right now?</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {challenges.map(([value, label]) => (
                   <Choice
@@ -355,9 +359,7 @@ export function BusinessAssessmentForm({ error }: Props) {
               </div>
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#16325c]">
-                Which areas should Atlas evaluate?
-              </p>
+              <QuestionLabel>Which areas should Atlas evaluate?</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 {evaluationAreas.map(([value, label]) => (
                   <Choice key={value} label={label} name="evaluationAreas" value={value} />
@@ -388,9 +390,7 @@ export function BusinessAssessmentForm({ error }: Props) {
               placeholder="Share the result you want Atlas to help create."
             />
             <div>
-              <p className="text-sm font-semibold text-[#16325c]">
-                What is the company size?
-              </p>
+              <QuestionLabel>What is the company size?</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <Choice label="Just me" name="businessSize" type="radio" value="just_me" />
                 <Choice label="2-5 employees" name="businessSize" type="radio" value="2_5" />
@@ -400,9 +400,7 @@ export function BusinessAssessmentForm({ error }: Props) {
               </div>
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#16325c]">
-                Are you currently using any AI tools?
-              </p>
+              <QuestionLabel>Are you currently using any AI tools?</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <Choice label="No" name="aiTools" type="radio" value="none" />
                 <Choice label="ChatGPT" name="aiTools" type="radio" value="chatgpt" />
@@ -413,9 +411,7 @@ export function BusinessAssessmentForm({ error }: Props) {
               </div>
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#16325c]">
-                When do you want to improve things?
-              </p>
+              <QuestionLabel>When do you want to improve things?</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <Choice
                   label="Immediately"
@@ -445,9 +441,7 @@ export function BusinessAssessmentForm({ error }: Props) {
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
-                <p className="text-sm font-semibold text-[#16325c]">
-                  New leads per month
-                </p>
+                <QuestionLabel>New leads per month</QuestionLabel>
                 <div className="mt-3 grid gap-3">
                   {monthlyLeadVolumes.map(([value, label]) => (
                     <Choice
@@ -461,9 +455,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                 </div>
               </div>
               <div>
-                <p className="text-sm font-semibold text-[#16325c]">
-                  Usual follow-up speed
-                </p>
+                <QuestionLabel>Usual follow-up speed</QuestionLabel>
                 <div className="mt-3 grid gap-3">
                   {followUpSpeeds.map(([value, label]) => (
                     <Choice
@@ -477,9 +469,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                 </div>
               </div>
               <div>
-                <p className="text-sm font-semibold text-[#16325c]">
-                  Budget range
-                </p>
+                <QuestionLabel>Budget range</QuestionLabel>
                 <div className="mt-3 grid gap-3">
                   {pilotBudgets.map(([value, label]) => (
                     <Choice
@@ -508,19 +498,9 @@ export function BusinessAssessmentForm({ error }: Props) {
             <TextField label="Your title (optional)" name="contactTitle" required={false} />
             <TextField label="Email" name="contactEmail" type="email" />
             <TextField label="Phone" name="contactPhone" type="tel" />
-              <div className="sm:col-span-2">
-                <TextField
-                  label="Website (optional)"
-                  name="website"
-                  placeholder="example.com"
-                  required={false}
-                />
-              </div>
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#16325c]">
-                Preferred contact method
-              </p>
+              <QuestionLabel>Preferred contact method</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 {contactPreferences.map(([value, label]) => (
                   <Choice
@@ -533,8 +513,8 @@ export function BusinessAssessmentForm({ error }: Props) {
                 ))}
               </div>
             </div>
-            <label className="block text-sm font-semibold text-[#16325c]">
-              <span>Social media links or handles (optional)</span>
+            <label className="block">
+              <QuestionLabel>Social media links or handles (optional)</QuestionLabel>
               <textarea
                 className="assessment-field assessment-textarea mt-2"
                 maxLength={1500}

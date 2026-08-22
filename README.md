@@ -45,7 +45,7 @@ Install dependencies:
 npm install
 ```
 
-Run the development server:
+Run the development server on the reserved Atlas for Entrepreneurs port:
 
 ```bash
 npm run dev

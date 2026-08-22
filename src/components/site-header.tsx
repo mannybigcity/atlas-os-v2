@@ -35,10 +35,10 @@ export function SiteHeader({ active }: SiteHeaderProps) {
           />
           <span>
             <span className="block text-lg font-bold tracking-tight">
-              RamFam Atlas OS
+              Atlas For Entrepreneurs
             </span>
             <span className="hidden text-xs font-semibold uppercase tracking-[0.12em] text-[#1246a0] sm:block">
-              Private Family Operating System
+              Client Growth Workspace
             </span>
           </span>
         </Link>
@@ -54,6 +54,12 @@ export function SiteHeader({ active }: SiteHeaderProps) {
               {item.label}
             </Link>
           ))}
+          <Link
+            className="rounded-full bg-[#f5b932] px-4 py-2 text-sm font-black !text-[#071b42] shadow-[0_8px_20px_rgba(245,185,50,0.2)] transition hover:bg-[#ffd064] hover:!text-[#071b42]"
+            href="/start-trial"
+          >
+            Start 7-day free trial
+          </Link>
         </nav>
       </div>
     </header>

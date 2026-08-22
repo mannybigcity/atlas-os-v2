@@ -24,7 +24,13 @@ import {
   type ClientAiActionState,
   type ClientAiResponse,
 } from "@/server/client-ai/types";
-import { getClientAiDailyQuestionCount, starterDailyQuestionLimit } from "@/server/client-ai/queries";
+import {
+  clientAiPlanLimits,
+  getClientAiDailyQuestionCount,
+  starterDailyQuestionLimit,
+  type ClientAiDailyUsage,
+  type ClientAiPlan,
+} from "@/server/client-ai/queries";
 
 const clientAiResponseSchema = {
   type: "object",
@@ -317,6 +323,7 @@ function unloggedClientAiResponse(input: {
   answer: string;
   nextStep: string;
   missingInputs?: string[];
+  dailyUsage?: ClientAiDailyUsage | null;
 }): ClientAiActionState {
   return {
     status: input.status,
@@ -329,7 +336,41 @@ function unloggedClientAiResponse(input: {
     nextStep: input.nextStep,
     missingInputs: input.missingInputs ?? [],
     error: null,
+    dailyUsage: input.dailyUsage ?? null,
   };
+}
+
+type ClientAiReservationRow = {
+  allowed: boolean;
+  plan: ClientAiPlan;
+  used: number;
+  limit: number | null;
+  remaining: number | null;
+};
+
+function reservationUsage(row: ClientAiReservationRow): ClientAiDailyUsage {
+  const plan = row.plan in clientAiPlanLimits ? row.plan : "basic";
+  const limit = clientAiPlanLimits[plan];
+  return {
+    plan,
+    planLabel: plan === "unlimited" ? "Unlimited" : plan === "growth" ? "Growth" : "Basic",
+    used: Math.max(0, Number(row.used) || 0),
+    limit,
+    remaining: limit === null ? null : Math.max(0, Number(row.remaining) || 0),
+  };
+}
+
+async function reserveClientAiQuestion(organizationId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("reserve_client_ai_daily_question", {
+    p_organization_id: organizationId,
+  });
+  const row = Array.isArray(data) ? data[0] : data;
+
+  if (error || !row) return { error: error?.message ?? "AI usage is unavailable.", usage: null, allowed: false };
+
+  const reservation = row as ClientAiReservationRow;
+  return { error: null, usage: reservationUsage(reservation), allowed: reservation.allowed };
 }
 
 export async function submitClientAiRequest(
@@ -498,6 +539,26 @@ export async function submitClientAiRequest(
     }
   }
 
+  const reservation = await reserveClientAiQuestion(organizationId);
+  if (reservation.error || !reservation.usage) {
+    return {
+      ...initialClientAiActionState,
+      status: "failed",
+      role,
+      error: "Workspace question usage could not be verified. Try again shortly.",
+    };
+  }
+
+  if (!reservation.allowed) {
+    return {
+      ...initialClientAiActionState,
+      status: "blocked",
+      role,
+      dailyUsage: reservation.usage,
+      error: `${reservation.usage.planLabel} has reached its daily Ask Atlas limit. It resets tomorrow.`,
+    };
+  }
+
   const resolvedRole = decision.routedTo ?? role;
   const roleSpec = getClientAiRoleSpec(resolvedRole);
 
@@ -528,6 +589,7 @@ export async function submitClientAiRequest(
         nextStep: "Switch to the coordinator for a workspace-wide answer.",
         missingInputs: [],
         error: null,
+        dailyUsage: reservation.usage,
       };
     } catch {
       return unloggedClientAiResponse({
@@ -537,6 +599,7 @@ export async function submitClientAiRequest(
         scopeStatus: decision.scopeStatus,
         answer: response,
         nextStep: "Switch to the coordinator for a workspace-wide answer.",
+        dailyUsage: reservation.usage,
       });
     }
   }
@@ -605,6 +668,7 @@ export async function submitClientAiRequest(
         nextStep: "Try again after checking the server configuration.",
         missingInputs: [],
         error: null,
+        dailyUsage: reservation.usage,
       };
     } catch {
       return unloggedClientAiResponse({
@@ -614,6 +678,7 @@ export async function submitClientAiRequest(
         scopeStatus: "in_scope",
         answer: response,
         nextStep: "Try again after checking the server configuration.",
+        dailyUsage: reservation.usage,
       });
     }
   }
@@ -647,6 +712,7 @@ export async function submitClientAiRequest(
       nextStep: result.value.nextStep,
       missingInputs: result.value.missingInputs,
       error: null,
+      dailyUsage: reservation.usage,
     };
   } catch {
     return unloggedClientAiResponse({
@@ -657,6 +723,7 @@ export async function submitClientAiRequest(
       answer: result.value.answer,
       nextStep: result.value.nextStep,
       missingInputs: result.value.missingInputs,
+      dailyUsage: reservation.usage,
     });
   }
 

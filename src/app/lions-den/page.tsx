@@ -295,11 +295,16 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
 
           {!assessments.setupRequired && assessments.data.length > 0 ? (
             <div className="mt-5 space-y-4">
-              {assessments.data.map((assessment) => (
-                <article
-                  className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
-                  key={assessment.id}
-                >
+              {assessments.data.map((assessment) => {
+                const salesProspect = sales.data.find(
+                  (prospect) => prospect.assessmentSubmissionId === assessment.id,
+                );
+
+                return (
+                  <article
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                    key={assessment.id}
+                  >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-700">
@@ -315,6 +320,14 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
                     <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
                       {humanize(assessment.status)}
                     </span>
+                    {salesProspect ? (
+                      <Link
+                        className="w-fit rounded-full bg-blue-700 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-white hover:bg-blue-800"
+                        href={`/lions-den/sales/${salesProspect.id}`}
+                      >
+                        Open Sales Record
+                      </Link>
+                    ) : null}
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -327,6 +340,10 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
                     <LeadDetail label="Business size" value={humanize(assessment.businessSize)} />
                     <LeadDetail label="AI tools" value={assessment.aiTools.map(humanize).join(", ")} />
                     <LeadDetail label="Timing" value={humanize(assessment.improvementTiming)} />
+                    <LeadDetail label="New leads per month" value={humanize(assessment.monthlyLeadVolume)} />
+                    <LeadDetail label="Usual follow-up speed" value={humanize(assessment.followUpSpeed)} />
+                    <LeadDetail label="Budget range" value={humanize(assessment.pilotBudget)} />
+                    <LeadDetail label="Preferred contact" value={humanize(assessment.preferredContactMethod)} />
                     <div className="rounded-2xl border border-slate-200 bg-white p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                         Contact
@@ -365,8 +382,9 @@ export default async function LionsDenPage({ searchParams }: LionsDenPageProps) 
                       Save status
                     </button>
                   </form>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           ) : null}
         </section>

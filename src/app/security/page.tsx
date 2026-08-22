@@ -3,7 +3,7 @@ import { AtlasMfaEnrollment } from "@/components/atlas-mfa-enrollment";
 import { requireUser } from "@/server/auth/guards";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Account Security | RamFam Atlas OS", robots: { index: false, follow: false } };
+export const metadata = { title: "Account Security | Atlas For Entrepreneurs", robots: { index: false, follow: false } };
 
 export default async function SecurityPage() {
   await requireUser("/security");

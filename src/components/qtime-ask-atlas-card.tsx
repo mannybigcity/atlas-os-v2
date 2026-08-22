@@ -3,17 +3,20 @@
 import { useActionState } from "react";
 import { submitClientAiRequest } from "@/server/client-ai/actions";
 import { initialClientAiActionState } from "@/server/client-ai/types";
+import type { ClientAiDailyUsage } from "@/server/client-ai/queries";
 
 type QTimeAskAtlasCardProps = {
   organizationId: string;
   workspaceName: string;
   enabled: boolean;
+  dailyUsage: ClientAiDailyUsage;
 };
 
 export function QTimeAskAtlasCard({
   organizationId,
   workspaceName,
   enabled,
+  dailyUsage,
 }: QTimeAskAtlasCardProps) {
   const [state, formAction, pending] = useActionState(
     submitClientAiRequest,
@@ -21,6 +24,10 @@ export function QTimeAskAtlasCard({
   );
 
   const disabled = !enabled || pending;
+  const currentUsage = state.dailyUsage ?? dailyUsage;
+  const usageLabel = currentUsage.limit === null
+    ? `${currentUsage.used} asked today · Unlimited`
+    : `${currentUsage.used} of ${currentUsage.limit} today`;
 
   return (
     <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
@@ -44,6 +51,10 @@ export function QTimeAskAtlasCard({
           {enabled ? "Live" : "Setup required"}
         </span>
       </div>
+
+      <p className="mt-3 w-fit rounded-full border border-[#5672f0] bg-[#eef3ff] px-3 py-1 text-xs font-semibold text-[#071b42]">
+        {usageLabel}
+      </p>
 
       <form action={formAction} className="mt-4 space-y-3">
         <input name="organizationId" type="hidden" value={organizationId} />
@@ -70,7 +81,11 @@ export function QTimeAskAtlasCard({
             {pending ? "Thinking..." : "Ask Atlas"}
           </button>
           <p className="text-xs leading-5 text-slate-500">
-            {enabled ? "Workspace response enabled." : "OpenAI setup required."}
+            {enabled
+              ? currentUsage.limit === null
+                ? "Unlimited questions today."
+                : `${currentUsage.remaining} question${currentUsage.remaining === 1 ? "" : "s"} remaining today.`
+              : "OpenAI setup required."}
           </p>
         </div>
       </form>

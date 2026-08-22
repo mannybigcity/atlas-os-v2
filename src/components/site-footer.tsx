@@ -24,9 +24,9 @@ export function SiteFooter() {
 
         <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.3fr_0.75fr_0.95fr_1fr]">
           <div className="max-w-sm">
-            <p className="text-lg font-bold text-white">RamFam Atlas OS</p>
+            <p className="text-lg font-bold text-white">Atlas For Entrepreneurs</p>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#ffd068]">
-              Private Family Operating System
+              Client Growth Workspace
             </p>
             <p className="mt-4 text-sm leading-7 text-slate-200">
               Your secure command center for the family businesses you own and operate.
@@ -53,8 +53,8 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs leading-6 text-slate-300 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; 2026 RamFam Atlas OS. All rights reserved.</p>
-          <p>Private access for authorized family members and operators.</p>
+          <p>&copy; 2026 Atlas For Entrepreneurs. All rights reserved.</p>
+          <p>Secure access for authorized clients and operators.</p>
         </div>
       </div>
     </footer>

@@ -19,7 +19,9 @@ export function getClientPortalName(organizationName: string | null | undefined)
     return "Q’s Lion’s Den";
   }
 
-  const identity = name.split(" ")[0] ?? name;
+  const identity = /^sis custom creations$/i.test(name)
+    ? "SIS Custom Creations CRM"
+    : name.split(" ")[0] ?? name;
   return `${identity}’s Lion’s Den`;
 }
 

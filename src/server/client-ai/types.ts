@@ -1,4 +1,5 @@
 import type { ClientAiRole } from "@/server/client-ai/guardrails";
+import type { ClientAiDailyUsage } from "@/server/client-ai/queries";
 
 export type ClientAiResponse = {
   answer: string;
@@ -17,6 +18,7 @@ export type ClientAiActionState = {
   nextStep: string | null;
   missingInputs: string[];
   error: string | null;
+  dailyUsage?: ClientAiDailyUsage | null;
 };
 
 export const initialClientAiActionState: ClientAiActionState = {
@@ -30,5 +32,5 @@ export const initialClientAiActionState: ClientAiActionState = {
   nextStep: null,
   missingInputs: [],
   error: null,
+  dailyUsage: null,
 };
-

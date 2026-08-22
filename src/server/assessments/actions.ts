@@ -155,7 +155,7 @@ export async function submitBusinessAssessment(formData: FormData) {
     redirect("/assessment?error=submit_failed");
   }
 
-  await sendAssessmentNotification({
+  const notification = await sendAssessmentNotification({
     id: assessmentId,
     businessName,
     contactName,
@@ -170,6 +170,18 @@ export async function submitBusinessAssessment(formData: FormData) {
     socialMedia: socialMedia || null,
     createdAt: submittedAt,
   });
+
+  if (!notification.sent) {
+    console.error("Atlas assessment notification was not accepted", {
+      assessmentId,
+      reason: notification.reason,
+    });
+  } else {
+    console.info("Atlas assessment notification accepted", {
+      assessmentId,
+      emailId: notification.id,
+    });
+  }
 
   redirect("/assessment?status=received");
 }

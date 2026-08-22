@@ -162,6 +162,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { error: tenantLeadError } = await supabase.rpc("capture_sis_tenant_lead", {
+      p_request_id: input.requestId,
+      p_business_name: input.businessName,
+      p_contact_name: input.contactName,
+      p_contact_email: input.contactEmail,
+      p_contact_phone: input.contactPhone,
+      p_website: input.website,
+      p_social_media: input.socialMedia,
+      p_source_url: sourceUrl,
+    });
+
+    if (tenantLeadError) {
+      throw new Error(tenantLeadError.message);
+    }
+
     return jsonResponse(
       { ok: true, status: "accepted", requestId: input.requestId },
       202,

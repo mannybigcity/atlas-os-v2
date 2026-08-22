@@ -7,7 +7,7 @@ import {
   clientWorkspaceHref,
   getClientWorkspaceContext,
 } from "@/server/client-workspace/context";
-import { getClientAiRequests } from "@/server/client-ai/queries";
+import { defaultClientAiDailyUsage, getClientAiDailyUsage, getClientAiRequests } from "@/server/client-ai/queries";
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +29,9 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
   const { isClientPreview, previewOrgSlug, primaryOrganization } = workspace;
   const aiRequests = primaryOrganization
     ? await getClientAiRequests(primaryOrganization.id, 8)
+    : null;
+  const aiUsage = primaryOrganization
+    ? await getClientAiDailyUsage(primaryOrganization.id)
     : null;
   const pipeline = primaryOrganization
     ? await getOpportunityPipeline(primaryOrganization.id)
@@ -69,6 +72,7 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
               organizationId={primaryOrganization.id}
               previewMode={isClientPreview}
               requests={aiRequests.setupRequired ? [] : aiRequests.data}
+              dailyUsage={aiUsage && !aiUsage.setupRequired ? aiUsage.data : defaultClientAiDailyUsage()}
             />
           </div>
         ) : null}

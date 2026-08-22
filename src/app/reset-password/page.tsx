@@ -4,7 +4,7 @@ import { PrivateAtlasAuthHeader } from "@/components/private-atlas-auth-header";
 import { updatePassword } from "@/server/auth/actions";
 
 export const metadata: Metadata = {
-  title: "Choose a New Password | RamFam Atlas OS",
+  title: "Choose a New Password | Atlas For Entrepreneurs",
   robots: { index: false, follow: false },
 };
 

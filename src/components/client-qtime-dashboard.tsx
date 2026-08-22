@@ -490,6 +490,7 @@ export function ClientQTimeDashboard({
   const aiRequests = dashboard.aiRequests.setupRequired
     ? []
     : dashboard.aiRequests.data;
+  const aiUsage = dashboard.aiUsage.data;
 
   const approvalQueue = [
     ...pilotDeliverables.filter((item) => item.status === "ready_for_review"),
@@ -641,6 +642,7 @@ export function ClientQTimeDashboard({
 
         <div className="mt-5">
           <QTimeAskAtlasCard
+            dailyUsage={aiUsage}
             enabled={openAiReady}
             organizationId={organization?.id ?? ""}
             workspaceName={organization?.name ?? "Q Time Productions"}

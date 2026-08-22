@@ -14,10 +14,10 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://app.ramfamatlas.com"),
-  title: "RamFam Atlas OS | Private Operating System",
+  metadataBase: new URL("https://atlasforentrepreneurs.com"),
+  title: "Atlas For Entrepreneurs | Client Workspace",
   description:
-    "RamFam Atlas OS is the private operating system for your family businesses.",
+    "Atlas For Entrepreneurs gives business owners a secure workspace to follow up, manage clients, and move work forward.",
 };
 
 export default function RootLayout({

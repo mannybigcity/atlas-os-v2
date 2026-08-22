@@ -81,6 +81,10 @@ export default async function ProspectPage({ params, searchParams }: ProspectPag
 
   const { prospect, sources, events, suppressions } = query.data;
   const activeSuppressions = suppressions.filter((item) => !item.liftedAt);
+  const assessmentSource = sources.find(
+    (source) => source.sourceType === "business_assessment",
+  );
+  const assessmentFacts = assessmentSource?.facts ?? {};
 
   return (
     <SurfaceShell
@@ -99,6 +103,23 @@ export default async function ProspectPage({ params, searchParams }: ProspectPag
         <Summary label="Next action" value={prospect.nextAction ?? "Not scheduled"} />
         <Summary label="Outreach" value={prospect.outreachApprovedAt ? `Approved: ${prospect.approvedChannels.join(", ")}` : "Not approved"} />
       </div>
+
+      {assessmentSource ? (
+        <section className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+            Assessment qualification
+          </p>
+          <h2 className="mt-2 text-xl font-bold text-slate-950">
+            What the owner said they need
+          </h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Summary label="New leads per month" value={formatFact(assessmentFacts.monthly_lead_volume)} />
+            <Summary label="Follow-up speed" value={formatFact(assessmentFacts.follow_up_speed)} />
+            <Summary label="Budget range" value={formatFact(assessmentFacts.pilot_budget)} />
+            <Summary label="Preferred contact" value={formatFact(assessmentFacts.preferred_contact_method)} />
+          </div>
+        </section>
+      ) : null}
 
       {activeSuppressions.length ? (
         <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-900">
@@ -290,6 +311,10 @@ function getSafeUrl(value: string) {
 }
 
 function humanize(value: string) { const words = value.replaceAll("_", " ").replaceAll(".", " · "); return words.charAt(0).toUpperCase() + words.slice(1); }
+
+function formatFact(value: unknown) {
+  return typeof value === "string" && value.length > 0 ? humanize(value) : "Not captured";
+}
 
 function toDateInput(value: string | null) {
   return value ? value.slice(0, 10) : "";

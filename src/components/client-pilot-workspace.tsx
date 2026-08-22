@@ -1,11 +1,12 @@
 import { ClientAiConsole } from "@/components/client-ai-console";
 import { formatDateTime } from "@/lib/format";
-import type { ClientAiRequest } from "@/server/client-ai/queries";
+import type { ClientAiDailyUsage, ClientAiRequest } from "@/server/client-ai/queries";
 import type { PilotWorkspace } from "@/server/pilot/queries";
 
 type ClientPilotWorkspaceProps = {
   organizationId: string;
   aiRequests: ClientAiRequest[];
+  aiUsage: ClientAiDailyUsage;
   workspace: PilotWorkspace;
 };
 
@@ -33,6 +34,7 @@ function workMessageTitle(
 export function ClientPilotWorkspace({
   organizationId,
   aiRequests,
+  aiUsage,
   workspace,
 }: ClientPilotWorkspaceProps) {
   const nextCheckIn = workspace.plan?.nextCheckInAt
@@ -239,6 +241,7 @@ export function ClientPilotWorkspace({
           organizationId={organizationId}
           previewMode={false}
           requests={aiRequests}
+          dailyUsage={aiUsage}
           title="Business AI"
           description="Ask for follow-up help, customer messaging, or CRM guidance."
         />
