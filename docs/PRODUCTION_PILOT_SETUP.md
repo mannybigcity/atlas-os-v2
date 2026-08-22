@@ -78,6 +78,14 @@ In **Supabase > Authentication > Emails > Invite user**, use:
 <p>Your login email is the address where you received this invitation. Atlas never sends passwords by email.</p>
 ```
 
+In **Supabase > Authentication > Emails > Confirm signup**, use:
+
+```html
+<h2>Confirm your Atlas email</h2>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next=/starter">Confirm email address</a></p>
+<p>Atlas will finish setting up your starter workspace after confirmation.</p>
+```
+
 In **Supabase > Authentication > Emails > Reset password**, use:
 
 ```html
@@ -85,9 +93,15 @@ In **Supabase > Authentication > Emails > Reset password**, use:
 <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/reset-password">Create a new password</a></p>
 ```
 
-Both links open a confirmation page first. Atlas verifies the one-time token
-only after the user presses the secure confirmation button. Invitations then
-open the create-password page; recovery emails open the reset-password page.
+Do not use `{{ .ConfirmationURL }}` for these templates. Email security
+scanners can prefetch that one-click URL and consume the one-time token before
+the user opens it. The token-hash links above only verify after the user presses
+the Atlas confirmation button.
+
+These links open a confirmation page first. Atlas verifies the one-time token
+only after the user presses the secure confirmation button. Signup confirmation
+opens the starter workspace; invitations open the create-password page; reset
+emails open the reset-password page.
 
 ## Supabase production checks
 

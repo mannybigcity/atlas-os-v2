@@ -77,12 +77,26 @@ In **Authentication > Emails > Invite user**, use:
 <p>Your login email is the address where you received this invitation. Atlas never sends passwords by email.</p>
 ```
 
+In **Authentication > Emails > Confirm signup**, use the same scanner-safe
+pattern so email security scanners cannot consume the one-time confirmation
+link before the user clicks it:
+
+```html
+<h2>Confirm your Atlas email</h2>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next=/starter">Confirm email address</a></p>
+<p>Atlas will finish setting up your starter workspace after confirmation.</p>
+```
+
 In **Authentication > Emails > Reset password**, use:
 
 ```html
 <h2>Reset your Atlas password</h2>
 <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/reset-password">Create a new password</a></p>
 ```
+
+Do not use `{{ .ConfirmationURL }}` for these three templates. That default
+one-click URL can be prefetched by Gmail, Microsoft Defender, or another mail
+security service, consuming the one-time token before the user opens it.
 
 Keep the rest of the email content concise and do not expose the token anywhere
 other than this link.
