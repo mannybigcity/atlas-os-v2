@@ -72,7 +72,7 @@ export const atlasPricingPlans: AtlasPricingPlan[] = [
     usageAllowance: "Larger monthly usage allowance",
     availability: "available",
     features: [
-      "Everything in START",
+      "Everything in BASIC",
       "Expanded lead generation",
       "Full Sales Command workflow",
       "Stronger follow-up capability",

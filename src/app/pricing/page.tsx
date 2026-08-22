@@ -198,7 +198,7 @@ export default function PricingPage() {
               <div className="mt-5 overflow-x-auto">
                 <table className="min-w-[760px] w-full border-separate border-spacing-0 text-left">
                   <caption className="sr-only">
-                    Atlas pricing comparison between Start, Grow, and Command.
+                    Atlas pricing comparison between Basic, Grow, and Unlimited.
                   </caption>
                   <thead>
                     <tr className="text-xs uppercase tracking-[0.16em] text-slate-500">
