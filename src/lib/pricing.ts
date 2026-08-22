@@ -1,6 +1,6 @@
 export type AtlasPricingAvailability = "available" | "launch_offer" | "coming_soon";
 
-export type AtlasPricingPlanSlug = "start" | "grow" | "command";
+export type AtlasPricingPlanSlug = "basic" | "grow" | "unlimited";
 
 export type AtlasPricingPlan = {
   slug: AtlasPricingPlanSlug;
@@ -17,23 +17,14 @@ export type AtlasPricingPlan = {
 
 export type AtlasPricingComparisonRow = {
   label: string;
-  start: string;
+  basic: string;
   grow: string;
-  command: string;
+  unlimited: string;
 };
 
 export type AtlasPricingFaq = {
   question: string;
   answer: string;
-};
-
-export type AtlasLaunchOffer = {
-  label: string;
-  name: string;
-  price: number;
-  summary: string;
-  term: string;
-  limit: string;
 };
 
 export type AtlasFutureAddOn = {
@@ -47,12 +38,12 @@ export type AtlasFutureAddOn = {
 
 export const atlasPricingPlans: AtlasPricingPlan[] = [
   {
-    slug: "start",
-    name: "ATLAS START",
+    slug: "basic",
+    name: "ATLAS BASIC",
     monthlyPrice: 99,
     bestFor: "Solo owners / very small businesses",
     featured: false,
-    cta: "Choose START",
+    cta: "Choose BASIC",
     usageAllowance: "Monthly usage allowance",
     availability: "available",
     features: [
@@ -96,12 +87,12 @@ export const atlasPricingPlans: AtlasPricingPlan[] = [
     ],
   },
   {
-    slug: "command",
-    name: "ATLAS COMMAND",
+    slug: "unlimited",
+    name: "ATLAS UNLIMITED",
     monthlyPrice: 499,
     bestFor: "Established teams",
     featured: false,
-    cta: "Choose COMMAND",
+    cta: "Choose UNLIMITED",
     usageAllowance: "Largest monthly usage allowance",
     availability: "available",
     features: [
@@ -122,40 +113,40 @@ export const atlasPricingPlans: AtlasPricingPlan[] = [
 ];
 
 export const atlasPricingComparisonRows: AtlasPricingComparisonRow[] = [
-  { label: "Suggested price", start: "$99/mo", grow: "$249/mo", command: "$499/mo" },
+  { label: "Suggested price", basic: "$99/mo", grow: "$249/mo", unlimited: "$499/mo" },
   {
     label: "Best for",
-    start: "Solo owners / very small businesses",
+    basic: "Solo owners / very small businesses",
     grow: "Growing local businesses",
-    command: "Established teams",
+    unlimited: "Established teams",
   },
-  { label: "Users", start: "1-2", grow: "Up to 5", command: "Up to 15" },
-  { label: "Customer relationship management (CRM)", start: "Included", grow: "Included", command: "Included" },
-  { label: "Lead generation", start: "Limited", grow: "Expanded", command: "High-volume" },
-  { label: "Social media content", start: "Basic", grow: "Full", command: "Full + advanced workflows" },
-  { label: "AI business assistant", start: "Basic", grow: "Full", command: "Full" },
-  { label: "Business assessment", start: "Included", grow: "Included", command: "Included" },
-  { label: "Opportunity tracking", start: "Included", grow: "Included", command: "Included" },
-  { label: "Activity and follow-up center", start: "Included", grow: "Included", command: "Included" },
+  { label: "Users", basic: "1-2", grow: "Up to 5", unlimited: "Up to 15" },
+  { label: "Customer relationship management (CRM)", basic: "Included", grow: "Included", unlimited: "Included" },
+  { label: "Lead generation", basic: "Limited", grow: "Expanded", unlimited: "High-volume" },
+  { label: "Social media content", basic: "Basic", grow: "Full", unlimited: "Full + advanced workflows" },
+  { label: "AI business assistant", basic: "Basic", grow: "Full", unlimited: "Full" },
+  { label: "Business assessment", basic: "Included", grow: "Included", unlimited: "Included" },
+  { label: "Opportunity tracking", basic: "Included", grow: "Included", unlimited: "Included" },
+  { label: "Activity and follow-up center", basic: "Included", grow: "Included", unlimited: "Included" },
   {
     label: "AI usage",
-    start: "Monthly allowance",
+    basic: "Monthly allowance",
     grow: "Larger allowance",
-    command: "Largest allowance",
+    unlimited: "Largest allowance",
   },
-  { label: "Reporting", start: "Basic", grow: "Growth dashboard", command: "Executive dashboard" },
-  { label: "Integrations", start: "Core", grow: "Expanded", command: "Priority" },
+  { label: "Reporting", basic: "Basic", grow: "Growth dashboard", unlimited: "Executive dashboard" },
+  { label: "Integrations", basic: "Core", grow: "Expanded", unlimited: "Priority" },
   {
     label: "Support",
-    start: "Standard",
+    basic: "Standard",
     grow: "Priority",
-    command: "Priority + onboarding",
+    unlimited: "Priority + onboarding",
   },
   {
     label: "Future ATLAS Phone AI",
-    start: "Add-on",
+    basic: "Add-on",
     grow: "Add-on",
-    command: "Included allowance / discounted",
+    unlimited: "Included allowance / discounted",
   },
 ];
 
@@ -193,7 +184,7 @@ export const atlasPricingFaqs: AtlasPricingFaq[] = [
   {
     question: "Can my team use Atlas?",
     answer:
-      "Yes. ATLAS COMMAND is the clearest fit for teams, and the product is designed to expand with organization needs.",
+      "Yes. ATLAS UNLIMITED is the clearest fit for teams, and the product is designed to expand with organization needs.",
   },
   {
     question: "Is Phone AI included?",
@@ -206,16 +197,6 @@ export const atlasPricingFaqs: AtlasPricingFaq[] = [
       "The pricing page does not introduce a billing contract. Any paid engagement should be confirmed before purchase or onboarding.",
   },
 ];
-
-export const atlasFoundingBusinessOffer: AtlasLaunchOffer = {
-  label: "Launch offer",
-  name: "ATLAS 30-DAY REVENUE RESCUE SPRINT",
-  price: 500,
-  summary:
-    "A focused, human-led 30-day sprint to identify one revenue leak, agree on one measurable goal, and make the next actions visible.",
-  term: "One-time payment",
-  limit: "No automatic renewal",
-};
 
 export const atlasPhoneAiAddOn: AtlasFutureAddOn = {
   label: "Coming soon",

@@ -3,13 +3,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import {
-  atlasFoundingBusinessOffer,
   atlasPhoneAiAddOn,
   atlasPricingComparisonRows,
   atlasPricingFaqs,
   atlasPricingPlans,
 } from "@/lib/pricing";
-import { getAtlasSprintPaymentLink } from "@/lib/payment-links";
+import { getAtlasPlanPaymentLinks } from "@/lib/payment-links";
 
 export const metadata: Metadata = {
   title: "Pricing | Atlas For Entrepreneurs",
@@ -38,7 +37,7 @@ const money = new Intl.NumberFormat("en-US", {
 });
 
 export default function PricingPage() {
-  const sprintPaymentLink = getAtlasSprintPaymentLink();
+  const planPaymentLinks = getAtlasPlanPaymentLinks();
 
   return (
     <>
@@ -65,11 +64,9 @@ export default function PricingPage() {
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   className="inline-flex items-center justify-center rounded-full bg-[#f5b932] px-7 py-4 text-sm font-black !text-[#071b42] shadow-[0_14px_34px_rgba(245,185,50,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ffd064] hover:!text-[#071b42]"
-                  href={sprintPaymentLink ?? "/pricing#launch-offer"}
-                  rel={sprintPaymentLink ? "noreferrer" : undefined}
-                  target={sprintPaymentLink ? "_blank" : undefined}
+                  href="/pricing#plans"
                 >
-                  Start My 30-Day Sprint
+                  Choose My Atlas Plan
                   <span aria-hidden="true" className="ml-2 text-lg leading-none">
                     &rarr;
                   </span>
@@ -93,7 +90,7 @@ export default function PricingPage() {
               <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-blue-100/70">
                 <span>Monthly usage allowance included</span>
                 <span>Human approval before external action</span>
-                <span>Founding business launch offer available by review</span>
+                <span>Three monthly plans for different stages of growth</span>
               </div>
             </div>
 
@@ -113,7 +110,7 @@ export default function PricingPage() {
 
         <section className="border-t border-white/10 bg-[#f4f7fb] text-[#071b42]">
           <div className="mx-auto w-full max-w-[84rem] px-6 py-20 sm:px-7 sm:py-24">
-            <div className="grid gap-5 lg:grid-cols-3">
+            <div className="grid gap-5 lg:grid-cols-3" id="plans">
               {atlasPricingPlans.map((plan) => (
                 <article
                   className={`relative overflow-hidden rounded-[1.9rem] border p-7 shadow-[0_18px_48px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 ${
@@ -175,9 +172,11 @@ export default function PricingPage() {
                           ? "bg-[#071b42] !text-white hover:bg-[#0a2f78] hover:!text-white"
                           : "bg-[#f5b932] !text-[#071b42] hover:bg-[#ffd064] hover:!text-[#071b42]"
                       }`}
-                      href="/assessment"
+                      href={planPaymentLinks[plan.slug] ?? `/assessment?plan=${plan.slug}`}
+                      rel={planPaymentLinks[plan.slug] ? "noreferrer" : undefined}
+                      target={planPaymentLinks[plan.slug] ? "_blank" : undefined}
                     >
-                      {plan.cta}
+                      {planPaymentLinks[plan.slug] ? plan.cta : `Review ${plan.name}`}
                     </Link>
                   </div>
                 </article>
@@ -207,13 +206,13 @@ export default function PricingPage() {
                         Plan
                       </th>
                       <th className="border-b border-[#e5edf7] px-4 py-3 text-right font-black">
-                        ATLAS START
+                        ATLAS BASIC
                       </th>
                       <th className="border-b border-[#e5edf7] px-4 py-3 text-right font-black">
                         ATLAS GROW
                       </th>
                       <th className="border-b border-[#e5edf7] px-4 py-3 text-right font-black">
-                        ATLAS COMMAND
+                        ATLAS UNLIMITED
                       </th>
                     </tr>
                   </thead>
@@ -227,13 +226,13 @@ export default function PricingPage() {
                           {row.label}
                         </th>
                         <td className="border-b border-[#edf2f8] px-4 py-4 text-right text-sm font-semibold text-slate-700">
-                          {row.start}
+                          {row.basic}
                         </td>
                         <td className="border-b border-[#edf2f8] px-4 py-4 text-right text-sm font-semibold text-slate-700">
                           {row.grow}
                         </td>
                         <td className="border-b border-[#edf2f8] px-4 py-4 text-right text-sm font-semibold text-slate-700">
-                          {row.command}
+                          {row.unlimited}
                         </td>
                       </tr>
                     ))}
@@ -242,53 +241,9 @@ export default function PricingPage() {
               </div>
             </section>
 
-            <div className="mt-8 rounded-[1.8rem] border border-[#d9e4f4] bg-white p-6 shadow-[0_16px_42px_rgba(15,23,42,0.05)]" id="launch-offer">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
-                    Launch offer
-                  </p>
-                  <h2 className="mt-3 text-3xl font-black tracking-[-0.05em]">
-                    {atlasFoundingBusinessOffer.name}
-                  </h2>
-                  <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-                    {atlasFoundingBusinessOffer.summary}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-[#f0c24a] bg-[#fff8df] px-5 py-4 text-sm text-[#4b3800]">
-                  <p className="font-black uppercase tracking-[0.16em]">
-                    One-time founding price
-                  </p>
-                  <p className="mt-2 text-4xl font-black">$500</p>
-                  <p className="mt-1 font-semibold">{atlasFoundingBusinessOffer.term}. {atlasFoundingBusinessOffer.limit}.</p>
-                </div>
-              </div>
-              <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#527096]">Includes</p>
-                  <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-600 sm:grid-cols-2">
-                    <li>Focused business and revenue-leak assessment</li>
-                    <li>One agreed measurable 30-day goal</li>
-                    <li>One private Atlas workspace</li>
-                    <li>Opportunity and follow-up pipeline</li>
-                    <li>One approved follow-up sequence or marketing asset set</li>
-                    <li>Weekly owner check-ins and a day-30 review</li>
-                  </ul>
-                  <p className="mt-4 text-xs leading-5 text-slate-500">Human approval is required before external action. Phone AI, ad spend, paid third-party software, unlimited consulting, and guaranteed results are not included.</p>
-                </div>
-                <div className="text-center lg:text-right">
-                  <a
-                    className="inline-flex rounded-full bg-[#f5b932] px-6 py-3 text-sm font-black !text-[#071b42] transition hover:bg-[#ffd064] hover:!text-[#071b42]"
-                    href={sprintPaymentLink ?? "/assessment?offer=30-day-sprint"}
-                    rel={sprintPaymentLink ? "noreferrer" : undefined}
-                    target={sprintPaymentLink ? "_blank" : undefined}
-                  >
-                    {sprintPaymentLink ? "Start My 30-Day Sprint" : "Request My 30-Day Sprint"}
-                  </a>
-                  {!sprintPaymentLink ? <p className="mt-2 max-w-xs text-xs leading-5 text-slate-500">Payment checkout is not configured in this environment yet.</p> : null}
-                </div>
-              </div>
-            </div>
+            <p className="mt-8 text-center text-sm font-semibold text-slate-500">
+              All Atlas plans are monthly subscriptions. Choose the tier that fits today and move up as the business grows.
+            </p>
           </div>
         </section>
 

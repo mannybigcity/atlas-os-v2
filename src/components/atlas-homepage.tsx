@@ -61,7 +61,7 @@ const copy: Record<Language, LandingCopy> = {
     headline: ["YOU CARRY THE FAMILY.", "ATLAS CARRIES THE BUSINESS."],
     heroCopy:
       "Your owner-controlled business workspace for organizing prospects, follow-up, pipeline, and approved next actions, so you can stay focused on what matters most.",
-    primary: "START MY 30-DAY SPRINT",
+    primary: "SEE ATLAS PLANS",
     secondary: "START BUSINESS ASSESSMENT",
     nav: {
       how: "How ATLAS Works",
@@ -125,7 +125,7 @@ const copy: Record<Language, LandingCopy> = {
     headline: ["TÚ CARGAS CON LA FAMILIA.", "ATLAS CARGA CON EL NEGOCIO."],
     heroCopy:
       "Tu espacio de trabajo con IA y control del propietario para organizar prospectos, seguimientos, oportunidades y próximos pasos aprobados, para que puedas enfocarte en lo que más importa.",
-    primary: "EMPEZAR MI SPRINT DE 30 DÍAS",
+    primary: "VER PLANES DE ATLAS",
     secondary: "EMPEZAR EVALUACIÓN DEL NEGOCIO",
     nav: {
       how: "Cómo funciona ATLAS",
@@ -242,7 +242,7 @@ function DashboardPreview({ language }: { language: Language }) {
   );
 }
 
-export function AtlasHomepage({ paymentLink }: { paymentLink: string | null }) {
+export function AtlasHomepage() {
   const language = useSyncExternalStore(subscribeToLanguage, getStoredLanguage, () => "en") as Language;
   const t = copy[language];
 
@@ -276,11 +276,7 @@ export function AtlasHomepage({ paymentLink }: { paymentLink: string | null }) {
               <h1 id="atlas-title"><span>{t.headline[0]}</span><strong>{t.headline[1]}</strong></h1>
               <p className="atlas-hero-lede">{t.heroCopy}</p>
               <div className="atlas-hero-actions">
-                {paymentLink ? (
-                  <a className="atlas-button gold" href={paymentLink} rel="noreferrer" target="_blank">{t.primary}</a>
-                ) : (
-                  <Link className="atlas-button gold" href="/pricing#launch-offer">{t.primary}</Link>
-                )}
+                <Link className="atlas-button gold" href="/pricing#plans">{t.primary}</Link>
                 <Link className="atlas-button outline" href="/assessment">{t.secondary}</Link>
               </div>
             </div>

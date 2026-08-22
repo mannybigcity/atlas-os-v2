@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { BusinessAssessmentForm } from "@/components/business-assessment-form";
-import { getAtlasSprintPaymentLink } from "@/lib/payment-links";
 
 export const metadata: Metadata = {
   title: "Business Health Assessment | Atlas",
@@ -17,7 +16,6 @@ type PageProps = {
 export default async function AssessmentPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const received = params.status === "received";
-  const sprintPaymentLink = getAtlasSprintPaymentLink();
 
   return (
     <>
@@ -82,19 +80,16 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
                 Your answers are saved in Atlas and queued for private CRM review.
                 Atlas will review the company details and recommend the best
-                starting point. If the fit is right, the clearest paid next step
-                is the Atlas 30-Day Revenue Rescue Sprint. The seven-day trial
-                remains available as a secondary way to explore the workspace.
+                starting point. Choose the Atlas plan that fits the business, or
+                use the seven-day trial as a secondary way to explore the workspace.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a
+                <Link
                   className="inline-flex rounded-full bg-[#f5b932] px-6 py-3 font-black text-[#071b42] hover:bg-[#ffd064]"
-                  href={sprintPaymentLink ?? "/pricing#launch-offer"}
-                  rel={sprintPaymentLink ? "noreferrer" : undefined}
-                  target={sprintPaymentLink ? "_blank" : undefined}
+                  href="/pricing#plans"
                 >
-                  {sprintPaymentLink ? "Start My 30-Day Sprint" : "Review the 30-Day Sprint"}
-                </a>
+                  View Atlas plans
+                </Link>
                 <Link
                   className="inline-flex rounded-full bg-[#1246a0] px-6 py-3 font-black text-white hover:bg-[#0a2f78]"
                   href="/start-trial"
