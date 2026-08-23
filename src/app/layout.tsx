@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Fraunces, Manrope } from "next/font/google";
 import { RouteFooter } from "@/components/route-footer";
+import { normalizeSiteLanguage, SITE_LANGUAGE_COOKIE } from "@/lib/site-language";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -20,16 +22,19 @@ export const metadata: Metadata = {
     "Atlas For Entrepreneurs gives business owners a secure workspace to follow up, manage clients, and move work forward.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
+
   return (
-    <html className={`${manrope.variable} ${fraunces.variable}`} lang="en">
+    <html className={`${manrope.variable} ${fraunces.variable}`} lang={language}>
       <body>
         {children}
-        <RouteFooter />
+        <RouteFooter initialLanguage={language} />
       </body>
     </html>
   );
