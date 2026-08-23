@@ -128,7 +128,7 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
             <p className="mt-3 text-sm leading-6 text-slate-600">{copy.formDescription}</p>
           </div>
           <form action={startTrial} className="mt-7 space-y-5">
-            {message ? <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">{message}</div> : null}
+            {copy.message ? <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">{copy.message}</div> : null}
             <div className="grid gap-5 sm:grid-cols-2">
               {fields.map((field) => {
                 const [label, placeholder] = language === "es" ? field.es : field.en;
