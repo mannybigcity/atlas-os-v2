@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AtlasSprintOffer } from "@/components/atlas-sprint-offer";
 import { SiteHeader } from "@/components/site-header";
 import { BusinessAssessmentForm } from "@/components/business-assessment-form";
-import { getAtlasSprintPaymentLink } from "@/lib/payment-links";
 import { withSiteLanguage } from "@/lib/site-language";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
@@ -118,9 +116,6 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
                 >
                   {t("Explore the 7-day trial", "Explorar la prueba de 7 días")}
                 </Link>
-              </div>
-              <div className="mt-8">
-                <AtlasSprintOffer checkoutUrl={getAtlasSprintPaymentLink()} compact />
               </div>
             </section>
           ) : (

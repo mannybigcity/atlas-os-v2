@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AtlasHomepage } from "@/components/atlas-homepage";
-import { getAtlasSprintPaymentLink } from "@/lib/payment-links";
 
 export const metadata: Metadata = {
   title: "Atlas For Entrepreneurs | Find More Leads, Follow Up Faster, Close More Deals",
@@ -44,7 +43,5 @@ export default async function Home({ searchParams }: HomePageProps) {
     redirect(`/auth/callback?code=${encodeURIComponent(code)}&next=/reset-password`);
   }
 
-  return (
-    <AtlasHomepage sprintUrl={getAtlasSprintPaymentLink()} />
-  );
+  return <AtlasHomepage />;
 }

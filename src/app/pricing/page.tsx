@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { AtlasSprintOffer } from "@/components/atlas-sprint-offer";
 import { SiteHeader } from "@/components/site-header";
 import {
   atlasPhoneAiAddOn,
   atlasPricingComparisonRows,
   atlasPricingFaqs,
   atlasPricingPlans,
-  atlasSprintOffer,
 } from "@/lib/pricing";
-import { getAtlasPlanPaymentLinks, getAtlasSprintPaymentLink } from "@/lib/payment-links";
+import { getAtlasPlanPaymentLinks } from "@/lib/payment-links";
 import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
@@ -68,8 +66,6 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Atlas pricing comparison between Basic, Grow, and Unlimited.":
     "Comparación de precios de Atlas entre Básico, Crecimiento e Ilimitado.",
   "Plan": "Plan",
-  "The sprint is the focused one-time starting offer. Monthly Atlas plans are optional continuation plans after the sprint.":
-    "El sprint es la oferta inicial enfocada de una sola vez. Los planes mensuales de Atlas son opciones de continuidad después del sprint.",
   "What Atlas replaces or simplifies": "Lo que Atlas reemplaza o simplifica",
   "Fewer disconnected tools. More coordinated work.": "Menos herramientas desconectadas. Más trabajo coordinado.",
   "Atlas reduces the need to bounce between disconnected prospecting, CRM, content, follow-up, and AI tools. It does not claim to fully replace HubSpot, GoHighLevel, ChatGPT, Canva, staff, or any other platform.":
@@ -102,28 +98,6 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "If you want help deciding, start with the business assessment. Atlas can guide the fit conversation without fabricating pricing or promises.":
     "Si quieres ayuda para decidir, comienza con la evaluación empresarial. Atlas puede orientar la conversación sobre la opción adecuada sin inventar precios ni promesas.",
   "No automatic subscription. No unsupported feature claims.": "Sin suscripción automática. Sin afirmaciones de funciones no disponibles.",
-  "Founding offer": "Oferta para fundadores",
-  "Atlas 30-Day Revenue Rescue Sprint": "Sprint Atlas de rescate de ingresos de 30 días",
-  "A focused, human-led 30-day engagement to identify one revenue leak, install a practical follow-up system, and review what changed.":
-    "Un trabajo enfocado de 30 días, dirigido por personas, para identificar una fuga de ingresos, instalar un sistema práctico de seguimiento y revisar qué cambió.",
-  "Focused business and revenue-leak assessment": "Evaluación enfocada del negocio y de fugas de ingresos",
-  "One agreed measurable 30-day goal": "Una meta medible acordada para 30 días",
-  "One private Atlas workspace": "Un espacio de trabajo privado de Atlas",
-  "Simple opportunity and follow-up pipeline": "Proceso sencillo de oportunidades y seguimiento",
-  "One approved follow-up sequence or focused marketing asset set": "Una secuencia de seguimiento aprobada o un conjunto enfocado de materiales de marketing",
-  "Weekly owner check-ins and a day-30 review": "Revisiones semanales con el propietario y una evaluación al día 30",
-  "Phone AI or autonomous customer contact": "IA telefónica o contacto autónomo con clientes",
-  "Autonomous publishing, ad spend, or paid third-party software": "Publicación autónoma, gasto publicitario o software externo de pago",
-  "Unlimited consulting or multiple unrelated business problems": "Consultoría ilimitada o múltiples problemas de negocio no relacionados",
-  "Guaranteed leads, sales, revenue, or business results": "Prospectos, ventas, ingresos o resultados empresariales garantizados",
-  "one time · no automatic renewal": "pago único · sin renovación automática",
-  "What you get": "Lo que recibes",
-  "Not included": "No incluido",
-  "Start My 30-Day Sprint": "Iniciar mi sprint de 30 días",
-  "Review the sprint with Atlas": "Revisar el sprint con Atlas",
-  "Secure Stripe-hosted checkout. No card details are collected on this site.":
-    "Pago seguro alojado por Stripe. Este sitio no recopila los datos de tu tarjeta.",
-  "Checkout is not configured in this local environment yet.": "El pago aún no está configurado en este entorno local.",
   "ATLAS BASIC": "ATLAS BÁSICO",
   "Solo owners / very small businesses": "Propietarios independientes / negocios muy pequeños",
   "Choose BASIC": "Elegir BÁSICO",
@@ -264,21 +238,11 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   const language = await getSiteLanguage(params.lang);
   const t = (text: string) => translate(text, language);
   const planPaymentLinks = getAtlasPlanPaymentLinks();
-  const sprintCheckoutUrl = getAtlasSprintPaymentLink();
 
   return (
     <>
       <SiteHeader active="pricing" />
       <main className="bg-[#061631] text-white">
-        <div className="bg-[#f4f7fb] px-6 pt-8 text-[#071b42] sm:px-7 sm:pt-10">
-          <div className="mx-auto w-full max-w-[84rem]">
-            {language === "es" ? (
-              <SpanishSprintOffer checkoutUrl={sprintCheckoutUrl} language={language} />
-            ) : (
-              <AtlasSprintOffer checkoutUrl={sprintCheckoutUrl} />
-            )}
-          </div>
-        </div>
         <section className="relative isolate overflow-hidden">
           <div className="absolute inset-0 -z-20 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:48px_48px]" />
           <div className="absolute -left-44 top-24 -z-10 h-[32rem] w-[32rem] rounded-full bg-[#1246a0]/30 blur-[130px]" />
@@ -482,9 +446,6 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
               </div>
             </section>
 
-            <p className="mt-8 text-center text-sm font-semibold text-slate-500">
-              {t("The sprint is the focused one-time starting offer. Monthly Atlas plans are optional continuation plans after the sprint.")}
-            </p>
           </div>
         </section>
 
@@ -659,95 +620,5 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
         </section>
       </main>
     </>
-  );
-}
-
-function SpanishSprintOffer({
-  checkoutUrl,
-  language,
-}: {
-  checkoutUrl: string | null;
-  language: SiteLanguage;
-}) {
-  const t = (text: string) => translate(text, language);
-
-  return (
-    <section
-      aria-labelledby="atlas-sprint-title"
-      className="rounded-[1.8rem] border border-[#f0c24a] bg-[#fffdf5] p-6 text-[#071b42] shadow-[0_16px_42px_rgba(15,23,42,0.05)] sm:p-8"
-      id="sprint"
-    >
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_.9fr] lg:items-start">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1246a0]">
-            {t("Founding offer")}
-          </p>
-          <h2
-            className="mt-3 max-w-3xl text-3xl font-black tracking-[-0.05em] sm:text-4xl"
-            id="atlas-sprint-title"
-          >
-            {t(atlasSprintOffer.name)}
-          </h2>
-          <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-700">
-            {t(atlasSprintOffer.summary)}
-          </p>
-          <p className="mt-5 text-3xl font-black tracking-[-0.04em]">
-            ${atlasSprintOffer.price.toLocaleString("en-US")} {" "}
-            <span className="text-base font-semibold text-slate-600">
-              {t("one time · no automatic renewal")}
-            </span>
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-[#eadb9d] bg-white/80 p-5">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#527096]">
-            {t("What you get")}
-          </p>
-          <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-700">
-            {atlasSprintOffer.includes.map((item) => (
-              <li className="flex gap-3" key={item}>
-                <span
-                  aria-hidden="true"
-                  className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#f5b932]"
-                />
-                <span>{t(item)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-6 text-xs font-black uppercase tracking-[0.16em] text-[#527096]">
-            {t("Not included")}
-          </p>
-          <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
-            {atlasSprintOffer.notIncluded.map((item) => (
-              <li key={item}>- {t(item)}</li>
-            ))}
-          </ul>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-            {checkoutUrl ? (
-              <a
-                className="inline-flex items-center justify-center rounded-full bg-[#f5b932] px-6 py-3 text-sm font-black text-[#071b42] transition hover:bg-[#ffd064]"
-                href={checkoutUrl}
-                rel="noreferrer"
-                target="_blank"
-              >
-                {t("Start My 30-Day Sprint")}
-              </a>
-            ) : (
-              <Link
-                className="inline-flex items-center justify-center rounded-full bg-[#1246a0] px-6 py-3 text-sm font-black text-white transition hover:bg-[#0a2f78]"
-                href={withSiteLanguage("/assessment", language)}
-              >
-                {t("Review the sprint with Atlas")}
-              </Link>
-            )}
-            <p className="text-xs leading-5 text-slate-600">
-              {checkoutUrl
-                ? t("Secure Stripe-hosted checkout. No card details are collected on this site.")
-                : t("Checkout is not configured in this local environment yet.")}
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }

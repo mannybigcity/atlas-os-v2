@@ -2,10 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { AtlasSprintOffer } from "@/components/atlas-sprint-offer";
 import { RecoveryLinkRedirect } from "@/components/recovery-link-redirect";
 import { useSyncExternalStore } from "react";
-import { persistSiteLanguage } from "@/components/language-switcher";
 import { SiteHeader } from "@/components/site-header";
 import { withSiteLanguage } from "@/lib/site-language";
 
@@ -248,17 +246,9 @@ function DashboardPreview({ language }: { language: Language }) {
   );
 }
 
-export function AtlasHomepage({ sprintUrl }: { sprintUrl: string | null }) {
+export function AtlasHomepage() {
   const language = useSyncExternalStore(subscribeToLanguage, getStoredLanguage, () => "en") as Language;
   const t = copy[language];
-
-  function changeLanguage(nextLanguage: Language) {
-    const url = new URL(window.location.href);
-    if (nextLanguage === "es") url.searchParams.set("lang", "es");
-    else url.searchParams.delete("lang");
-    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
-    persistSiteLanguage(nextLanguage);
-  }
 
   return (
     <div className="atlas-site">
@@ -270,19 +260,6 @@ export function AtlasHomepage({ sprintUrl }: { sprintUrl: string | null }) {
           <div className="atlas-wrap atlas-hero-grid">
             <div className="atlas-hero-copy">
               <p className="atlas-kicker">{t.eyebrow}</p>
-              <div aria-label={language === "es" ? "Idioma" : "Language"} className="mb-5 flex gap-2" role="group">
-                {(["en", "es"] as const).map((option) => (
-                  <button
-                    aria-pressed={language === option}
-                    className="rounded-full border border-current px-3 py-1 text-xs font-black uppercase tracking-[0.14em] transition hover:bg-white/10"
-                    key={option}
-                    onClick={() => changeLanguage(option)}
-                    type="button"
-                  >
-                    {option === "en" ? "English" : "Español"}
-                  </button>
-                ))}
-              </div>
               <h1 id="atlas-title"><span>{t.headline[0]}</span><strong>{t.headline[1]}</strong></h1>
               <p className="atlas-hero-lede">{t.heroCopy}</p>
               <div className="atlas-hero-actions">
@@ -304,8 +281,6 @@ export function AtlasHomepage({ sprintUrl }: { sprintUrl: string | null }) {
             </div>
           </div>
         </section>
-
-        <AtlasSprintOffer checkoutUrl={sprintUrl} compact />
 
         <section className="atlas-principles" aria-label={language === "es" ? "Principios de Atlas" : "Atlas principles"}>
           <div className="atlas-wrap atlas-principles-grid">

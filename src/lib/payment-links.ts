@@ -6,8 +6,6 @@ const planPaymentLinks: Record<AtlasPricingPlanSlug, string> = {
   unlimited: process.env.NEXT_PUBLIC_STRIPE_ATLAS_UNLIMITED_URL?.trim() ?? "",
 };
 
-const sprintPaymentLink = process.env.NEXT_PUBLIC_STRIPE_ATLAS_SPRINT_URL?.trim() ?? "";
-
 function normalizePaymentLink(value: string) {
   if (!value) return null;
 
@@ -29,8 +27,4 @@ export function getAtlasPlanPaymentLinks() {
     grow: getAtlasPlanPaymentLink("grow"),
     unlimited: getAtlasPlanPaymentLink("unlimited"),
   } satisfies Record<AtlasPricingPlanSlug, string | null>;
-}
-
-export function getAtlasSprintPaymentLink() {
-  return normalizePaymentLink(sprintPaymentLink);
 }

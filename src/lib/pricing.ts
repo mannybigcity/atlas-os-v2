@@ -36,27 +36,6 @@ export type AtlasFutureAddOn = {
   futureFeatures: string[];
 };
 
-export const atlasSprintOffer = {
-  name: "Atlas 30-Day Revenue Rescue Sprint",
-  price: 500,
-  summary:
-    "A focused, human-led 30-day engagement to identify one revenue leak, install a practical follow-up system, and review what changed.",
-  includes: [
-    "Focused business and revenue-leak assessment",
-    "One agreed measurable 30-day goal",
-    "One private Atlas workspace",
-    "Simple opportunity and follow-up pipeline",
-    "One approved follow-up sequence or focused marketing asset set",
-    "Weekly owner check-ins and a day-30 review",
-  ],
-  notIncluded: [
-    "Phone AI or autonomous customer contact",
-    "Autonomous publishing, ad spend, or paid third-party software",
-    "Unlimited consulting or multiple unrelated business problems",
-    "Guaranteed leads, sales, revenue, or business results",
-  ],
-} as const;
-
 export const atlasPricingPlans: AtlasPricingPlan[] = [
   {
     slug: "basic",
