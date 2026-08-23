@@ -37,6 +37,13 @@ function subscribeToLanguage(onChange: () => void) {
   };
 }
 
+export function persistSiteLanguage(language: SiteLanguage) {
+  document.cookie = `${SITE_LANGUAGE_COOKIE}=${language}; Path=/; Max-Age=${SITE_LANGUAGE_MAX_AGE}; SameSite=Lax`;
+  window.localStorage.setItem(SITE_LANGUAGE_STORAGE_KEY, language);
+  document.documentElement.lang = language;
+  window.dispatchEvent(new Event("atlas-language-change"));
+}
+
 export function useSiteLanguage(initialLanguage: SiteLanguage = "en") {
   const pathname = usePathname();
   const language = useSyncExternalStore(subscribeToLanguage, getBrowserLanguage, () => initialLanguage);
@@ -55,10 +62,7 @@ export function LanguageSwitcher() {
   const spanish = language === "es";
 
   function changeLanguage(nextLanguage: SiteLanguage) {
-    document.cookie = `${SITE_LANGUAGE_COOKIE}=${nextLanguage}; Path=/; Max-Age=${SITE_LANGUAGE_MAX_AGE}; SameSite=Lax`;
-    window.localStorage.setItem(SITE_LANGUAGE_STORAGE_KEY, nextLanguage);
-    document.documentElement.lang = nextLanguage;
-    window.dispatchEvent(new Event("atlas-language-change"));
+    persistSiteLanguage(nextLanguage);
 
     const url = new URL(window.location.href);
     url.pathname = pathname;

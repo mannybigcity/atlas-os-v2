@@ -2,8 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { AtlasSprintOffer } from "@/components/atlas-sprint-offer";
+import { RecoveryLinkRedirect } from "@/components/recovery-link-redirect";
 import { useSyncExternalStore } from "react";
+import { persistSiteLanguage } from "@/components/language-switcher";
 import { SiteHeader } from "@/components/site-header";
+import { withSiteLanguage } from "@/lib/site-language";
 
 type Language = "en" | "es";
 
@@ -66,11 +70,11 @@ const copy: Record<Language, LandingCopy> = {
     nav: {
       how: "How ATLAS Works",
       who: "Who It's For",
-      dashboard: "Client Dashboard",
+      dashboard: "Panel de clientes",
       pricing: "Pricing",
       resources: "Resources",
-      login: "Client Login",
-      action: "Client Dashboard",
+      login: "Acceso del cliente",
+      action: "Panel de clientes",
     },
     principles: [
       "Built for small business",
@@ -99,7 +103,7 @@ const copy: Record<Language, LandingCopy> = {
       { title: "Close", body: "Keep pipeline context visible while you make the customer decisions.", mark: "04" },
       { title: "Grow", body: "Draft focused marketing content with human review before anything goes live.", mark: "05" },
     ],
-    denTitle: "CLIENT DASHBOARD",
+    denTitle: "PANEL DE CLIENTES",
     denCopy: "Your command center. See what ATLAS is doing, what needs your attention, and what is coming next.",
     denPoints: [
       "Owner-approved work and next actions",
@@ -169,7 +173,7 @@ const copy: Record<Language, LandingCopy> = {
       "Tareas y recordatorios",
       "Notas, actividad y uso de la cuenta",
     ],
-    denCta: "ENTRA AL CLIENT DASHBOARD",
+    denCta: "ENTRAR AL PANEL DE CLIENTES",
     closingTitle: ["MANEJA EL NEGOCIO.", "LLEGA A LOS MOMENTOS QUE IMPORTAN."],
     closingCopy:
       "ATLAS organiza el trabajo que se dispersa: prospectos, seguimientos, oportunidades, tareas y borradores aprobados, para que puedas enfocarte en tus clientes y tu familia.",
@@ -185,6 +189,8 @@ const copy: Record<Language, LandingCopy> = {
 
 function getStoredLanguage(): Language {
   if (typeof window === "undefined") return "en";
+  if (new URLSearchParams(window.location.search).get("lang") === "es") return "es";
+  if (document.cookie.split(";").some((value) => value.trim() === "atlas_language=es")) return "es";
   const saved = window.localStorage.getItem("afe-language");
   return saved === "es" ? "es" : "en";
 }
@@ -192,10 +198,10 @@ function getStoredLanguage(): Language {
 function subscribeToLanguage(onChange: () => void) {
   if (typeof window === "undefined") return () => undefined;
   window.addEventListener("storage", onChange);
-  window.addEventListener("afe-language-change", onChange);
+  window.addEventListener("atlas-language-change", onChange);
   return () => {
     window.removeEventListener("storage", onChange);
-    window.removeEventListener("afe-language-change", onChange);
+    window.removeEventListener("atlas-language-change", onChange);
   };
 }
 
@@ -242,17 +248,21 @@ function DashboardPreview({ language }: { language: Language }) {
   );
 }
 
-export function AtlasHomepage() {
+export function AtlasHomepage({ sprintUrl }: { sprintUrl: string | null }) {
   const language = useSyncExternalStore(subscribeToLanguage, getStoredLanguage, () => "en") as Language;
   const t = copy[language];
 
   function changeLanguage(nextLanguage: Language) {
-    window.localStorage.setItem("afe-language", nextLanguage);
-    window.dispatchEvent(new Event("afe-language-change"));
+    const url = new URL(window.location.href);
+    if (nextLanguage === "es") url.searchParams.set("lang", "es");
+    else url.searchParams.delete("lang");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    persistSiteLanguage(nextLanguage);
   }
 
   return (
     <div className="atlas-site">
+      <RecoveryLinkRedirect />
       <SiteHeader active="home" />
 
       <main>
@@ -260,7 +270,7 @@ export function AtlasHomepage() {
           <div className="atlas-wrap atlas-hero-grid">
             <div className="atlas-hero-copy">
               <p className="atlas-kicker">{t.eyebrow}</p>
-              <div aria-label="Language" className="mb-5 flex gap-2" role="group">
+              <div aria-label={language === "es" ? "Idioma" : "Language"} className="mb-5 flex gap-2" role="group">
                 {(["en", "es"] as const).map((option) => (
                   <button
                     aria-pressed={language === option}
@@ -276,26 +286,28 @@ export function AtlasHomepage() {
               <h1 id="atlas-title"><span>{t.headline[0]}</span><strong>{t.headline[1]}</strong></h1>
               <p className="atlas-hero-lede">{t.heroCopy}</p>
               <div className="atlas-hero-actions">
-                <Link className="atlas-button gold" href="/pricing#plans">{t.primary}</Link>
-                <Link className="atlas-button outline" href="/assessment">{t.secondary}</Link>
+                <Link className="atlas-button gold" href={withSiteLanguage("/pricing#plans", language)}>{t.primary}</Link>
+                <Link className="atlas-button outline" href={withSiteLanguage("/assessment", language)}>{t.secondary}</Link>
               </div>
             </div>
-            <div className="atlas-hero-art" aria-label="Atlas carries the business">
+            <div className="atlas-hero-art" aria-label={language === "es" ? "Atlas carga con el negocio" : "Atlas carries the business"}>
               <div className="atlas-sun" />
               <Image
-                alt="The plumbers, HVAC owners, barbers, swim instructors, and realtors Atlas serves"
+                alt={language === "es" ? "Los plomeros, dueños de HVAC, barberos, instructores y agentes inmobiliarios a quienes sirve Atlas" : "The plumbers, HVAC owners, barbers, swim instructors, and realtors Atlas serves"}
                 className="atlas-service-collage"
                 src="/atlas-service-industry-collage-landscape.png"
                 width={1536}
                 height={864}
                 priority
               />
-              <Image className="atlas-hero-figure" alt="Atlas lion carrying a globe" src="/atlas-holding-globe-tight.png" width={799} height={1008} priority />
+              <Image className="atlas-hero-figure" alt={language === "es" ? "León de Atlas cargando el mundo" : "Atlas lion carrying a globe"} src="/atlas-holding-globe-tight.png" width={799} height={1008} priority />
             </div>
           </div>
         </section>
 
-        <section className="atlas-principles" aria-label="Atlas principles">
+        <AtlasSprintOffer checkoutUrl={sprintUrl} compact />
+
+        <section className="atlas-principles" aria-label={language === "es" ? "Principios de Atlas" : "Atlas principles"}>
           <div className="atlas-wrap atlas-principles-grid">
             {t.principles.map((principle, index) => <article key={principle}><b>{String(index + 1).padStart(2, "0")}</b><span>{principle}</span></article>)}
           </div>
@@ -325,7 +337,7 @@ export function AtlasHomepage() {
             <p className="atlas-section-label">{t.denTitle}</p>
             <h2 id="den-title">{t.denCopy}</h2>
             <ul>{t.denPoints.map((point) => <li key={point}>{point}</li>)}</ul>
-            <Link className="atlas-button gold compact" href="/login">{t.denCta}</Link>
+            <Link className="atlas-button gold compact" href={withSiteLanguage("/login", language)}>{t.denCta}</Link>
           </div>
           <DashboardPreview language={language} />
         </section>
@@ -338,23 +350,23 @@ export function AtlasHomepage() {
             </div>
             <div className="atlas-family-art">
               <Image
-                alt="Baseball games, theater recitals, and band recitals families can be present for"
+                alt={language === "es" ? "Partidos, recitales de teatro y conciertos familiares en los que puedes estar presente" : "Baseball games, theater recitals, and band recitals families can be present for"}
                 src="/atlas-family-moments-collage-landscape.png"
                 width={1536}
                 height={864}
               />
-              <Image className="atlas-family-atlas" alt="Atlas carries the business" src="/atlas-holding-globe-tight.png" width={799} height={1008} />
+              <Image className="atlas-family-atlas" alt={language === "es" ? "Atlas carga con el negocio" : "Atlas carries the business"} src="/atlas-holding-globe-tight.png" width={799} height={1008} />
             </div>
           </div>
         </section>
 
         <section className="atlas-outcome-section" id="resources">
           <div className="atlas-outcome-stats">{t.stats.map((stat) => <article key={stat.label}><strong>{stat.value}</strong><span>{stat.label}</span></article>)}</div>
-          <Link className="atlas-outcome-cta" href="/assessment"><span>{t.bottomCta}</span><span aria-hidden="true" className="atlas-outcome-arrow">→</span></Link>
+          <Link className="atlas-outcome-cta" href={withSiteLanguage("/assessment", language)}><span>{t.bottomCta}</span><span aria-hidden="true" className="atlas-outcome-arrow">→</span></Link>
         </section>
       </main>
 
-      <aside className="atlas-bottom-bar"><div className="atlas-wrap"><span>ATLAS</span><strong>{language === "es" ? "TÚ LIDERAS. ATLAS TE RESPALDA." : "YOU LEAD. ATLAS HAS YOUR BACK."}</strong><Link href="/assessment">{t.bottomCta}</Link></div></aside>
+      <aside className="atlas-bottom-bar"><div className="atlas-wrap"><span>ATLAS</span><strong>{language === "es" ? "TÚ LIDERAS. ATLAS TE RESPALDA." : "YOU LEAD. ATLAS HAS YOUR BACK."}</strong><Link href={withSiteLanguage("/assessment", language)}>{t.bottomCta}</Link></div></aside>
     </div>
   );
 }

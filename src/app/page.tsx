@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { AtlasHomepage } from "@/components/atlas-homepage";
+import { getAtlasSprintPaymentLink } from "@/lib/payment-links";
 
 export const metadata: Metadata = {
   title: "Atlas For Entrepreneurs | Find More Leads, Follow Up Faster, Close More Deals",
@@ -24,6 +26,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
-  return <AtlasHomepage />;
+type HomePageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function Home({ searchParams }: HomePageProps) {
+  const params = await searchParams;
+  const type = typeof params?.type === "string" ? params.type : undefined;
+  const tokenHash = typeof params?.token_hash === "string" ? params.token_hash : undefined;
+  const code = typeof params?.code === "string" ? params.code : undefined;
+
+  if (type === "recovery" && tokenHash) {
+    redirect(`/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=recovery&next=/reset-password`);
+  }
+
+  if (type === "recovery" && code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(code)}&next=/reset-password`);
+  }
+
+  return (
+    <AtlasHomepage sprintUrl={getAtlasSprintPaymentLink()} />
+  );
 }
