@@ -33,7 +33,7 @@ function returnToTarget(formData: FormData, fallback: string) {
     return fallback;
   }
 
-  if (/^\/(?:clients|lions-den\/sales)(?:[?#].*)?$/i.test(candidate)) {
+  if (/^\/(?:client|clients|lions-den\/sales)(?:[?#].*)?$/i.test(candidate)) {
     return candidate;
   }
 
@@ -379,7 +379,7 @@ export async function suppressSalesProspect(formData: FormData) {
 }
 
 export async function logSalesFollowUp(formData: FormData) {
-  const user = await requireSuperAdmin("/clients");
+  const user = await requireSuperAdmin("/client");
   const returnTo = returnToTarget(
     formData,
     `/lions-den/sales/${String(formData.get("prospectId") ?? "").trim()}`,
@@ -434,7 +434,7 @@ export async function logSalesFollowUp(formData: FormData) {
 }
 
 export async function completeSalesFollowUp(formData: FormData) {
-  const user = await requireSuperAdmin("/clients");
+  const user = await requireSuperAdmin("/client");
   const returnTo = returnToTarget(
     formData,
     `/lions-den/sales/${String(formData.get("prospectId") ?? "").trim()}`,
@@ -488,8 +488,8 @@ export async function completeSalesFollowUp(formData: FormData) {
 }
 
 export async function convertSalesProspectToClient(formData: FormData) {
-  const user = await requireSuperAdmin("/clients");
-  const returnTo = returnToTarget(formData, "/clients");
+  const user = await requireSuperAdmin("/client");
+  const returnTo = returnToTarget(formData, "/client");
   const prospectId = field(formData, "prospectId", 36);
   const targetOrganizationId = field(formData, "targetOrganizationId", 36);
 
@@ -543,8 +543,8 @@ export async function convertSalesProspectToClient(formData: FormData) {
 }
 
 export async function deleteSalesProspect(formData: FormData) {
-  await requireSuperAdmin("/clients");
-  const returnTo = returnToTarget(formData, "/clients");
+  await requireSuperAdmin("/client");
+  const returnTo = returnToTarget(formData, "/client");
   const prospectId = field(formData, "prospectId", 36);
   const confirmName = field(formData, "confirmName", 250);
 

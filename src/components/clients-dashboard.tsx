@@ -548,7 +548,7 @@ export function ClientCrmDashboard({
     label: stage.label,
     value: stage.value,
     tone: stage.tone,
-    href: `/clients?focus=${stage.key}#stage-lens`,
+    href: `/client?focus=${stage.key}#stage-lens`,
   }));
 
   const followUpHealth = [
@@ -592,7 +592,7 @@ export function ClientCrmDashboard({
     ...organizations.map((organization) => ({
       id: `organization:${organization.id}`,
       label: organization.name,
-      href: organization.slug ? `/clients?previewOrg=${encodeURIComponent(organization.slug)}` : "/clients",
+      href: organization.slug ? `/client?previewOrg=${encodeURIComponent(organization.slug)}` : "/client",
     })),
   ];
 
@@ -642,7 +642,7 @@ export function ClientCrmDashboard({
             ["Follow-up Dates", "#follow-up-dates", String(followUpItems.length)],
             ["Calendar", "#calendar", String(calendarItems.length)],
             ["Approvals", "#approvals", String(approvalsQueue.length)],
-            ["Activity", "/clients?panel=activity#activity", String(visibleActivity.length)],
+            ["Activity", "/client?panel=activity#activity", String(visibleActivity.length)],
           ].map(([label, href, value]) =>
             String(href).startsWith("#") ? (
               <a
@@ -869,8 +869,8 @@ export function ClientCrmDashboard({
                             className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
                             href={
                               organization.slug === "qtime-productions"
-                                ? `/clients?previewOrg=${encodeURIComponent(organization.slug)}&panel=qtime#qtime-command-center`
-                                : `/clients?previewOrg=${encodeURIComponent(organization.slug)}`
+                                ? `/client?previewOrg=${encodeURIComponent(organization.slug)}&panel=qtime#qtime-command-center`
+                                : `/client?previewOrg=${encodeURIComponent(organization.slug)}`
                             }
                           >
                             Preview

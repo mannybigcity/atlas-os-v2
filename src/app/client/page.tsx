@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { ClientAdminDashboard } from "@/components/client-admin-dashboard";
+import { ClientCrmDashboard } from "@/components/clients-dashboard";
 import { ClientPortalShell } from "@/components/client-portal-shell";
 import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
 import { SisCrmDashboard } from "@/components/sis-crm-dashboard";
@@ -11,6 +11,7 @@ import {
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
 import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
 import { getSisDashboardData } from "@/server/sis-workspace/queries";
+import { getSalesEvents, getSalesProspects } from "@/server/sales/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +24,14 @@ type ClientDashboardPageProps = {
   searchParams?: Promise<{
     access?: string;
     content?: string;
+    focus?: string;
     identity?: string;
     message?: string;
     note?: string;
     pilot?: string;
     previewOrg?: string;
     profile?: string;
+    panel?: string;
     status?: string;
     workspace?: string;
   }>;
@@ -63,6 +66,9 @@ export default async function ClientDashboardPage({
     workspace;
   const organizations = workspace.isSuperAdmin && !isClientPreview && !workspace.selectedWorkspaceSlug
     ? await getOrganizationsForSuperAdmin()
+    : null;
+  const sales = organizations
+    ? await Promise.all([getSalesProspects(), getSalesEvents()])
     : null;
 
   const isSisWorkspace = primaryOrganization?.slug === "sis-custom-creations";
@@ -126,7 +132,7 @@ export default async function ClientDashboardPage({
           </StatusAlert>
         ) : null}
 
-        {!memberships.setupRequired && memberships.data.length === 0 ? (
+        {!workspace.isSuperAdmin && !memberships.setupRequired && memberships.data.length === 0 ? (
           <StatusAlert tone="amber">
             Your login is active, but a business workspace has not been assigned
             yet. Contact your workspace team and we will connect it.
@@ -139,7 +145,17 @@ export default async function ClientDashboardPage({
               We could not load client workspaces. Try again or contact the Atlas team.
             </StatusAlert>
           ) : (
-            <ClientAdminDashboard organizations={organizations.data} />
+            <ClientCrmDashboard
+              events={sales?.[1].setupRequired ? [] : sales?.[1].data ?? []}
+              focusStage={params?.focus ?? ""}
+              organizations={organizations.data}
+              previewDashboard={dashboard}
+              previewOrganization={previewOrganization?.data ?? null}
+              previewWorkspace={workspace.isClientPreview ? workspace : null}
+              prospects={sales?.[0].setupRequired ? [] : sales?.[0].data ?? []}
+              returnTo="/client"
+              selectedPanel={params?.panel ?? ""}
+            />
           )
         ) : isSisWorkspace && sisDashboard ? (
           sisDashboard.setupRequired ? (
