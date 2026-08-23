@@ -1120,9 +1120,10 @@ export async function ClientQTimeDashboard({
                             </label>
                             <button
                               className="inline-flex w-full items-center justify-center rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white opacity-70"
+                              disabled
                               type="button"
                             >
-                              {spanish ? "Completar seguimiento" : "Complete follow-up"}
+                              {spanish ? "Próximamente: completar seguimiento" : "Coming soon: complete follow-up"}
                             </button>
                           </div>
                         </div>
