@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useSiteLanguage } from "@/components/language-switcher";
+import type { SiteLanguage } from "@/lib/site-language";
 
 type CalendarContextOption = {
   id: string;
@@ -117,23 +119,27 @@ function parseStoredItems(raw: string | null): CalendarSeedItem[] {
   }
 }
 
-function formatMonthLabel(date: Date) {
-  return new Intl.DateTimeFormat("en", {
+function localeFor(language: SiteLanguage) {
+  return language === "es" ? "es-US" : "en-US";
+}
+
+function formatMonthLabel(date: Date, language: SiteLanguage) {
+  return new Intl.DateTimeFormat(localeFor(language), {
     month: "long",
     year: "numeric",
   }).format(date);
 }
 
-function formatShortDate(date: Date) {
-  return new Intl.DateTimeFormat("en", {
+function formatShortDate(date: Date, language: SiteLanguage) {
+  return new Intl.DateTimeFormat(localeFor(language), {
     weekday: "short",
     month: "short",
     day: "numeric",
   }).format(date);
 }
 
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat("en", {
+function formatTime(value: string, language: SiteLanguage) {
+  return new Intl.DateTimeFormat(localeFor(language), {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
@@ -148,6 +154,8 @@ export function ClientsCalendar({
   followUpItems,
   storageKey = "atlas-clients-calendar-v1",
 }: ClientsCalendarProps) {
+  const language = useSiteLanguage();
+  const spanish = language === "es";
   const [hydrated, setHydrated] = useState(false);
   const [view, setView] = useState<"month" | "week" | "day" | "year">("month");
   const [selectedDate, setSelectedDate] = useState(() => new Date());
@@ -242,7 +250,9 @@ export function ClientsCalendar({
         item.id === id
           ? {
               ...item,
-              notes: item.notes ? `${item.notes}\n\nMarked complete locally.` : "Marked complete locally.",
+              notes: item.notes
+                ? `${item.notes}\n\n${spanish ? "Marcado como completado localmente." : "Marked complete locally."}`
+                : spanish ? "Marcado como completado localmente." : "Marked complete locally.",
             }
           : item,
       ),
@@ -250,16 +260,16 @@ export function ClientsCalendar({
   }
 
   const viewLabel = useMemo(() => {
-    if (view === "month") return formatMonthLabel(selectedDate);
+    if (view === "month") return formatMonthLabel(selectedDate, language);
     if (view === "year") return String(selectedDate.getFullYear());
-    if (view === "week") return `${formatShortDate(weekStart)} - ${formatShortDate(addDays(weekStart, 6))}`;
-    return formatShortDate(selectedDate);
-  }, [selectedDate, view, weekStart]);
+    if (view === "week") return `${formatShortDate(weekStart, language)} - ${formatShortDate(addDays(weekStart, 6), language)}`;
+    return formatShortDate(selectedDate, language);
+  }, [language, selectedDate, view, weekStart]);
 
   const yearViewItems = useMemo(
     () =>
       yearMonths.map((month) => ({
-        label: formatMonthLabel(month.date),
+        label: formatMonthLabel(month.date, language),
         monthIndex: month.monthIndex,
         count: allItems.filter(
           (item) =>
@@ -267,7 +277,7 @@ export function ClientsCalendar({
             new Date(item.dateTime).getMonth() === month.date.getMonth(),
         ).length,
       })),
-    [allItems, yearMonths],
+    [allItems, language, yearMonths],
   );
 
   const gridViewItems = useMemo(() => {
@@ -283,15 +293,15 @@ export function ClientsCalendar({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#5672f0]">
-            Calendar
+            {spanish ? "Calendario" : "Calendar"}
           </p>
           <h3 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">
-            Month, Week, Day, Year
+            {spanish ? "Mes, Semana, Día, Año" : "Month, Week, Day, Year"}
           </h3>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            Device-local reminders only. Follow-up items from the CRM appear here,
-            and you can add or edit your own reminder state without pretending it
-            is synced to email or SMS.
+            {spanish
+              ? "Solo recordatorios locales del dispositivo. Los seguimientos del CRM aparecen aquí, y puedes agregar o editar tus propios recordatorios sin afirmar que están sincronizados con correo electrónico o SMS."
+              : "Device-local reminders only. Follow-up items from the CRM appear here, and you can add or edit your own reminder state without pretending it is synced to email or SMS."}
           </p>
         </div>
 
@@ -307,7 +317,7 @@ export function ClientsCalendar({
               onClick={() => setView(item)}
               type="button"
             >
-            {item.charAt(0).toUpperCase() + item.slice(1)}
+            {{ month: spanish ? "Mes" : "Month", week: spanish ? "Semana" : "Week", day: spanish ? "Día" : "Day", year: spanish ? "Año" : "Year" }[item]}
           </button>
         ))}
       </div>
@@ -320,7 +330,7 @@ export function ClientsCalendar({
               {viewLabel}
             </h4>
             <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 ring-1 ring-slate-200">
-              {allItems.length} items
+              {allItems.length} {spanish ? "elementos" : "items"}
             </span>
           </div>
 
@@ -338,16 +348,16 @@ export function ClientsCalendar({
                   type="button"
                 >
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-[#5672f0]">
-                    Month
+                    {spanish ? "Mes" : "Month"}
                   </p>
                   <p className="mt-2 text-lg font-semibold text-slate-950">{month.label}</p>
-                  <p className="mt-2 text-sm text-slate-600">{month.count} items</p>
+                  <p className="mt-2 text-sm text-slate-600">{month.count} {spanish ? "elementos" : "items"}</p>
                 </button>
               ))}
             </div>
           ) : view === "month" ? (
             <div className="mt-4 grid grid-cols-7 gap-2">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
+              {(spanish ? ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"] : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]).map((label) => (
                 <div className="px-2 py-1 text-center text-[11px] font-black uppercase tracking-[0.16em] text-slate-500" key={label}>
                   {label}
                 </div>
@@ -400,9 +410,9 @@ export function ClientsCalendar({
                   type="button"
                 >
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
-                    {formatShortDate(date)}
+                    {formatShortDate(date, language)}
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-950">{items.length} items</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">{items.length} {spanish ? "elementos" : "items"}</p>
                 </button>
               ))}
             </div>
@@ -412,7 +422,7 @@ export function ClientsCalendar({
             <div className="mt-4 space-y-3">
               {selectedItems.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm leading-6 text-slate-600">
-                  No items on this date yet.
+                  {spanish ? "Todavía no hay elementos en esta fecha." : "No items on this date yet."}
                 </div>
               ) : (
                 selectedItems.map((item) => (
@@ -420,25 +430,25 @@ export function ClientsCalendar({
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5672f0]">
-                          {item.kind}
+                          {item.kind === "event" ? (spanish ? "evento" : "event") : spanish ? "tarea" : "task"}
                         </p>
                         <h5 className="mt-2 text-sm font-semibold text-slate-950">{item.title}</h5>
                       </div>
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
-                        {formatTime(item.dateTime)}
+                        {formatTime(item.dateTime, language)}
                       </span>
                     </div>
                     <p className="mt-3 text-sm leading-6 text-slate-600">{item.notes}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <span className="rounded-full bg-[#eef3ff] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5672f0]">
-                        Reminder {item.reminderOffsetMinutes}m before
+                        {spanish ? `Recordatorio ${item.reminderOffsetMinutes} min antes` : `Reminder ${item.reminderOffsetMinutes}m before`}
                       </span>
                       {item.contextHref ? (
                         <Link
                           className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
                           href={item.contextHref}
                         >
-                          Open context
+                          {spanish ? "Abrir contexto" : "Open context"}
                         </Link>
                       ) : null}
                       {item.source === "local" ? (
@@ -448,21 +458,21 @@ export function ClientsCalendar({
                             onClick={() => editItem(item)}
                             type="button"
                           >
-                            Edit
+                            {spanish ? "Editar" : "Edit"}
                           </button>
                           <button
                             className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-800 transition hover:bg-emerald-100"
                             onClick={() => toggleCompleted(item.id)}
                             type="button"
                           >
-                            Mark done
+                            {spanish ? "Marcar completado" : "Mark done"}
                           </button>
                           <button
                             className="rounded-full border border-rose-300 bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-800 transition hover:bg-rose-100"
                             onClick={() => removeItem(item.id)}
                             type="button"
                           >
-                            Remove
+                            {spanish ? "Eliminar" : "Remove"}
                           </button>
                         </>
                       ) : null}
@@ -479,10 +489,12 @@ export function ClientsCalendar({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-[#5672f0]">
-                  Device-local reminder
+                  {spanish ? "Recordatorio local del dispositivo" : "Device-local reminder"}
                 </p>
                 <h4 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950">
-                  {draft.id ? "Edit calendar item" : "Create calendar item"}
+                  {draft.id
+                    ? spanish ? "Editar elemento del calendario" : "Edit calendar item"
+                    : spanish ? "Crear elemento del calendario" : "Create calendar item"}
                 </h4>
               </div>
               {draft.id ? (
@@ -491,28 +503,28 @@ export function ClientsCalendar({
                   onClick={() => setDraft(defaultDraft)}
                   type="button"
                 >
-                  Clear
+                  {spanish ? "Limpiar" : "Clear"}
                 </button>
               ) : null}
             </div>
 
             <div className="mt-4 grid gap-3">
               <Field
-                label="Title"
+                label={spanish ? "Título" : "Title"}
                 name="title"
                 onChange={(value) => setDraft((current) => ({ ...current, title: value }))}
                 value={draft.title}
               />
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field
-                  label="Date"
+                  label={spanish ? "Fecha" : "Date"}
                   name="date"
                   onChange={(value) => setDraft((current) => ({ ...current, date: value }))}
                   type="date"
                   value={draft.date}
                 />
                 <Field
-                  label="Time"
+                  label={spanish ? "Hora" : "Time"}
                   name="time"
                   onChange={(value) => setDraft((current) => ({ ...current, time: value }))}
                   type="time"
@@ -521,16 +533,16 @@ export function ClientsCalendar({
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Select
-                  label="Kind"
+                  label={spanish ? "Tipo" : "Kind"}
                   onChange={(value) => setDraft((current) => ({ ...current, kind: value === "event" ? "event" : "task" }))}
                   options={[
-                    { label: "Task", value: "task" },
-                    { label: "Event", value: "event" },
+                    { label: spanish ? "Tarea" : "Task", value: "task" },
+                    { label: spanish ? "Evento" : "Event", value: "event" },
                   ]}
                   value={draft.kind}
                 />
                 <Field
-                  label="Reminder offset minutes"
+                  label={spanish ? "Minutos de anticipación" : "Reminder offset minutes"}
                   name="reminderOffsetMinutes"
                   onChange={(value) => setDraft((current) => ({ ...current, reminderOffsetMinutes: value }))}
                   type="number"
@@ -538,13 +550,13 @@ export function ClientsCalendar({
                 />
               </div>
               <Select
-                label="Context"
+                label={spanish ? "Contexto" : "Context"}
                 onChange={(value) => setDraft((current) => ({ ...current, contextId: value }))}
-                options={[{ label: "No context", value: "" }, ...contextOptions.map((item) => ({ label: item.label, value: item.id }))]}
+                options={[{ label: spanish ? "Sin contexto" : "No context", value: "" }, ...contextOptions.map((item) => ({ label: item.label, value: item.id }))]}
                 value={draft.contextId}
               />
               <label className="block">
-                <span className="text-sm font-medium text-slate-700">Notes</span>
+                <span className="text-sm font-medium text-slate-700">{spanish ? "Notas" : "Notes"}</span>
                 <textarea
                   className="mt-2 min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-[#5672f0] focus:ring-4 focus:ring-[#dfe7ff]"
                   onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))}
@@ -555,19 +567,21 @@ export function ClientsCalendar({
                 className="rounded-full bg-[#5672f0] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#465fd1]"
                 type="submit"
               >
-                {draft.id ? "Update local reminder" : "Save local reminder"}
+                {draft.id
+                  ? spanish ? "Actualizar recordatorio local" : "Update local reminder"
+                  : spanish ? "Guardar recordatorio local" : "Save local reminder"}
               </button>
             </div>
           </form>
 
           <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-              What is stored locally
+              {spanish ? "Qué se guarda localmente" : "What is stored locally"}
             </p>
             <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
-              <li>Calendar reminders are saved only on this device.</li>
-              <li>Follow-up dates from the CRM are read from the live workspace.</li>
-              <li>No email, SMS, or provider integration is triggered here.</li>
+              <li>{spanish ? "Los recordatorios del calendario se guardan solo en este dispositivo." : "Calendar reminders are saved only on this device."}</li>
+              <li>{spanish ? "Las fechas de seguimiento del CRM se leen del espacio de trabajo activo." : "Follow-up dates from the CRM are read from the live workspace."}</li>
+              <li>{spanish ? "Aquí no se activa ninguna integración de correo electrónico, SMS o proveedor." : "No email, SMS, or provider integration is triggered here."}</li>
             </ul>
           </div>
         </div>

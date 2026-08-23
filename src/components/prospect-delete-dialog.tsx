@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { deleteSalesProspect } from "@/server/sales/actions";
+import { useSiteLanguage } from "@/components/language-switcher";
 
 type ProspectDeleteDialogProps = {
   prospectId: string;
@@ -14,6 +15,8 @@ export function ProspectDeleteDialog({
   prospectName,
   returnTo,
 }: ProspectDeleteDialogProps) {
+  const language = useSiteLanguage();
+  const spanish = language === "es";
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const cancelRef = useRef<HTMLButtonElement | null>(null);
@@ -36,7 +39,7 @@ export function ProspectDeleteDialog({
         onClick={() => setOpen(true)}
         type="button"
       >
-        Delete
+        {spanish ? "Eliminar" : "Delete"}
       </button>
 
       {open ? (
@@ -67,19 +70,21 @@ export function ProspectDeleteDialog({
               <input name="returnTo" type="hidden" value={returnTo} />
 
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-rose-700">
-                Permanent delete
+                {spanish ? "Eliminación permanente" : "Permanent delete"}
               </p>
               <h3
                 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950"
                 id={`delete-title-${prospectId}`}
               >
-                Delete {prospectName}?
+                {spanish ? `¿Eliminar ${prospectName}?` : `Delete ${prospectName}?`}
               </h3>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                This permanently removes the prospect and its related history from the current schema. There is no restore path.
+                {spanish
+                  ? "Esto elimina permanentemente al prospecto y su historial relacionado del esquema actual. No existe una opción de restauración."
+                  : "This permanently removes the prospect and its related history from the current schema. There is no restore path."}
               </p>
               <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-                Confirmed target: <span className="font-semibold">{prospectName}</span>
+                {spanish ? "Objetivo confirmado:" : "Confirmed target:"}{" "}<span className="font-semibold">{prospectName}</span>
               </p>
 
               <div className="mt-5 flex flex-wrap gap-3">
@@ -89,13 +94,13 @@ export function ProspectDeleteDialog({
                   onClick={() => setOpen(false)}
                   type="button"
                 >
-                  Cancel
+                  {spanish ? "Cancelar" : "Cancel"}
                 </button>
                 <button
                   className="rounded-full bg-rose-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-700"
                   type="submit"
                 >
-                  Delete prospect
+                  {spanish ? "Eliminar prospecto" : "Delete prospect"}
                 </button>
               </div>
             </form>

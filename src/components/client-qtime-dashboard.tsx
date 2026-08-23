@@ -6,6 +6,8 @@ import { clientWorkspaceHref } from "@/server/client-workspace/context";
 import type { ClientDashboardData } from "@/server/client-dashboard/queries";
 import { hasServerIntegrationSecret } from "@/server/integrations/server-env";
 import { QTimeAskAtlasCard } from "@/components/qtime-ask-atlas-card";
+import { getSiteLanguage } from "@/lib/site-language-server";
+import type { SiteLanguage } from "@/lib/site-language";
 
 type ClientQTimeDashboardProps = {
   workspace: ClientWorkspaceContext;
@@ -43,8 +45,20 @@ type CalendarItem = {
   ctaLabel?: string;
 };
 
-function humanize(value: string) {
-  return value.replaceAll("_", " ");
+function humanize(value: string, spanish = false) {
+  if (!spanish) return value.replaceAll("_", " ");
+  const labels: Record<string, string> = {
+    ad_request: "solicitud de anuncio",
+    approved: "aprobado",
+    changes_requested: "cambios solicitados",
+    completed: "completado",
+    failed: "falló",
+    follow_up_queued: "seguimiento en cola",
+    needs_client_input: "requiere información",
+    published: "publicado",
+    ready_for_review: "listo para revisión",
+  };
+  return labels[value] ?? value.replaceAll("_", " ");
 }
 
 function statusTone(value: string) {
@@ -68,17 +82,17 @@ function statusTone(value: string) {
   return "bg-slate-100 text-slate-700";
 }
 
-function stageLabel(value: string) {
+function stageLabel(value: string, spanish = false) {
   const labels: Record<string, string> = {
-    researching: "Researching",
-    qualified: "Qualified",
-    needs_client_input: "Needs Input",
-    ready_for_follow_up: "Ready",
-    follow_up_queued: "Ready",
-    contacted: "Contacted",
-    responded: "Responded",
-    won: "Won",
-    lost: "Lost",
+    researching: spanish ? "Investigando" : "Researching",
+    qualified: spanish ? "Calificado" : "Qualified",
+    needs_client_input: spanish ? "Requiere información" : "Needs Input",
+    ready_for_follow_up: spanish ? "Listo" : "Ready",
+    follow_up_queued: spanish ? "Listo" : "Ready",
+    contacted: spanish ? "Contactado" : "Contacted",
+    responded: spanish ? "Respondió" : "Responded",
+    won: spanish ? "Ganado" : "Won",
+    lost: spanish ? "Perdido" : "Lost",
   };
 
   return labels[value] ?? value.replaceAll("_", " ");
@@ -131,19 +145,19 @@ function draftReviewHref(
   return `${clientWorkspaceHref("/client/micah", previewOrgSlug ?? undefined)}#draft-${draft.id}`;
 }
 
-function formatShortDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
+function formatShortDate(value: string, language: SiteLanguage) {
+  return new Intl.DateTimeFormat(language === "es" ? "es-US" : "en-US", {
     month: "short",
     day: "numeric",
   }).format(new Date(value));
 }
 
-function formatCalendarDate(value: string | null) {
+function formatCalendarDate(value: string | null, language: SiteLanguage) {
   if (!value) {
-    return "No due date stored";
+    return language === "es" ? "Sin fecha límite guardada" : "No due date stored";
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(language === "es" ? "es-US" : "en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -336,6 +350,7 @@ function SectionShell({
 function buildDailySeries<T>(
   rows: T[],
   key: keyof T,
+  language: SiteLanguage,
 ) {
   const today = new Date();
   const points = Array.from({ length: 7 }, (_value, index) => {
@@ -345,7 +360,7 @@ function buildDailySeries<T>(
 
     return {
       key: day.toISOString().slice(0, 10),
-      label: new Intl.DateTimeFormat("en", { weekday: "short" }).format(day),
+      label: new Intl.DateTimeFormat(language === "es" ? "es-US" : "en-US", { weekday: "short" }).format(day),
       value: 0,
     };
   });
@@ -373,24 +388,24 @@ function getFollowUpChannel(opportunity: {
   contactPhone: string | null;
   contactSocial: string | null;
   sourceLabel: string | null;
-}) {
+}, spanish: boolean) {
   if (opportunity.contactSocial) {
-    return { label: "Social DM", hint: "Best fit for the contact's visible social profile." };
+    return { label: spanish ? "Mensaje en red social" : "Social DM", hint: spanish ? "Es la mejor opción para el perfil social visible del contacto." : "Best fit for the contact's visible social profile." };
   }
 
   if (opportunity.contactEmail) {
-    return { label: "Email", hint: "Best fit for a concise written outreach update." };
+    return { label: spanish ? "Correo" : "Email", hint: spanish ? "Es la mejor opción para un mensaje escrito y conciso." : "Best fit for a concise written outreach update." };
   }
 
   if (opportunity.contactPhone) {
-    return { label: "Call / text", hint: "Best fit for a direct verbal or text check-in." };
+    return { label: spanish ? "Llamada / mensaje" : "Call / text", hint: spanish ? "Es la mejor opción para una revisión directa por voz o mensaje." : "Best fit for a direct verbal or text check-in." };
   }
 
   if (opportunity.sourceLabel) {
-    return { label: "Source follow-up", hint: "Use the original source as the next touchpoint." };
+    return { label: spanish ? "Seguimiento de la fuente" : "Source follow-up", hint: spanish ? "Usa la fuente original como próximo punto de contacto." : "Use the original source as the next touchpoint." };
   }
 
-  return { label: "Internal review", hint: "No external contact method is stored yet." };
+  return { label: spanish ? "Revisión interna" : "Internal review", hint: spanish ? "Todavía no se ha guardado un método de contacto externo." : "No external contact method is stored yet." };
 }
 
 function getFollowUpObjective(opportunity: {
@@ -410,7 +425,7 @@ function getFollowUpActivity(opportunity: {
     createdAt: string;
   }>;
   fitReason: string | null;
-}) {
+}, spanish: boolean) {
   const latest = opportunity.events.at(-1);
 
   if (latest) {
@@ -419,7 +434,7 @@ function getFollowUpActivity(opportunity: {
 
   return (
     opportunity.fitReason ??
-    "No prior activity is recorded yet for this opportunity."
+    (spanish ? "Todavía no se ha registrado actividad previa para esta oportunidad." : "No prior activity is recorded yet for this opportunity.")
   );
 }
 
@@ -445,10 +460,11 @@ function buildFollowUps(
     }>;
   }>,
   noteSummary: string,
+  spanish: boolean,
 ) {
   return opportunities.slice(0, 5).map((opportunity) => {
-    const channel = getFollowUpChannel(opportunity);
-    const contact = opportunity.contactName ?? opportunity.sourceLabel ?? "Unnamed opportunity";
+    const channel = getFollowUpChannel(opportunity, spanish);
+    const contact = opportunity.contactName ?? opportunity.sourceLabel ?? (spanish ? "Oportunidad sin nombre" : "Unnamed opportunity");
 
     return {
       id: opportunity.id,
@@ -456,23 +472,27 @@ function buildFollowUps(
       objective: getFollowUpObjective(opportunity),
       suggestedAction:
         opportunity.nextAction ??
-        `Use the ${channel.label.toLowerCase()} touchpoint and log the result.`,
+        (spanish ? `Usa ${channel.label.toLowerCase()} como punto de contacto y registra el resultado.` : `Use the ${channel.label.toLowerCase()} touchpoint and log the result.`),
       channel: channel.label,
       dueDate: opportunity.nextActionDue,
-      dueTimeLabel: opportunity.nextActionDue ? "Time not stored in source data" : "No due time stored",
-      priorActivity: getFollowUpActivity(opportunity),
+      dueTimeLabel: opportunity.nextActionDue
+        ? spanish ? "La hora no está guardada en los datos de origen" : "Time not stored in source data"
+        : spanish ? "Sin hora límite guardada" : "No due time stored",
+      priorActivity: getFollowUpActivity(opportunity, spanish),
       notes: noteSummary,
-      ownerLabel: humanize(opportunity.ownerRole),
-      stageLabel: stageLabel(opportunity.stage),
+      ownerLabel: humanize(opportunity.ownerRole, spanish),
+      stageLabel: stageLabel(opportunity.stage, spanish),
       channelHint: channel.hint,
     } satisfies FollowUpCard;
   });
 }
 
-export function ClientQTimeDashboard({
+export async function ClientQTimeDashboard({
   workspace,
   dashboard,
 }: ClientQTimeDashboardProps) {
+  const language = await getSiteLanguage();
+  const spanish = language === "es";
   const organization = workspace.primaryOrganization;
   const plan = dashboard.pilot.setupRequired ? null : dashboard.pilot.data.plan;
   const pilotDeliverables = dashboard.pilot.setupRequired
@@ -531,56 +551,56 @@ export function ClientQTimeDashboard({
   const noteSummary =
     notes.find((item) => item.attentionRequested)?.body ??
     notes[0]?.body ??
-    "No workspace note is captured yet.";
+    (spanish ? "Todavía no se ha guardado una nota del espacio." : "No workspace note is captured yet.");
 
-  const followUps = buildFollowUps(readyForFollowUp, noteSummary);
+  const followUps = buildFollowUps(readyForFollowUp, noteSummary, spanish);
   const topFollowUps = followUps.slice(0, 2);
   const davidWorkspaceHref = clientWorkspaceHref("/client/david", workspace.previewOrgSlug);
-  const activityTrend = buildDailySeries(recentActivity, "occurredAt");
-  const requestTrend = buildDailySeries(recentAiRequests, "createdAt");
+  const activityTrend = buildDailySeries(recentActivity, "occurredAt", language);
+  const requestTrend = buildDailySeries(recentAiRequests, "createdAt", language);
   const openAiReady = hasServerIntegrationSecret("OPENAI_API_KEY");
 
   const pipelineStages = [
     {
       key: "researching",
-      label: "Researching",
+      label: spanish ? "Investigando" : "Researching",
       count: allPipeline.filter((item) => item.stage === "researching").length,
     },
     {
       key: "qualified",
-      label: "Qualified",
+      label: spanish ? "Calificado" : "Qualified",
       count: allPipeline.filter((item) => item.stage === "qualified").length,
     },
     {
       key: "needs_client_input",
-      label: "Needs Input",
+      label: spanish ? "Requiere información" : "Needs Input",
       count: allPipeline.filter((item) => item.stage === "needs_client_input").length,
     },
     {
       key: "ready_for_follow_up",
-      label: "Ready",
+      label: spanish ? "Listo" : "Ready",
       count: allPipeline.filter((item) =>
         ["ready_for_follow_up", "follow_up_queued"].includes(item.stage),
       ).length,
     },
     {
       key: "contacted",
-      label: "Contacted",
+      label: spanish ? "Contactado" : "Contacted",
       count: allPipeline.filter((item) => item.stage === "contacted").length,
     },
     {
       key: "responded",
-      label: "Responded",
+      label: spanish ? "Respondió" : "Responded",
       count: allPipeline.filter((item) => item.stage === "responded").length,
     },
     {
       key: "won",
-      label: "Won",
+      label: spanish ? "Ganado" : "Won",
       count: allPipeline.filter((item) => item.stage === "won").length,
     },
     {
       key: "lost",
-      label: "Lost",
+      label: spanish ? "Perdido" : "Lost",
       count: allPipeline.filter((item) => item.stage === "lost").length,
     },
   ].map((stage) => ({
@@ -597,21 +617,23 @@ export function ClientQTimeDashboard({
               {organization?.name ?? "Q Time Productions"}
             </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.06em] text-slate-950 sm:text-4xl">
-              Customer Relations Manager
+              {spanish ? "Gestor de Relaciones con Clientes" : "Customer Relations Manager"}
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              One dashboard for approvals, pipeline, follow-up, calendar, activity, and Ask Atlas.
+              {spanish
+                ? "Un panel para aprobaciones, pipeline, seguimiento, calendario, actividad y Pregunta a Atlas."
+                : "One dashboard for approvals, pipeline, follow-up, calendar, activity, and Ask Atlas."}
             </p>
           </div>
 
-          <nav aria-label="QTime navigation" className="grid gap-2 sm:grid-cols-2 xl:min-w-[30rem]">
+          <nav aria-label={spanish ? "Navegación de QTime" : "QTime navigation"} className="grid gap-2 sm:grid-cols-2 xl:min-w-[30rem]">
             {[
-              ["Overview", "#overview", String(openPipeline.length)],
-              ["Approvals", "#approvals", String(readyReviewCount)],
+              [spanish ? "Resumen" : "Overview", "#overview", String(openPipeline.length)],
+              [spanish ? "Aprobaciones" : "Approvals", "#approvals", String(readyReviewCount)],
               ["Pipeline", "#pipeline", String(openPipeline.length)],
-              ["Calendar", "#calendar", String(contentDraftCount + followUpCount)],
-              ["Activity", "#activity", String(recentActivity.length)],
-              ["Notes", "#notes", String(notes.length)],
+              [spanish ? "Calendario" : "Calendar", "#calendar", String(contentDraftCount + followUpCount)],
+              [spanish ? "Actividad" : "Activity", "#activity", String(recentActivity.length)],
+              [spanish ? "Notas" : "Notes", "#notes", String(notes.length)],
             ].map(([label, href, value]) =>
               String(href).startsWith("#") ? (
                 <a
@@ -656,34 +678,34 @@ export function ClientQTimeDashboard({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-[#5672f0]">
-                  Follow-up Desk
+                  {spanish ? "Centro de Seguimiento" : "Follow-up Desk"}
                 </p>
                 <h3 className="mt-2 text-lg font-semibold tracking-[-0.04em] text-slate-950">
-                  The fortune is in the follow-up
+                  {spanish ? "La fortuna está en el seguimiento" : "The fortune is in the follow-up"}
                 </h3>
               </div>
               <Link
                 className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
                 href={davidWorkspaceHref}
               >
-                Open Follow-up Desk
+                {spanish ? "Abrir Centro de Seguimiento" : "Open Follow-up Desk"}
               </Link>
             </div>
             {topFollowUps.length === 0 ? (
               <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
-                <p className="text-sm font-semibold text-slate-950">Queue clear.</p>
+                <p className="text-sm font-semibold text-slate-950">{spanish ? "Cola despejada." : "Queue clear."}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link
                     className="rounded-full bg-slate-950 px-3 py-1.5 text-xs font-semibold !text-white transition hover:bg-slate-800 hover:!text-white focus:!text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
                     href="#pipeline"
                   >
-                    Open Pipeline
+                    {spanish ? "Abrir pipeline" : "Open Pipeline"}
                   </Link>
                   <Link
                     className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                     href="#calendar"
                   >
-                    Schedule follow-up
+                    {spanish ? "Programar seguimiento" : "Schedule follow-up"}
                   </Link>
                 </div>
               </div>
@@ -704,7 +726,7 @@ export function ClientQTimeDashboard({
                         </h4>
                       </div>
                       <span className="text-xs font-semibold text-slate-500">
-                        {formatCalendarDate(item.dueDate)}
+                        {formatCalendarDate(item.dueDate, language)}
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -721,16 +743,17 @@ export function ClientQTimeDashboard({
       <section className="grid gap-5 xl:grid-cols-[1.16fr_0.84fr]">
         <div className="space-y-5">
           <SectionShell
-            eyebrow="Approval queue"
+            eyebrow={spanish ? "Cola de aprobación" : "Approval queue"}
             id="approvals"
-            title="What needs review now"
+            title={spanish ? "Lo que necesita revisión ahora" : "What needs review now"}
           >
             <div className="space-y-3">
               {approvalQueue.length === 0
                 ? emptyState({
-                    title: "Nothing is waiting for review.",
-                    body:
-                      "There are no client-ready content, deliverables, or attention requests yet. The next input is the first item to approve.",
+                    title: spanish ? "No hay nada esperando revisión." : "Nothing is waiting for review.",
+                    body: spanish
+                      ? "Todavía no hay contenido, entregables ni solicitudes de atención listos para el cliente. La próxima entrada será el primer elemento por aprobar."
+                      : "There are no client-ready content, deliverables, or attention requests yet. The next input is the first item to approve.",
                   })
                 : approvalQueue.slice(0, 5).map((item) => {
                     if ("title" in item && "attentionRequested" in item) {
@@ -742,14 +765,14 @@ export function ClientQTimeDashboard({
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
                               <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5672f0]">
-                                Note
+                                 {spanish ? "Nota" : "Note"}
                               </p>
                               <h4 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950">
                                 {item.title}
                               </h4>
                             </div>
                             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-amber-800">
-                              input needed
+                              {spanish ? "se requiere información" : "input needed"}
                             </span>
                           </div>
                           {item.body ? (
@@ -772,7 +795,7 @@ export function ClientQTimeDashboard({
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
                               <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5672f0]">
-                                Ad request
+                                 {spanish ? "Solicitud de anuncio" : "Ad request"}
                               </p>
                               <h4 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950">
                                 {item.title}
@@ -781,11 +804,11 @@ export function ClientQTimeDashboard({
                             <span
                               className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] ${statusTone(item.status)}`}
                             >
-                              {humanize(item.status)}
+                              {humanize(item.status, spanish)}
                             </span>
                           </div>
                           <p className="mt-3 text-sm leading-6 text-slate-600">
-                            {item.caption ?? item.headline ?? "No caption provided."}
+                            {item.caption ?? item.headline ?? (spanish ? "No se proporcionó texto." : "No caption provided.")}
                           </p>
                         </Link>
                       );
@@ -799,18 +822,18 @@ export function ClientQTimeDashboard({
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
                             <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5672f0]">
-                              Client work
+                              {spanish ? "Trabajo del cliente" : "Client work"}
                             </p>
                             <h4 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950">
                               {item.title}
                             </h4>
                           </div>
                           <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-blue-800">
-                            review
+                            {spanish ? "revisión" : "review"}
                           </span>
                         </div>
                         <p className="mt-3 text-sm leading-6 text-slate-600">
-                          {item.summary ?? "No summary provided."}
+                          {item.summary ?? (spanish ? "No se proporcionó un resumen." : "No summary provided.")}
                         </p>
                       </article>
                     );
@@ -821,15 +844,16 @@ export function ClientQTimeDashboard({
           <SectionShell
             eyebrow="Pipeline"
             id="pipeline"
-            title="Open opportunities and stage conversion"
+            title={spanish ? "Oportunidades abiertas y conversión por etapa" : "Open opportunities and stage conversion"}
           >
             <div className="grid gap-4 lg:grid-cols-[1fr_0.86fr]">
               <div className="space-y-3">
                 {openPipeline.length === 0
                   ? emptyState({
-                      title: "No open opportunities yet.",
-                      body:
-                        "The workspace does not have a current prospect list. That is the next place the growth research tool should fill in.",
+                      title: spanish ? "Todavía no hay oportunidades abiertas." : "No open opportunities yet.",
+                      body: spanish
+                        ? "El espacio no tiene una lista actual de prospectos. Ese es el próximo lugar que debe completar la herramienta de investigación de crecimiento."
+                        : "The workspace does not have a current prospect list. That is the next place the growth research tool should fill in.",
                     })
                   : openPipeline.slice(0, 6).map((opportunity) => (
                       <article
@@ -848,14 +872,14 @@ export function ClientQTimeDashboard({
                           <span
                             className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] ${statusTone(opportunity.stage)}`}
                           >
-                            {stageLabel(opportunity.stage)}
+                            {stageLabel(opportunity.stage, spanish)}
                           </span>
                         </div>
                         <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-600">
-                          <span>Fit {opportunity.fitScore}/100</span>
+                          <span>{spanish ? "Afinidad" : "Fit"} {opportunity.fitScore}/100</span>
                           <span>{opportunity.ownerRole.toUpperCase()}</span>
                           {opportunity.nextActionDue ? (
-                            <span>Due {formatShortDate(opportunity.nextActionDue)}</span>
+                            <span>{spanish ? "Fecha límite" : "Due"} {formatShortDate(opportunity.nextActionDue, language)}</span>
                           ) : null}
                         </div>
                         <p className="mt-3 text-sm leading-6 text-slate-600">
@@ -873,12 +897,12 @@ export function ClientQTimeDashboard({
                     value: stage.count,
                     href: stage.href,
                   }))}
-                  subtitle="Ordered stage totals."
-                  title="Pipeline stages"
+                  subtitle={spanish ? "Totales ordenados por etapa." : "Ordered stage totals."}
+                  title={spanish ? "Etapas del pipeline" : "Pipeline stages"}
                 />
                 <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-                    Stage totals
+                    {spanish ? "Totales por etapa" : "Stage totals"}
                   </p>
                   <div className="mt-4 space-y-3">
                     {pipelineStages.map((stage) => (
@@ -902,16 +926,17 @@ export function ClientQTimeDashboard({
           </SectionShell>
 
           <SectionShell
-            eyebrow="Activity"
+            eyebrow={spanish ? "Actividad" : "Activity"}
             id="activity"
-            title="Visible workspace history"
+            title={spanish ? "Historial visible del espacio" : "Visible workspace history"}
           >
             <div className="space-y-3">
               {recentActivity.length === 0
                 ? emptyState({
-                    title: "No activity is visible yet.",
-                    body:
-                      "The activity feed will populate as notes, business profile updates, and approval work start moving.",
+                    title: spanish ? "Todavía no hay actividad visible." : "No activity is visible yet.",
+                    body: spanish
+                      ? "El feed de actividad se llenará cuando comiencen a avanzar las notas, actualizaciones del perfil empresarial y aprobaciones."
+                      : "The activity feed will populate as notes, business profile updates, and approval work start moving.",
                   })
                 : recentActivity.map((event) => (
                     <article
@@ -921,7 +946,7 @@ export function ClientQTimeDashboard({
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5672f0]">
-                            {humanize(event.eventType)}
+                            {humanize(event.eventType, spanish)}
                           </p>
                           <h4 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950">
                             {event.title}
@@ -937,16 +962,17 @@ export function ClientQTimeDashboard({
           </SectionShell>
 
           <SectionShell
-            eyebrow="Ad requests"
+            eyebrow={spanish ? "Solicitudes de anuncios" : "Ad requests"}
             id="ad-requests"
-            title="Creative requests and review status"
+            title={spanish ? "Solicitudes creativas y estado de revisión" : "Creative requests and review status"}
           >
             <div className="space-y-3">
               {contentDraftCount === 0
                 ? emptyState({
-                    title: "No content drafts yet.",
-                    body:
-                      "There are no visible content drafts in this workspace. The creative tool can still draft them, but the current state is honest: nothing is ready for review yet.",
+                    title: spanish ? "Todavía no hay borradores de contenido." : "No content drafts yet.",
+                    body: spanish
+                      ? "No hay borradores de contenido visibles en este espacio. La herramienta creativa todavía puede prepararlos, pero el estado actual es claro: nada está listo para revisión."
+                      : "There are no visible content drafts in this workspace. The creative tool can still draft them, but the current state is honest: nothing is ready for review yet.",
                   })
                 : contentStudio!.drafts.map((draft) => (
                     <article
@@ -965,14 +991,14 @@ export function ClientQTimeDashboard({
                         <span
                           className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] ${statusTone(draft.status)}`}
                         >
-                          {humanize(draft.status)}
+                           {humanize(draft.status, spanish)}
                         </span>
                       </div>
                       <p className="mt-3 text-sm leading-6 text-slate-600">
                         {draft.caption}
                       </p>
                       <p className="mt-2 text-xs font-medium text-slate-500">
-                        Draft date {formatShortDate(draft.draftDate)}
+                        {spanish ? "Fecha del borrador" : "Draft date"} {formatShortDate(draft.draftDate, language)}
                       </p>
                     </article>
                   ))}
@@ -983,28 +1009,28 @@ export function ClientQTimeDashboard({
         <div className="space-y-5">
           <SectionShell
             className="hidden"
-            eyebrow="Follow-up desk"
+            eyebrow={spanish ? "Centro de seguimiento" : "Follow-up desk"}
             id="follow-up-dates-legacy"
-            title="The fortune is in the follow-up"
+            title={spanish ? "La fortuna está en el seguimiento" : "The fortune is in the follow-up"}
             tone="ink"
           >
             <div className="space-y-3">
               {followUps.length === 0
                 ? (
                   <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-4">
-                    <p className="text-sm font-semibold text-white">Queue clear.</p>
+                    <p className="text-sm font-semibold text-white">{spanish ? "Cola despejada." : "Queue clear."}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <a
                         className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold !text-slate-950 transition hover:bg-slate-100 hover:!text-slate-950 focus:!text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         href="#pipeline"
                       >
-                        Open Pipeline
+                        {spanish ? "Abrir pipeline" : "Open Pipeline"}
                       </a>
                       <a
                         className="rounded-full border border-white/15 bg-transparent px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/10"
                         href="#calendar"
                       >
-                        Schedule follow-up
+                        {spanish ? "Programar seguimiento" : "Schedule follow-up"}
                       </a>
                     </div>
                   </div>
@@ -1023,12 +1049,12 @@ export function ClientQTimeDashboard({
                             {item.title}
                           </h4>
                           <p className="mt-2 text-sm leading-6 text-slate-300">
-                            Owner: {item.ownerLabel}
+                            {spanish ? "Responsable" : "Owner"}: {item.ownerLabel}
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <QueueChip label="Channel" value={item.channel} tone="gold" />
-                          <QueueChip label="Due" value={formatCalendarDate(item.dueDate)} tone="blue" />
+                          <QueueChip label={spanish ? "Canal" : "Channel"} value={item.channel} tone="gold" />
+                          <QueueChip label={spanish ? "Fecha límite" : "Due"} value={formatCalendarDate(item.dueDate, language)} tone="blue" />
                         </div>
                       </div>
 
@@ -1036,7 +1062,7 @@ export function ClientQTimeDashboard({
                         <div className="space-y-3">
                           <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
                             <p className="text-xs font-black uppercase tracking-[0.14em] text-white">
-                              Objective
+                              {spanish ? "Objetivo" : "Objective"}
                             </p>
                             <p className="mt-2 text-sm leading-6 text-white">
                               {item.objective}
@@ -1044,20 +1070,20 @@ export function ClientQTimeDashboard({
                           </div>
                           <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
                             <p className="text-xs font-black uppercase tracking-[0.14em] text-white">
-                              Prior activity / notes
+                              {spanish ? "Actividad previa / notas" : "Prior activity / notes"}
                             </p>
                             <p className="mt-2 text-sm leading-6 text-white">
                               {item.priorActivity}
                             </p>
                             <p className="mt-3 text-xs font-medium text-white">
-                              Workspace note: {item.notes}
+                              {spanish ? "Nota del espacio" : "Workspace note"}: {item.notes}
                             </p>
                           </div>
                         </div>
 
                         <div className="space-y-3 rounded-2xl border border-[#d8b15a]/20 bg-[#f9f3e3] p-4 text-slate-950">
                           <p className="text-xs font-black uppercase tracking-[0.14em] text-[#8b6b17]">
-                            Suggested action
+                            {spanish ? "Acción sugerida" : "Suggested action"}
                           </p>
                           <p className="text-sm leading-6 text-slate-800">
                             {item.suggestedAction}
@@ -1068,7 +1094,7 @@ export function ClientQTimeDashboard({
                           <div className="space-y-2 pt-2">
                             <label className="block">
                               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
-                                Outreach channel
+                                 {spanish ? "Canal de contacto" : "Outreach channel"}
                               </span>
                               <select
                                 className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
@@ -1076,19 +1102,19 @@ export function ClientQTimeDashboard({
                                 disabled
                               >
                                 <option>{item.channel}</option>
-                                <option>Email</option>
-                                <option>Social DM</option>
-                                <option>Call / text</option>
-                                <option>Internal review</option>
+                                <option>{spanish ? "Correo" : "Email"}</option>
+                                <option>{spanish ? "Mensaje en red social" : "Social DM"}</option>
+                                <option>{spanish ? "Llamada / mensaje" : "Call / text"}</option>
+                                <option>{spanish ? "Revisión interna" : "Internal review"}</option>
                               </select>
                             </label>
                             <label className="block">
                               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
-                                Record outcome
+                                 {spanish ? "Registrar resultado" : "Record outcome"}
                               </span>
                               <textarea
                                 className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-700"
-                                defaultValue={`Due ${formatCalendarDate(item.dueDate)}. ${item.dueTimeLabel}.`}
+                                defaultValue={`${spanish ? "Fecha límite" : "Due"} ${formatCalendarDate(item.dueDate, language)}. ${item.dueTimeLabel}.`}
                                 disabled
                               />
                             </label>
@@ -1096,7 +1122,7 @@ export function ClientQTimeDashboard({
                               className="inline-flex w-full items-center justify-center rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white opacity-70"
                               type="button"
                             >
-                              Complete follow-up
+                              {spanish ? "Completar seguimiento" : "Complete follow-up"}
                             </button>
                           </div>
                         </div>
@@ -1107,9 +1133,9 @@ export function ClientQTimeDashboard({
           </SectionShell>
 
           <SectionShell
-            eyebrow="Calendar"
+            eyebrow={spanish ? "Calendario" : "Calendar"}
             id="calendar"
-            title="Upcoming dated items"
+            title={spanish ? "Próximos elementos con fecha" : "Upcoming dated items"}
           >
             <div className="space-y-3">
               {(
@@ -1120,8 +1146,8 @@ export function ClientQTimeDashboard({
                           id: `check-in-${plan.nextCheckInAt}`,
                           kind: "check-in" as const,
                           date: plan.nextCheckInAt,
-                          title: "Next check-in",
-                          detail: plan.thirtyDayGoal ?? "Confirm the 30-day goal.",
+                           title: spanish ? "Próxima revisión" : "Next check-in",
+                           detail: plan.thirtyDayGoal ?? (spanish ? "Confirma la meta de 30 días." : "Confirm the 30-day goal."),
                           href: null,
                         },
                       ]
@@ -1133,7 +1159,7 @@ export function ClientQTimeDashboard({
                     title: draft.title,
                     detail: draft.caption ?? draft.headline ?? draft.campaign,
                     href: draftReviewHref(draft, workspace.previewOrgSlug),
-                    ctaLabel: "Open review",
+                    ctaLabel: spanish ? "Abrir revisión" : "Open review",
                   })),
                   ...readyForFollowUp
                     .filter((opportunity) => Boolean(opportunity.nextActionDue))
@@ -1141,7 +1167,7 @@ export function ClientQTimeDashboard({
                       id: `follow-up-${opportunity.id}`,
                       kind: "follow-up" as const,
                       date: `${opportunity.nextActionDue}T00:00:00.000Z`,
-                      title: `${opportunity.name} follow-up`,
+                       title: `${opportunity.name} ${spanish ? "seguimiento" : "follow-up"}`,
                       detail: opportunity.nextAction ?? opportunity.researchSummary.slice(0, 120),
                       href: davidWorkspaceHref,
                     })),
@@ -1155,19 +1181,19 @@ export function ClientQTimeDashboard({
                       className="block rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-[#5672f0] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
                       href={item.href}
                       key={item.id}
-                      aria-label={`Open ${item.title}`}
+                       aria-label={`${spanish ? "Abrir" : "Open"} ${item.title}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5672f0]">
-                            {item.kind}
+                             {item.kind === "check-in" ? (spanish ? "revisión" : "check-in") : item.kind === "ad request" ? (spanish ? "solicitud de anuncio" : "ad request") : spanish ? "seguimiento" : "follow-up"}
                           </p>
                           <h4 className="mt-2 text-sm font-semibold text-slate-950">
                             {item.title}
                           </h4>
                         </div>
                         <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-slate-700 ring-1 ring-slate-200">
-                          {formatShortDate(item.date)}
+                           {formatShortDate(item.date, language)}
                         </span>
                       </div>
                       <p className="mt-3 text-sm leading-6 text-slate-700">
@@ -1187,21 +1213,21 @@ export function ClientQTimeDashboard({
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5672f0]">
-                            {item.kind}
+                             {item.kind === "check-in" ? (spanish ? "revisión" : "check-in") : item.kind === "ad request" ? (spanish ? "solicitud de anuncio" : "ad request") : spanish ? "seguimiento" : "follow-up"}
                           </p>
                           <h4 className="mt-2 text-sm font-semibold text-slate-950">
                             {item.title}
                           </h4>
                         </div>
                         <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-slate-700 ring-1 ring-slate-200">
-                          {formatShortDate(item.date)}
+                           {formatShortDate(item.date, language)}
                         </span>
                       </div>
                       <p className="mt-3 text-sm leading-6 text-slate-700">
                         {item.detail}
                       </p>
                       <span className="mt-4 inline-flex rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500">
-                        No linked source yet
+                         {spanish ? "Todavía no hay una fuente vinculada" : "No linked source yet"}
                       </span>
                     </article>
                   ),
@@ -1210,16 +1236,17 @@ export function ClientQTimeDashboard({
           </SectionShell>
 
           <SectionShell
-            eyebrow="Notes"
+            eyebrow={spanish ? "Notas" : "Notes"}
             id="notes"
-            title="Workspace notes that need attention"
+            title={spanish ? "Notas del espacio que requieren atención" : "Workspace notes that need attention"}
           >
             <div className="space-y-3">
               {notes.length === 0
                 ? emptyState({
-                    title: "No notes have been captured yet.",
-                    body:
-                      "Notes will appear here once the workspace starts logging requests, approvals, or attention items.",
+                    title: spanish ? "Todavía no se han guardado notas." : "No notes have been captured yet.",
+                    body: spanish
+                      ? "Las notas aparecerán aquí cuando el espacio comience a registrar solicitudes, aprobaciones o elementos de atención."
+                      : "Notes will appear here once the workspace starts logging requests, approvals, or attention items.",
                   })
                 : notes.slice(0, 5).map((item) => (
                     <article
@@ -1229,14 +1256,16 @@ export function ClientQTimeDashboard({
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5672f0]">
-                            note
+                            {spanish ? "nota" : "note"}
                           </p>
                           <h4 className="mt-2 text-sm font-semibold text-slate-950">
                             {item.title}
                           </h4>
                         </div>
                         <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-amber-800">
-                          {item.attentionRequested ? "attention" : "reference"}
+                           {item.attentionRequested
+                             ? spanish ? "atención" : "attention"
+                             : spanish ? "referencia" : "reference"}
                         </span>
                       </div>
                       {item.body ? (

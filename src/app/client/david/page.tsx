@@ -7,22 +7,29 @@ import {
 } from "@/server/client-workspace/context";
 import { defaultClientAiDailyUsage, getClientAiDailyUsage, getClientAiRequests } from "@/server/client-ai/queries";
 import { getPilotWorkspace } from "@/server/pilot/queries";
+import { getSiteLanguage } from "@/lib/site-language-server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Follow-up Desk | Client Workspace",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const language = await getSiteLanguage();
+  return {
+    title: language === "es" ? "Centro de Seguimiento | Espacio del Cliente" : "Follow-up Desk | Client Workspace",
+    robots: { index: false, follow: false },
+  };
+}
 
 type DavidPageProps = {
   searchParams?: Promise<{
+    lang?: string;
     previewOrg?: string;
   }>;
 };
 
 export default async function DavidPage({ searchParams }: DavidPageProps) {
   const params = await searchParams;
+  const language = await getSiteLanguage(params?.lang);
+  const spanish = language === "es";
   const workspace = await getClientWorkspaceContext("/client/david", params);
   const { isClientPreview, previewOrgSlug, primaryOrganization } = workspace;
   const aiRequests = primaryOrganization
@@ -38,29 +45,33 @@ export default async function DavidPage({ searchParams }: DavidPageProps) {
   return (
     <ClientWorkspaceScreen
       backHref={clientWorkspaceHref("/client", previewOrgSlug)}
-      description="The Follow-up Desk keeps follow-up notes, check-ins, and business messages close to the CRM."
-      eyebrow="Follow-up Desk"
+      description={spanish
+        ? "El Centro de Seguimiento mantiene las notas, revisiones y mensajes comerciales cerca del CRM."
+        : "The Follow-up Desk keeps follow-up notes, check-ins, and business messages close to the CRM."}
+      eyebrow={spanish ? "Centro de Seguimiento" : "Follow-up Desk"}
       organizationName={primaryOrganization?.name}
       previewMode={isClientPreview}
     >
       <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5 text-sm leading-6 text-indigo-950">
-        <p className="font-semibold">The Follow-up Desk keeps next actions visible.</p>
+        <p className="font-semibold">
+          {spanish ? "El Centro de Seguimiento mantiene visibles las próximas acciones." : "The Follow-up Desk keeps next actions visible."}
+        </p>
         <p className="mt-1">
-          Use this page for follow-up notes, prospect reminders, messages, and
-          the next check-in. The CRM can handle the graphs and recording; this
-          page is the deeper working view.
+          {spanish
+            ? "Usa esta página para notas de seguimiento, recordatorios de prospectos, mensajes y la próxima revisión. El CRM administra las gráficas y los registros; esta es la vista de trabajo detallada."
+            : "Use this page for follow-up notes, prospect reminders, messages, and the next check-in. The CRM can handle the graphs and recording; this page is the deeper working view."}
         </p>
       </div>
 
       {pilot?.setupRequired ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-          The Follow-up Desk is preparing this workspace.
+          {spanish ? "El Centro de Seguimiento está preparando este espacio de trabajo." : "The Follow-up Desk is preparing this workspace."}
         </div>
       ) : null}
 
       {!primaryOrganization ? (
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-          No organization workspace is assigned to this account yet.
+          {spanish ? "Todavía no hay un espacio de trabajo de organización asignado a esta cuenta." : "No organization workspace is assigned to this account yet."}
         </div>
       ) : null}
 
