@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useSiteLanguage } from "@/components/language-switcher";
 import { submitBusinessAssessment } from "@/server/assessments/actions";
 
 const customerSources = [
@@ -73,6 +74,122 @@ const contactPreferences = [
   ["email", "Email"],
   ["text", "Text message"],
 ] as const;
+
+const spanishLabels: Record<string, string> = {
+  Referrals: "Referidos",
+  "Walk-ins": "Clientes sin cita",
+  Networking: "Contactos profesionales",
+  "Repeat customers": "Clientes recurrentes",
+  "Paid ads": "Anuncios pagados",
+  Other: "Otro",
+  "Finding more customers": "Encontrar más clientes",
+  "Getting customers to buy": "Lograr que los clientes compren",
+  "Not enough time": "No hay suficiente tiempo",
+  "Too much manual work": "Demasiado trabajo manual",
+  Hiring: "Contratación",
+  "Cash flow": "Flujo de efectivo",
+  Marketing: "Marketing",
+  "Keeping customers": "Retener clientes",
+  "Growing the business": "Hacer crecer el negocio",
+  Sales: "Ventas",
+  Operations: "Operaciones",
+  "Customer service": "Servicio al cliente",
+  Pricing: "Precios",
+  Automation: "Automatización",
+  AI: "IA",
+  Website: "Sitio web",
+  Branding: "Marca",
+  Finance: "Finanzas",
+  Technology: "Tecnología",
+  "Under 10 new leads per month": "Menos de 10 prospectos nuevos al mes",
+  "10-25 new leads per month": "10-25 prospectos nuevos al mes",
+  "26-75 new leads per month": "26-75 prospectos nuevos al mes",
+  "76+ new leads per month": "76+ prospectos nuevos al mes",
+  "Not sure yet": "Todavía no estoy seguro",
+  "Same day": "El mismo día",
+  "1-2 days": "1-2 días",
+  "3-7 days": "3-7 días",
+  "When someone remembers": "Cuando alguien se acuerda",
+  "We are not tracking it yet": "Todavía no lo estamos midiendo",
+  "Under $500": "Menos de $500",
+  "$500-$1,500": "$500-$1,500",
+  "$1,500-$3,000": "$1,500-$3,000",
+  "$3,000+": "$3,000+",
+  "I need a recommendation": "Necesito una recomendación",
+  "Phone call": "Llamada telefónica",
+  Email: "Correo electrónico",
+  "Text message": "Mensaje de texto",
+  Section: "Sección",
+  Complete: "Completa",
+  "In progress": "En progreso",
+  "Please complete every required question before sending the business assessment.":
+    "Completa todas las preguntas obligatorias antes de enviar la evaluación del negocio.",
+  "We could not save the assessment. Please try again in a moment.":
+    "No pudimos guardar la evaluación. Inténtalo de nuevo en un momento.",
+  "Start with the business story, the offer, and the customer they serve.":
+    "Comienza con la historia del negocio, la oferta y el cliente al que sirve.",
+  "Company basics": "Datos básicos del negocio",
+  "Tell us about the company": "Cuéntanos sobre el negocio",
+  "What do you provide, who do you serve, and where do you operate?":
+    "¿Qué ofreces, a quién sirves y dónde operas?",
+  "Who is the ideal customer?": "¿Quién es el cliente ideal?",
+  "Describe the best-fit customer in one or two sentences.":
+    "Describe al cliente ideal en una o dos frases.",
+  "Business name": "Nombre del negocio",
+  "Show how customers arrive, what slows the handoff, and where Atlas should help first.":
+    "Muestra cómo llegan los clientes, qué retrasa el contacto y dónde debe ayudar Atlas primero.",
+  "Customer flow and priorities": "Flujo de clientes y prioridades",
+  "Where do most customers come from?": "¿De dónde vienen la mayoría de los clientes?",
+  "What is the biggest challenge right now?": "¿Cuál es el mayor desafío en este momento?",
+  "Which areas should Atlas evaluate?": "¿Qué áreas debe evaluar Atlas?",
+  "Clearer understanding of the company and customer profile.":
+    "Una comprensión más clara del negocio y del perfil de sus clientes.",
+  "Practical next-step recommendation based on the answers.":
+    "Una recomendación práctica para el siguiente paso basada en las respuestas.",
+  "A review of whether the business is ready for a 7-day trial.":
+    "Una revisión para determinar si el negocio está listo para una prueba de 7 días.",
+  "Capture the next 90 days so Atlas can recommend the right first move.":
+    "Comparte los próximos 90 días para que Atlas recomiende el primer paso correcto.",
+  "Growth plan": "Plan de crecimiento",
+  "What would success look like in 90 days?": "¿Cómo se vería el éxito en 90 días?",
+  "Share the result you want Atlas to help create.":
+    "Comparte el resultado que quieres que Atlas te ayude a crear.",
+  "What is the company size?": "¿Cuál es el tamaño del negocio?",
+  "Just me": "Solo yo",
+  "2-5 employees": "2-5 empleados",
+  "6-15 employees": "6-15 empleados",
+  "16-50 employees": "16-50 empleados",
+  "50+ employees": "50+ empleados",
+  "Are you currently using any AI tools?": "¿Usas actualmente herramientas de IA?",
+  "Multiple tools": "Varias herramientas",
+  "When do you want to improve things?": "¿Cuándo quieres mejorar las cosas?",
+  Immediately: "Inmediatamente",
+  "Within 30 days": "En 30 días",
+  "Within 90 days": "En 90 días",
+  "Just exploring": "Solo estoy explorando",
+  "New leads per month": "Prospectos nuevos al mes",
+  "Usual follow-up speed": "Velocidad habitual de seguimiento",
+  "Budget range": "Rango de presupuesto",
+  "Give Atlas the best contact and the consent needed to follow up.":
+    "Dale a Atlas el mejor contacto y el consentimiento necesario para dar seguimiento.",
+  "Contact and consent": "Contacto y consentimiento",
+  "Your name": "Tu nombre",
+  "Your title (optional)": "Tu cargo (opcional)",
+  Phone: "Teléfono",
+  "Preferred contact method": "Método de contacto preferido",
+  "Social media links or handles (optional)": "Enlaces o usuarios de redes sociales (opcional)",
+  "Facebook, Instagram, TikTok, LinkedIn, YouTube, Etsy, or other public pages":
+    "Facebook, Instagram, TikTok, LinkedIn, YouTube, Etsy u otras páginas públicas",
+  "Atlas may contact me about this business assessment. My information will be used to respond to my request and will not be sold.":
+    "Atlas puede contactarme sobre esta evaluación del negocio. Mi información se usará para responder a mi solicitud y no se venderá.",
+  "Send the business assessment": "Enviar la evaluación del negocio",
+  "Atlas will review the answers and show the next step, including a 7-day free trial review option if the business is a fit.":
+    "Atlas revisará las respuestas y mostrará el siguiente paso, incluida una opción de revisión de prueba gratis por 7 días si el negocio encaja.",
+  "Send my business assessment": "Enviar mi evaluación del negocio",
+  "No charge today. No automatic subscription.": "Sin cargo hoy. Sin suscripción automática.",
+  Completion: "Progreso",
+  "All sections complete": "Todas las secciones completas",
+};
 
 type Props = {
   error?: string;
@@ -219,19 +336,21 @@ function SectionCard({
   helper,
   complete,
   children,
+  translate,
 }: {
   number: string;
   title: string;
   helper: string;
   complete: boolean;
   children: ReactNode;
+  translate: (value: string) => string;
 }) {
   return (
     <section className="rounded-[1.75rem] border border-[#dbe6f3] bg-white p-5 shadow-[0_1.25rem_2.75rem_rgba(6,27,82,.08)] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#edf2f8] pb-4">
         <div className="max-w-2xl">
           <p className="text-xs font-black uppercase tracking-[0.26em] text-[#1246a0]">
-            Section {number}
+            {translate("Section")} {number}
           </p>
           <h2 className="mt-2 text-xl font-black tracking-[-0.05em] text-[#06266d] sm:text-2xl">
             {title}
@@ -241,7 +360,7 @@ function SectionCard({
           <span
           className={`inline-flex min-h-9 items-center rounded-full px-3 text-xs font-black uppercase tracking-[0.18em] ${complete ? "bg-emerald-50 text-emerald-700" : "bg-[#eef4ff] text-[#1246a0]"}`}
         >
-          {complete ? "Complete" : "In progress"}
+          {translate(complete ? "Complete" : "In progress")}
         </span>
       </div>
       <div className="mt-5">{children}</div>
@@ -250,6 +369,9 @@ function SectionCard({
 }
 
 export function BusinessAssessmentForm({ error }: Props) {
+  const language = useSiteLanguage();
+  const translate = (value: string) =>
+    language === "es" ? spanishLabels[value] ?? value : value;
   const formRef = useRef<HTMLFormElement | null>(null);
   const [sections, setSections] = useState<[boolean, boolean, boolean, boolean]>([
     false,
@@ -286,8 +408,8 @@ export function BusinessAssessmentForm({ error }: Props) {
             role="alert"
           >
             {error === "missing_information"
-              ? "Please complete every required question before sending the business assessment."
-              : "We could not save the assessment. Please try again in a moment."}
+              ? translate("Please complete every required question before sending the business assessment.")
+              : translate("We could not save the assessment. Please try again in a moment.")}
           </div>
         ) : null}
 
@@ -301,56 +423,58 @@ export function BusinessAssessmentForm({ error }: Props) {
         />
 
         <SectionCard
-            complete={sections[0]}
-            helper="Start with the business story, the offer, and the customer they serve."
-            number="01"
-            title="Company basics"
-          >
-            <div className="grid gap-4">
-              <TextAreaField
-                label="Tell us about the company"
-                name="businessDescription"
-                placeholder="What do you provide, who do you serve, and where do you operate?"
+          complete={sections[0]}
+          helper={translate("Start with the business story, the offer, and the customer they serve.")}
+          number="01"
+          title={translate("Company basics")}
+          translate={translate}
+        >
+          <div className="grid gap-4">
+            <TextAreaField
+              label={translate("Tell us about the company")}
+              name="businessDescription"
+              placeholder={translate("What do you provide, who do you serve, and where do you operate?")}
+            />
+            <TextAreaField
+              label={translate("Who is the ideal customer?")}
+              name="idealCustomer"
+              placeholder={translate("Describe the best-fit customer in one or two sentences.")}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField label={translate("Business name")} name="businessName" />
+              <TextField
+                label={translate("Website")}
+                name="website"
+                placeholder="example.com"
+                required={false}
               />
-              <TextAreaField
-                label="Who is the ideal customer?"
-                name="idealCustomer"
-                placeholder="Describe the best-fit customer in one or two sentences."
-              />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <TextField label="Business name" name="businessName" />
-                <TextField
-                  label="Website"
-                  name="website"
-                  placeholder="example.com"
-                  required={false}
-                />
-              </div>
             </div>
+          </div>
         </SectionCard>
 
         <SectionCard
           complete={sections[1]}
-          helper="Show how customers arrive, what slows the handoff, and where Atlas should help first."
+          helper={translate("Show how customers arrive, what slows the handoff, and where Atlas should help first.")}
           number="02"
-          title="Customer flow and priorities"
+          title={translate("Customer flow and priorities")}
+          translate={translate}
         >
           <div className="grid gap-4">
             <div>
-              <QuestionLabel>Where do most customers come from?</QuestionLabel>
+              <QuestionLabel>{translate("Where do most customers come from?")}</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {customerSources.map(([value, label]) => (
-                  <Choice key={value} label={label} name="customerSources" value={value} />
+                  <Choice key={value} label={translate(label)} name="customerSources" value={value} />
                 ))}
               </div>
             </div>
             <div>
-              <QuestionLabel>What is the biggest challenge right now?</QuestionLabel>
+              <QuestionLabel>{translate("What is the biggest challenge right now?")}</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {challenges.map(([value, label]) => (
                   <Choice
                     key={value}
-                    label={label}
+                    label={translate(label)}
                     name="biggestChallenge"
                     type="radio"
                     value={value}
@@ -359,10 +483,10 @@ export function BusinessAssessmentForm({ error }: Props) {
               </div>
             </div>
             <div>
-              <QuestionLabel>Which areas should Atlas evaluate?</QuestionLabel>
+              <QuestionLabel>{translate("Which areas should Atlas evaluate?")}</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 {evaluationAreas.map(([value, label]) => (
-                  <Choice key={value} label={label} name="evaluationAreas" value={value} />
+                  <Choice key={value} label={translate(label)} name="evaluationAreas" value={value} />
                 ))}
               </div>
             </div>
@@ -371,68 +495,69 @@ export function BusinessAssessmentForm({ error }: Props) {
 
         <section className="rounded-[1.75rem] border border-[#dbe6f3] bg-white p-5 shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.08)] sm:p-6">
           <ul className="grid gap-3 text-sm leading-6 text-slate-600 sm:grid-cols-3">
-            <li>Clearer understanding of the company and customer profile.</li>
-            <li>Practical next-step recommendation based on the answers.</li>
-            <li>A review of whether the business is ready for a 7-day trial.</li>
+            <li>{translate("Clearer understanding of the company and customer profile.")}</li>
+            <li>{translate("Practical next-step recommendation based on the answers.")}</li>
+            <li>{translate("A review of whether the business is ready for a 7-day trial.")}</li>
           </ul>
         </section>
 
         <SectionCard
           complete={sections[2]}
-          helper="Capture the next 90 days so Atlas can recommend the right first move."
+          helper={translate("Capture the next 90 days so Atlas can recommend the right first move.")}
           number="03"
-          title="Growth plan"
+          title={translate("Growth plan")}
+          translate={translate}
         >
           <div className="grid gap-4">
             <TextAreaField
-              label="What would success look like in 90 days?"
+              label={translate("What would success look like in 90 days?")}
               name="ninetyDayGoal"
-              placeholder="Share the result you want Atlas to help create."
+              placeholder={translate("Share the result you want Atlas to help create.")}
             />
             <div>
-              <QuestionLabel>What is the company size?</QuestionLabel>
+              <QuestionLabel>{translate("What is the company size?")}</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Choice label="Just me" name="businessSize" type="radio" value="just_me" />
-                <Choice label="2-5 employees" name="businessSize" type="radio" value="2_5" />
-                <Choice label="6-15 employees" name="businessSize" type="radio" value="6_15" />
-                <Choice label="16-50 employees" name="businessSize" type="radio" value="16_50" />
-                <Choice label="50+ employees" name="businessSize" type="radio" value="50_plus" />
+                <Choice label={translate("Just me")} name="businessSize" type="radio" value="just_me" />
+                <Choice label={translate("2-5 employees")} name="businessSize" type="radio" value="2_5" />
+                <Choice label={translate("6-15 employees")} name="businessSize" type="radio" value="6_15" />
+                <Choice label={translate("16-50 employees")} name="businessSize" type="radio" value="16_50" />
+                <Choice label={translate("50+ employees")} name="businessSize" type="radio" value="50_plus" />
               </div>
             </div>
             <div>
-              <QuestionLabel>Are you currently using any AI tools?</QuestionLabel>
+              <QuestionLabel>{translate("Are you currently using any AI tools?")}</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Choice label="No" name="aiTools" type="radio" value="none" />
+                <Choice label={translate("No")} name="aiTools" type="radio" value="none" />
                 <Choice label="ChatGPT" name="aiTools" type="radio" value="chatgpt" />
                 <Choice label="Claude" name="aiTools" type="radio" value="claude" />
                 <Choice label="Gemini" name="aiTools" type="radio" value="gemini" />
                 <Choice label="Copilot" name="aiTools" type="radio" value="copilot" />
-                <Choice label="Multiple tools" name="aiTools" type="radio" value="multiple" />
+                <Choice label={translate("Multiple tools")} name="aiTools" type="radio" value="multiple" />
               </div>
             </div>
             <div>
-              <QuestionLabel>When do you want to improve things?</QuestionLabel>
+              <QuestionLabel>{translate("When do you want to improve things?")}</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <Choice
-                  label="Immediately"
+                  label={translate("Immediately")}
                   name="improvementTiming"
                   type="radio"
                   value="immediately"
                 />
                 <Choice
-                  label="Within 30 days"
+                  label={translate("Within 30 days")}
                   name="improvementTiming"
                   type="radio"
                   value="30_days"
                 />
                 <Choice
-                  label="Within 90 days"
+                  label={translate("Within 90 days")}
                   name="improvementTiming"
                   type="radio"
                   value="90_days"
                 />
                 <Choice
-                  label="Just exploring"
+                  label={translate("Just exploring")}
                   name="improvementTiming"
                   type="radio"
                   value="exploring"
@@ -441,12 +566,12 @@ export function BusinessAssessmentForm({ error }: Props) {
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
-                <QuestionLabel>New leads per month</QuestionLabel>
+                <QuestionLabel>{translate("New leads per month")}</QuestionLabel>
                 <div className="mt-3 grid gap-3">
                   {monthlyLeadVolumes.map(([value, label]) => (
                     <Choice
                       key={value}
-                      label={label}
+                      label={translate(label)}
                       name="monthlyLeadVolume"
                       type="radio"
                       value={value}
@@ -455,12 +580,12 @@ export function BusinessAssessmentForm({ error }: Props) {
                 </div>
               </div>
               <div>
-                <QuestionLabel>Usual follow-up speed</QuestionLabel>
+                <QuestionLabel>{translate("Usual follow-up speed")}</QuestionLabel>
                 <div className="mt-3 grid gap-3">
                   {followUpSpeeds.map(([value, label]) => (
                     <Choice
                       key={value}
-                      label={label}
+                      label={translate(label)}
                       name="followUpSpeed"
                       type="radio"
                       value={value}
@@ -469,12 +594,12 @@ export function BusinessAssessmentForm({ error }: Props) {
                 </div>
               </div>
               <div>
-                <QuestionLabel>Budget range</QuestionLabel>
+                <QuestionLabel>{translate("Budget range")}</QuestionLabel>
                 <div className="mt-3 grid gap-3">
                   {pilotBudgets.map(([value, label]) => (
                     <Choice
                       key={value}
-                      label={label}
+                      label={translate(label)}
                       name="pilotBudget"
                       type="radio"
                       value={value}
@@ -488,24 +613,25 @@ export function BusinessAssessmentForm({ error }: Props) {
 
         <SectionCard
           complete={sections[3]}
-          helper="Give Atlas the best contact and the consent needed to follow up."
+          helper={translate("Give Atlas the best contact and the consent needed to follow up.")}
           number="04"
-          title="Contact and consent"
+          title={translate("Contact and consent")}
+          translate={translate}
         >
           <div className="grid gap-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TextField label="Your name" name="contactName" />
-            <TextField label="Your title (optional)" name="contactTitle" required={false} />
-            <TextField label="Email" name="contactEmail" type="email" />
-            <TextField label="Phone" name="contactPhone" type="tel" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField label={translate("Your name")} name="contactName" />
+              <TextField label={translate("Your title (optional)")} name="contactTitle" required={false} />
+              <TextField label={translate("Email")} name="contactEmail" type="email" />
+              <TextField label={translate("Phone")} name="contactPhone" type="tel" />
             </div>
             <div>
-              <QuestionLabel>Preferred contact method</QuestionLabel>
+              <QuestionLabel>{translate("Preferred contact method")}</QuestionLabel>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 {contactPreferences.map(([value, label]) => (
                   <Choice
                     key={value}
-                    label={label}
+                    label={translate(label)}
                     name="preferredContactMethod"
                     type="radio"
                     value={value}
@@ -514,12 +640,12 @@ export function BusinessAssessmentForm({ error }: Props) {
               </div>
             </div>
             <label className="block">
-              <QuestionLabel>Social media links or handles (optional)</QuestionLabel>
+              <QuestionLabel>{translate("Social media links or handles (optional)")}</QuestionLabel>
               <textarea
                 className="assessment-field assessment-textarea mt-2"
                 maxLength={1500}
                 name="socialMedia"
-                placeholder="Facebook, Instagram, TikTok, LinkedIn, YouTube, Etsy, or other public pages"
+                placeholder={translate("Facebook, Instagram, TikTok, LinkedIn, YouTube, Etsy, or other public pages")}
                 required={false}
               />
             </label>
@@ -532,8 +658,7 @@ export function BusinessAssessmentForm({ error }: Props) {
                 value="yes"
               />
               <span>
-                Atlas may contact me about this business assessment. My information
-                will be used to respond to my request and will not be sold.
+                {translate("Atlas may contact me about this business assessment. My information will be used to respond to my request and will not be sold.")}
               </span>
             </label>
           </div>
@@ -543,22 +668,21 @@ export function BusinessAssessmentForm({ error }: Props) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-2xl font-black tracking-[-0.06em] text-[#06266d] sm:text-3xl">
-                Send the business assessment
+                {translate("Send the business assessment")}
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                Atlas will review the answers and show the next step, including a
-                7-day free trial review option if the business is a fit.
+                {translate("Atlas will review the answers and show the next step, including a 7-day free trial review option if the business is a fit.")}
               </p>
             </div>
             <button
               className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#f4b52f] px-6 text-sm font-black text-[#071b42] shadow-sm transition hover:bg-[#ffc94f]"
               type="submit"
             >
-              Send my business assessment
+              {translate("Send my business assessment")}
             </button>
           </div>
           <p className="mt-4 text-center text-sm text-slate-500 sm:text-left">
-            No charge today. No automatic subscription.
+            {translate("No charge today. No automatic subscription.")}
           </p>
         </div>
       </form>
@@ -566,15 +690,15 @@ export function BusinessAssessmentForm({ error }: Props) {
       <aside className="lg:sticky lg:top-6 lg:self-start">
         <div className="rounded-[1.75rem] border border-[#cfdcf0] bg-[#071b42] p-5 text-white shadow-[0_1.25rem_2.5rem_rgba(6,27,82,.16)]">
           <p className="text-xs font-black uppercase tracking-[0.28em] text-[#f7cc62]">
-            Completion
+            {translate("Completion")}
           </p>
           <div className="mt-4 flex items-end justify-between gap-4">
             <div>
               <div className="text-4xl font-black tracking-[-0.08em]">{percent}%</div>
               <p className="mt-1 text-sm leading-6 text-white/75">
                 {currentSection > sections.length
-                  ? "All sections complete"
-                  : `Section ${currentSection} of ${sections.length}`}
+                  ? translate("All sections complete")
+                  : `${translate("Section")} ${currentSection} ${language === "es" ? "de" : "of"} ${sections.length}`}
               </p>
             </div>
             <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-white/8 text-sm font-black text-[#f7cc62]">
