@@ -1,12 +1,17 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { PrivateAtlasAuthHeader } from "@/components/private-atlas-auth-header";
+import { getSiteLanguage } from "@/lib/site-language-server";
 import { updatePassword } from "@/server/auth/actions";
 
-export const metadata: Metadata = {
-  title: "Choose a New Password | Atlas For Entrepreneurs",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const language = await getSiteLanguage();
+
+  return {
+    title: language === "es" ? "Elige una contraseña nueva | Atlas para emprendedores" : "Choose a New Password | Atlas For Entrepreneurs",
+    robots: { index: false, follow: false },
+  };
+}
 
 type ResetPasswordPageProps = {
   searchParams?: Promise<{
@@ -26,7 +31,40 @@ export default async function ResetPasswordPage({
   searchParams,
 }: ResetPasswordPageProps) {
   const params = await searchParams;
-  const error = params?.error ? errorMessages[params.error] : null;
+  const language = await getSiteLanguage();
+  const copy = language === "es"
+    ? {
+        eyebrow: "Recuperación segura",
+        title: "Elige una contraseña nueva.",
+        description: "Usa una contraseña única que no compartas con Gmail ni con ningún otro servicio. Después de guardarla, Atlas cerrará tu sesión y te devolverá al acceso.",
+        newPassword: "Contraseña nueva",
+        newPasswordPlaceholder: "Contraseña nueva",
+        confirmPassword: "Confirma la contraseña nueva",
+        confirmPlaceholder: "Confirma la contraseña nueva",
+        requirements: "Al menos 12 caracteres, incluyendo una letra minúscula, una mayúscula, un número y un símbolo.",
+        submit: "Actualizar contraseña",
+        request: "Solicitar un enlace de restablecimiento nuevo",
+        errors: {
+          missing_password: "Ingresa y confirma la contraseña nueva.",
+          password_mismatch: "Los campos de contraseña no coinciden.",
+          update_failed: "No se pudo actualizar la contraseña. Solicita un enlace de restablecimiento nuevo.",
+          weak_password: "Usa al menos 12 caracteres con una letra minúscula, una mayúscula, un número y un símbolo.",
+        },
+      }
+    : {
+        eyebrow: "Secure recovery",
+        title: "Choose a new password.",
+        description: "Use a unique password that is not shared with Gmail or any other service. After saving, Atlas signs you out and sends you back to login.",
+        newPassword: "New password",
+        newPasswordPlaceholder: "New password",
+        confirmPassword: "Confirm new password",
+        confirmPlaceholder: "Confirm new password",
+        requirements: "At least 12 characters, including lowercase, uppercase, a number, and a symbol.",
+        submit: "Update password",
+        request: "Request a new reset link",
+        errors: errorMessages,
+      };
+  const error = params?.error ? copy.errors[params.error as keyof typeof copy.errors] : null;
 
   return (
     <>
@@ -34,15 +72,13 @@ export default async function ResetPasswordPage({
       <main className="min-h-[calc(100vh-73px)] bg-slate-50 px-6 py-12">
         <section className="mx-auto max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-700">
-            Secure recovery
+            {copy.eyebrow}
           </p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-            Choose a new password.
+            {copy.title}
           </h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">
-            Use a unique password that is not shared with Gmail or any other
-            service. After saving, Atlas signs you out and sends you back to
-            login.
+            {copy.description}
           </p>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -58,7 +94,7 @@ export default async function ResetPasswordPage({
                   className="text-sm font-medium text-slate-700"
                   htmlFor="password"
                 >
-                  New password
+                  {copy.newPassword}
                 </label>
                 <input
                   autoComplete="new-password"
@@ -67,7 +103,7 @@ export default async function ResetPasswordPage({
                   id="password"
                   minLength={12}
                   name="password"
-                  placeholder="New password"
+                  placeholder={copy.newPasswordPlaceholder}
                   required
                   type="password"
                 />
@@ -75,8 +111,7 @@ export default async function ResetPasswordPage({
                   className="mt-2 text-sm leading-6 text-slate-600"
                   id="password-requirements"
                 >
-                  At least 12 characters, including lowercase, uppercase, a
-                  number, and a symbol.
+                  {copy.requirements}
                 </p>
               </div>
 
@@ -85,7 +120,7 @@ export default async function ResetPasswordPage({
                   className="text-sm font-medium text-slate-700"
                   htmlFor="confirmPassword"
                 >
-                  Confirm new password
+                  {copy.confirmPassword}
                 </label>
                 <input
                   autoComplete="new-password"
@@ -93,7 +128,7 @@ export default async function ResetPasswordPage({
                   id="confirmPassword"
                   minLength={12}
                   name="confirmPassword"
-                  placeholder="Confirm new password"
+                  placeholder={copy.confirmPlaceholder}
                   required
                   type="password"
                 />
@@ -103,7 +138,7 @@ export default async function ResetPasswordPage({
                 className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                 type="submit"
               >
-                Update password
+                {copy.submit}
               </button>
             </form>
 
@@ -111,7 +146,7 @@ export default async function ResetPasswordPage({
               className="mt-5 inline-flex text-sm font-semibold text-slate-700 hover:text-slate-950"
               href="/forgot-password"
             >
-              Request a new reset link
+              {copy.request}
             </Link>
           </div>
         </section>

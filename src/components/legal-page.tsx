@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { SiteLanguage } from "@/lib/site-language";
 import { SiteHeader } from "@/components/site-header";
 
 export function LegalPage({
@@ -6,12 +7,14 @@ export function LegalPage({
   title,
   summary,
   lastUpdated,
+  language,
   children,
 }: {
   eyebrow: string;
   title: string;
   summary: string;
   lastUpdated: string;
+  language: SiteLanguage;
   children: ReactNode;
 }) {
   return (
@@ -30,7 +33,7 @@ export function LegalPage({
               {summary}
             </p>
             <p className="mt-5 text-sm font-semibold text-[#1246a0]">
-              Last updated: {lastUpdated}
+              {language === "es" ? "Última actualización: " : "Last updated: "}{lastUpdated}
             </p>
           </div>
         </section>

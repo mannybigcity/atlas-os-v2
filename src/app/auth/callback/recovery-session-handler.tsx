@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/browser";
 
 type RecoverySessionHandlerProps = {
   code?: string;
+  language: "en" | "es";
   nextPath?: string;
 };
 
@@ -24,9 +25,12 @@ function safeClientRedirectPath(value: string | undefined) {
 
 export function RecoverySessionHandler({
   code,
+  language,
   nextPath,
 }: RecoverySessionHandlerProps) {
-  const [message, setMessage] = useState("Preparing recovery session...");
+  const [message, setMessage] = useState(
+    language === "es" ? "Preparando la sesión de recuperación..." : "Preparing recovery session...",
+  );
 
   useEffect(() => {
     async function handleRecoverySession() {
@@ -37,7 +41,11 @@ export function RecoverySessionHandler({
         const { error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (error) {
-          setMessage("The reset link could not be verified. Redirecting...");
+          setMessage(
+            language === "es"
+              ? "No se pudo verificar el enlace de restablecimiento. Redirigiendo..."
+              : "The reset link could not be verified. Redirecting...",
+          );
           window.location.replace("/login?error=auth_callback_failed");
           return;
         }
@@ -62,7 +70,11 @@ export function RecoverySessionHandler({
       });
 
       if (error) {
-        setMessage("The reset link could not be verified. Redirecting...");
+        setMessage(
+          language === "es"
+            ? "No se pudo verificar el enlace de restablecimiento. Redirigiendo..."
+            : "The reset link could not be verified. Redirecting...",
+        );
         window.location.replace("/login?error=auth_callback_failed");
         return;
       }
@@ -71,7 +83,7 @@ export function RecoverySessionHandler({
     }
 
     void handleRecoverySession();
-  }, [code, nextPath]);
+  }, [code, language, nextPath]);
 
   return <p>{message}</p>;
 }
