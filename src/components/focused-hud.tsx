@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
+import { useSiteLanguage } from "@/components/language-switcher";
 
 type FocusedHudProps = {
   eyebrow: string;
@@ -21,6 +22,7 @@ export function FocusedHud({
   status,
   title,
 }: FocusedHudProps) {
+  const language = useSiteLanguage();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
@@ -49,7 +51,7 @@ export function FocusedHud({
   return (
     <div className="focused-hud-layer" role="presentation">
       <button
-        aria-label="Close focused detail"
+        aria-label={language === "es" ? "Cerrar detalle enfocado" : "Close focused detail"}
         className="focused-hud-backdrop"
         onClick={onClose}
         type="button"
@@ -67,7 +69,7 @@ export function FocusedHud({
             {status ? <p className="focused-hud-status">{status}</p> : null}
           </div>
           <button
-            aria-label="Close focused detail"
+            aria-label={language === "es" ? "Cerrar detalle enfocado" : "Close focused detail"}
             className="focused-hud-close"
             onClick={onClose}
             ref={closeButtonRef}

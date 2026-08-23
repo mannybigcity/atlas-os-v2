@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useSiteLanguage } from "@/components/language-switcher";
+import type { SiteLanguage } from "@/lib/site-language";
 import {
   demoWorkEvents,
   initialAgentSnapshots,
@@ -24,19 +26,13 @@ import type {
 
 const EVENT_DURATION_MS = 4200;
 
-const stateLabels: Record<AgentWorkState, string> = {
-  offline: "Offline",
-  available: "Available",
-  thinking: "Thinking",
-  walking: "Walking",
-  working: "Working",
-  waiting_for_input: "Needs input",
-  waiting_for_approval: "Awaiting approval",
-  in_meeting: "In meeting",
-  handing_off: "Handing off",
-  blocked: "Blocked",
-  completed: "Completed",
-  error: "Needs attention",
+const stateLabels: Record<SiteLanguage, Record<AgentWorkState, string>> = {
+  en: {
+    offline: "Offline", available: "Available", thinking: "Thinking", walking: "Walking", working: "Working", waiting_for_input: "Needs input", waiting_for_approval: "Awaiting approval", in_meeting: "In meeting", handing_off: "Handing off", blocked: "Blocked", completed: "Completed", error: "Needs attention",
+  },
+  es: {
+    offline: "Sin conexión", available: "Disponible", thinking: "Pensando", walking: "En movimiento", working: "Trabajando", waiting_for_input: "Requiere información", waiting_for_approval: "Esperando aprobación", in_meeting: "En reunión", handing_off: "Transfiriendo", blocked: "Bloqueado", completed: "Completado", error: "Requiere atención",
+  },
 };
 
 function buildSnapshots(activeEvent: WorkEvent): AgentSceneSnapshot[] {
@@ -63,6 +59,7 @@ function statusTone(state: AgentWorkState) {
 }
 
 export function LionsDenScene() {
+  const language = useSiteLanguage();
   const [eventIndex, setEventIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [selectedAgentId, setSelectedAgentId] =
@@ -107,35 +104,32 @@ export function LionsDenScene() {
   );
 
   return (
-    <section className="lions-shell" aria-label="Atlas Client Dashboard public playback">
+    <section className="lions-shell" aria-label={language === "es" ? "Reproducción pública del Panel del cliente de Atlas" : "Atlas Client Dashboard public playback"}>
       <div className="lions-copy">
-        <span className="tiny-tag">Public workflow playback</span>
-        <h1>Watch Atlas and the team move the work.</h1>
+        <span className="tiny-tag">{language === "es" ? "Reproducción pública del flujo" : "Public workflow playback"}</span>
+        <h1>{language === "es" ? "Mira cómo Atlas y el equipo hacen avanzar el trabajo." : "Watch Atlas and the team move the work."}</h1>
         <p>
-          This is the sales-safe version of the Client Dashboard. The room is
-          powered by assignment events, approval gates, and handoffs, not random
-          walking.
+          {language === "es" ? "Esta es la versión del Panel del cliente segura para ventas. La sala funciona con asignaciones, puertas de aprobación y transferencias, no con movimientos aleatorios." : "This is the sales-safe version of the Client Dashboard. The room is powered by assignment events, approval gates, and handoffs, not random walking."}
         </p>
         <div className="lions-actions">
           <Link href="/assessment" className="primary-cta">
-            Start assessment
+            {language === "es" ? "Iniciar evaluación" : "Start assessment"}
           </Link>
           <Link href="/login" className="secondary-cta">
-            Client login
+            {language === "es" ? "Acceso de clientes" : "Client login"}
           </Link>
         </div>
         <p className="lions-note">
-          Public mode uses sample data. Private client work stays behind login and
-          approval.
+          {language === "es" ? "El modo público usa datos de muestra. El trabajo privado del cliente permanece protegido por acceso y aprobación." : "Public mode uses sample data. Private client work stays behind login and approval."}
         </p>
       </div>
 
       <div className="office-wrap">
-        <div className="office-label">Client Dashboard event floor</div>
+        <div className="office-label">{language === "es" ? "Planta de eventos del Panel del cliente" : "Client Dashboard event floor"}</div>
         <div className="office-live-badge" aria-live="polite">
           <span className="demo-dot" />
-          <strong>PUBLIC PLAYBACK</strong>
-          <small>telemetry not connected</small>
+          <strong>{language === "es" ? "REPRODUCCIÓN PÚBLICA" : "PUBLIC PLAYBACK"}</strong>
+          <small>{language === "es" ? "telemetría no conectada" : "telemetry not connected"}</small>
         </div>
         <div className="office-stage">
           {officeZones.map((zone) => (
@@ -149,7 +143,7 @@ export function LionsDenScene() {
                 height: `${zone.height}%`,
               }}
             >
-              <span>{zone.name}</span>
+              <span>{translateSceneText(zone.name, language)}</span>
             </div>
           ))}
 
@@ -188,7 +182,7 @@ export function LionsDenScene() {
                   ["--agent-direction" as string]: direction,
                 }}
                 onClick={() => setSelectedAgentId(agent.id)}
-                aria-label={`Inspect ${agent.name}`}
+                aria-label={language === "es" ? `Inspeccionar ${agent.name}` : `Inspect ${agent.name}`}
               >
                 <span className="agent-avatar">
                   <Image
@@ -201,7 +195,7 @@ export function LionsDenScene() {
                   {moving ? <span className="walk-shadow" aria-hidden="true" /> : null}
                 </span>
                 <span className={`agent-state agent-state-${statusTone(snapshot.state)}`}>
-                  {stateLabels[snapshot.state]}
+                  {stateLabels[language][snapshot.state]}
                 </span>
               </button>
             );
@@ -211,7 +205,7 @@ export function LionsDenScene() {
 
         <div className="office-controls">
           <button type="button" onClick={() => setIsPaused((value) => !value)}>
-            {isPaused ? "Resume room" : "Pause room"}
+            {isPaused ? language === "es" ? "Reanudar sala" : "Resume room" : language === "es" ? "Pausar sala" : "Pause room"}
           </button>
           <button
             type="button"
@@ -221,9 +215,9 @@ export function LionsDenScene() {
               setSelectedAgentId("atlas");
             }}
           >
-            Restart mission
+            {language === "es" ? "Reiniciar misión" : "Restart mission"}
           </button>
-          <span>Public playback only. No private client telemetry is exposed here.</span>
+          <span>{language === "es" ? "Solo reproducción pública. Aquí no se expone telemetría privada de clientes." : "Public playback only. No private client telemetry is exposed here."}</span>
         </div>
       </div>
 
@@ -233,34 +227,34 @@ export function LionsDenScene() {
             <div className="inspector-head">
               <Image
                 src={selectedAgent.portrait}
-                alt={`${selectedAgent.name} portrait`}
+                alt={language === "es" ? `Retrato de ${selectedAgent.name}` : `${selectedAgent.name} portrait`}
                 width={84}
                 height={84}
               />
               <div>
-                <span>{selectedAgent.animal}</span>
+                <span>{translateSceneText(selectedAgent.animal, language)}</span>
                 <h2>{selectedAgent.name}</h2>
-                <p>{selectedAgent.role}</p>
+                <p>{translateSceneText(selectedAgent.role, language)}</p>
               </div>
             </div>
             <dl>
               <div>
-                <dt>Status</dt>
-                <dd>{stateLabels[selectedSnapshot.state]}</dd>
+                <dt>{language === "es" ? "Estado" : "Status"}</dt>
+                <dd>{stateLabels[language][selectedSnapshot.state]}</dd>
               </div>
               <div>
-                <dt>Assignment</dt>
-                <dd>{selectedSnapshot.currentAssignment}</dd>
+                <dt>{language === "es" ? "Asignación" : "Assignment"}</dt>
+                <dd>{translateSceneText(selectedSnapshot.currentAssignment, language)}</dd>
               </div>
               <div>
-                <dt>Next action</dt>
-                <dd>{selectedSnapshot.nextExpectedAction}</dd>
+                <dt>{language === "es" ? "Próxima acción" : "Next action"}</dt>
+                <dd>{translateSceneText(selectedSnapshot.nextExpectedAction, language)}</dd>
               </div>
             </dl>
             <div className="tool-strip" aria-label={`${selectedAgent.name} indicators`}>
               {selectedAgent.tools.map((tool) => (
                 <span key={tool.label} className={`tool-pill tool-${tool.state}`}>
-                  {tool.label}
+                  {translateSceneText(tool.label, language)}
                 </span>
               ))}
             </div>
@@ -270,7 +264,7 @@ export function LionsDenScene() {
 
       <div className="activity-feed">
         <div className="feed-title">
-          <span>Demo event feed</span>
+          <span>{language === "es" ? "Actividad de eventos de demostración" : "Demo event feed"}</span>
           <strong>{activeEvent.occurredAt}</strong>
         </div>
         {demoWorkEvents.map((event, index) => {
@@ -287,8 +281,8 @@ export function LionsDenScene() {
               }}
             >
               <span>{agent?.name}</span>
-              <strong>{event.safeSummary}</strong>
-              <small>{event.approvalRequired ? "Approval protected" : event.eventType.replaceAll("_", " ")}</small>
+              <strong>{translateSceneText(event.safeSummary, language)}</strong>
+              <small>{event.approvalRequired ? language === "es" ? "Protegido por aprobación" : "Approval protected" : language === "es" ? eventTypeLabels[event.eventType] ?? event.eventType.replaceAll("_", " ") : event.eventType.replaceAll("_", " ")}</small>
             </button>
           );
         })}
@@ -296,3 +290,75 @@ export function LionsDenScene() {
     </section>
   );
 }
+
+const eventTypeLabels: Record<string, string> = {
+  mission_received: "misión recibida",
+  assignment_created: "asignación creada",
+  deliverable_created: "entregable creado",
+  approval_granted: "aprobación concedida",
+  approval_requested: "aprobación solicitada",
+  handoff_started: "transferencia iniciada",
+  follow_up_queued: "seguimiento en cola",
+  mission_updated: "misión actualizada",
+};
+
+function translateSceneText(value: string, language: SiteLanguage) {
+  if (language !== "es") return value;
+  return spanishSceneText[value] ?? value;
+}
+
+const spanishSceneText: Record<string, string> = {
+  "ATLAS Command": "Comando de ATLAS",
+  "Opportunity Bay": "Bahía de oportunidades",
+  "Content Studio": "Estudio de contenido",
+  "CRM Corner": "Rincón del CRM",
+  "Lion's Den Table": "Mesa de la Guarida del León",
+  "Approval Rail": "Carril de aprobación",
+  "Revenue Signals": "Señales de ingresos",
+  "Mission Board": "Tablero de misiones",
+  "Central Hall": "Sala central",
+  "Chief of Staff": "Jefe de Gabinete",
+  "Opportunity Director": "Director de oportunidades",
+  "Marketing Director": "Director de marketing",
+  "CRM Director": "Director del CRM",
+  "Golden Lion": "León dorado",
+  "Bald Eagle": "Águila calva",
+  Sloth: "Perezoso",
+  Wolf: "Lobo",
+  "Supabase ledger": "Registro de Supabase",
+  "Approval gate": "Puerta de aprobación",
+  "OpenAI planning": "Planificación con OpenAI",
+  "Google Places": "Google Places",
+  "Fit signals": "Señales de encaje",
+  "Research queue": "Cola de investigación",
+  "Content drafts": "Borradores de contenido",
+  "Brand voice": "Voz de marca",
+  "Approval first": "Aprobación primero",
+  "CRM table": "Tabla del CRM",
+  "Follow-up clock": "Reloj de seguimiento",
+  "Pipeline hygiene": "Higiene del embudo",
+  "Turn the assessment into one measurable revenue priority.": "Convertir la evaluación en una prioridad de ingresos medible.",
+  "Assign the first growth investigation.": "Asignar la primera investigación de crecimiento.",
+  "Standing by for opportunity research.": "En espera para investigar oportunidades.",
+  "Scan for warm lead sources.": "Buscar fuentes de prospectos interesados.",
+  "Standing by for approved offers.": "En espera de ofertas aprobadas.",
+  "Draft private campaign assets.": "Crear borradores privados de campaña.",
+  "Watching for leads needing a next step.": "Vigilando prospectos que necesitan una próxima acción.",
+  "Attach every opportunity to follow-up.": "Vincular cada oportunidad a un seguimiento.",
+  "ATLAS received a business assessment and found the first priority: warm leads are not getting followed up.": "ATLAS recibió una evaluación de negocio y encontró la primera prioridad: no se está dando seguimiento a los prospectos interesados.",
+  "Create one growth mission and assign research to HUNTER.": "Crear una misión de crecimiento y asignar la investigación a HUNTER.",
+  "HUNTER was assigned to find the fastest path to more qualified opportunities.": "HUNTER recibió la tarea de encontrar la ruta más rápida hacia más oportunidades calificadas.",
+  "Scan local channels and prepare an opportunity snapshot.": "Examinar canales locales y preparar un resumen de oportunidades.",
+  "HUNTER returned a shortlist of warm-lead sources and one recommended next move.": "HUNTER devolvió una lista corta de fuentes de prospectos interesados y una próxima acción recomendada.",
+  "ATLAS reviews and chooses the offer to test.": "ATLAS revisa y elige la oferta que se probará.",
+  "ATLAS approved the strongest offer. MICAH is turning it into simple marketing drafts.": "ATLAS aprobó la oferta más sólida. MICAH la está convirtiendo en borradores sencillos de marketing.",
+  "Create private captions, offer angles, and a short CTA.": "Crear textos privados, enfoques de oferta y un llamado a la acción breve.",
+  "MICAH drafted content, but it stays private until ATLAS and the owner approve it.": "MICAH preparó contenido, pero seguirá privado hasta que ATLAS y el dueño lo aprueben.",
+  "Review draft and approve, reject, or request changes.": "Revisar el borrador y aprobarlo, rechazarlo o solicitar cambios.",
+  "DAVID received the approved offer so every response can be tracked with a next step.": "DAVID recibió la oferta aprobada para que cada respuesta tenga una próxima acción rastreable.",
+  "Create follow-up stages and a simple response tracker.": "Crear etapas de seguimiento y un rastreador sencillo de respuestas.",
+  "DAVID found three open follow-ups and put them into a visible queue.": "DAVID encontró tres seguimientos abiertos y los colocó en una cola visible.",
+  "ATLAS reviews the revenue leak before outreach is approved.": "ATLAS revisa la fuga de ingresos antes de aprobar el contacto.",
+  "ATLAS updated the mission: fix inquiry-to-follow-up first before adding another tool.": "ATLAS actualizó la misión: corregir primero el seguimiento de consultas antes de agregar otra herramienta.",
+  "Founder approval decides whether this becomes live work.": "La aprobación del fundador decide si esto se convierte en trabajo activo.",
+};

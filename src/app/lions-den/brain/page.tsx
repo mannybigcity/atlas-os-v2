@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ObsidianRelationshipGraph } from "@/components/brain/obsidian-relationship-graph";
+import { getSiteLanguage } from "@/lib/site-language-server";
 import { requireSuperAdmin } from "@/server/auth/guards";
 import {
   buildObsidianRelationshipGraph,
@@ -25,7 +26,8 @@ type SecondBrainPageProps = {
 export default async function SecondBrainPage({ searchParams }: SecondBrainPageProps) {
   await requireSuperAdmin("/lions-den/brain");
   const params = await searchParams;
-  const [vault, organizations, prospects] = await Promise.all([
+  const [language, vault, organizations, prospects] = await Promise.all([
+    getSiteLanguage(),
     getObsidianVaultSnapshot(),
     getOrganizationsForSuperAdmin(),
     getSalesProspects(),
@@ -72,28 +74,26 @@ export default async function SecondBrainPage({ searchParams }: SecondBrainPageP
       <div className="brain-shell">
         <header className="brain-header">
           <div>
-            <Link className="brain-back" href="/lions-den">← ATLAS OS command center</Link>
-            <p className="brain-kicker">Personal knowledge layer</p>
-            <h1>Second Brain</h1>
+            <Link className="brain-back" href="/lions-den">← {language === "es" ? "Centro de mando de ATLAS OS" : "ATLAS OS command center"}</Link>
+            <p className="brain-kicker">{language === "es" ? "Capa de conocimiento personal" : "Personal knowledge layer"}</p>
+            <h1>{language === "es" ? "Segundo cerebro" : "Second Brain"}</h1>
             <p className="brain-subtitle">
-              A focused map of owned knowledge, client context, and mission trails.
-              Select a source to open its detail HUD.
+              {language === "es" ? "Un mapa enfocado de conocimiento propio, contexto del cliente y rutas de misión. Selecciona una fuente para abrir su HUD de detalle." : "A focused map of owned knowledge, client context, and mission trails. Select a source to open its detail HUD."}
             </p>
           </div>
           <span className={`brain-status ${vault.exists ? "is-ready" : "is-needs-input"}`}>
-            <span aria-hidden="true" /> {vault.exists ? "Vault connected" : "Needs setup"}
+            <span aria-hidden="true" /> {vault.exists ? language === "es" ? "Bóveda conectada" : "Vault connected" : language === "es" ? "Requiere configuración" : "Needs setup"}
           </span>
         </header>
 
         {!vault.exists ? (
           <section className="brain-setup" aria-labelledby="brain-setup-title">
-            <p className="brain-kicker">Connection required</p>
-            <h2 id="brain-setup-title">Owned source needs input</h2>
+            <p className="brain-kicker">{language === "es" ? "Se requiere conexión" : "Connection required"}</p>
+            <h2 id="brain-setup-title">{language === "es" ? "La fuente propia requiere información" : "Owned source needs input"}</h2>
             <p>{vault.error}</p>
             <code>ATLAS_OBSIDIAN_VAULT_PATH=&lt;absolute-path-to-vault&gt;</code>
             <p className="brain-help">
-              Configure the server-only path and restart the app. ATLAS reads
-              metadata only; it never uploads, edits, or deletes vault files.
+              {language === "es" ? "Configura la ruta exclusiva del servidor y reinicia la aplicación. ATLAS solo lee metadatos; nunca sube, edita ni elimina archivos de la bóveda." : "Configure the server-only path and restart the app. ATLAS reads metadata only; it never uploads, edits, or deletes vault files."}
             </p>
           </section>
         ) : (
@@ -105,20 +105,19 @@ export default async function SecondBrainPage({ searchParams }: SecondBrainPageP
             />
             {organizations.setupRequired || prospects.setupRequired ? (
               <p className="brain-map-status" role="status">
-                Client-source linking needs input because Atlas organization or
-                CRM records are not available to the authenticated server query.
+                {language === "es" ? "La vinculación de fuentes del cliente requiere información porque los registros de organizaciones o del CRM no están disponibles para la consulta autenticada del servidor." : "Client-source linking needs input because Atlas organization or CRM records are not available to the authenticated server query."}
               </p>
             ) : null}
           </>
         )}
 
         <details className="brain-technical-details">
-          <summary>Source diagnostics</summary>
+          <summary>{language === "es" ? "Diagnóstico de fuentes" : "Source diagnostics"}</summary>
           <div className="brain-technical-grid">
-            <span>Vault path</span><code>{vault.vaultPath ?? "Not configured"}</code>
-            <span>Metadata index</span><strong>{vault.noteCount} Markdown notes</strong>
-            <span>Folder index</span><strong>{vault.folderCount} folders</strong>
-            <span>Latest metadata change</span><strong>{vault.updatedAt ?? "Not available"}</strong>
+            <span>{language === "es" ? "Ruta de la bóveda" : "Vault path"}</span><code>{vault.vaultPath ?? (language === "es" ? "No configurada" : "Not configured")}</code>
+            <span>{language === "es" ? "Índice de metadatos" : "Metadata index"}</span><strong>{vault.noteCount} {language === "es" ? "notas Markdown" : "Markdown notes"}</strong>
+            <span>{language === "es" ? "Índice de carpetas" : "Folder index"}</span><strong>{vault.folderCount} {language === "es" ? "carpetas" : "folders"}</strong>
+            <span>{language === "es" ? "Último cambio de metadatos" : "Latest metadata change"}</span><strong>{vault.updatedAt ?? (language === "es" ? "No disponible" : "Not available")}</strong>
           </div>
         </details>
       </div>

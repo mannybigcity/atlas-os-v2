@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SurfaceShell } from "@/components/surface-shell";
 import { formatDateTime } from "@/lib/format";
+import { getSiteLanguage } from "@/lib/site-language-server";
 import {
   formatMicroUsd,
   getKingdomAgent,
@@ -40,7 +41,10 @@ function roleTone(role: KingdomAgentRole) {
 
 export default async function LionDenAgentsPage() {
   const user = await requireSuperAdmin("/lions-den/agents");
-  const runs = await getRecentAgentRuns(50);
+  const [language, runs] = await Promise.all([
+    getSiteLanguage(),
+    getRecentAgentRuns(50),
+  ]);
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
@@ -63,35 +67,33 @@ export default async function LionDenAgentsPage() {
 
   return (
     <SurfaceShell
-      description="A visible command surface for the Atlas agent roster. This shows the roles, budgets, approval boundaries, and real ledger activity when agent workflows run."
-      eyebrow="Client Dashboard"
-      title="Atlas Agent Command"
+      description={language === "es" ? "Una superficie de mando visible para el equipo de agentes de Atlas. Muestra roles, presupuestos, límites de aprobación y actividad real del registro cuando se ejecutan los flujos." : "A visible command surface for the Atlas agent roster. This shows the roles, budgets, approval boundaries, and real ledger activity when agent workflows run."}
+      eyebrow={language === "es" ? "Panel del cliente" : "Client Dashboard"}
+      title={language === "es" ? "Comando de agentes de Atlas" : "Atlas Agent Command"}
     >
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
-        Signed in as {user.email}. ATLAS remains Chief of Staff. HUNTER,
-        MICAH, DAVID, and ORACLE support the mission without overriding
-        Manny approval.
+        {language === "es" ? "Sesión iniciada como" : "Signed in as"} {user.email}. {language === "es" ? "ATLAS sigue siendo el Jefe de Gabinete. HUNTER, MICAH, DAVID y ORACLE apoyan la misión sin anular la aprobación de Manny." : "ATLAS remains Chief of Staff. HUNTER, MICAH, DAVID, and ORACLE support the mission without overriding Manny approval."}
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
-            Today&apos;s logged runs
+            {language === "es" ? "Ejecuciones registradas hoy" : "Today’s logged runs"}
           </p>
           <p className="mt-2 text-3xl font-black text-slate-950">{todayRuns}</p>
           <p className="mt-2 text-sm text-slate-600">
-            Real runs from the private usage ledger.
+            {language === "es" ? "Ejecuciones reales del registro privado de uso." : "Real runs from the private usage ledger."}
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
-            Today&apos;s estimated API cost
+            {language === "es" ? "Costo estimado de API de hoy" : "Today’s estimated API cost"}
           </p>
           <p className="mt-2 text-3xl font-black text-slate-950">
             {formatMicroUsd(todayCost)}
           </p>
           <p className="mt-2 text-sm text-slate-600">
-            Cost estimates are tracked per workflow.
+            {language === "es" ? "Los costos estimados se registran por flujo." : "Cost estimates are tracked per workflow."}
           </p>
         </div>
       </div>
@@ -100,22 +102,23 @@ export default async function LionDenAgentsPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
-              Roster
+              {language === "es" ? "Equipo" : "Roster"}
             </p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-              The agents you can see and govern
+              {language === "es" ? "Los agentes que puedes ver y gobernar" : "The agents you can see and govern"}
             </h2>
           </div>
           <Link
             className="text-sm font-bold text-blue-700 hover:text-blue-900"
             href="/lions-den/sales"
           >
-            Open Sales Command →
+            {language === "es" ? "Abrir Comando de ventas" : "Open Sales Command"} →
           </Link>
         </div>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           {kingdomAgents.map((agent) => {
+            const localizedAgent = language === "es" ? spanishAgentCopy[agent.role] : agent;
             const latestRun = runsByRole[agent.role]?.[0];
             const loggedCost = (runsByRole[agent.role] ?? [])
               .filter((run) => new Date(run.occurredAt) >= todayStart)
@@ -133,13 +136,13 @@ export default async function LionDenAgentsPage() {
                         agent.role,
                       )}`}
                     >
-                      {agent.mascot}
+                      {localizedAgent.mascot}
                     </span>
                     <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
                       {agent.name}
                     </h3>
                     <p className="text-sm font-semibold text-slate-700">
-                      {agent.title}
+                      {localizedAgent.title}
                     </p>
                   </div>
                   <span
@@ -147,24 +150,24 @@ export default async function LionDenAgentsPage() {
                       latestRun?.status,
                     )}`}
                   >
-                    {latestRun?.status ?? agent.status}
+                    {statusLabel(latestRun?.status ?? agent.status, language)}
                   </span>
                 </div>
 
                 <p className="mt-4 text-sm leading-6 text-slate-600">
-                  {agent.mission}
+                  {localizedAgent.mission}
                 </p>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                      Room
+                      {language === "es" ? "Sala" : "Room"}
                     </p>
-                    <p className="mt-1 font-bold text-slate-950">{agent.room}</p>
+                    <p className="mt-1 font-bold text-slate-950">{localizedAgent.room}</p>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                      Daily budget
+                      {language === "es" ? "Presupuesto diario" : "Daily budget"}
                     </p>
                     <p className="mt-1 font-bold text-slate-950">
                       {formatMicroUsd(agent.dailyBudgetMicrousd)}
@@ -172,36 +175,36 @@ export default async function LionDenAgentsPage() {
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                      Approval
+                      {language === "es" ? "Aprobación" : "Approval"}
                     </p>
                     <p className="mt-1 font-bold text-slate-950">
-                      {agent.approvalRequired ? "Required" : "Internal only"}
+                      {agent.approvalRequired ? language === "es" ? "Requerida" : "Required" : language === "es" ? "Solo interno" : "Internal only"}
                     </p>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                      Last run
+                      {language === "es" ? "Última ejecución" : "Last run"}
                     </p>
                     <p className="mt-1 font-bold text-slate-950">
-                      {latestRun ? formatDateTime(latestRun.occurredAt) : "No ledger run yet"}
+                      {latestRun ? formatDateTime(latestRun.occurredAt) : language === "es" ? "Aún no hay ejecuciones registradas" : "No ledger run yet"}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                    Model and token policy
+                    {language === "es" ? "Política de modelos y tokens" : "Model and token policy"}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-700">
-                    {agent.modelPolicy}
+                    {localizedAgent.modelPolicy}
                   </p>
                   <p className="mt-2 text-xs font-semibold text-slate-500">
-                    Logged today for {agent.name}: {formatMicroUsd(loggedCost)}
+                    {language === "es" ? "Registrado hoy para" : "Logged today for"} {agent.name}: {formatMicroUsd(loggedCost)}
                   </p>
                 </div>
 
                 <ul className="mt-5 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
-                  {agent.capabilities.map((capability) => (
+                  {localizedAgent.capabilities.map((capability) => (
                     <li className="flex gap-2" key={capability}>
                       <span className="mt-1 h-2 w-2 rounded-full bg-emerald-400" />
                       <span>{capability}</span>
@@ -216,27 +219,24 @@ export default async function LionDenAgentsPage() {
 
       <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
-          Real agent activity ledger
+          {language === "es" ? "Registro real de actividad de agentes" : "Real agent activity ledger"}
         </p>
         <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-          What they have actually done
+          {language === "es" ? "Lo que realmente han hecho" : "What they have actually done"}
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          This feed comes from Supabase <code>atlas_agent_runs</code>. It is the
-          difference between a mascot and a working system.
+          {language === "es" ? <>Esta actividad proviene de <code>atlas_agent_runs</code> en Supabase. Es la diferencia entre una mascota y un sistema que funciona.</> : <>This feed comes from Supabase <code>atlas_agent_runs</code>. It is the difference between a mascot and a working system.</>}
         </p>
 
         {runs.setupRequired ? (
           <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            Agent run ledger is not ready yet. Apply the agent usage ledger
-            migration in Supabase.
+            {language === "es" ? "El registro de ejecuciones de agentes aún no está listo. Aplica la migración del registro de uso de agentes en Supabase." : "Agent run ledger is not ready yet. Apply the agent usage ledger migration in Supabase."}
           </div>
         ) : null}
 
         {!runs.setupRequired && recentRuns.length === 0 ? (
           <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-            No agent runs have been recorded yet. Run HUNTER research or MICAH
-            sample creation from Sales Command and the work will appear here.
+            {language === "es" ? "Aún no se han registrado ejecuciones. Ejecuta una investigación de HUNTER o crea una muestra de MICAH desde Comando de ventas y el trabajo aparecerá aquí." : "No agent runs have been recorded yet. Run HUNTER research or MICAH sample creation from Sales Command and the work will appear here."}
           </div>
         ) : null}
 
@@ -264,7 +264,7 @@ export default async function LionDenAgentsPage() {
                       {run.provider}
                       {run.model ? ` · ${run.model}` : ""} ·{" "}
                       {run.inputTokens + run.outputTokens} tokens ·{" "}
-                      {run.resultCount} results
+                      {run.resultCount} {language === "es" ? "resultados" : "results"}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 sm:justify-end">
@@ -273,7 +273,7 @@ export default async function LionDenAgentsPage() {
                         run.status,
                       )}`}
                     >
-                      {run.status}
+                      {statusLabel(run.status, language)}
                     </span>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
                       {formatMicroUsd(run.estimatedCostMicrousd)}
@@ -288,3 +288,51 @@ export default async function LionDenAgentsPage() {
     </SurfaceShell>
   );
 }
+
+function statusLabel(value: string, language: "en" | "es") {
+  if (language !== "es") return value.replaceAll("_", " ");
+  return ({ active: "activo", blocked: "bloqueado", connected: "conectado", failed: "fallido", planned: "planificado", succeeded: "exitoso" } as Record<string, string>)[value] ?? value.replaceAll("_", " ");
+}
+
+const spanishAgentCopy: Record<KingdomAgentRole, { title: string; mascot: string; room: string; mission: string; modelPolicy: string; capabilities: string[] }> = {
+  atlas: {
+    title: "Jefe de Gabinete del Reino",
+    mascot: "León dorado",
+    room: "Sala del Trono",
+    mission: "Proteger el enfoque de Manny, hacer cumplir la Constitución del Reino RAMFAM y convertir oportunidades dispersas en la próxima acción práctica de ingresos.",
+    modelPolicy: "Usar razonamiento más potente solo cuando la decisión cambie dinero, clientes o dirección.",
+    capabilities: ["Priorizar ingresos antes que expansión", "Asignar el trabajo al rol correcto", "Mantener visibles las puertas de aprobación", "Resumir la mejor próxima acción"],
+  },
+  hunter: {
+    title: "Comandante de ingresos",
+    mascot: "Águila calva",
+    room: "Sala de estrategia de HUNTER",
+    mission: "Encontrar oportunidades prácticas de ingresos, calificar prospectos, organizar señales de encaje y traer las mejores opciones para revisión.",
+    modelPolicy: "Usar modelos pequeños para limpiar investigación; gastar solo cuando un prospecto merezca revisión.",
+    capabilities: ["Seguimiento de fuentes de prospectos", "Resúmenes de señales de encaje", "Notas de oportunidades de ingresos", "Preparación de contacto con aprobación previa"],
+  },
+  micah: {
+    title: "Agente de redes sociales",
+    mascot: "Perezoso",
+    room: "Estudio multimedia de MICAH",
+    mission: "Convertir objetivos de negocio en borradores útiles, ideas de campaña, ofertas, textos, guiones y direcciones visuales que el dueño pueda aprobar.",
+    modelPolicy: "Usar muestras limitadas en público; reservar calendarios extensos para paneles de clientes de pago.",
+    capabilities: ["Borradores de muestras de contenido", "Enfoques de campaña", "Opciones de texto y llamados a la acción", "Activos de marketing listos para aprobación"],
+  },
+  david: {
+    title: "Agente del CRM",
+    mascot: "Lobo",
+    room: "Panel del CRM",
+    mission: "Evitar que se pierdan prospectos, notas, contexto del cliente, fechas de seguimiento y oportunidades abiertas.",
+    modelPolicy: "Usar primero reglas deterministas de base de datos; llamar a IA solo para resumir notas desordenadas.",
+    capabilities: ["Visibilidad del embudo", "Recordatorios de próximas acciones", "Organización del contexto del cliente", "Higiene de la cola de seguimiento"],
+  },
+  oracle: {
+    title: "Inteligencia del Reino y vigilancia de tendencias",
+    mascot: "Búho",
+    room: "Torre de vigilancia de ORACLE",
+    mission: "Vigilar herramientas útiles, cambios del mercado, tendencias de repositorios, ideas de flujo y señales de ingresos que puedan fortalecer el Reino.",
+    modelPolicy: "Usar análisis programados económicos; escalar solo cuando la señal pueda afectar los ingresos.",
+    capabilities: ["Vigilancia de herramientas y repositorios", "Comprobaciones de utilidad de MCP", "Resúmenes de señales de ingresos", "Filtrado de objetos brillantes"],
+  },
+};

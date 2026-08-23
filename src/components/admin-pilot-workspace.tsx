@@ -6,9 +6,11 @@ import {
   updatePilotDeliverable,
 } from "@/server/pilot/actions";
 import { formatDateTime } from "@/lib/format";
+import type { SiteLanguage } from "@/lib/site-language";
 import type { PilotWorkspace } from "@/server/pilot/queries";
 
 type AdminPilotWorkspaceProps = {
+  language: SiteLanguage;
   organizationId: string;
   organizationName: string;
   workspace: PilotWorkspace;
@@ -21,22 +23,25 @@ function datetimeLocalValue(value?: string | null) {
   return value ? value.slice(0, 16) : "";
 }
 
-function reviewDecisionLabel(decision: "approved" | "changes_requested") {
+function reviewDecisionLabel(decision: "approved" | "changes_requested", language: SiteLanguage) {
+  if (language === "es") return decision === "approved" ? "Aprobado" : "Cambios solicitados";
   return decision === "approved" ? "Approved" : "Changes requested";
 }
 
 function workMessageTitle(
   messageKind: "work_sent" | "approved" | "changes_requested",
   authorDisplayName: string,
+  language: SiteLanguage,
 ) {
   if (messageKind === "work_sent") {
-    return `${authorDisplayName} sent work for client review`;
+    return language === "es" ? `${authorDisplayName} envió trabajo para revisión del cliente` : `${authorDisplayName} sent work for client review`;
   }
 
-  return `${reviewDecisionLabel(messageKind)} by ${authorDisplayName}`;
+  return language === "es" ? `${reviewDecisionLabel(messageKind, language)} por ${authorDisplayName}` : `${reviewDecisionLabel(messageKind, language)} by ${authorDisplayName}`;
 }
 
 export function AdminPilotWorkspace({
+  language,
   organizationId,
   organizationName,
   workspace,
@@ -48,45 +53,45 @@ export function AdminPilotWorkspace({
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
             {organizationName}
           </p>
-          <h3 className="mt-2 text-lg font-semibold text-slate-950">Founding pilot control</h3>
+          <h3 className="mt-2 text-lg font-semibold text-slate-950">{language === "es" ? "Control del piloto fundador" : "Founding pilot control"}</h3>
         </div>
         <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 ring-1 ring-slate-200">
-          {workspace.plan?.status ?? "not started"}
+          {workspace.plan?.status ? statusLabel(workspace.plan.status, language) : language === "es" ? "no iniciado" : "not started"}
         </span>
       </div>
 
       <form action={savePilotPlan} className="mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-2">
         <input name="organizationId" type="hidden" value={organizationId} />
         <label className="md:col-span-2">
-          <span className="text-sm font-medium text-slate-700">30-day goal</span>
+          <span className="text-sm font-medium text-slate-700">{language === "es" ? "Meta de 30 días" : "30-day goal"}</span>
           <textarea className={`${inputClass} min-h-20`} defaultValue={workspace.plan?.thirtyDayGoal ?? ""} name="thirtyDayGoal" />
         </label>
         <label>
-          <span className="text-sm font-medium text-slate-700">Success definition</span>
+          <span className="text-sm font-medium text-slate-700">{language === "es" ? "Definición de éxito" : "Success definition"}</span>
           <textarea className={`${inputClass} min-h-20`} defaultValue={workspace.plan?.successDefinition ?? ""} name="successDefinition" />
         </label>
         <div className="grid gap-3">
           <label>
-            <span className="text-sm font-medium text-slate-700">Next check-in</span>
+            <span className="text-sm font-medium text-slate-700">{language === "es" ? "Próxima revisión" : "Next check-in"}</span>
             <input className={inputClass} defaultValue={datetimeLocalValue(workspace.plan?.nextCheckInAt)} name="nextCheckInAt" type="datetime-local" />
           </label>
           <label>
-            <span className="text-sm font-medium text-slate-700">Status</span>
+            <span className="text-sm font-medium text-slate-700">{language === "es" ? "Estado" : "Status"}</span>
             <select className={inputClass} defaultValue={workspace.plan?.status ?? "active"} name="status">
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="completed">Completed</option>
+              <option value="active">{language === "es" ? "Activo" : "Active"}</option>
+              <option value="paused">{language === "es" ? "En pausa" : "Paused"}</option>
+              <option value="completed">{language === "es" ? "Completado" : "Completed"}</option>
             </select>
           </label>
         </div>
         <button className="w-fit rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white" type="submit">
-          Save pilot plan
+          {language === "es" ? "Guardar plan piloto" : "Save pilot plan"}
         </button>
       </form>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div>
-          <h4 className="font-semibold text-slate-950">Actions</h4>
+          <h4 className="font-semibold text-slate-950">{language === "es" ? "Acciones" : "Actions"}</h4>
           <div className="mt-3 space-y-2">
             {workspace.actions.map((action) => (
               <form action={updatePilotAction} className="rounded-xl border border-slate-200 bg-white p-3" key={action.id}>
@@ -94,40 +99,40 @@ export function AdminPilotWorkspace({
                 <p className="text-sm font-semibold text-slate-950">{action.priority}. {action.title}</p>
                 <div className="mt-2 flex items-center gap-2">
                   <select className="rounded-lg border border-slate-300 px-2 py-1 text-xs" defaultValue={action.status} name="status">
-                    <option value="not_started">Not started</option>
-                    <option value="in_progress">In progress</option>
-                    <option value="blocked">Blocked</option>
-                    <option value="completed">Completed</option>
+                    <option value="not_started">{language === "es" ? "No iniciada" : "Not started"}</option>
+                    <option value="in_progress">{language === "es" ? "En curso" : "In progress"}</option>
+                    <option value="blocked">{language === "es" ? "Bloqueada" : "Blocked"}</option>
+                    <option value="completed">{language === "es" ? "Completada" : "Completed"}</option>
                   </select>
-                  <button className="text-xs font-semibold text-blue-700" type="submit">Update</button>
+                  <button className="text-xs font-semibold text-blue-700" type="submit">{language === "es" ? "Actualizar" : "Update"}</button>
                 </div>
               </form>
             ))}
           </div>
           <form action={createPilotAction} className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
             <input name="organizationId" type="hidden" value={organizationId} />
-            <input className={inputClass} name="title" placeholder="Action title" />
-            <textarea className={`${inputClass} min-h-16`} name="description" placeholder="What needs to happen?" />
+            <input className={inputClass} name="title" placeholder={language === "es" ? "Título de la acción" : "Action title"} />
+            <textarea className={`${inputClass} min-h-16`} name="description" placeholder={language === "es" ? "¿Qué debe suceder?" : "What needs to happen?"} />
             <div className="grid grid-cols-2 gap-2">
               <select className={inputClass} defaultValue="1" name="priority">
-                <option value="1">Priority 1</option><option value="2">Priority 2</option><option value="3">Priority 3</option>
+                <option value="1">{language === "es" ? "Prioridad 1" : "Priority 1"}</option><option value="2">{language === "es" ? "Prioridad 2" : "Priority 2"}</option><option value="3">{language === "es" ? "Prioridad 3" : "Priority 3"}</option>
               </select>
-              <input className={inputClass} name="ownerLabel" placeholder="Owner" />
+              <input className={inputClass} name="ownerLabel" placeholder={language === "es" ? "Responsable" : "Owner"} />
             </div>
             <input className={inputClass} name="dueDate" type="date" />
             <input name="status" type="hidden" value="not_started" />
-            <button className="mt-3 rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white" type="submit">Add action</button>
+            <button className="mt-3 rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white" type="submit">{language === "es" ? "Agregar acción" : "Add action"}</button>
           </form>
         </div>
 
         <div>
-          <h4 className="font-semibold text-slate-950">Work for Client Review</h4>
+          <h4 className="font-semibold text-slate-950">{language === "es" ? "Trabajo para revisión del cliente" : "Work for Client Review"}</h4>
           <div className="mt-3 space-y-2">
             {workspace.deliverables.map((deliverable) => (
               <form action={updatePilotDeliverable} className="rounded-xl border border-slate-200 bg-white p-3" key={deliverable.id}>
                 <input name="deliverableId" type="hidden" value={deliverable.id} />
                 {deliverable.messages.length > 0 ? (
-                  <div className="mt-3 space-y-2" aria-label="Work message history">
+                  <div className="mt-3 space-y-2" aria-label={language === "es" ? "Historial de mensajes del trabajo" : "Work message history"}>
                     {deliverable.messages.map((message) => (
                       <div
                         className={`rounded-xl border p-3 text-xs leading-5 ${
@@ -141,6 +146,7 @@ export function AdminPilotWorkspace({
                           {workMessageTitle(
                             message.messageKind,
                             message.authorDisplayName,
+                            language,
                           )}
                         </p>
                         {message.message ? <p className="mt-1">{message.message}</p> : null}
@@ -153,11 +159,11 @@ export function AdminPilotWorkspace({
                 ) : null}
                 {deliverable.review?.decision === "changes_requested" ? (
                   <p className="mt-3 text-xs leading-5 text-slate-600">
-                    Revise the work below. Keep it as Draft while editing, then choose Ready for client review when it is ready.
+                    {language === "es" ? "Revisa el trabajo a continuación. Déjalo como Borrador mientras lo editas y elige Listo para revisión del cliente cuando esté preparado." : "Revise the work below. Keep it as Draft while editing, then choose Ready for client review when it is ready."}
                   </p>
                 ) : null}
                 <label className="mt-3 block text-xs font-semibold text-slate-700" htmlFor={`work-title-${deliverable.id}`}>
-                  Work title
+                  {language === "es" ? "Título del trabajo" : "Work title"}
                 </label>
                 <input
                   className={inputClass}
@@ -167,7 +173,7 @@ export function AdminPilotWorkspace({
                   required
                 />
                 <label className="block text-xs font-semibold text-slate-700" htmlFor={`work-summary-${deliverable.id}`}>
-                  Short summary
+                  {language === "es" ? "Resumen breve" : "Short summary"}
                 </label>
                 <textarea
                   className={`${inputClass} min-h-16`}
@@ -176,7 +182,7 @@ export function AdminPilotWorkspace({
                   name="summary"
                 />
                 <label className="block text-xs font-semibold text-slate-700" htmlFor={`work-body-${deliverable.id}`}>
-                  Work for the client to review
+                  {language === "es" ? "Trabajo para que el cliente lo revise" : "Work for the client to review"}
                 </label>
                 <textarea
                   className={`${inputClass} min-h-24`}
@@ -185,7 +191,7 @@ export function AdminPilotWorkspace({
                   name="body"
                 />
                 <label className="block text-xs font-semibold text-slate-700" htmlFor={`work-status-${deliverable.id}`}>
-                  Status
+                  {language === "es" ? "Estado" : "Status"}
                 </label>
                 <select
                   className={inputClass}
@@ -193,31 +199,36 @@ export function AdminPilotWorkspace({
                   id={`work-status-${deliverable.id}`}
                   name="status"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="ready_for_review">Ready for client review</option>
-                  <option value="delivered">Delivered</option>
-                  <option value="archived">Archived</option>
+                  <option value="draft">{language === "es" ? "Borrador" : "Draft"}</option>
+                  <option value="ready_for_review">{language === "es" ? "Listo para revisión del cliente" : "Ready for client review"}</option>
+                  <option value="delivered">{language === "es" ? "Entregado" : "Delivered"}</option>
+                  <option value="archived">{language === "es" ? "Archivado" : "Archived"}</option>
                 </select>
                 <button className="mt-3 rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white" type="submit">
-                  Save changes
+                  {language === "es" ? "Guardar cambios" : "Save changes"}
                 </button>
               </form>
             ))}
           </div>
           <form action={createPilotDeliverable} className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
             <input name="organizationId" type="hidden" value={organizationId} />
-            <input className={inputClass} name="title" placeholder="Work title" />
-            <textarea className={`${inputClass} min-h-16`} name="summary" placeholder="Short summary" />
-            <textarea className={`${inputClass} min-h-24`} name="body" placeholder="Work for the client to review" />
+            <input className={inputClass} name="title" placeholder={language === "es" ? "Título del trabajo" : "Work title"} />
+            <textarea className={`${inputClass} min-h-16`} name="summary" placeholder={language === "es" ? "Resumen breve" : "Short summary"} />
+            <textarea className={`${inputClass} min-h-24`} name="body" placeholder={language === "es" ? "Trabajo para que el cliente lo revise" : "Work for the client to review"} />
             <select className={inputClass} defaultValue="draft" name="status">
-              <option value="draft">Draft</option>
-              <option value="ready_for_review">Ready for client review</option>
-              <option value="delivered">Delivered</option>
+              <option value="draft">{language === "es" ? "Borrador" : "Draft"}</option>
+              <option value="ready_for_review">{language === "es" ? "Listo para revisión del cliente" : "Ready for client review"}</option>
+              <option value="delivered">{language === "es" ? "Entregado" : "Delivered"}</option>
             </select>
-            <button className="mt-3 rounded-full bg-blue-700 px-4 py-2 text-sm font-semibold text-white" type="submit">Add work for review</button>
+            <button className="mt-3 rounded-full bg-blue-700 px-4 py-2 text-sm font-semibold text-white" type="submit">{language === "es" ? "Agregar trabajo para revisión" : "Add work for review"}</button>
           </form>
         </div>
       </div>
     </article>
   );
+}
+
+function statusLabel(value: string, language: SiteLanguage) {
+  if (language !== "es") return value.replaceAll("_", " ");
+  return ({ active: "activo", paused: "en pausa", completed: "completado" } as Record<string, string>)[value] ?? value.replaceAll("_", " ");
 }

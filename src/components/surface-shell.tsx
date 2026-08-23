@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 type SurfaceShellProps = {
   eyebrow: string;
@@ -20,9 +21,12 @@ export function SurfaceShell({
   return (
     <main className={`min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8 ${className}`}>
       <section className="mx-auto max-w-7xl rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
-          {eyebrow}
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
+            {eyebrow}
+          </p>
+          <LanguageSwitcher />
+        </div>
         <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
           {title}
         </h1>

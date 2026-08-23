@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { HunterSearch } from "@/components/hunter-search";
 import { SurfaceShell } from "@/components/surface-shell";
 import { formatDateTime } from "@/lib/format";
+import type { SiteLanguage } from "@/lib/site-language";
+import { getSiteLanguage } from "@/lib/site-language-server";
 import { requireSuperAdmin } from "@/server/auth/guards";
 import { createSalesProspect } from "@/server/sales/actions";
 import {
@@ -21,13 +23,13 @@ type SalesPageProps = {
   searchParams?: Promise<{ crm?: string }>;
 };
 
-const errorMessages: Record<string, string> = {
-  business_name_required: "Enter the prospect's business name.",
-  invalid_website: "Enter a valid business website, such as example.com.",
-  invalid_source: "Enter a valid public source URL beginning with a real domain.",
-  invalid_email: "Enter a valid business contact email or leave it blank.",
-  invalid_contact_basis: "Choose a valid contact basis.",
-  create_failed: "The prospect could not be created. Apply the Atlas Sales CRM migration first.",
+const errorMessages: Record<string, Record<SiteLanguage, string>> = {
+  business_name_required: { en: "Enter the prospect's business name.", es: "Escribe el nombre del negocio del prospecto." },
+  invalid_website: { en: "Enter a valid business website, such as example.com.", es: "Escribe un sitio web válido, como example.com." },
+  invalid_source: { en: "Enter a valid public source URL beginning with a real domain.", es: "Escribe una URL pública válida que comience con un dominio real." },
+  invalid_email: { en: "Enter a valid business contact email or leave it blank.", es: "Escribe un correo comercial válido o deja el campo vacío." },
+  invalid_contact_basis: { en: "Choose a valid contact basis.", es: "Elige una base de contacto válida." },
+  create_failed: { en: "The prospect could not be created. Apply the Atlas Sales CRM migration first.", es: "No se pudo crear el prospecto. Aplica primero la migración del CRM de ventas de Atlas." },
 };
 
 const openStatuses = new Set<SalesProspectStatus>([
@@ -43,9 +45,12 @@ const openStatuses = new Set<SalesProspectStatus>([
 
 export default async function SalesPage({ searchParams }: SalesPageProps) {
   await requireSuperAdmin("/lions-den/sales");
-  const params = await searchParams;
-  const prospects = await getSalesProspects();
-  const error = params?.crm ? errorMessages[params.crm] : null;
+  const [language, params, prospects] = await Promise.all([
+    getSiteLanguage(),
+    searchParams,
+    getSalesProspects(),
+  ]);
+  const error = params?.crm ? errorMessages[params.crm]?.[language] : null;
   const openCount = prospects.data.filter((prospect) =>
     openStatuses.has(prospect.status),
   ).length;
@@ -74,15 +79,15 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
 
   return (
     <SurfaceShell
-      description="The private Atlas sales system. HUNTER researches, DAVID keeps every next step visible, MICAH prepares approved drafts, and ATLAS coordinates the handoffs."
-      eyebrow="Atlas Revenue Operations"
-      title="Sales Command"
+      description={language === "es" ? "El sistema privado de ventas de Atlas. HUNTER investiga, DAVID mantiene visible cada próxima acción, MICAH prepara borradores aprobados y ATLAS coordina las transferencias." : "The private Atlas sales system. HUNTER researches, DAVID keeps every next step visible, MICAH prepares approved drafts, and ATLAS coordinates the handoffs."}
+      eyebrow={language === "es" ? "Operaciones de ingresos de Atlas" : "Atlas Revenue Operations"}
+      title={language === "es" ? "Comando de ventas" : "Sales Command"}
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Metric label="Open prospects" value={openCount} />
-        <Metric label="Overdue next actions" value={overdueCount} tone={overdueCount ? "amber" : "slate"} />
-        <Metric label="Actions scheduled" value={scheduledCount} tone={scheduledCount ? "blue" : "slate"} />
-        <Metric label="Outreach approved" value={approvedCount} tone="blue" />
+        <Metric label={language === "es" ? "Prospectos abiertos" : "Open prospects"} value={openCount} />
+        <Metric label={language === "es" ? "Próximas acciones vencidas" : "Overdue next actions"} value={overdueCount} tone={overdueCount ? "amber" : "slate"} />
+        <Metric label={language === "es" ? "Acciones programadas" : "Actions scheduled"} value={scheduledCount} tone={scheduledCount ? "blue" : "slate"} />
+        <Metric label={language === "es" ? "Contacto aprobado" : "Outreach approved"} value={approvedCount} tone="blue" />
       </div>
 
       {error ? (
@@ -93,15 +98,13 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
 
       <section className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
-          Launch boundary
+          {language === "es" ? "Límite de lanzamiento" : "Launch boundary"}
         </p>
         <h2 className="mt-2 text-xl font-bold text-slate-950">
-          Research first. Human approval before contact.
+          {language === "es" ? "Investigar primero. Aprobación humana antes del contacto." : "Research first. Human approval before contact."}
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-700">
-          Adding a prospect does not send email, text, social messages, or calls.
-          Outreach is locked until a destination is verified, suppression is
-          checked, and Manny approves the specific channel.
+          {language === "es" ? "Agregar un prospecto no envía correos, mensajes de texto, mensajes sociales ni llamadas. El contacto permanece bloqueado hasta verificar el destino, comprobar supresiones y obtener la aprobación de Manny para el canal específico." : "Adding a prospect does not send email, text, social messages, or calls. Outreach is locked until a destination is verified, suppression is checked, and Manny approves the specific channel."}
         </p>
       </section>
 
@@ -111,25 +114,23 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
-              DAVID follow-up focus
+              {language === "es" ? "Enfoque de seguimiento de DAVID" : "DAVID follow-up focus"}
             </p>
             <h2 className="mt-2 text-2xl font-bold text-slate-950">
-              Do not let the next step disappear
+              {language === "es" ? "No dejes que desaparezca la próxima acción" : "Do not let the next step disappear"}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Overdue work appears first. Open the prospect, complete the action,
-              and schedule the next one while the conversation is fresh.
+              {language === "es" ? "El trabajo vencido aparece primero. Abre el prospecto, completa la acción y programa la siguiente mientras la conversación está fresca." : "Overdue work appears first. Open the prospect, complete the action, and schedule the next one while the conversation is fresh."}
             </p>
           </div>
           <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${overdueCount ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
-            {overdueCount ? `${overdueCount} overdue` : "Queue current"}
+            {overdueCount ? language === "es" ? `${overdueCount} vencidas` : `${overdueCount} overdue` : language === "es" ? "Cola al día" : "Queue current"}
           </span>
         </div>
 
         {followUpQueue.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-            No follow-up dates are scheduled yet. Add a next action and due date
-            to every active prospect.
+            {language === "es" ? "Aún no hay fechas de seguimiento programadas. Agrega una próxima acción y fecha límite a cada prospecto activo." : "No follow-up dates are scheduled yet. Add a next action and due date to every active prospect."}
           </div>
         ) : (
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
@@ -147,11 +148,11 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
                         {prospect.businessName}
                       </p>
                       <p className="mt-1 text-sm leading-6 text-slate-700">
-                        {prospect.nextAction ?? "Choose the next follow-up step"}
+                        {prospect.nextAction ?? (language === "es" ? "Elige la próxima acción de seguimiento" : "Choose the next follow-up step")}
                       </p>
                     </div>
                     <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${overdue ? "bg-amber-200 text-amber-900" : "bg-blue-100 text-blue-800"}`}>
-                      {overdue ? "Overdue" : "Next up"}
+                      {overdue ? language === "es" ? "Vencida" : "Overdue" : language === "es" ? "Siguiente" : "Next up"}
                     </span>
                   </div>
                   <p className="mt-3 text-xs font-medium text-slate-500">
@@ -168,53 +169,51 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
-              HUNTER intake
+              {language === "es" ? "Ingreso de HUNTER" : "HUNTER intake"}
             </p>
             <h2 className="mt-2 text-2xl font-bold text-slate-950">
-              Add a researched prospect
+              {language === "es" ? "Agregar un prospecto investigado" : "Add a researched prospect"}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Start with facts you verified on the business&apos;s own public site,
-              a referral, or another permitted source. Save the source so we can
-              always explain where the record came from.
+              {language === "es" ? "Empieza con datos verificados en el sitio público del negocio, una referencia u otra fuente permitida. Guarda la fuente para poder explicar siempre el origen del registro." : "Start with facts you verified on the business's own public site, a referral, or another permitted source. Save the source so we can always explain where the record came from."}
             </p>
           </div>
           <span className="w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-amber-800">
-            No auto-send
+            {language === "es" ? "Sin envío automático" : "No auto-send"}
           </span>
         </div>
 
         <form action={createSalesProspect} className="mt-5 grid gap-4 sm:grid-cols-2">
-          <Field label="Business name" name="businessName" required />
-          <Field label="Business category" name="industry" placeholder="Auto repair, childcare, fitness, home services..." />
-          <Field label="City" name="city" />
-          <Field label="State / region" name="region" placeholder="TX" />
-          <Field label="Business website" name="website" placeholder="example.com" type="text" />
-          <Field label="Public source URL" name="sourceUrl" placeholder="https://example.com/contact" type="url" />
-          <Field label="Contact name (if public)" name="contactName" />
-          <Field label="Business email (if public)" name="contactEmail" type="email" />
-          <Field label="Business phone (if public)" name="contactPhone" type="tel" />
-          <Field label="Social profile or handle" name="socialMedia" />
+          <Field label={language === "es" ? "Nombre del negocio" : "Business name"} name="businessName" required />
+          <Field label={language === "es" ? "Categoría del negocio" : "Business category"} name="industry" placeholder={language === "es" ? "Reparación de autos, cuidado infantil, fitness, servicios para el hogar..." : "Auto repair, childcare, fitness, home services..."} />
+          <Field label={language === "es" ? "Ciudad" : "City"} name="city" />
+          <Field label={language === "es" ? "Estado / región" : "State / region"} name="region" placeholder="TX" />
+          <Field label={language === "es" ? "Sitio web del negocio" : "Business website"} name="website" placeholder="example.com" type="text" />
+          <Field label={language === "es" ? "URL de fuente pública" : "Public source URL"} name="sourceUrl" placeholder="https://example.com/contact" type="url" />
+          <Field label={language === "es" ? "Nombre de contacto (si es público)" : "Contact name (if public)"} name="contactName" />
+          <Field label={language === "es" ? "Correo comercial (si es público)" : "Business email (if public)"} name="contactEmail" type="email" />
+          <Field label={language === "es" ? "Teléfono comercial (si es público)" : "Business phone (if public)"} name="contactPhone" type="tel" />
+          <Field label={language === "es" ? "Perfil o usuario social" : "Social profile or handle"} name="socialMedia" />
           <label className="sm:col-span-2">
-            <span className="text-sm font-medium text-slate-700">Contact basis</span>
+            <span className="text-sm font-medium text-slate-700">{language === "es" ? "Base de contacto" : "Contact basis"}</span>
             <select
               className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950"
               defaultValue="public_business_contact"
               name="contactBasis"
             >
-              <option value="public_business_contact">Public business contact</option>
-              <option value="referral">Referral</option>
-              <option value="prior_relationship">Prior relationship</option>
-              <option value="inbound_consent">Inbound consent</option>
-              <option value="customer">Current customer</option>
-              <option value="unknown">Not verified yet</option>
+              <option value="public_business_contact">{language === "es" ? "Contacto comercial público" : "Public business contact"}</option>
+              <option value="referral">{language === "es" ? "Referencia" : "Referral"}</option>
+              <option value="prior_relationship">{language === "es" ? "Relación previa" : "Prior relationship"}</option>
+              <option value="inbound_consent">{language === "es" ? "Consentimiento entrante" : "Inbound consent"}</option>
+              <option value="customer">{language === "es" ? "Cliente actual" : "Current customer"}</option>
+              <option value="unknown">{language === "es" ? "Aún no verificado" : "Not verified yet"}</option>
             </select>
           </label>
           <button
             className="rounded-full bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 sm:col-span-2"
             type="submit"
           >
-            Add to HUNTER research queue
+            {language === "es" ? "Agregar a la cola de investigación de HUNTER" : "Add to HUNTER research queue"}
           </button>
         </form>
       </section>
@@ -223,24 +222,22 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
-              DAVID pipeline
+              {language === "es" ? "Embudo de DAVID" : "DAVID pipeline"}
             </p>
-            <h2 className="mt-2 text-2xl font-bold text-slate-950">Prospects and next actions</h2>
+            <h2 className="mt-2 text-2xl font-bold text-slate-950">{language === "es" ? "Prospectos y próximas acciones" : "Prospects and next actions"}</h2>
           </div>
-          <span className="text-sm text-slate-500">{prospects.data.length} total</span>
+          <span className="text-sm text-slate-500">{prospects.data.length} {language === "es" ? "en total" : "total"}</span>
         </div>
 
         {prospects.setupRequired ? (
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-            Apply migration <code>20260715100000_atlas_sales_crm.sql</code> in
-            Supabase before using Sales Command.
+            {language === "es" ? <>Aplica la migración <code>20260715100000_atlas_sales_crm.sql</code> en Supabase antes de usar Comando de ventas.</> : <>Apply migration <code>20260715100000_atlas_sales_crm.sql</code> in Supabase before using Sales Command.</>}
           </div>
         ) : null}
 
         {!prospects.setupRequired && prospects.data.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-            The pipeline is empty. Add the first researched business above; new
-            website assessments will also enter this CRM automatically.
+            {language === "es" ? "El embudo está vacío. Agrega arriba el primer negocio investigado; las nuevas evaluaciones del sitio también entrarán automáticamente en este CRM." : "The pipeline is empty. Add the first researched business above; new website assessments will also enter this CRM automatically."}
           </div>
         ) : null}
 
@@ -255,30 +252,30 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-lg font-semibold text-slate-950">{prospect.businessName}</h3>
-                    <StageBadge status={prospect.status} />
+                    <StageBadge language={language} status={prospect.status} />
                   </div>
                   <p className="mt-1 text-sm text-slate-600">
-                    {prospect.industry ?? "Industry not set"}
+                    {prospect.industry ?? (language === "es" ? "Industria sin definir" : "Industry not set")}
                     {prospect.city ? ` · ${prospect.city}${prospect.region ? `, ${prospect.region}` : ""}` : ""}
                   </p>
                   <p className="mt-2 text-sm text-slate-700">
-                    Next: {prospect.nextAction ?? "Research and choose the next step"}
+                    {language === "es" ? "Siguiente" : "Next"}: {prospect.nextAction ?? (language === "es" ? "Investigar y elegir la próxima acción" : "Research and choose the next step")}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {prospect.nextActionAt
                       ? formatDateTime(prospect.nextActionAt)
-                      : "No due date"}
+                      : language === "es" ? "Sin fecha límite" : "No due date"}
                   </p>
                 </div>
                 <div className="text-left sm:text-right">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
-                    Owner
+                    {language === "es" ? "Responsable" : "Owner"}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-slate-900">
                     {prospect.assignedRole.toUpperCase()}
                   </p>
                   <p className="mt-2 text-xs text-slate-500">
-                    Fit {prospect.fitScore ?? "—"}/100
+                    {language === "es" ? "Encaje" : "Fit"} {prospect.fitScore ?? "—"}/100
                   </p>
                 </div>
               </div>
@@ -292,7 +289,7 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
           className="inline-flex rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
           href="/lions-den"
         >
-          Back to the Lion&apos;s Den
+          {language === "es" ? "Volver a la Guarida del León" : "Back to the Lion’s Den"}
         </Link>
       </div>
     </SurfaceShell>
@@ -328,16 +325,20 @@ function Field({ label, name, placeholder, required, type = "text" }: { label: s
   );
 }
 
-function StageBadge({ status }: { status: SalesProspectStatus }) {
+function StageBadge({ language, status }: { language: SiteLanguage; status: SalesProspectStatus }) {
   const warm = ["new", "researching", "review_ready"].includes(status);
   return (
     <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${warm ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800"}`}>
-      {humanize(status)}
+      {humanize(status, language)}
     </span>
   );
 }
 
-function humanize(value: string) {
+function humanize(value: string, language: SiteLanguage = "en") {
+  if (language === "es") {
+    const translated = ({ approved_for_outreach: "Aprobado para contacto", contacted: "Contactado", converted: "Convertido", disqualified: "Descalificado", lost: "Perdido", new: "Nuevo", proposal_sent: "Propuesta enviada", qualified: "Calificado", replied: "Respondió", researching: "En investigación", review_ready: "Listo para revisión", won: "Ganado" } as Record<string, string>)[value];
+    if (translated) return translated;
+  }
   const words = value.replaceAll("_", " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
