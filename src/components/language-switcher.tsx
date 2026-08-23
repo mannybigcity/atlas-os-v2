@@ -40,6 +40,10 @@ function subscribeToLanguage(onChange: () => void) {
 export function persistSiteLanguage(language: SiteLanguage) {
   document.cookie = `${SITE_LANGUAGE_COOKIE}=${language}; Path=/; Max-Age=${SITE_LANGUAGE_MAX_AGE}; SameSite=Lax`;
   window.localStorage.setItem(SITE_LANGUAGE_STORAGE_KEY, language);
+  const url = new URL(window.location.href);
+  if (language === "es") url.searchParams.set("lang", "es");
+  else url.searchParams.delete("lang");
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   document.documentElement.lang = language;
   window.dispatchEvent(new Event("atlas-language-change"));
 }
