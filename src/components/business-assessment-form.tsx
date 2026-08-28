@@ -186,7 +186,8 @@ const spanishLabels: Record<string, string> = {
   "Atlas will review the answers and show the next step, including a 7-day free trial review option if the business is a fit.":
     "Atlas revisará las respuestas y mostrará el siguiente paso, incluida una opción de revisión de prueba gratis por 7 días si el negocio encaja.",
   "Send my business assessment": "Enviar mi evaluación del negocio",
-  "No charge today. No automatic subscription.": "Sin cargo hoy. Sin suscripción automática.",
+  "No charge to send this assessment. Paid plans are monthly and renew until you cancel.":
+    "No hay cargo por enviar esta evaluación. Los planes de pago son mensuales y se renuevan hasta que los canceles.",
   Completion: "Progreso",
   "All sections complete": "Todas las secciones completas",
 };
@@ -682,7 +683,7 @@ export function BusinessAssessmentForm({ error }: Props) {
             </button>
           </div>
           <p className="mt-4 text-center text-sm text-slate-500 sm:text-left">
-            {translate("No charge today. No automatic subscription.")}
+            {translate("No charge to send this assessment. Paid plans are monthly and renew until you cancel.")}
           </p>
         </div>
       </form>
