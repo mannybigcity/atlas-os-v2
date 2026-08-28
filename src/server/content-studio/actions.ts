@@ -32,6 +32,6 @@ export async function reviewContentDraft(formData: FormData) {
   });
 
   redirect(
-    `/client?content=${error ? "review_error" : "review_saved"}#content-studio`,
+    `/client/micah?content=${error ? "review_error" : "review_saved"}#content-studio`,
   );
 }

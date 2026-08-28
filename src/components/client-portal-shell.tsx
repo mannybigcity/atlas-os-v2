@@ -27,15 +27,10 @@ export async function ClientPortalShell({
   const language = await getSiteLanguage();
   const spanish = language === "es";
   const portalName = getClientPortalName(organizationName);
-  const isSisWorkspace = /^sis custom creations$/i.test(String(organizationName ?? ""));
   const localizedEyebrow = spanish && eyebrow === "Private client workspace"
     ? "Espacio privado del cliente"
     : eyebrow;
-  const localizedPortalName = spanish && !isSisWorkspace
-    ? portalName === "Your Lion’s Den"
-      ? "Tu Centro de Mando"
-      : `${portalName.replace(/’s Lion’s Den$/, "")} · Centro de Mando`
-    : portalName;
+  const localizedPortalName = portalName;
 
   return (
     <main className="min-h-screen bg-slate-50 p-3 sm:p-5">

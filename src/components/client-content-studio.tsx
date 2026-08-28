@@ -58,53 +58,40 @@ export async function ClientContentStudio({
 
   return (
     <section
-      className="rounded-2xl border border-blue-200 bg-white p-5"
+      className="rounded-[1.6rem] border border-[#d8c27a] bg-white p-5"
       id="content-studio"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
-            {spanish ? "Estudio de Contenido MICAH" : "MICAH Content Studio"}
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#f5b932]">
+            MICAH
           </p>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-            {spanish ? "Imágenes sociales y borradores de publicaciones" : <>Social images &amp; post drafts</>}
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#071b42]">
+            {spanish ? "Galería de borradores para descargar" : "Draft gallery to download"}
           </h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[#33415c]">
             {spanish
-              ? "Atlas prepara el trabajo aquí. No se publica nada hasta que lo revises y apruebes."
-              : "Atlas prepares the work here. Nothing is posted until you review and approve it."}
+              ? "Descarga el archivo y publícalo tú mismo. MICAH no publica en redes."
+              : "Download the file and post it yourself. MICAH does not publish to social."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
-            {reviewCount} {spanish ? "en espera de revisión" : "awaiting review"}
+          <span className="rounded-full bg-[#fff8e6] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#071b42]">
+            {studio.drafts.length} {spanish ? "borradores" : "drafts"}
           </span>
-          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-800">
-            {studio.automation?.enabled
-              ? spanish ? "Estudio diario activo" : "Daily studio active"
-              : spanish ? "Estudio manual" : "Manual studio"}
-          </span>
+          {reviewCount > 0 ? (
+            <span className="rounded-full bg-[#071b42] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#f5b932]">
+              {reviewCount} {spanish ? "nuevos" : "new"}
+            </span>
+          ) : null}
         </div>
       </div>
 
-      {studio.automation?.enabled ? (
-        <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
-          {spanish
-            ? `MICAH está configurado para preparar hasta ${studio.automation.dailyLimit} borradores nuevos por día para este espacio. El horario usa ${studio.automation.timezone}.`
-            : `MICAH is configured to prepare up to ${studio.automation.dailyLimit} new draft per day for this workspace. The schedule uses ${studio.automation.timezone}.`}
-          {studio.automation.lastSuccessfulRunAt
-            ? spanish
-              ? ` Última ejecución completada ${formatDateTime(studio.automation.lastSuccessfulRunAt)}.`
-              : ` Last completed ${formatDateTime(studio.automation.lastSuccessfulRunAt)}.`
-            : spanish
-              ? " La primera ejecución automatizada está esperando el despliegue a producción."
-              : " The first automated run is waiting for production deployment."}
-        </div>
-      ) : null}
-
       {studio.drafts.length === 0 ? (
-        <p className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-          {spanish ? "Todavía no hay borradores de contenido listos." : "No content drafts are ready yet."}
+        <p className="mt-5 rounded-2xl border border-dashed border-[#d8c27a] bg-[#fff8e6] p-5 text-sm leading-6 text-[#071b42]">
+          {spanish
+            ? "Todavía no hay borradores. Cuando MICAH prepare uno, podrás descargarlo aquí. Nada se publica solo."
+            : "Nothing in it yet. When MICAH prepares a draft, you can download it here. Nothing is posted automatically."}
         </p>
       ) : (
         <div className="mt-6 grid gap-5 xl:grid-cols-2">
@@ -142,7 +129,7 @@ export async function ClientContentStudio({
                 <div className="p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#f5b932]">
                         {draft.campaign} · {draft.draftDate}
                       </p>
                       <h3 className="mt-2 text-lg font-bold text-slate-950">
@@ -176,11 +163,11 @@ export async function ClientContentStudio({
 
                   {source ? (
                     <a
-                      className="mt-4 inline-flex rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                      className="mt-4 inline-flex rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0c2b63]"
                       download={`${draft.campaign.toLowerCase().replaceAll(" ", "-")}-${draft.draftDate}.${draft.imageSvg && !draft.imageUrl ? "svg" : "png"}`}
                       href={source}
                     >
-                      {spanish ? "Descargar imagen" : "Download image"}
+                      {spanish ? "Descargar para publicar tú" : "Download to post yourself"}
                     </a>
                   ) : null}
 
@@ -222,7 +209,7 @@ export async function ClientContentStudio({
                           type="submit"
                           value="approved"
                         >
-                          {spanish ? "Aprobar borrador" : "Approve draft"}
+                          {spanish ? "Conservar borrador" : "Keep this draft"}
                         </button>
                         <button
                           className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"

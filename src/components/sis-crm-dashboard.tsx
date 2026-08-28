@@ -49,7 +49,7 @@ export function SisCrmDashboard({ dashboard }: SisCrmDashboardProps) {
       <section className="rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,rgba(86,114,240,0.18),transparent_30%),linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)] p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#5672f0]">SIS company workspace</p>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5b932]">SIS company workspace</p>
             <h2 className="mt-2 text-3xl font-semibold tracking-[-0.06em] text-slate-950 sm:text-4xl">SIS Custom Creations CRM</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Private SIS operations for services, leads, quotes, orders, payment readiness, and fulfillment.
@@ -111,7 +111,7 @@ export function SisCrmDashboard({ dashboard }: SisCrmDashboardProps) {
         <article className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5672f0]">David queue</p>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#f5b932]">Lead queue</p>
               <h3 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">Recent SIS leads</h3>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{recentLeads.length} shown</span>

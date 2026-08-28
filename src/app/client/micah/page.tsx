@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { ClientMicahIntake } from "@/components/client-micah-intake";
 import { ClientContentStudio } from "@/components/client-content-studio";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
+import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
+import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
 import {
   clientWorkspaceHref,
   getClientWorkspaceContext,
@@ -15,7 +17,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const language = await getSiteLanguage();
   return {
-    title: language === "es" ? "Estudio de Contenido | Espacio del Cliente" : "Content Studio | Client Workspace",
+    title: language === "es" ? "MICAH | The Lion’s Den" : "MICAH | The Lion’s Den",
     robots: { index: false, follow: false },
   };
 }
@@ -24,6 +26,7 @@ type MicahPageProps = {
   searchParams?: Promise<{
     lang?: string;
     previewOrg?: string;
+    workspace?: string;
   }>;
 };
 
@@ -38,12 +41,43 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
     previewOrgSlug,
     primaryOrganization,
   } = workspace;
+  const useLionsDen = usesLionsDenHub(primaryOrganization?.slug);
   const studio = primaryOrganization
     ? await getContentStudio(primaryOrganization.id)
     : null;
   const aiRequests = primaryOrganization
     ? await getClientAiRequests(primaryOrganization.id, 6)
     : null;
+
+  const board = (
+    <div className="space-y-5">
+      {studio?.setupRequired ? (
+        <div className="rounded-2xl border border-[#d8c27a] bg-[#fff8e6] p-5 text-sm leading-6 text-[#071b42]">
+          {spanish ? "MICAH está preparando este espacio de trabajo." : "MICAH is preparing this workspace."}
+        </div>
+      ) : null}
+      {!primaryOrganization ? (
+        <div className="rounded-2xl border border-dashed border-[#d8c27a] bg-[#fff8e6] p-5 text-sm leading-6 text-[#071b42]">
+          {spanish ? "Todavía no hay un espacio de trabajo de organización asignado a esta cuenta." : "No organization workspace is assigned to this account yet."}
+        </div>
+      ) : null}
+      {studio && !studio.setupRequired && primaryOrganization ? (
+        <ClientContentStudio
+          canReview={canEditBusinessProfile}
+          organizationId={primaryOrganization.id}
+          studio={studio.data}
+        />
+      ) : null}
+    </div>
+  );
+
+  if (useLionsDen) {
+    return (
+      <LionsDenBoardScreen board="micah" workspace={workspace}>
+        {board}
+      </LionsDenBoardScreen>
+    );
+  }
 
   return (
     <ClientWorkspaceScreen
@@ -55,18 +89,6 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
       organizationName={primaryOrganization?.name}
       previewMode={isClientPreview}
     >
-      {studio?.setupRequired ? (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
-          {spanish ? "El Estudio de Contenido está preparando este espacio de trabajo." : "Content Studio is preparing this workspace."}
-        </div>
-      ) : null}
-
-      {!primaryOrganization ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-          {spanish ? "Todavía no hay un espacio de trabajo de organización asignado a esta cuenta." : "No organization workspace is assigned to this account yet."}
-        </div>
-      ) : null}
-
       {studio && !studio.setupRequired && primaryOrganization ? (
         <div className="space-y-5">
           <ClientMicahIntake
@@ -76,14 +98,11 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
               aiRequests && !aiRequests.setupRequired ? aiRequests.data : []
             }
           />
-
-          <ClientContentStudio
-            canReview={canEditBusinessProfile}
-            organizationId={primaryOrganization.id}
-            studio={studio.data}
-          />
+          {board}
         </div>
-      ) : null}
+      ) : (
+        board
+      )}
     </ClientWorkspaceScreen>
   );
 }

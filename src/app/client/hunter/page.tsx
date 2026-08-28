@@ -2,13 +2,17 @@ import type { Metadata } from "next";
 import { ClientAiConsole } from "@/components/client-ai-console";
 import { ClientOpportunityPipeline } from "@/components/client-opportunity-pipeline";
 import { HunterSearch } from "@/components/hunter-search";
+import { HunterReviewPile } from "@/components/lions-den/hunter-review-pile";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
+import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
+import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
 import {
   clientWorkspaceHref,
   getClientWorkspaceContext,
 } from "@/server/client-workspace/context";
 import { defaultClientAiDailyUsage, getClientAiDailyUsage, getClientAiRequests } from "@/server/client-ai/queries";
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
+import { getHunterReviewPile } from "@/server/hunter/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
 export const dynamic = "force-dynamic";
@@ -16,17 +20,33 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const language = await getSiteLanguage();
   return {
-    title: language === "es" ? "Investigación de Crecimiento | Espacio del Cliente" : "Growth Research | Client Workspace",
+    title: language === "es" ? "HUNTER | The Lion’s Den" : "HUNTER | The Lion’s Den",
     robots: { index: false, follow: false },
   };
 }
 
 type HunterPageProps = {
   searchParams?: Promise<{
+    hunter?: string;
     lang?: string;
     previewOrg?: string;
+    workspace?: string;
   }>;
 };
+
+function hunterStatusCopy(code: string | undefined, spanish: boolean) {
+  const messages: Record<string, { en: string; es: string; tone: "ok" | "warn" }> = {
+    accepted: { en: "That listing is now a Prospect. The salesman can call. Atlas did not contact anyone.", es: "Esa ficha ahora es un prospecto. El vendedor puede llamar. Atlas no contactó a nadie.", tone: "ok" },
+    already_accepted: { en: "That listing was already accepted into Prospects.", es: "Esa ficha ya estaba aceptada en Prospectos.", tone: "ok" },
+    dismissed: { en: "That listing was removed from the review pile.", es: "Esa ficha se quitó de la pila de revisión.", tone: "ok" },
+    duplicate: { en: "A Prospect with that business name already exists.", es: "Ya existe un prospecto con ese nombre.", tone: "warn" },
+    accept_failed: { en: "The listing could not be accepted. Confirm the review pile migration is applied.", es: "No se pudo aceptar la ficha. Confirma que la migración de la pila de revisión esté aplicada.", tone: "warn" },
+    dismiss_failed: { en: "The listing could not be dismissed.", es: "No se pudo descartar la ficha.", tone: "warn" },
+    missing: { en: "That review item was not found.", es: "No se encontró ese hallazgo.", tone: "warn" },
+    invalid: { en: "That review action was not valid.", es: "Esa acción de revisión no fue válida.", tone: "warn" },
+  };
+  return code ? messages[code] ?? null : null;
+}
 
 export default async function HunterPage({ searchParams }: HunterPageProps) {
   const params = await searchParams;
@@ -34,6 +54,7 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
   const spanish = language === "es";
   const workspace = await getClientWorkspaceContext("/client/hunter", params);
   const { isClientPreview, previewOrgSlug, primaryOrganization } = workspace;
+  const useLionsDen = usesLionsDenHub(primaryOrganization?.slug);
   const aiRequests = primaryOrganization
     ? await getClientAiRequests(primaryOrganization.id, 8)
     : null;
@@ -43,6 +64,43 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
   const pipeline = primaryOrganization
     ? await getOpportunityPipeline(primaryOrganization.id)
     : null;
+  const reviewPile = primaryOrganization
+    ? await getHunterReviewPile(primaryOrganization.id)
+    : null;
+  const status = hunterStatusCopy(params?.hunter, spanish);
+
+  const board = (
+    <div className="space-y-5">
+      {status ? (
+        <div className={`rounded-2xl border p-4 text-sm leading-6 ${status.tone === "ok" ? "border-[#d8c27a] bg-[#fff8e6] text-[#071b42]" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
+          {spanish ? status.es : status.en}
+        </div>
+      ) : null}
+
+      <HunterSearch organizationId={primaryOrganization?.id} />
+
+      {primaryOrganization ? (
+        <HunterReviewPile
+          items={reviewPile && !reviewPile.setupRequired ? reviewPile.data : []}
+          organizationId={primaryOrganization.id}
+          setupRequired={Boolean(reviewPile?.setupRequired)}
+          spanish={spanish}
+        />
+      ) : (
+        <div className="rounded-2xl border border-dashed border-[#d8c27a] bg-[#fff8e6] p-5 text-sm leading-6 text-[#071b42]">
+          {spanish ? "Todavía no hay un espacio de trabajo de organización asignado a esta cuenta." : "No organization workspace is assigned to this account yet."}
+        </div>
+      )}
+    </div>
+  );
+
+  if (useLionsDen) {
+    return (
+      <LionsDenBoardScreen board="hunter" workspace={workspace}>
+        {board}
+      </LionsDenBoardScreen>
+    );
+  }
 
   return (
     <ClientWorkspaceScreen
@@ -69,11 +127,7 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
                 : "Use this box for prospecting questions, location targeting, or fit checks. It stays scoped to growth research and does not contact anyone automatically."}
             </p>
           </div>
-          <span className="w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-amber-800">
-            {spanish ? "Google Places conectado" : "Google Places connected"}
-          </span>
         </div>
-
         {primaryOrganization && aiRequests ? (
           <div className="mt-5">
             <ClientAiConsole
@@ -86,23 +140,7 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
           </div>
         ) : null}
       </section>
-
-      <HunterSearch />
-
-      {pipeline?.setupRequired ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
-          {spanish
-            ? "La investigación de crecimiento está preparando el pipeline de oportunidades para este espacio de trabajo."
-            : "Growth research is preparing the opportunity pipeline for this workspace."}
-        </div>
-      ) : null}
-
-      {!primaryOrganization ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-          {spanish ? "Todavía no hay un espacio de trabajo de organización asignado a esta cuenta." : "No organization workspace is assigned to this account yet."}
-        </div>
-      ) : null}
-
+      {board}
       {pipeline && !pipeline.setupRequired ? (
         <ClientOpportunityPipeline pipeline={pipeline.data} />
       ) : null}
