@@ -39,15 +39,15 @@ export async function createOrganizationNote(formData: FormData) {
   const body = textValue(formData, "body");
 
   if (!organizationId) {
-    redirect("/client?note=missing_organization");
+    redirect("/client/notes?note=missing_organization");
   }
 
   if (!title) {
-    redirect("/client?note=missing_title");
+    redirect("/client/notes?note=missing_title");
   }
 
   if (!body) {
-    redirect("/client?message=missing_body");
+    redirect("/client/notes?note=missing_body");
   }
 
   const supabase = await requireOrganizationMembership(organizationId, user.id);
@@ -58,10 +58,10 @@ export async function createOrganizationNote(formData: FormData) {
   });
 
   if (error) {
-    redirect("/client?note=error");
+    redirect("/client/notes?note=error");
   }
 
-  redirect("/client?note=created");
+  redirect("/client/notes?note=created");
 }
 
 export async function createClientNoteMessage(formData: FormData) {

@@ -8,20 +8,29 @@ function cleanOrganizationName(value: string) {
     .slice(0, 120);
 }
 
+export function isSisCustomCreations(organizationName: string | null | undefined) {
+  return /^sis custom creations$/i.test(String(organizationName ?? "").trim());
+}
+
+export function isQTimeProductions(organizationName: string | null | undefined) {
+  return /^qtime productions$/i.test(String(organizationName ?? "").trim());
+}
+
+export function isQTimeWorkspaceSlug(slug: string | null | undefined) {
+  return slug === "qtime-productions";
+}
+
 export function getClientPortalName(organizationName: string | null | undefined) {
   const name = cleanOrganizationName(String(organizationName ?? ""));
 
-  if (!name) {
-    return "Your Lion’s Den";
+  if (!name || isSisCustomCreations(name)) {
+    return "The Lion’s Den";
   }
 
-  if (/^qtime productions$/i.test(name)) {
+  if (isQTimeProductions(name)) {
     return "Q’s Lion’s Den";
   }
 
-  const identity = /^sis custom creations$/i.test(name)
-    ? "SIS Custom Creations CRM"
-    : name.split(" ")[0] ?? name;
+  const identity = name.split(" ")[0] ?? name;
   return `${identity}’s Lion’s Den`;
 }
-

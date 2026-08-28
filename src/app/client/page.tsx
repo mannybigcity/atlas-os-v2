@@ -4,14 +4,17 @@ import type { ReactNode } from "react";
 import { ClientCrmDashboard } from "@/components/clients-dashboard";
 import { ClientPortalShell } from "@/components/client-portal-shell";
 import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
-import { SisCrmDashboard } from "@/components/sis-crm-dashboard";
-import {
-  getClientWorkspaceContext,
-} from "@/server/client-workspace/context";
+import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
+import { LionsDenOverview } from "@/components/lions-den/lions-den-overview";
+import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
+import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
 import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
 import { getSisDashboardData } from "@/server/sis-workspace/queries";
 import { getSalesEvents, getSalesProspects } from "@/server/sales/queries";
+import { getOpportunityPipeline } from "@/server/opportunities/queries";
+import { getHunterReviewPile } from "@/server/hunter/queries";
+import { getContentStudio } from "@/server/content-studio/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +22,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const language = await getSiteLanguage();
   return {
-    title: language === "es" ? "Espacio del Cliente" : "Client Workspace",
+    title: language === "es" ? "The Lion’s Den" : "The Lion’s Den",
     robots: { index: false, follow: false },
   };
 }
@@ -62,6 +65,7 @@ function StatusAlert({
     </div>
   );
 }
+
 export default async function ClientDashboardPage({
   searchParams,
 }: ClientDashboardPageProps) {
@@ -79,12 +83,140 @@ export default async function ClientDashboardPage({
     : null;
 
   const isSisWorkspace = primaryOrganization?.slug === "sis-custom-creations";
-  const dashboard = primaryOrganization && !isSisWorkspace
+  const useLionsDen = usesLionsDenHub(primaryOrganization?.slug);
+  const dashboard = primaryOrganization && !isSisWorkspace && !useLionsDen
     ? await getClientDashboardData(primaryOrganization.id)
     : null;
   const sisDashboard = isSisWorkspace
     ? await getSisDashboardData(primaryOrganization.id)
     : null;
+  const [pipeline, reviewPile, studio] = useLionsDen && primaryOrganization
+    ? await Promise.all([
+        getOpportunityPipeline(primaryOrganization.id),
+        getHunterReviewPile(primaryOrganization.id),
+        getContentStudio(primaryOrganization.id),
+      ])
+    : [null, null, null];
+
+  const alerts = (
+    <div className="mb-5 space-y-4">
+      {params?.status === "welcome" ? (
+        <StatusAlert>
+          {spanish ? "The Lion’s Den está listo." : "The Lion’s Den is ready."}
+        </StatusAlert>
+      ) : null}
+      {params?.access === "denied" ? (
+        <StatusAlert tone="amber">
+          {spanish
+            ? "Tu inicio de sesión funcionó, pero esta cuenta no está autorizada para esa área."
+            : "Your login worked, but this account is not authorized for that area."}
+        </StatusAlert>
+      ) : null}
+      {params?.pilot === "review_saved" || params?.content === "review_saved" ? (
+        <StatusAlert>{spanish ? "Tu revisión se guardó." : "Your review was saved."}</StatusAlert>
+      ) : null}
+      {params?.pilot === "review_error" || params?.content === "review_error" ? (
+        <StatusAlert tone="rose">
+          {spanish
+            ? "No se pudo guardar esa revisión. Inténtalo de nuevo o envía un mensaje al equipo de tu espacio de trabajo."
+            : "That review could not be saved. Try again or message your workspace team."}
+        </StatusAlert>
+      ) : null}
+      {previewOrganization?.setupRequired ? (
+        <StatusAlert tone="rose">
+          {spanish
+            ? "No pudimos cargar la vista previa del cliente solicitada. Confirma el identificador de la organización y el acceso al espacio de trabajo."
+            : "We could not load the requested client preview. Confirm the organization slug and workspace access."}
+        </StatusAlert>
+      ) : null}
+      {previewOrgSlug && previewOrganization && !previewOrganization.data ? (
+        <StatusAlert tone="amber">
+          {spanish ? "No se encontró ninguna organización para el identificador de vista previa" : "No organization was found for preview slug"}{" "}
+          &ldquo;{previewOrgSlug}&rdquo;.
+        </StatusAlert>
+      ) : null}
+      {memberships.setupRequired ? (
+        <StatusAlert tone="rose">
+          {spanish
+            ? "No pudimos cargar el acceso al espacio de trabajo. Comunícate con tu equipo para que podamos restaurar la cuenta."
+            : "We could not load workspace access. Contact your workspace team so we can restore the account."}
+        </StatusAlert>
+      ) : null}
+      {!workspace.isSuperAdmin && !memberships.setupRequired && memberships.data.length === 0 ? (
+        <StatusAlert tone="amber">
+          {spanish
+            ? "Tu inicio de sesión está activo, pero todavía no se ha asignado un espacio de trabajo empresarial. Comunícate con tu equipo y lo conectaremos."
+            : "Your login is active, but a business workspace has not been assigned yet. Contact your workspace team and we will connect it."}
+        </StatusAlert>
+      ) : null}
+    </div>
+  );
+
+  if (organizations) {
+    return (
+      <ClientPortalShell
+        description={spanish
+          ? "Un espacio privado para prioridades, aprobaciones, proyectos, seguimiento, archivos, informes y herramientas aprobadas, limitado a tu organización."
+          : "A private workspace for priorities, approvals, projects, follow-up, files, reports, and approved tools—scoped to your organization."}
+        eyebrow={isClientPreview ? "Atlas CRM" : spanish ? "CRM privado" : "Private CRM"}
+        organizationName={primaryOrganization?.name}
+        fullWidth
+        showOverviewLink={false}
+        workspaces={memberships.data.flatMap((membership) => membership.organization ? [{ name: membership.organization.name, slug: membership.organization.slug ?? "" }] : [])}
+      >
+        {alerts}
+        {organizations.setupRequired ? (
+          <StatusAlert tone="rose">
+            {spanish
+              ? "No pudimos cargar los espacios de trabajo de clientes. Inténtalo de nuevo o comunícate con el equipo de Atlas."
+              : "We could not load client workspaces. Try again or contact the Atlas team."}
+          </StatusAlert>
+        ) : (
+          <ClientCrmDashboard
+            events={sales?.[1].setupRequired ? [] : sales?.[1].data ?? []}
+            focusStage={params?.focus ?? ""}
+            organizations={organizations.data}
+            previewDashboard={dashboard}
+            previewOrganization={previewOrganization?.data ?? null}
+            previewWorkspace={workspace.isClientPreview ? workspace : null}
+            prospects={sales?.[0].setupRequired ? [] : sales?.[0].data ?? []}
+            returnTo="/client"
+            selectedPanel={params?.panel ?? ""}
+          />
+        )}
+      </ClientPortalShell>
+    );
+  }
+
+  if (useLionsDen && primaryOrganization) {
+    const prospects = pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : [];
+    const reviewItems = reviewPile && !reviewPile.setupRequired ? reviewPile.data : [];
+    const drafts = studio && !studio.setupRequired ? studio.data.drafts : [];
+
+    return (
+      <LionsDenBoardScreen board="overview" workspace={workspace}>
+        {alerts}
+        {sisDashboard?.setupRequired ? (
+          <StatusAlert tone="rose">
+            {spanish
+              ? "No pudimos cargar la capa de datos del CRM de SIS. La organización existe, pero las tablas del tenant requieren atención."
+              : "We could not load the SIS CRM data layer. The organization exists, but the tenant tables need attention."}
+          </StatusAlert>
+        ) : (
+          <LionsDenOverview
+            drafts={drafts}
+            organizationName={primaryOrganization.name}
+            previewOrgSlug={workspace.previewOrgSlug || undefined}
+            prospects={prospects}
+            reviewPile={reviewItems}
+            sisDashboard={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data : null}
+            spanish={spanish}
+            workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+          />
+        )}
+      </LionsDenBoardScreen>
+    );
+  }
 
   return (
     <ClientPortalShell
@@ -97,99 +229,10 @@ export default async function ClientDashboardPage({
       showOverviewLink={false}
       workspaces={memberships.data.flatMap((membership) => membership.organization ? [{ name: membership.organization.name, slug: membership.organization.slug ?? "" }] : [])}
     >
-      <div className="space-y-4">
-        {params?.status === "welcome" ? (
-          <StatusAlert>
-            {spanish ? "El espacio de trabajo del CRM está listo." : "The CRM workspace is ready."}
-          </StatusAlert>
-        ) : null}
-
-        {params?.access === "denied" ? (
-          <StatusAlert tone="amber">
-            {spanish
-              ? "Tu inicio de sesión funcionó, pero esta cuenta no está autorizada para esa área."
-              : "Your login worked, but this account is not authorized for that area."}
-          </StatusAlert>
-        ) : null}
-
-        {params?.pilot === "review_saved" || params?.content === "review_saved" ? (
-          <StatusAlert>{spanish ? "Tu revisión se guardó." : "Your review was saved."}</StatusAlert>
-        ) : null}
-
-        {params?.pilot === "review_error" || params?.content === "review_error" ? (
-          <StatusAlert tone="rose">
-            {spanish
-              ? "No se pudo guardar esa revisión. Inténtalo de nuevo o envía un mensaje al equipo de tu espacio de trabajo."
-              : "That review could not be saved. Try again or message your workspace team."}
-          </StatusAlert>
-        ) : null}
-
-        {previewOrganization?.setupRequired ? (
-          <StatusAlert tone="rose">
-            {spanish
-              ? "No pudimos cargar la vista previa del cliente solicitada. Confirma el identificador de la organización y el acceso al espacio de trabajo."
-              : "We could not load the requested client preview. Confirm the organization slug and workspace access."}
-          </StatusAlert>
-        ) : null}
-
-        {previewOrgSlug && previewOrganization && !previewOrganization.data ? (
-          <StatusAlert tone="amber">
-            {spanish ? "No se encontró ninguna organización para el identificador de vista previa" : "No organization was found for preview slug"}{" "}
-            &ldquo;{previewOrgSlug}&rdquo;.
-          </StatusAlert>
-        ) : null}
-
-        {memberships.setupRequired ? (
-          <StatusAlert tone="rose">
-            {spanish
-              ? "No pudimos cargar el acceso al espacio de trabajo. Comunícate con tu equipo para que podamos restaurar la cuenta."
-              : "We could not load workspace access. Contact your workspace team so we can restore the account."}
-          </StatusAlert>
-        ) : null}
-
-        {!workspace.isSuperAdmin && !memberships.setupRequired && memberships.data.length === 0 ? (
-          <StatusAlert tone="amber">
-            {spanish
-              ? "Tu inicio de sesión está activo, pero todavía no se ha asignado un espacio de trabajo empresarial. Comunícate con tu equipo y lo conectaremos."
-              : "Your login is active, but a business workspace has not been assigned yet. Contact your workspace team and we will connect it."}
-          </StatusAlert>
-        ) : null}
-
-        {organizations ? (
-          organizations.setupRequired ? (
-            <StatusAlert tone="rose">
-              {spanish
-                ? "No pudimos cargar los espacios de trabajo de clientes. Inténtalo de nuevo o comunícate con el equipo de Atlas."
-                : "We could not load client workspaces. Try again or contact the Atlas team."}
-            </StatusAlert>
-          ) : (
-            <ClientCrmDashboard
-              events={sales?.[1].setupRequired ? [] : sales?.[1].data ?? []}
-              focusStage={params?.focus ?? ""}
-              organizations={organizations.data}
-              previewDashboard={dashboard}
-              previewOrganization={previewOrganization?.data ?? null}
-              previewWorkspace={workspace.isClientPreview ? workspace : null}
-              prospects={sales?.[0].setupRequired ? [] : sales?.[0].data ?? []}
-              returnTo="/client"
-              selectedPanel={params?.panel ?? ""}
-            />
-          )
-        ) : isSisWorkspace && sisDashboard ? (
-          sisDashboard.setupRequired ? (
-            <StatusAlert tone="rose">
-              {spanish
-                ? "No pudimos cargar la capa de datos del CRM de SIS. La organización existe, pero las tablas del tenant requieren atención."
-                : "We could not load the SIS CRM data layer. The organization exists, but the tenant tables need attention."}
-            </StatusAlert>
-          ) : (
-            <SisCrmDashboard dashboard={sisDashboard.data} />
-          )
-        ) : primaryOrganization && dashboard ? (
-          <ClientQTimeDashboard workspace={workspace} dashboard={dashboard} />
-        ) : null}
-      </div>
-
+      {alerts}
+      {primaryOrganization && dashboard ? (
+        <ClientQTimeDashboard workspace={workspace} dashboard={dashboard} />
+      ) : null}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <Link className="rounded-full border border-slate-300 px-5 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" href="/">
           {spanish ? "Sitio público" : "Public site"}
