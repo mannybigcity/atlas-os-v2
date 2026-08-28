@@ -10,10 +10,7 @@ import {
   IntegrationConfigurationError,
   IntegrationRequestError,
 } from "@/server/integrations/errors";
-import {
-  searchGooglePlacesText,
-  type GooglePlaceProspect,
-} from "@/server/integrations/google-places";
+import { searchGooglePlacesText } from "@/server/integrations/google-places";
 import {
   HUNTER_DAILY_SEARCH_CAP,
   HUNTER_SEARCH_RESULT_CAP,
@@ -23,24 +20,9 @@ import {
   hunterDailyCapReached,
   placesToReviewInserts,
 } from "@/server/hunter/review";
-
-export type HunterSearchState = {
-  status: "idle" | "success" | "error";
-  message: string | null;
-  query: string | null;
-  places: GooglePlaceProspect[];
-  persistedCount: number;
-};
+import type { HunterSearchState } from "@/server/hunter/types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-export const initialHunterSearchState: HunterSearchState = {
-  status: "idle",
-  message: null,
-  query: null,
-  places: [],
-  persistedCount: 0,
-};
 
 async function requireHunterOperator(organizationId: string | null) {
   const user = await requireUser(organizationId ? "/client/hunter" : "/lions-den/sales");

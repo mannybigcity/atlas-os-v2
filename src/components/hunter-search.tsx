@@ -2,10 +2,8 @@
 
 import { useActionState } from "react";
 import { useSiteLanguage } from "@/components/language-switcher";
-import {
-  initialHunterSearchState,
-  searchHunterProspects,
-} from "@/server/hunter/actions";
+import { searchHunterProspects } from "@/server/hunter/actions";
+import { initialHunterSearchState } from "@/server/hunter/types";
 
 type HunterSearchProps = {
   organizationId?: string;

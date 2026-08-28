@@ -18,13 +18,13 @@ const securityHeaders = [
     : []),
 ];
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   experimental: {
     useTypeScriptCli: true,
   },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
-};
+} as NextConfig;
 
 export default nextConfig;
