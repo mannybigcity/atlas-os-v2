@@ -117,7 +117,7 @@ const copy: Record<Language, LandingCopy> = {
     stats: [
       { value: "GOAL", label: "One focused 30-day goal" },
       { value: "WORKSPACE", label: "One private client workspace" },
-      { value: "CONTROL", label: "No automatic renewal" },
+      { value: "CONTROL", label: "Monthly plans. Cancel anytime." },
       { value: "YOU", label: "Stay in control" },
     ],
     bottomCta: "START FREE ASSESSMENT",
@@ -178,7 +178,7 @@ const copy: Record<Language, LandingCopy> = {
     stats: [
       { value: "META", label: "Una meta enfocada de 30 días" },
       { value: "ESPACIO", label: "Un espacio de trabajo privado" },
-      { value: "CONTROL", label: "Sin renovación automática" },
+      { value: "CONTROL", label: "Planes mensuales. Cancela cuando quieras." },
       { value: "TÚ", label: "Mantienes el control" },
     ],
     bottomCta: "EMPEZAR EVALUACIÓN GRATIS",

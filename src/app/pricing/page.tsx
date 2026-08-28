@@ -48,8 +48,8 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Choose My Atlas Plan": "Elegir mi plan de Atlas",
   "Start Your Business Assessment": "Iniciar mi evaluación empresarial",
   "Start 7-day free trial": "Iniciar prueba gratuita de 7 días",
-  "No card required. Your seven-day trial starts after the enrollment step is completed.":
-    "No se requiere tarjeta. Tu prueba de siete días comienza después de completar la inscripción.",
+  "Paid plans are monthly and renew until you cancel.":
+    "Los planes de pago son mensuales y se renuevan hasta que los canceles.",
   "Monthly usage allowance included": "Asignación mensual de uso incluida",
   "Human approval before external action": "Aprobación humana antes de cualquier acción externa",
   "Three monthly plans for different stages of growth": "Tres planes mensuales para distintas etapas de crecimiento",
@@ -97,7 +97,8 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Choose the plan that matches your growth stage.": "Elige el plan que corresponda a tu etapa de crecimiento.",
   "If you want help deciding, start with the business assessment. Atlas can guide the fit conversation without fabricating pricing or promises.":
     "Si quieres ayuda para decidir, comienza con la evaluación empresarial. Atlas puede orientar la conversación sobre la opción adecuada sin inventar precios ni promesas.",
-  "No automatic subscription. No unsupported feature claims.": "Sin suscripción automática. Sin afirmaciones de funciones no disponibles.",
+  "Paid plans are monthly and renew until you cancel. Front Desk is not live.":
+    "Los planes de pago son mensuales y se renuevan hasta que los canceles. Front Desk no está activo.",
   "ATLAS BASIC": "ATLAS BÁSICO",
   "Solo owners / very small businesses": "Propietarios independientes / negocios muy pequeños",
   "Choose BASIC": "Elegir BÁSICO",
@@ -138,10 +139,10 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Advanced workflows": "Flujos de trabajo avanzados",
   "Priority onboarding": "Incorporación prioritaria",
   "Future automation privileges": "Privilegios de automatización futura",
-  "Preferred pricing and allowance for ATLAS Phone AI": "Precio y asignación preferentes para ATLAS Phone AI",
+  "Phone AI is a future add-on, not live": "Phone AI es un complemento futuro, no está activo",
   "Preferred access to future voice and receptionist tooling": "Acceso preferente a futuras herramientas de voz y recepción",
   "More advanced automation privileges as systems mature": "Privilegios de automatización más avanzados a medida que maduran los sistemas",
-  "Suggested price": "Precio sugerido",
+  "Monthly price": "Precio mensual",
   "$99/mo": "$99/mes",
   "$249/mo": "$249/mes",
   "$499/mo": "$499/mes",
@@ -177,7 +178,6 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Priority + onboarding": "Prioridad + incorporación",
   "Future ATLAS Phone AI": "Futuro ATLAS Phone AI",
   "Add-on": "Complemento",
-  "Included allowance / discounted": "Asignación incluida / con descuento",
   "Can I change plans later?": "¿Puedo cambiar de plan más adelante?",
   "Yes. The plans are designed as a progression, so you can move up when your workflow and usage justify it.":
     "Sí. Los planes están diseñados como una progresión, por lo que puedes subir de nivel cuando tu flujo de trabajo y uso lo justifiquen.",
@@ -203,8 +203,8 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Not yet. ATLAS FRONT DESK is coming soon as a separate future add-on, and it is not operational in this release.":
     "Todavía no. ATLAS FRONT DESK llegará próximamente como un complemento futuro independiente y no está operativo en esta versión.",
   "Is there a long-term contract?": "¿Hay un contrato a largo plazo?",
-  "The pricing page does not introduce a billing contract. Any paid engagement should be confirmed before purchase or onboarding.":
-    "La página de precios no establece un contrato de facturación. Cualquier servicio pagado debe confirmarse antes de la compra o la incorporación.",
+  "Paid BASIC, GROW, and UNLIMITED plans are monthly Stripe subscriptions. They renew until you cancel. The business assessment and the 7-day trial at /start-trial are not paid subscriptions and do not take a card.":
+    "Los planes de pago BÁSICO, CRECIMIENTO e ILIMITADO son suscripciones mensuales de Stripe. Se renuevan hasta que las canceles. La evaluación empresarial y la prueba de 7 días en /start-trial no son suscripciones de pago y no piden tarjeta.",
   "ATLAS FRONT DESK": "ATLAS FRONT DESK",
   "$149-$249/month plus usage": "$149-$249/mes más uso",
   "AI receptionist and inbound call handling for lead capture, callback capture, call summaries, and CRM writeback.":
@@ -285,7 +285,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
                 </Link>
               </div>
               <p className="mt-4 text-sm font-semibold text-blue-100/75">
-                {t("No card required. Your seven-day trial starts after the enrollment step is completed.")}
+                {t("Paid plans are monthly and renew until you cancel.")}
               </p>
               <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-blue-100/70">
                 <span>{t("Monthly usage allowance included")}</span>
@@ -613,7 +613,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
                 {t("Start Your Business Assessment")}
               </Link>
               <p className="mt-4 text-xs font-semibold text-blue-100/70">
-                {t("No automatic subscription. No unsupported feature claims.")}
+                {t("Paid plans are monthly and renew until you cancel. Front Desk is not live.")}
               </p>
             </div>
           </div>

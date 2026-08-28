@@ -103,7 +103,7 @@ export const atlasPricingPlans: AtlasPricingPlan[] = [
       "Advanced workflows",
       "Priority onboarding",
       "Future automation privileges",
-      "Preferred pricing and allowance for ATLAS Phone AI",
+      "Phone AI is a future add-on, not live",
     ],
     futureFeatures: [
       "Preferred access to future voice and receptionist tooling",
@@ -113,7 +113,7 @@ export const atlasPricingPlans: AtlasPricingPlan[] = [
 ];
 
 export const atlasPricingComparisonRows: AtlasPricingComparisonRow[] = [
-  { label: "Suggested price", basic: "$99/mo", grow: "$249/mo", unlimited: "$499/mo" },
+  { label: "Monthly price", basic: "$99/mo", grow: "$249/mo", unlimited: "$499/mo" },
   {
     label: "Best for",
     basic: "Solo owners / very small businesses",
@@ -146,7 +146,7 @@ export const atlasPricingComparisonRows: AtlasPricingComparisonRow[] = [
     label: "Future ATLAS Phone AI",
     basic: "Add-on",
     grow: "Add-on",
-    unlimited: "Included allowance / discounted",
+    unlimited: "Add-on",
   },
 ];
 
@@ -194,7 +194,7 @@ export const atlasPricingFaqs: AtlasPricingFaq[] = [
   {
     question: "Is there a long-term contract?",
     answer:
-      "The pricing page does not introduce a billing contract. Any paid engagement should be confirmed before purchase or onboarding.",
+      "Paid BASIC, GROW, and UNLIMITED plans are monthly Stripe subscriptions. They renew until you cancel. The business assessment and the 7-day trial at /start-trial are not paid subscriptions and do not take a card.",
   },
 ];
 
