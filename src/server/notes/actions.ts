@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { isSuperAdminEmail } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { requireSuperAdmin, requireUser } from "@/server/auth/guards";
+import { safeRedirectPath } from "@/lib/paths";
 
 function textValue(formData: FormData, key: string) {
   const value = String(formData.get(key) ?? "").trim();
@@ -37,6 +38,27 @@ async function requireOrganizationMembership(
   return supabase;
 }
 
+function notesReturnPath(formData: FormData, status: string) {
+  const requested = String(formData.get("returnTo") ?? "").trim();
+  const [pathname, query = ""] = requested.split("?");
+  const safePath = pathname ? safeRedirectPath(pathname) : "/client/notes";
+  const destination = safePath === "/client" || safePath.startsWith("/client/")
+    ? safePath
+    : "/client/notes";
+  const params = new URLSearchParams(query);
+  const next = new URLSearchParams();
+  const previewOrg = params.get("previewOrg");
+  const workspace = params.get("workspace");
+  if (previewOrg && /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(previewOrg)) {
+    next.set("previewOrg", previewOrg);
+  }
+  if (workspace && /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(workspace)) {
+    next.set("workspace", workspace);
+  }
+  next.set("note", status);
+  return `${destination}?${next.toString()}`;
+}
+
 export async function createOrganizationNote(formData: FormData) {
   const user = await requireUser("/client");
   const organizationId = String(formData.get("organizationId") ?? "").trim();
@@ -44,15 +66,15 @@ export async function createOrganizationNote(formData: FormData) {
   const body = textValue(formData, "body");
 
   if (!organizationId) {
-    redirect("/client/notes?note=missing_organization");
+    redirect(notesReturnPath(formData, "missing_organization"));
   }
 
   if (!title) {
-    redirect("/client/notes?note=missing_title");
+    redirect(notesReturnPath(formData, "missing_title"));
   }
 
   if (!body) {
-    redirect("/client/notes?note=missing_body");
+    redirect(notesReturnPath(formData, "missing_body"));
   }
 
   const supabase = await requireOrganizationMembership(organizationId, user);
@@ -63,10 +85,10 @@ export async function createOrganizationNote(formData: FormData) {
   });
 
   if (error) {
-    redirect("/client/notes?note=error");
+    redirect(notesReturnPath(formData, "error"));
   }
 
-  redirect("/client/notes?note=created");
+  redirect(notesReturnPath(formData, "created"));
 }
 
 export async function createClientNoteMessage(formData: FormData) {

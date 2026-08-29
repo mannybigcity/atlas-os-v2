@@ -44,19 +44,22 @@ export async function LionsDenClientHub({
   const orgLabel = String(organizationName ?? "").trim();
 
   return (
-    <div className="lions-den-hub min-h-screen bg-[#f4f1e8] text-[#071b42]">
-      <header className="border-b border-[#d8c27a] bg-[#071b42] text-white">
-        <div className="flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="lions-den-hub min-h-screen bg-white text-[#071b42]">
+      <header className="border-b border-[#0a2a5c] bg-[#071b42] text-white">
+        <div className="flex flex-col gap-4 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#f5b932]">
-              {spanish ? "Centro de operaciones" : "Operations hub"}
-            </p>
-            <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl tracking-[-0.04em]">
               {portalName}
-            </h1>
+            </p>
             {orgLabel ? (
-              <p className="mt-1 text-sm text-white/75">{orgLabel}</p>
-            ) : null}
+              <h1 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-[-0.04em]">
+                {orgLabel}
+              </h1>
+            ) : (
+              <h1 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-[-0.04em]">
+                {spanish ? "Escritorio de trabajo" : "Working desk"}
+              </h1>
+            )}
           </div>
           <nav aria-label={spanish ? "Acciones del espacio" : "Workspace actions"} className="flex flex-wrap items-center gap-2">
             {workspaces.length > 1
@@ -88,16 +91,26 @@ export async function LionsDenClientHub({
       </header>
 
       <div className="grid gap-0 xl:grid-cols-[15rem_minmax(0,1fr)_20rem]">
-        <aside className="border-b border-[#d8c27a] bg-white xl:border-b-0 xl:border-r">
+        <aside className="border-b border-[#0a2a5c] bg-[#071b42] text-white xl:min-h-[calc(100vh-4.5rem)] xl:border-b-0 xl:border-r">
+          <div className="hidden px-4 pt-5 xl:block">
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#f5b932]">
+              {spanish ? "Menú del escritorio" : "Desk menu"}
+            </p>
+            <p className="mt-2 text-xs leading-5 text-white/70">
+              {spanish
+                ? "Prioridades, seguimiento y herramientas. ATLAS está a la derecha."
+                : "Priorities, follow-up, and tools. ATLAS stays on the right."}
+            </p>
+          </div>
           <nav aria-label={spanish ? "The Lion’s Den" : "The Lion’s Den"} className="flex gap-2 overflow-x-auto p-3 xl:block xl:space-y-1 xl:overflow-visible xl:p-4">
             {lionsDenBoards.map((item) => {
               const active = item.id === board;
               return (
                 <Link
-                  className={`block shrink-0 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+                  className={`block shrink-0 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
                     active
-                      ? "bg-[#071b42] text-[#f5b932]"
-                      : "text-[#071b42] hover:bg-[#f5b932]/20"
+                      ? "bg-[#f5b932] text-[#071b42]"
+                      : "text-white/85 hover:bg-white/10 hover:text-white"
                   }`}
                   href={lionsDenHref(item.href, previewOrgSlug, workspaceSlug)}
                   key={item.id}
@@ -109,9 +122,9 @@ export async function LionsDenClientHub({
           </nav>
         </aside>
 
-        <main className="min-w-0 bg-[#fbfaf4] p-4 sm:p-6">{children}</main>
+        <main className="min-w-0 bg-white p-4 sm:p-6">{children}</main>
 
-        <aside className="border-t border-[#d8c27a] bg-white xl:border-t-0 xl:border-l">
+        <aside className="border-t border-[#d5d0c4] bg-[#fbfaf4] xl:border-t-0 xl:border-l">
           <AtlasStaffPane
             dailyUsage={aiUsage}
             organizationId={organizationId ?? ""}

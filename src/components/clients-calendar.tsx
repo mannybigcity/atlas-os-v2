@@ -39,6 +39,7 @@ type ClientsCalendarProps = {
   contextOptions: CalendarContextOption[];
   followUpItems: CalendarSeedItem[];
   storageKey?: string;
+  tone?: "crm" | "desk";
 };
 
 const defaultDraft: CalendarDraft = {
@@ -149,13 +150,52 @@ function toDateKeyFromDate(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+function calendarTone(tone: "crm" | "desk") {
+  const desk = tone === "desk";
+  return {
+    section: desk
+      ? "rounded-[1.2rem] border border-[#d5d0c4] bg-white p-5"
+      : "rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_12px_36px_rgba(15,23,42,0.05)]",
+    kicker: desk ? "text-[#071b42]" : "text-[#5672f0]",
+    title: desk ? "text-[#071b42]" : "text-slate-950",
+    body: desk ? "text-[#33415c]" : "text-slate-600",
+    activeBtn: desk ? "bg-[#071b42] text-[#f5b932]" : "bg-[#5672f0] text-white",
+    idleBtn: desk
+      ? "border border-[#d5d0c4] bg-white text-[#071b42] hover:border-[#071b42]"
+      : "border border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50",
+    panel: desk ? "rounded-[1.1rem] border border-[#ece7d8] bg-[#fbfaf4] p-4" : "rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4",
+    activeCell: desk ? "border-[#071b42] bg-white shadow-sm" : "border-[#5672f0] bg-white shadow-sm",
+    idleCell: desk
+      ? "border-[#ece7d8] bg-white hover:border-[#d8c27a] hover:bg-white"
+      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
+    badge: desk
+      ? "rounded-full bg-[#fff8e6] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#071b42]"
+      : "rounded-full bg-[#eef3ff] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5672f0]",
+    chip: desk
+      ? "rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]"
+      : "rounded-full bg-[#eef3ff] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5672f0]",
+    submit: desk
+      ? "rounded-full bg-[#071b42] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0c2b63]"
+      : "rounded-full bg-[#5672f0] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#465fd1]",
+    focus: desk
+      ? "focus:border-[#f5b932] focus:ring-4 focus:ring-[#f5b932]/20"
+      : "focus:border-[#5672f0] focus:ring-4 focus:ring-[#dfe7ff]",
+    muted: desk ? "text-[#5c6578]" : "text-slate-500",
+    field: desk
+      ? "border-[#d5d0c4] text-[#071b42]"
+      : "border-slate-300 text-slate-950",
+  };
+}
+
 export function ClientsCalendar({
   contextOptions,
   followUpItems,
   storageKey = "atlas-clients-calendar-v1",
+  tone = "crm",
 }: ClientsCalendarProps) {
   const language = useSiteLanguage();
   const spanish = language === "es";
+  const skin = calendarTone(tone);
   const [hydrated, setHydrated] = useState(false);
   const [view, setView] = useState<"month" | "week" | "day" | "year">("month");
   const [selectedDate, setSelectedDate] = useState(() => new Date());
@@ -289,16 +329,16 @@ export function ClientsCalendar({
   }, [allItems, monthDays, selectedDate, view, weekDays]);
 
   return (
-    <section className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_12px_36px_rgba(15,23,42,0.05)]">
+    <section className={skin.section}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#5672f0]">
+          <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${skin.kicker}`}>
             {spanish ? "Calendario" : "Calendar"}
           </p>
-          <h3 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">
+          <h3 className={`mt-2 text-2xl font-semibold tracking-[-0.05em] ${skin.title}`}>
             {spanish ? "Mes, Semana, Día, Año" : "Month, Week, Day, Year"}
           </h3>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+          <p className={`mt-2 max-w-3xl text-sm leading-6 ${skin.body}`}>
             {spanish
               ? "Solo recordatorios locales del dispositivo. Los seguimientos del CRM aparecen aquí, y puedes agregar o editar tus propios recordatorios sin afirmar que están sincronizados con correo electrónico o SMS."
               : "Device-local reminders only. Follow-up items from the CRM appear here, and you can add or edit your own reminder state without pretending it is synced to email or SMS."}
@@ -309,9 +349,7 @@ export function ClientsCalendar({
           {(["month", "week", "day", "year"] as const).map((item) => (
             <button
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                view === item
-                  ? "bg-[#5672f0] text-white"
-                  : "border border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+                view === item ? skin.activeBtn : skin.idleBtn
               }`}
               key={item}
               onClick={() => setView(item)}
@@ -324,9 +362,9 @@ export function ClientsCalendar({
       </div>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
+        <div className={skin.panel}>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h4 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">
+            <h4 className={`text-lg font-semibold tracking-[-0.03em] ${skin.title}`}>
               {viewLabel}
             </h4>
             <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 ring-1 ring-slate-200">
@@ -338,7 +376,7 @@ export function ClientsCalendar({
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {yearViewItems.map((month) => (
                 <button
-                  className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-[#5672f0] hover:shadow-sm"
+                  className={`rounded-2xl border p-4 text-left transition hover:shadow-sm ${skin.idleCell}`}
                   key={month.label}
                   onClick={() =>
                     setSelectedDate(
@@ -347,10 +385,10 @@ export function ClientsCalendar({
                   }
                   type="button"
                 >
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#5672f0]">
+                  <p className={`text-xs font-black uppercase tracking-[0.18em] ${skin.kicker}`}>
                     {spanish ? "Mes" : "Month"}
                   </p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">{month.label}</p>
+                  <p className={`mt-2 text-lg font-semibold ${skin.title}`}>{month.label}</p>
                   <p className="mt-2 text-sm text-slate-600">{month.count} {spanish ? "elementos" : "items"}</p>
                 </button>
               ))}
@@ -366,10 +404,8 @@ export function ClientsCalendar({
                 const active = sameDay(date, selectedDate);
                 return (
                   <button
-                    className={`min-h-28 rounded-2xl border p-2 text-left transition ${
-                      active
-                        ? "border-[#5672f0] bg-white shadow-sm"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                    className={`${tone === "desk" ? "min-h-16" : "min-h-28"} rounded-2xl border p-2 text-left transition ${
+                      active ? skin.activeCell : skin.idleCell
                     }`}
                     key={date.toISOString()}
                     onClick={() => setSelectedDate(date)}
@@ -380,7 +416,7 @@ export function ClientsCalendar({
                         {date.getDate()}
                       </span>
                       {items.length ? (
-                        <span className="rounded-full bg-[#eef3ff] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5672f0]">
+                        <span className={skin.badge}>
                           {items.length}
                         </span>
                       ) : null}
@@ -401,9 +437,7 @@ export function ClientsCalendar({
               {gridViewItems.map(({ date, items }) => (
                 <button
                   className={`rounded-2xl border p-3 text-left transition ${
-                    sameDay(date, selectedDate)
-                      ? "border-[#5672f0] bg-white shadow-sm"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                    sameDay(date, selectedDate) ? skin.activeCell : skin.idleCell
                   }`}
                   key={date.toISOString()}
                   onClick={() => setSelectedDate(date)}
@@ -429,7 +463,7 @@ export function ClientsCalendar({
                   <article className="rounded-2xl border border-slate-200 bg-white p-4" key={item.id}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5672f0]">
+                        <p className={`text-[11px] font-black uppercase tracking-[0.16em] ${skin.kicker}`}>
                           {item.kind === "event" ? (spanish ? "evento" : "event") : spanish ? "tarea" : "task"}
                         </p>
                         <h5 className="mt-2 text-sm font-semibold text-slate-950">{item.title}</h5>
@@ -440,7 +474,7 @@ export function ClientsCalendar({
                     </div>
                     <p className="mt-3 text-sm leading-6 text-slate-600">{item.notes}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-[#eef3ff] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5672f0]">
+                      <span className={skin.chip}>
                         {spanish ? `Recordatorio ${item.reminderOffsetMinutes} min antes` : `Reminder ${item.reminderOffsetMinutes}m before`}
                       </span>
                       {item.contextHref ? (
@@ -485,10 +519,10 @@ export function ClientsCalendar({
         </div>
 
         <div className="space-y-4">
-          <form className="rounded-[1.4rem] border border-slate-200 bg-white p-4" onSubmit={submitDraft}>
+          <form className={`rounded-[1.4rem] border bg-white p-4 ${tone === "desk" ? "border-[#d5d0c4]" : "border-slate-200"}`} onSubmit={submitDraft}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#5672f0]">
+                <p className={`text-xs font-black uppercase tracking-[0.18em] ${skin.kicker}`}>
                   {spanish ? "Recordatorio local del dispositivo" : "Device-local reminder"}
                 </p>
                 <h4 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950">
@@ -510,6 +544,7 @@ export function ClientsCalendar({
 
             <div className="mt-4 grid gap-3">
               <Field
+                focusClassName={skin.focus}
                 label={spanish ? "Título" : "Title"}
                 name="title"
                 onChange={(value) => setDraft((current) => ({ ...current, title: value }))}
@@ -517,6 +552,7 @@ export function ClientsCalendar({
               />
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field
+                  focusClassName={skin.focus}
                   label={spanish ? "Fecha" : "Date"}
                   name="date"
                   onChange={(value) => setDraft((current) => ({ ...current, date: value }))}
@@ -524,6 +560,7 @@ export function ClientsCalendar({
                   value={draft.date}
                 />
                 <Field
+                  focusClassName={skin.focus}
                   label={spanish ? "Hora" : "Time"}
                   name="time"
                   onChange={(value) => setDraft((current) => ({ ...current, time: value }))}
@@ -533,6 +570,7 @@ export function ClientsCalendar({
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Select
+                  focusClassName={skin.focus}
                   label={spanish ? "Tipo" : "Kind"}
                   onChange={(value) => setDraft((current) => ({ ...current, kind: value === "event" ? "event" : "task" }))}
                   options={[
@@ -542,6 +580,7 @@ export function ClientsCalendar({
                   value={draft.kind}
                 />
                 <Field
+                  focusClassName={skin.focus}
                   label={spanish ? "Minutos de anticipación" : "Reminder offset minutes"}
                   name="reminderOffsetMinutes"
                   onChange={(value) => setDraft((current) => ({ ...current, reminderOffsetMinutes: value }))}
@@ -550,6 +589,7 @@ export function ClientsCalendar({
                 />
               </div>
               <Select
+                focusClassName={skin.focus}
                 label={spanish ? "Contexto" : "Context"}
                 onChange={(value) => setDraft((current) => ({ ...current, contextId: value }))}
                 options={[{ label: spanish ? "Sin contexto" : "No context", value: "" }, ...contextOptions.map((item) => ({ label: item.label, value: item.id }))]}
@@ -558,13 +598,13 @@ export function ClientsCalendar({
               <label className="block">
                 <span className="text-sm font-medium text-slate-700">{spanish ? "Notas" : "Notes"}</span>
                 <textarea
-                  className="mt-2 min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-[#5672f0] focus:ring-4 focus:ring-[#dfe7ff]"
+                  className={`mt-2 min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition ${skin.focus}`}
                   onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))}
                   value={draft.notes}
                 />
               </label>
               <button
-                className="rounded-full bg-[#5672f0] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#465fd1]"
+                className={skin.submit}
                 type="submit"
               >
                 {draft.id
@@ -593,12 +633,14 @@ export function ClientsCalendar({
 export const ClientCalendar = ClientsCalendar;
 
 function Field({
+  focusClassName = "focus:border-[#5672f0] focus:ring-4 focus:ring-[#dfe7ff]",
   label,
   name,
   onChange,
   type = "text",
   value,
 }: {
+  focusClassName?: string;
   label: string;
   name: string;
   onChange: (value: string) => void;
@@ -609,7 +651,7 @@ function Field({
     <label className="block">
       <span className="text-sm font-medium text-slate-700">{label}</span>
       <input
-        className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-[#5672f0] focus:ring-4 focus:ring-[#dfe7ff]"
+        className={`mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition ${focusClassName}`}
         name={name}
         onChange={(event) => onChange(event.target.value)}
         type={type}
@@ -620,11 +662,13 @@ function Field({
 }
 
 function Select({
+  focusClassName = "focus:border-[#5672f0] focus:ring-4 focus:ring-[#dfe7ff]",
   label,
   options,
   onChange,
   value,
 }: {
+  focusClassName?: string;
   label: string;
   options: Array<{ label: string; value: string }>;
   onChange: (value: string) => void;
@@ -634,7 +678,7 @@ function Select({
     <label className="block">
       <span className="text-sm font-medium text-slate-700">{label}</span>
       <select
-        className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-[#5672f0] focus:ring-4 focus:ring-[#dfe7ff]"
+        className={`mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition ${focusClassName}`}
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
