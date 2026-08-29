@@ -1,3 +1,8 @@
+import {
+  escapeIlikeExact,
+  findOrganizationByPreviewSlug,
+  organizationSlugsMatch,
+} from "@/lib/client-portal/identity";
 import { createClient } from "@/lib/supabase/server";
 
 export type OrganizationSummary = {
@@ -150,11 +155,12 @@ export async function getOrganizationsForSuperAdmin(): Promise<
 export async function getOrganizationBySlugForSuperAdmin(
   slug: string,
 ): Promise<WorkspaceQueryResult<OrganizationSummary | null>> {
+  const requested = slug.trim();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("organizations")
     .select("id, name, slug, created_at")
-    .eq("slug", slug)
+    .eq("slug", requested)
     .maybeSingle();
 
   if (error) {
@@ -165,8 +171,45 @@ export async function getOrganizationBySlugForSuperAdmin(
     };
   }
 
+  if (data) {
+    return {
+      data: normalizeOrganization(data as OrganizationRow),
+      setupRequired: false,
+      error: null,
+    };
+  }
+
+  const insensitive = await supabase
+    .from("organizations")
+    .select("id, name, slug, created_at")
+    .ilike("slug", escapeIlikeExact(requested))
+    .limit(2);
+
+  if (!insensitive.error) {
+    const rows = (insensitive.data ?? []) as OrganizationRow[];
+    const match =
+      rows.find((row) => organizationSlugsMatch(row.slug, requested)) ?? rows[0];
+    if (match) {
+      return {
+        data: normalizeOrganization(match),
+        setupRequired: false,
+        error: null,
+      };
+    }
+  }
+
+  const organizations = await getOrganizationsForSuperAdmin();
+  if (organizations.setupRequired) {
+    return {
+      data: null,
+      setupRequired: true,
+      error: organizations.error,
+    };
+  }
+
+  const fallback = findOrganizationByPreviewSlug(requested, organizations.data);
   return {
-    data: data ? normalizeOrganization(data as OrganizationRow) : null,
+    data: fallback ?? null,
     setupRequired: false,
     error: null,
   };

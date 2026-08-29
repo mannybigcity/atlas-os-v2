@@ -58,11 +58,11 @@ export function LionsDenOverview({
 
       {!hasAnything ? (
         <section className="rounded-[1.6rem] border border-dashed border-[#d8c27a] bg-[#fff8e6] p-5 text-sm leading-6 text-[#071b42]">
-          <p className="font-semibold">{spanish ? "Todavía no hay nada aquí." : "Nothing in it yet."}</p>
+          <p className="font-semibold">{spanish ? "El escritorio está listo." : "The desk is open."}</p>
           <p className="mt-2">
             {spanish
-              ? "Agrega una consulta de fiesta o acepta el primer prospecto desde HUNTER."
-              : "Add a party inquiry or accept the first prospect from HUNTER."}
+              ? "Empieza en HUNTER cuando quieras hallazgos locales, o anota la primera consulta de fiesta. Nadie se contacta hasta que aceptes un prospecto."
+              : "Start in HUNTER when you want local finds, or take the first party inquiry. Nobody is contacted until you accept a prospect."}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white" href={href("/client/hunter")}>
@@ -89,16 +89,16 @@ export function LionsDenOverview({
             <p className="text-xs text-[#5c6578]">
               {partyEvents.length === 0
                 ? spanish
-                  ? "Ninguna fiesta en el tablero todavía."
-                  : "No parties on the board yet."
+                  ? "Ninguna fiesta en el tablero."
+                  : "No parties on the board."
                 : `${partyEvents.length} ${spanish ? "en el tablero" : "on the board"}`}
             </p>
           </div>
           {partyEvents.length === 0 ? (
             <p className="mt-4 rounded-2xl border border-dashed border-[#d5d0c4] bg-[#fbfaf4] p-4 text-sm leading-6 text-[#5c6578]">
               {spanish
-                ? "Todavía no hay consultas de fiesta. Agrega la primera abajo."
-                : "No party inquiries yet. Add the first one below."}
+                ? "No hay consultas de fiesta en el tablero. Agrega la primera abajo."
+                : "No party inquiries on the board. Add the first one below."}
             </p>
           ) : (
             <div className="mt-4 divide-y divide-[#ece7d8]">
@@ -140,8 +140,8 @@ export function LionsDenOverview({
           body={
             reviewPile.length === 0
               ? spanish
-                ? "Nada en la pila. Busca negocios locales; no se contacta a nadie."
-                : "Nothing in the pile. Search local businesses; nobody is contacted."
+                ? "La pila de revisión está vacía. Busca negocios locales cuando quieras. No se contacta a nadie."
+                : "The review pile is empty. Search local businesses when you are ready. Nobody is contacted."
               : spanish
                 ? `${reviewPile.length} hallazgos esperando tu aceptación.`
                 : `${reviewPile.length} finds waiting for you to accept.`
@@ -154,8 +154,8 @@ export function LionsDenOverview({
           body={
             prospects.length === 0
               ? spanish
-                ? "Todavía no hay prospectos. Acepta el primero desde HUNTER."
-                : "No prospects yet. Accept the first one from HUNTER."
+                ? "No hay prospectos aceptados en la lista de llamadas. Acepta uno desde HUNTER cuando esté listo."
+                : "No accepted prospects on the call list. Accept one from HUNTER when you are ready."
               : spanish
                 ? `${prospects.length} prospectos aceptados. El vendedor puede llamar.`
                 : `${prospects.length} accepted prospects. The salesman can call.`
@@ -168,8 +168,8 @@ export function LionsDenOverview({
           body={
             drafts.length === 0
               ? spanish
-                ? "Todavía no hay borradores para descargar."
-                : "No drafts to download yet."
+                ? "No hay borradores en espera. MICAH guarda aquí los archivos para que los descargues."
+                : "No drafts waiting. MICAH will hold files here for you to download."
               : spanish
                 ? `${drafts.length} borradores listos para descargar y publicar tú mismo.`
                 : `${drafts.length} drafts ready to download and post yourself.`

@@ -59,9 +59,9 @@ export function LionsDenNotesBoard({
 
       {notes.length === 0 ? (
         <div className="rounded-[1.6rem] border border-dashed border-[#d8c27a] bg-[#fff8e6] p-5 text-sm leading-6 text-[#071b42]">
-          <p className="font-semibold">{spanish ? "Todavía no hay notas." : "Nothing in it yet."}</p>
+          <p className="font-semibold">{spanish ? "Todavía no hay notas en el escritorio." : "No notes on the desk yet."}</p>
           <p className="mt-2">
-            {spanish ? "Agrega la primera nota cuando tengas algo que recordar." : "Add the first note when you have something to remember."}
+            {spanish ? "Escribe la primera cuando necesites un recordatorio." : "Write the first one when you need a reminder."}
           </p>
         </div>
       ) : (

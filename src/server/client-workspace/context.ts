@@ -1,6 +1,11 @@
 import type { User } from "@supabase/supabase-js";
 import { isSuperAdminEmail } from "@/lib/env";
-import { isSisWorkspaceSlug } from "@/lib/client-portal/identity";
+import {
+  isGuestClientPreview,
+  isSisWorkspaceSlug,
+  keepPrimaryOrganizationForSisRequest,
+  organizationSlugsMatch,
+} from "@/lib/client-portal/identity";
 import { requireUser } from "@/server/auth/guards";
 import {
   getOrganizationBySlugForSuperAdmin,
@@ -64,18 +69,20 @@ export async function getClientWorkspaceContext(
     ? await getOrganizationBySlugForSuperAdmin(previewOrgSlug)
     : null;
   const personalMemberships = await getUserMemberships(user.id);
-  const isClientPreview = Boolean(
-    previewOrganization &&
-      !previewOrganization.setupRequired &&
-      previewOrganization.data,
-  );
-  const memberships: WorkspaceQueryResult<MembershipSummary[]> = isClientPreview
+  const loadedPreviewOrganization =
+    previewOrganization && !previewOrganization.setupRequired
+      ? previewOrganization.data
+      : null;
+  const resolvedPreviewOrgSlug = loadedPreviewOrganization?.slug?.trim() || previewOrgSlug;
+  const isOperatingPreviewOrganization = Boolean(loadedPreviewOrganization);
+  const isClientPreview = isGuestClientPreview(loadedPreviewOrganization);
+  const memberships: WorkspaceQueryResult<MembershipSummary[]> = isOperatingPreviewOrganization
     ? {
         data: [
           {
-            id: `preview-${previewOrganization?.data?.id}`,
+            id: `preview-${loadedPreviewOrganization?.id}`,
             role: "owner",
-            organization: previewOrganization?.data ?? null,
+            organization: loadedPreviewOrganization,
           },
         ],
         setupRequired: false,
@@ -83,23 +90,30 @@ export async function getClientWorkspaceContext(
       }
     : personalMemberships;
   const primaryMembership = (requestedWorkspaceSlug
-    ? memberships.data.find((membership) => membership.organization?.slug === requestedWorkspaceSlug)
+    ? memberships.data.find((membership) =>
+        organizationSlugsMatch(membership.organization?.slug, requestedWorkspaceSlug),
+      )
     : undefined) ?? memberships.data.find((membership) => membership.organization);
-  const primaryOrganization = primaryMembership?.organization ?? undefined;
+  const primaryOrganization = keepPrimaryOrganizationForSisRequest(
+    primaryMembership?.organization,
+    resolvedPreviewOrgSlug,
+    requestedWorkspaceSlug,
+  );
   const canEditBusinessProfile =
+    Boolean(primaryOrganization) &&
     !isClientPreview &&
     (primaryMembership?.role === "owner" || primaryMembership?.role === "admin");
 
   return {
     user,
     isSuperAdmin,
-    previewOrgSlug,
+    previewOrgSlug: resolvedPreviewOrgSlug,
     isClientPreview,
     memberships,
-    primaryMembership,
+    primaryMembership: primaryOrganization ? primaryMembership : undefined,
     primaryOrganization,
     canEditBusinessProfile,
-    canCreateNotes: Boolean(primaryMembership) && !isClientPreview,
+    canCreateNotes: Boolean(primaryOrganization) && !isClientPreview,
     previewOrganization,
     selectedWorkspaceSlug: primaryOrganization?.slug ?? "",
   };

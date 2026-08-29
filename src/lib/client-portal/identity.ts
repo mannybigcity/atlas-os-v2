@@ -32,10 +32,63 @@ export function isSisOrganization(organization?: { name?: string | null; slug?: 
   return isSisCustomCreations(organization.name) || isSisWorkspaceSlug(organization.slug);
 }
 
+export function organizationSlugsMatch(
+  left?: string | null,
+  right?: string | null,
+) {
+  const a = String(left ?? "").trim().toLowerCase();
+  const b = String(right ?? "").trim().toLowerCase();
+  return Boolean(a && b && a === b);
+}
+
+export function escapeIlikeExact(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+export function findOrganizationByPreviewSlug<T extends { name?: string | null; slug?: string | null }>(
+  slug: string,
+  organizations?: T[] | null,
+) {
+  const requested = String(slug ?? "").trim();
+  if (!requested) return undefined;
+
+  const bySlug = organizations?.find((organization) => organizationSlugsMatch(organization.slug, requested));
+  if (bySlug) return bySlug;
+
+  if (isSisWorkspaceSlug(requested)) {
+    return organizations?.find((organization) => isSisOrganization(organization));
+  }
+
+  return undefined;
+}
+
+export function isGuestClientPreview(
+  organization?: { name?: string | null; slug?: string | null } | null,
+) {
+  return Boolean(organization) && !isSisOrganization(organization);
+}
+
+export function keepPrimaryOrganizationForSisRequest<T extends { name?: string | null; slug?: string | null }>(
+  organization: T | null | undefined,
+  previewOrgSlug?: string | null,
+  workspaceSlug?: string | null,
+) {
+  if (!isSisLionsDenRequest(previewOrgSlug, workspaceSlug)) {
+    return organization ?? undefined;
+  }
+
+  if (organization && isSisOrganization(organization)) {
+    return organization;
+  }
+
+  return undefined;
+}
+
 export function sisLionsDenPreviewHref(
   organizations?: Array<{ name?: string | null; slug?: string | null }> | null,
 ) {
-  const matchedSlug = organizations?.find((organization) => isSisOrganization(organization) && organization.slug)?.slug;
+  const matchedSlug = findOrganizationByPreviewSlug(SIS_LIONS_DEN_PREVIEW_SLUG, organizations)?.slug
+    ?? organizations?.find((organization) => isSisOrganization(organization) && organization.slug)?.slug;
   return `/client?previewOrg=${encodeURIComponent(matchedSlug || SIS_LIONS_DEN_PREVIEW_SLUG)}`;
 }
 

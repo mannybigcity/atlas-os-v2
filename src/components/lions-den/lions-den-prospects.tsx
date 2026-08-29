@@ -31,11 +31,11 @@ export function LionsDenProspectsBoard({
 
       {prospects.length === 0 ? (
         <div className="mt-5 rounded-2xl border border-dashed border-[#d8c27a] bg-[#fff8e6] p-5 text-sm leading-6 text-[#071b42]">
-          <p className="font-semibold">{spanish ? "Todavía no hay prospectos." : "Nothing in it yet."}</p>
+          <p className="font-semibold">{spanish ? "La lista de llamadas está vacía." : "The call list is empty."}</p>
           <p className="mt-2">
             {spanish
-              ? "Abre HUNTER, revisa la pila y acepta el primer prospecto."
-              : "Open HUNTER, review the pile, and accept the first prospect."}
+              ? "Abre HUNTER, revisa la pila y acepta el primer prospecto cuando esté listo para llamar."
+              : "Open HUNTER, review the pile, and accept the first prospect when you are ready to call."}
           </p>
           <Link
             className="mt-4 inline-flex rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white"

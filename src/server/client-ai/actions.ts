@@ -10,6 +10,7 @@ import {
   IntegrationRequestError,
 } from "@/server/integrations/errors";
 import type { OpenAIStructuredTextResult } from "@/server/integrations/openai-responses";
+import { isSuperAdminEmail } from "@/lib/env";
 import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
@@ -461,8 +462,9 @@ export async function submitClientAiRequest(
     }
   }
 
+  const isSuperAdmin = isSuperAdminEmail(user.email);
   const memberships = await getUserMemberships(user.id);
-  if (memberships.setupRequired) {
+  if (memberships.setupRequired && !isSuperAdmin) {
     return {
       ...initialClientAiActionState,
       status: "failed",
@@ -475,7 +477,7 @@ export async function submitClientAiRequest(
     (entry) => entry.organization?.id === organizationId,
   );
 
-  if (!membership) {
+  if (!membership && !isSuperAdmin) {
     return {
       ...initialClientAiActionState,
       status: "blocked",
@@ -606,8 +608,9 @@ export async function submitClientAiRequest(
 
   const dashboard = await getClientDashboardData(organizationId);
   const guardrails = await loadRoleMarkdown(resolvedRole);
+  const organizationName = membership?.organization?.name ?? "Client workspace";
   const workspaceSummary = summarizeDashboard(
-    membership.organization?.name ?? "Client workspace",
+    organizationName,
     dashboard,
   );
 
@@ -630,7 +633,7 @@ export async function submitClientAiRequest(
         guardrails,
       ].join("\n"),
       input: JSON.stringify({
-        organizationName: membership.organization?.name ?? "Client workspace",
+        organizationName,
         role: resolvedRole,
         userPrompt: prompt,
         workspace: workspaceSummary,
