@@ -61,6 +61,7 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
       <LionsDenBoardScreen board="follow-up" workspace={workspace}>
         <LionsDenFollowUpBoard
           inboxTasks={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.inboxTasks : []}
+          partyEvents={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.partyEvents : []}
           prospects={pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []}
           spanish={spanish}
         />

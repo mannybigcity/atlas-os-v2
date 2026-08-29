@@ -16,6 +16,7 @@ import { getSalesEvents, getSalesProspects } from "@/server/sales/queries";
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
 import { getHunterReviewPile } from "@/server/hunter/queries";
 import { getContentStudio } from "@/server/content-studio/queries";
+import { getOrganizationNotes } from "@/server/notes/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
 export const dynamic = "force-dynamic";
@@ -100,13 +101,14 @@ export default async function ClientDashboardPage({
   const sisDashboard = primaryOrganization && isSisWorkspace
     ? await getSisDashboardData(primaryOrganization.id)
     : null;
-  const [pipeline, reviewPile, studio] = useLionsDen && primaryOrganization
+  const [pipeline, reviewPile, studio, notes] = useLionsDen && primaryOrganization
     ? await Promise.all([
         getOpportunityPipeline(primaryOrganization.id),
         getHunterReviewPile(primaryOrganization.id),
         getContentStudio(primaryOrganization.id),
+        getOrganizationNotes(primaryOrganization.id),
       ])
-    : [null, null, null];
+    : [null, null, null, null];
 
   const alerts = (
     <div className="mb-5 space-y-4">
@@ -143,6 +145,14 @@ export default async function ClientDashboardPage({
         <StatusAlert tone="amber">
           {spanish ? "No se encontró ninguna organización para el identificador de vista previa" : "No organization was found for preview slug"}{" "}
           &ldquo;{previewOrgSlug}&rdquo;.
+        </StatusAlert>
+      ) : null}
+      {params?.note === "created" ? (
+        <StatusAlert>{spanish ? "Nota guardada." : "Note saved."}</StatusAlert>
+      ) : null}
+      {params?.note === "error" ? (
+        <StatusAlert tone="rose">
+          {spanish ? "No se pudo guardar la nota." : "The note could not be saved."}
         </StatusAlert>
       ) : null}
       {memberships.setupRequired ? (
@@ -214,7 +224,10 @@ export default async function ClientDashboardPage({
           </StatusAlert>
         ) : (
           <LionsDenOverview
+            canCreateNotes={workspace.canCreateNotes}
             drafts={drafts}
+            notes={notes && !notes.setupRequired ? notes.data : []}
+            organizationId={primaryOrganization?.id}
             organizationName={primaryOrganization?.name ?? "SIS Custom Creations"}
             previewOrgSlug={workspace.previewOrgSlug || undefined}
             prospects={prospects}
