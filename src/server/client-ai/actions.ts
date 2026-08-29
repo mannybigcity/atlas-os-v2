@@ -10,6 +10,7 @@ import {
   IntegrationRequestError,
 } from "@/server/integrations/errors";
 import type { OpenAIStructuredTextResult } from "@/server/integrations/openai-responses";
+import { isSuperAdminEmail } from "@/lib/env";
 import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
@@ -461,8 +462,9 @@ export async function submitClientAiRequest(
     }
   }
 
+  const isSuperAdmin = isSuperAdminEmail(user.email);
   const memberships = await getUserMemberships(user.id);
-  if (memberships.setupRequired) {
+  if (memberships.setupRequired && !isSuperAdmin) {
     return {
       ...initialClientAiActionState,
       status: "failed",
@@ -475,7 +477,7 @@ export async function submitClientAiRequest(
     (entry) => entry.organization?.id === organizationId,
   );
 
-  if (!membership) {
+  if (!membership && !isSuperAdmin) {
     return {
       ...initialClientAiActionState,
       status: "blocked",

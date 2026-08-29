@@ -1,13 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  escapeIlikeExact,
+  findOrganizationByPreviewSlug,
   getClientPortalName,
+  isGuestClientPreview,
   isQTimeProductions,
   isQTimeWorkspaceSlug,
   isSisCustomCreations,
   isSisLionsDenRequest,
   isSisOrganization,
   isSisWorkspaceSlug,
+  keepPrimaryOrganizationForSisRequest,
+  organizationSlugsMatch,
   shouldShowSuperAdminCrm,
   sisLionsDenPreviewHref,
   SIS_LIONS_DEN_PREVIEW_SLUG,
@@ -102,5 +107,60 @@ test("admin Lion's Den door uses the live SIS slug or a matched organization", (
     ]),
     "/client?previewOrg=sis-diy-big-complete-showcase",
   );
+  assert.equal(
+    sisLionsDenPreviewHref([
+      { name: "SIS Custom Creations", slug: "SIS-DIY-big-complete-showcase" },
+    ]),
+    "/client?previewOrg=SIS-DIY-big-complete-showcase",
+  );
   assert.equal(sisLionsDenPreviewHref([{ name: "Harbor Lights Studio", slug: "harbor-lights" }]), "/client?previewOrg=sis-diy-big-complete-showcase");
+});
+
+test("preview slug lookup is case-insensitive and can fall back to the SIS org", () => {
+  assert.equal(organizationSlugsMatch("SIS-DIY-big-complete-showcase", "sis-diy-big-complete-showcase"), true);
+  assert.equal(escapeIlikeExact("sis-diy-big-complete-showcase"), "sis-diy-big-complete-showcase");
+  assert.equal(escapeIlikeExact("100%_off"), "100\\%\\_off");
+
+  const mixedCase = findOrganizationByPreviewSlug("sis-diy-big-complete-showcase", [
+    { name: "QTime Productions", slug: "qtime-productions" },
+    { name: "SIS Custom Creations", slug: "SIS-DIY-big-complete-showcase" },
+  ]);
+  assert.equal(mixedCase?.slug, "SIS-DIY-big-complete-showcase");
+  assert.equal(mixedCase?.name, "SIS Custom Creations");
+
+  const byName = findOrganizationByPreviewSlug("sis-diy-big-complete-showcase", [
+    { name: "SIS Custom Creations", slug: "sis-custom-creations" },
+    { name: "QTime Productions", slug: "qtime-productions" },
+  ]);
+  assert.equal(byName?.name, "SIS Custom Creations");
+  assert.equal(byName?.slug, "sis-custom-creations");
+});
+
+test("super admin opening SIS Lion's Den is an operator, not a guest preview", () => {
+  assert.equal(
+    isGuestClientPreview({ name: "SIS Custom Creations", slug: "SIS-DIY-big-complete-showcase" }),
+    false,
+  );
+  assert.equal(
+    isGuestClientPreview({ name: "QTime Productions", slug: "qtime-productions" }),
+    true,
+  );
+  assert.equal(isGuestClientPreview(null), false);
+});
+
+test("a SIS Lion's Den request does not fall through to QTIME", () => {
+  const qtime = { name: "QTime Productions", slug: "qtime-productions" };
+  const sis = { name: "SIS Custom Creations", slug: "SIS-DIY-big-complete-showcase" };
+  assert.equal(
+    keepPrimaryOrganizationForSisRequest(qtime, SIS_LIONS_DEN_PREVIEW_SLUG, "")?.slug,
+    undefined,
+  );
+  assert.equal(
+    keepPrimaryOrganizationForSisRequest(sis, SIS_LIONS_DEN_PREVIEW_SLUG, "")?.slug,
+    "SIS-DIY-big-complete-showcase",
+  );
+  assert.equal(
+    keepPrimaryOrganizationForSisRequest(qtime, "", "qtime-productions")?.slug,
+    "qtime-productions",
+  );
 });

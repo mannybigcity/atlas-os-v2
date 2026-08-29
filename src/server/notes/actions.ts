@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { isSuperAdminEmail } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { requireSuperAdmin, requireUser } from "@/server/auth/guards";
 
@@ -15,14 +16,18 @@ function includesAtlasMention(body: string) {
 
 async function requireOrganizationMembership(
   organizationId: string,
-  userId: string,
+  user: { id: string; email?: string | null },
 ) {
   const supabase = await createClient();
+  if (isSuperAdminEmail(user.email)) {
+    return supabase;
+  }
+
   const { data: membership, error } = await supabase
     .from("organization_memberships")
     .select("id")
     .eq("organization_id", organizationId)
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if (error || !membership) {
@@ -50,7 +55,7 @@ export async function createOrganizationNote(formData: FormData) {
     redirect("/client/notes?note=missing_body");
   }
 
-  const supabase = await requireOrganizationMembership(organizationId, user.id);
+  const supabase = await requireOrganizationMembership(organizationId, user);
   const { error } = await supabase.rpc("create_note_thread", {
     p_organization_id: organizationId,
     p_title: title,
@@ -74,7 +79,7 @@ export async function createClientNoteMessage(formData: FormData) {
     redirect("/client?message=missing_body");
   }
 
-  const supabase = await requireOrganizationMembership(organizationId, user.id);
+  const supabase = await requireOrganizationMembership(organizationId, user);
   const { error } = await supabase.from("note_messages").insert({
     organization_id: organizationId,
     note_id: noteId,

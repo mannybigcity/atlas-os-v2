@@ -38,7 +38,7 @@ export function LionsDenFollowUpBoard({
 
       {empty ? (
         <div className="rounded-[1.6rem] border border-dashed border-[#d8c27a] bg-[#fff8e6] p-5 text-sm leading-6 text-[#071b42]">
-          <p className="font-semibold">{spanish ? "Todavía no hay seguimientos." : "Nothing in it yet."}</p>
+          <p className="font-semibold">{spanish ? "No hay seguimientos en el escritorio." : "No follow-ups on the desk."}</p>
           <p className="mt-2">
             {spanish
               ? "Acepta un prospecto o agrega una consulta de fiesta y la próxima acción aparecerá aquí."

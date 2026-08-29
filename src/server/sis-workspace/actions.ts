@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { getVerifiedUser } from "@/server/auth/guards";
+import { isSuperAdminEmail } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { isSisOrganization } from "@/lib/client-portal/identity";
-import { getUserMemberships } from "@/server/organizations/queries";
+import { getOrganizationsForSuperAdmin, getUserMemberships } from "@/server/organizations/queries";
 
 const stages = ["new_inquiry", "contact_within_24_hours", "qualified", "quote_sent", "deposit_pending", "booked", "prep_in_progress", "party_complete", "diy_subscription_offered", "won_follow_up"] as const;
 type PartyStage = (typeof stages)[number];
@@ -15,6 +16,12 @@ function date(formData: FormData, key: string) { const value = text(formData, ke
 async function getSisManager() {
   const user = await getVerifiedUser();
   if (!user) throw new Error("Unauthorized");
+  if (isSuperAdminEmail(user.email)) {
+    const organizations = await getOrganizationsForSuperAdmin();
+    const sis = organizations.data.find((organization) => isSisOrganization(organization));
+    if (!sis) throw new Error("SIS manager access required");
+    return { user, organizationId: sis.id };
+  }
   const memberships = await getUserMemberships(user.id);
   const membership = memberships.data.find((item) => isSisOrganization(item.organization));
   if (!membership || (membership.role !== "owner" && membership.role !== "admin")) throw new Error("SIS manager access required");
