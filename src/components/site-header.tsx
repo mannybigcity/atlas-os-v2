@@ -71,10 +71,11 @@ export function SiteHeader({ active }: SiteHeaderProps) {
         <nav aria-label={spanish ? "Navegación móvil" : "Mobile navigation"} className="flex shrink-0 items-center gap-2 lg:hidden">
           <LanguageSwitcher />
           <Link
+            aria-label={spanish ? "Crear una cuenta. Comenzar prueba gratis de 7 días" : "Create an account. Start 7-day free trial"}
             className="rounded-full bg-[#f5b932] px-3 py-2 text-xs font-black !text-[#071b42] transition hover:bg-[#ffd064] hover:!text-[#071b42]"
-            href={withSiteLanguage("/assessment", language)}
+            href={withSiteLanguage("/start-trial", language)}
           >
-            {spanish ? "Comenzar" : "Get started"}
+            {spanish ? "Crear cuenta" : "Create account"}
           </Link>
           <Link
             className="rounded-full border border-[#1246a0] px-3 py-2 text-xs font-black text-[#1246a0] transition hover:bg-[#eef4ff]"

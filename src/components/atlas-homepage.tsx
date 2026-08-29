@@ -19,6 +19,7 @@ type LandingCopy = {
   eyebrow: string;
   headline: [string, string];
   heroCopy: string;
+  trial: string;
   primary: string;
   secondary: string;
   nav: { how: string; who: string; dashboard: string; pricing: string; resources: string; login: string; action: string };
@@ -63,6 +64,7 @@ const copy: Record<Language, LandingCopy> = {
     headline: ["YOU CARRY THE FAMILY.", "ATLAS CARRIES THE BUSINESS."],
     heroCopy:
       "Your owner-controlled business workspace for organizing prospects, follow-up, pipeline, and approved next actions, so you can stay focused on what matters most.",
+    trial: "START 7-DAY FREE TRIAL",
     primary: "SEE ATLAS PLANS",
     secondary: "START BUSINESS ASSESSMENT",
     nav: {
@@ -127,6 +129,7 @@ const copy: Record<Language, LandingCopy> = {
     headline: ["TÚ CARGAS CON LA FAMILIA.", "ATLAS CARGA CON EL NEGOCIO."],
     heroCopy:
       "Tu espacio de trabajo con IA y control del propietario para organizar prospectos, seguimientos, oportunidades y próximos pasos aprobados, para que puedas enfocarte en lo que más importa.",
+    trial: "COMENZAR PRUEBA GRATIS DE 7 DÍAS",
     primary: "VER PLANES DE ATLAS",
     secondary: "EMPEZAR EVALUACIÓN DEL NEGOCIO",
     nav: {
@@ -263,6 +266,7 @@ export function AtlasHomepage() {
               <h1 id="atlas-title"><span>{t.headline[0]}</span><strong>{t.headline[1]}</strong></h1>
               <p className="atlas-hero-lede">{t.heroCopy}</p>
               <div className="atlas-hero-actions">
+                <Link className="atlas-button gold" href={withSiteLanguage("/start-trial", language)}>{t.trial}</Link>
                 <Link className="atlas-button gold" href={withSiteLanguage("/pricing#plans", language)}>{t.primary}</Link>
                 <Link className="atlas-button outline" href={withSiteLanguage("/assessment", language)}>{t.secondary}</Link>
               </div>

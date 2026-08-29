@@ -5,6 +5,8 @@ import {
   isQTimeProductions,
   isQTimeWorkspaceSlug,
   isSisCustomCreations,
+  isSisWorkspaceSlug,
+  SIS_CUSTOM_CREATIONS_SLUG,
 } from "./identity.ts";
 
 test("SIS owner-facing chrome is The Lion's Den, not a DAVID or CRM label", () => {
@@ -28,5 +30,7 @@ test("other tenants get a Lion's Den label from the business name", () => {
 test("QTIME is not the default Lion's Den workspace slug", () => {
   assert.equal(isQTimeWorkspaceSlug("qtime-productions"), true);
   assert.equal(isQTimeWorkspaceSlug("sis-custom-creations"), false);
+  assert.equal(isSisWorkspaceSlug(SIS_CUSTOM_CREATIONS_SLUG), true);
+  assert.equal(isSisWorkspaceSlug("qtime-productions"), false);
 });
 

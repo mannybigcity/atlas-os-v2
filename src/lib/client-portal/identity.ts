@@ -16,8 +16,14 @@ export function isQTimeProductions(organizationName: string | null | undefined) 
   return /^qtime productions$/i.test(String(organizationName ?? "").trim());
 }
 
+export const SIS_CUSTOM_CREATIONS_SLUG = "sis-custom-creations";
+
 export function isQTimeWorkspaceSlug(slug: string | null | undefined) {
   return slug === "qtime-productions";
+}
+
+export function isSisWorkspaceSlug(slug: string | null | undefined) {
+  return slug === SIS_CUSTOM_CREATIONS_SLUG;
 }
 
 export function getClientPortalName(organizationName: string | null | undefined) {
