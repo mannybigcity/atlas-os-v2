@@ -5,7 +5,9 @@ import {
   isQTimeProductions,
   isQTimeWorkspaceSlug,
   isSisCustomCreations,
+  isSisLionsDenRequest,
   isSisWorkspaceSlug,
+  shouldShowSuperAdminCrm,
   SIS_CUSTOM_CREATIONS_SLUG,
 } from "./identity.ts";
 
@@ -32,5 +34,54 @@ test("QTIME is not the default Lion's Den workspace slug", () => {
   assert.equal(isQTimeWorkspaceSlug("sis-custom-creations"), false);
   assert.equal(isSisWorkspaceSlug(SIS_CUSTOM_CREATIONS_SLUG), true);
   assert.equal(isSisWorkspaceSlug("qtime-productions"), false);
+});
+
+test("SIS preview and selected workspace skip the super-admin CRM", () => {
+  assert.equal(
+    shouldShowSuperAdminCrm({
+      isSuperAdmin: true,
+      isClientPreview: false,
+      selectedWorkspaceSlug: "",
+      previewOrgSlug: SIS_CUSTOM_CREATIONS_SLUG,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldShowSuperAdminCrm({
+      isSuperAdmin: true,
+      isClientPreview: false,
+      selectedWorkspaceSlug: "",
+      requestedWorkspaceSlug: SIS_CUSTOM_CREATIONS_SLUG,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldShowSuperAdminCrm({
+      isSuperAdmin: true,
+      isClientPreview: false,
+      selectedWorkspaceSlug: SIS_CUSTOM_CREATIONS_SLUG,
+    }),
+    false,
+  );
+  assert.equal(isSisLionsDenRequest(SIS_CUSTOM_CREATIONS_SLUG, ""), true);
+});
+
+test("super-admin CRM stays the default when no SIS view is requested", () => {
+  assert.equal(
+    shouldShowSuperAdminCrm({
+      isSuperAdmin: true,
+      isClientPreview: false,
+      selectedWorkspaceSlug: "",
+    }),
+    true,
+  );
+  assert.equal(
+    shouldShowSuperAdminCrm({
+      isSuperAdmin: true,
+      isClientPreview: true,
+      selectedWorkspaceSlug: "",
+    }),
+    false,
+  );
 });
 

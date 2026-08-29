@@ -1,4 +1,4 @@
-import { isQTimeWorkspaceSlug, isSisWorkspaceSlug } from "@/lib/client-portal/identity";
+import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
 
 export type LionsDenBoard =
   | "overview"
@@ -29,30 +29,6 @@ export const lionsDenBoards: Array<{
 
 export function usesLionsDenHub(slug: string | null | undefined) {
   return Boolean(slug) && !isQTimeWorkspaceSlug(slug);
-}
-
-export function isSisLionsDenRequest(previewOrgSlug?: string | null, workspaceSlug?: string | null) {
-  return isSisWorkspaceSlug(previewOrgSlug) || isSisWorkspaceSlug(workspaceSlug);
-}
-
-export function shouldShowSuperAdminCrm({
-  isSuperAdmin,
-  isClientPreview,
-  selectedWorkspaceSlug,
-  previewOrgSlug,
-  requestedWorkspaceSlug,
-}: {
-  isSuperAdmin: boolean;
-  isClientPreview: boolean;
-  selectedWorkspaceSlug?: string | null;
-  previewOrgSlug?: string | null;
-  requestedWorkspaceSlug?: string | null;
-}) {
-  if (!isSuperAdmin || isClientPreview || selectedWorkspaceSlug) {
-    return false;
-  }
-
-  return !isSisLionsDenRequest(previewOrgSlug, requestedWorkspaceSlug);
 }
 
 export function lionsDenHref(path: string, previewOrgSlug?: string, workspaceSlug?: string) {

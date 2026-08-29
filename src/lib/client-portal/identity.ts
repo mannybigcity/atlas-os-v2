@@ -26,6 +26,30 @@ export function isSisWorkspaceSlug(slug: string | null | undefined) {
   return slug === SIS_CUSTOM_CREATIONS_SLUG;
 }
 
+export function isSisLionsDenRequest(previewOrgSlug?: string | null, workspaceSlug?: string | null) {
+  return isSisWorkspaceSlug(previewOrgSlug) || isSisWorkspaceSlug(workspaceSlug);
+}
+
+export function shouldShowSuperAdminCrm({
+  isSuperAdmin,
+  isClientPreview,
+  selectedWorkspaceSlug,
+  previewOrgSlug,
+  requestedWorkspaceSlug,
+}: {
+  isSuperAdmin: boolean;
+  isClientPreview: boolean;
+  selectedWorkspaceSlug?: string | null;
+  previewOrgSlug?: string | null;
+  requestedWorkspaceSlug?: string | null;
+}) {
+  if (!isSuperAdmin || isClientPreview || selectedWorkspaceSlug) {
+    return false;
+  }
+
+  return !isSisLionsDenRequest(previewOrgSlug, requestedWorkspaceSlug);
+}
+
 export function getClientPortalName(organizationName: string | null | undefined) {
   const name = cleanOrganizationName(String(organizationName ?? ""));
 
