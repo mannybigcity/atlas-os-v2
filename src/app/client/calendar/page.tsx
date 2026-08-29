@@ -34,7 +34,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
   }
   const organization = workspace.primaryOrganization;
   const pipeline = organization ? await getOpportunityPipeline(organization.id) : null;
-  const sisDashboard = isSisOrganization(organization)
+  const sisDashboard = organization && isSisOrganization(organization)
     ? await getSisDashboardData(organization.id)
     : null;
 
