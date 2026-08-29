@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState } from "react";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { submitClientAiRequest } from "@/server/client-ai/actions";
@@ -43,13 +44,20 @@ export function AtlasStaffPane({
       <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#f5b932]">
         {spanish ? "Personal de ATLAS" : "ATLAS staff"}
       </p>
-      <h2 className="mt-2 text-xl font-semibold tracking-[-0.04em] text-[#071b42]">
-        {spanish ? "Pregunta al personal" : "Ask the staff"}
+      <h2 className="mt-2 flex items-center gap-2 text-xl font-semibold tracking-[-0.04em] text-[#071b42]">
+        <Image
+          alt=""
+          className="h-7 w-7 shrink-0 object-contain"
+          height={56}
+          src="/brand/atlas-logo.png"
+          width={56}
+        />
+        {spanish ? "Pregunta a Atlas" : "Ask Atlas"}
       </h2>
       <p className="mt-2 text-sm leading-6 text-[#33415c]">
         {spanish
-          ? `ATLAS es personal interno para ${organizationName || "este espacio"}. No es un closer y no actúa hacia afuera sin tu aprobación.`
-          : `ATLAS is internal staff for ${organizationName || "this workspace"}. Not a closer, and no external action without your approval.`}
+          ? `ATLAS es personal interno para ${organizationName || "este espacio"}, no un closer. No actúa hacia afuera sin tu aprobación.`
+          : `ATLAS is staff, not a closer, for ${organizationName || "this workspace"}. No external action without your approval.`}
       </p>
       {usageLabel ? (
         <p className="mt-3 w-fit rounded-full border border-[#d8c27a] bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">

@@ -41,7 +41,7 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
     previewOrgSlug,
     primaryOrganization,
   } = workspace;
-  const useLionsDen = usesLionsDenHub(primaryOrganization?.slug);
+  const useLionsDen = usesLionsDenHub(primaryOrganization);
   const studio = primaryOrganization
     ? await getContentStudio(primaryOrganization.id)
     : null;
