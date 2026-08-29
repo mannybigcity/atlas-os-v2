@@ -608,8 +608,9 @@ export async function submitClientAiRequest(
 
   const dashboard = await getClientDashboardData(organizationId);
   const guardrails = await loadRoleMarkdown(resolvedRole);
+  const organizationName = membership?.organization?.name ?? "Client workspace";
   const workspaceSummary = summarizeDashboard(
-    membership.organization?.name ?? "Client workspace",
+    organizationName,
     dashboard,
   );
 
@@ -632,7 +633,7 @@ export async function submitClientAiRequest(
         guardrails,
       ].join("\n"),
       input: JSON.stringify({
-        organizationName: membership.organization?.name ?? "Client workspace",
+        organizationName,
         role: resolvedRole,
         userPrompt: prompt,
         workspace: workspaceSummary,
