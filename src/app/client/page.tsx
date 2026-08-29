@@ -6,7 +6,7 @@ import { ClientPortalShell } from "@/components/client-portal-shell";
 import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenOverview } from "@/components/lions-den/lions-den-overview";
-import { isSisLionsDenRequest, shouldShowSuperAdminCrm } from "@/lib/client-portal/identity";
+import { isSisLionsDenRequest, isSisOrganization, shouldShowSuperAdminCrm } from "@/lib/client-portal/identity";
 import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
@@ -92,7 +92,7 @@ export default async function ClientDashboardPage({
     ? await Promise.all([getSalesProspects(), getSalesEvents()])
     : null;
 
-  const isSisWorkspace = primaryOrganization?.slug === "sis-custom-creations";
+  const isSisWorkspace = isSisOrganization(primaryOrganization);
   const useLionsDen = usesLionsDenHub(primaryOrganization?.slug);
   const dashboard = primaryOrganization && !isSisWorkspace && !useLionsDen
     ? await getClientDashboardData(primaryOrganization.id)

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
+import { isSisOrganization } from "@/lib/client-portal/identity";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getSisPartyEventDetail } from "@/server/sis-workspace/queries";
 
@@ -13,7 +14,7 @@ function formatDate(value: string | null) {
 export default async function SisPartyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const workspace = await getClientWorkspaceContext(`/client/sis/party/${id}`);
-  if (workspace.primaryOrganization?.slug !== "sis-custom-creations") notFound();
+  if (!isSisOrganization(workspace.primaryOrganization)) notFound();
   const result = await getSisPartyEventDetail(workspace.primaryOrganization.id, id);
   if (result.setupRequired) throw new Error(result.error);
   if (!result.data) notFound();

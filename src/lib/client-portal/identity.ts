@@ -9,21 +9,34 @@ function cleanOrganizationName(value: string) {
 }
 
 export function isSisCustomCreations(organizationName: string | null | undefined) {
-  return /^sis custom creations$/i.test(String(organizationName ?? "").trim());
+  const name = String(organizationName ?? "").trim();
+  return /sis\s*custom\s*creations/i.test(name) || /sis[-_\s]?diy/i.test(name);
 }
 
 export function isQTimeProductions(organizationName: string | null | undefined) {
   return /^qtime productions$/i.test(String(organizationName ?? "").trim());
 }
 
-export const SIS_CUSTOM_CREATIONS_SLUG = "sis-custom-creations";
+export const SIS_LIONS_DEN_PREVIEW_SLUG = "sis-diy-big-complete-showcase";
 
 export function isQTimeWorkspaceSlug(slug: string | null | undefined) {
   return slug === "qtime-productions";
 }
 
 export function isSisWorkspaceSlug(slug: string | null | undefined) {
-  return slug === SIS_CUSTOM_CREATIONS_SLUG;
+  return /sis-diy/i.test(String(slug ?? "").trim());
+}
+
+export function isSisOrganization(organization?: { name?: string | null; slug?: string | null } | null) {
+  if (!organization) return false;
+  return isSisCustomCreations(organization.name) || isSisWorkspaceSlug(organization.slug);
+}
+
+export function sisLionsDenPreviewHref(
+  organizations?: Array<{ name?: string | null; slug?: string | null }> | null,
+) {
+  const matchedSlug = organizations?.find((organization) => isSisOrganization(organization) && organization.slug)?.slug;
+  return `/client?previewOrg=${encodeURIComponent(matchedSlug || SIS_LIONS_DEN_PREVIEW_SLUG)}`;
 }
 
 export function isSisLionsDenRequest(previewOrgSlug?: string | null, workspaceSlug?: string | null) {

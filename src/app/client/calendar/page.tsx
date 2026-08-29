@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenCalendarBoard } from "@/components/lions-den/lions-den-calendar";
-import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
+import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
 import { getSisDashboardData } from "@/server/sis-workspace/queries";
@@ -34,7 +34,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
   }
   const organization = workspace.primaryOrganization;
   const pipeline = organization ? await getOpportunityPipeline(organization.id) : null;
-  const sisDashboard = organization?.slug === "sis-custom-creations"
+  const sisDashboard = isSisOrganization(organization)
     ? await getSisDashboardData(organization.id)
     : null;
 

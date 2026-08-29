@@ -1,6 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { isSuperAdminEmail } from "@/lib/env";
-import { isSisWorkspaceSlug, SIS_CUSTOM_CREATIONS_SLUG } from "@/lib/client-portal/identity";
+import { isSisWorkspaceSlug } from "@/lib/client-portal/identity";
 import { requireUser } from "@/server/auth/guards";
 import {
   getOrganizationBySlugForSuperAdmin,
@@ -58,7 +58,7 @@ export async function getClientWorkspaceContext(
   const previewOrgSlug = isSafeOrganizationSlug(requestedPreviewOrgSlug)
     ? requestedPreviewOrgSlug
     : isSuperAdmin && isSisWorkspaceSlug(requestedWorkspaceSlug)
-      ? SIS_CUSTOM_CREATIONS_SLUG
+      ? requestedWorkspaceSlug
       : "";
   const previewOrganization = previewOrgSlug
     ? await getOrganizationBySlugForSuperAdmin(previewOrgSlug)
