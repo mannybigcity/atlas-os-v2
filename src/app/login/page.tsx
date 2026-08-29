@@ -56,6 +56,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         invalidCredentials: "No aceptamos esas credenciales.",
         callbackFailed: "No se pudo completar el enlace seguro de acceso.",
         passwordUpdated: "Contraseña actualizada. Vuelve a iniciar sesión para continuar.",
+        checkoutReady: "Tu pago se recibió. Inicia sesión con el correo de la compra para abrir Lion’s Den.",
         email: "Correo electrónico",
         password: "Contraseña",
         signIn: "Iniciar sesión",
@@ -70,6 +71,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         invalidCredentials: "The credentials were not accepted.",
         callbackFailed: "The secure login link could not be completed.",
         passwordUpdated: "Password updated. Sign in again to continue.",
+        checkoutReady: "Your payment was received. Sign in with the email you used at checkout to open Lion’s Den.",
         email: "Email",
         password: "Password",
         signIn: "Sign in",
@@ -103,6 +105,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           ) : null}
           {params?.status === "password_updated" ? (
             <Alert tone="emerald">{copy.passwordUpdated}</Alert>
+          ) : null}
+          {params?.status === "checkout_ready" ? (
+            <Alert tone="emerald">{copy.checkoutReady}</Alert>
           ) : null}
 
           <form action={signInWithPassword} className="mt-4 space-y-4">
