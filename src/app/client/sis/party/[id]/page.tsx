@@ -14,8 +14,9 @@ function formatDate(value: string | null) {
 export default async function SisPartyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const workspace = await getClientWorkspaceContext(`/client/sis/party/${id}`);
-  if (!isSisOrganization(workspace.primaryOrganization)) notFound();
-  const result = await getSisPartyEventDetail(workspace.primaryOrganization.id, id);
+  const organization = workspace.primaryOrganization;
+  if (!organization || !isSisOrganization(organization)) notFound();
+  const result = await getSisPartyEventDetail(organization.id, id);
   if (result.setupRequired) throw new Error(result.error);
   if (!result.data) notFound();
   const party = result.data;
