@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { isSuperAdminEmail } from "@/lib/env";
+import { isSisWorkspaceSlug } from "@/lib/client-portal/identity";
 import { requireUser } from "@/server/auth/guards";
 import {
   getOrganizationBySlugForSuperAdmin,
@@ -51,16 +52,18 @@ export async function getClientWorkspaceContext(
   const requestedPreviewOrgSlug = isSuperAdmin
     ? String(searchParams?.previewOrg ?? "").trim().toLowerCase()
     : "";
+  const requestedWorkspaceSlug = isSafeOrganizationSlug(String(searchParams?.workspace ?? "").trim().toLowerCase())
+    ? String(searchParams?.workspace ?? "").trim().toLowerCase()
+    : "";
   const previewOrgSlug = isSafeOrganizationSlug(requestedPreviewOrgSlug)
     ? requestedPreviewOrgSlug
-    : "";
+    : isSuperAdmin && isSisWorkspaceSlug(requestedWorkspaceSlug)
+      ? requestedWorkspaceSlug
+      : "";
   const previewOrganization = previewOrgSlug
     ? await getOrganizationBySlugForSuperAdmin(previewOrgSlug)
     : null;
   const personalMemberships = await getUserMemberships(user.id);
-  const requestedWorkspaceSlug = isSafeOrganizationSlug(String(searchParams?.workspace ?? "").trim().toLowerCase())
-    ? String(searchParams?.workspace ?? "").trim().toLowerCase()
-    : "";
   const isClientPreview = Boolean(
     previewOrganization &&
       !previewOrganization.setupRequired &&

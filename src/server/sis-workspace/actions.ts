@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getVerifiedUser } from "@/server/auth/guards";
 import { createClient } from "@/lib/supabase/server";
+import { isSisOrganization } from "@/lib/client-portal/identity";
 import { getUserMemberships } from "@/server/organizations/queries";
 
 const stages = ["new_inquiry", "contact_within_24_hours", "qualified", "quote_sent", "deposit_pending", "booked", "prep_in_progress", "party_complete", "diy_subscription_offered", "won_follow_up"] as const;
@@ -15,7 +16,7 @@ async function getSisManager() {
   const user = await getVerifiedUser();
   if (!user) throw new Error("Unauthorized");
   const memberships = await getUserMemberships(user.id);
-  const membership = memberships.data.find((item) => item.organization?.slug === "sis-custom-creations");
+  const membership = memberships.data.find((item) => isSisOrganization(item.organization));
   if (!membership || (membership.role !== "owner" && membership.role !== "admin")) throw new Error("SIS manager access required");
   return { user, organizationId: membership.organization!.id };
 }

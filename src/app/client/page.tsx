@@ -6,6 +6,7 @@ import { ClientPortalShell } from "@/components/client-portal-shell";
 import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenOverview } from "@/components/lions-den/lions-den-overview";
+import { isSisLionsDenRequest, isSisOrganization, shouldShowSuperAdminCrm } from "@/lib/client-portal/identity";
 import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
@@ -75,19 +76,28 @@ export default async function ClientDashboardPage({
   const workspace = await getClientWorkspaceContext("/client", params);
   const { isClientPreview, memberships, previewOrgSlug, previewOrganization, primaryOrganization } =
     workspace;
-  const organizations = workspace.isSuperAdmin && !isClientPreview && !workspace.selectedWorkspaceSlug
+  const requestedWorkspaceSlug = String(params?.workspace ?? "").trim().toLowerCase();
+  const wantsSisLionsDen = isSisLionsDenRequest(previewOrgSlug, requestedWorkspaceSlug)
+    || isSisLionsDenRequest(previewOrgSlug, workspace.selectedWorkspaceSlug);
+  const organizations = shouldShowSuperAdminCrm({
+    isSuperAdmin: workspace.isSuperAdmin,
+    isClientPreview,
+    selectedWorkspaceSlug: workspace.selectedWorkspaceSlug,
+    previewOrgSlug,
+    requestedWorkspaceSlug,
+  })
     ? await getOrganizationsForSuperAdmin()
     : null;
   const sales = organizations
     ? await Promise.all([getSalesProspects(), getSalesEvents()])
     : null;
 
-  const isSisWorkspace = primaryOrganization?.slug === "sis-custom-creations";
+  const isSisWorkspace = isSisOrganization(primaryOrganization);
   const useLionsDen = usesLionsDenHub(primaryOrganization?.slug);
   const dashboard = primaryOrganization && !isSisWorkspace && !useLionsDen
     ? await getClientDashboardData(primaryOrganization.id)
     : null;
-  const sisDashboard = isSisWorkspace
+  const sisDashboard = primaryOrganization && isSisWorkspace
     ? await getSisDashboardData(primaryOrganization.id)
     : null;
   const [pipeline, reviewPile, studio] = useLionsDen && primaryOrganization
@@ -188,7 +198,7 @@ export default async function ClientDashboardPage({
     );
   }
 
-  if (useLionsDen && primaryOrganization) {
+  if ((useLionsDen && primaryOrganization) || (wantsSisLionsDen && !organizations)) {
     const prospects = pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : [];
     const reviewItems = reviewPile && !reviewPile.setupRequired ? reviewPile.data : [];
     const drafts = studio && !studio.setupRequired ? studio.data.drafts : [];
@@ -205,7 +215,7 @@ export default async function ClientDashboardPage({
         ) : (
           <LionsDenOverview
             drafts={drafts}
-            organizationName={primaryOrganization.name}
+            organizationName={primaryOrganization?.name ?? "SIS Custom Creations"}
             previewOrgSlug={workspace.previewOrgSlug || undefined}
             prospects={prospects}
             reviewPile={reviewItems}

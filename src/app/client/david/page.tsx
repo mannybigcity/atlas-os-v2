@@ -3,6 +3,7 @@ import { ClientPilotWorkspace } from "@/components/client-pilot-workspace";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenFollowUpBoard } from "@/components/lions-den/lions-den-follow-up";
+import { isSisOrganization } from "@/lib/client-portal/identity";
 import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
 import {
   clientWorkspaceHref,
@@ -51,7 +52,7 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
   const pipeline = primaryOrganization
     ? await getOpportunityPipeline(primaryOrganization.id)
     : null;
-  const sisDashboard = primaryOrganization?.slug === "sis-custom-creations"
+  const sisDashboard = primaryOrganization && isSisOrganization(primaryOrganization)
     ? await getSisDashboardData(primaryOrganization.id)
     : null;
 

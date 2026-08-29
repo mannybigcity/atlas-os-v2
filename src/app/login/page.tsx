@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PrivateAtlasAuthHeader } from "@/components/private-atlas-auth-header";
+import { withSiteLanguage } from "@/lib/site-language";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import { signInWithPassword } from "@/server/auth/actions";
 
@@ -59,6 +60,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         password: "Contraseña",
         signIn: "Iniciar sesión",
         resetPassword: "Restablecer contraseña",
+        createAccount: "Crea una cuenta / Comienza tu prueba gratis de 7 días",
+        noCard: "No necesitas tarjeta.",
       }
     : {
         title: "Sign in to Atlas For Entrepreneurs",
@@ -71,6 +74,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         password: "Password",
         signIn: "Sign in",
         resetPassword: "Reset password",
+        createAccount: "Create an account / Start 7-day free trial",
+        noCard: "No card required.",
       };
 
   return (
@@ -128,13 +133,22 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </button>
           </form>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-6 space-y-3">
             <Link
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#2a5abd] px-5 text-sm font-black text-[#06266d] transition hover:bg-[#eef4ff]"
-              href="/forgot-password"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#f5b932] px-5 text-sm font-black text-[#071b42] transition hover:bg-[#ffd064]"
+              href={withSiteLanguage("/start-trial", language)}
             >
-              {copy.resetPassword}
+              {copy.createAccount}
             </Link>
+            <p className="text-center text-xs leading-5 text-slate-500">{copy.noCard}</p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#2a5abd] px-5 text-sm font-black text-[#06266d] transition hover:bg-[#eef4ff]"
+                href="/forgot-password"
+              >
+                {copy.resetPassword}
+              </Link>
+            </div>
           </div>
         </div>
       </section>
