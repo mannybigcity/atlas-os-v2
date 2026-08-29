@@ -52,7 +52,7 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
   const pipeline = primaryOrganization
     ? await getOpportunityPipeline(primaryOrganization.id)
     : null;
-  const sisDashboard = isSisOrganization(primaryOrganization)
+  const sisDashboard = primaryOrganization && isSisOrganization(primaryOrganization)
     ? await getSisDashboardData(primaryOrganization.id)
     : null;
 

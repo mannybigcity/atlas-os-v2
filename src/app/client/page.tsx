@@ -97,7 +97,7 @@ export default async function ClientDashboardPage({
   const dashboard = primaryOrganization && !isSisWorkspace && !useLionsDen
     ? await getClientDashboardData(primaryOrganization.id)
     : null;
-  const sisDashboard = isSisWorkspace
+  const sisDashboard = primaryOrganization && isSisWorkspace
     ? await getSisDashboardData(primaryOrganization.id)
     : null;
   const [pipeline, reviewPile, studio] = useLionsDen && primaryOrganization
