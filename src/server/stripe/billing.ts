@@ -3,6 +3,11 @@ import "server-only";
 import type Stripe from "stripe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getAtlasStripeClient } from "@/server/stripe/client";
+import {
+  provisionPaidAtlasWorkspace,
+  resolveCheckoutEmail,
+} from "@/server/stripe/paid-workspace";
+import { provisioningStatusForCheckoutEmail } from "@/server/stripe/paid-workspace-identity";
 
 const PLAN_PRICE_ENV: Record<string, string> = {
   basic: "STRIPE_ATLAS_BASIC_PRICE_ID",
@@ -39,10 +44,6 @@ function customerId(value: string | Stripe.Customer | Stripe.DeletedCustomer | n
 
 function subscriptionId(value: string | Stripe.Subscription | null | undefined) {
   return typeof value === "string" ? value : value?.id ?? null;
-}
-
-function emailFromSession(session: Stripe.Checkout.Session) {
-  return (session.customer_details?.email ?? session.customer_email ?? "").trim().toLowerCase() || null;
 }
 
 async function markEvent(event: Stripe.Event) {
@@ -96,14 +97,16 @@ async function upsertEntitlement(input: {
   status: string;
   currentPeriodEnd: number | null;
   cancelAtPeriodEnd: boolean;
-  provisioningStatus?: "pending" | "linked" | "suspended";
+  provisioningStatus?: "pending" | "linked" | "suspended" | "failed";
+  userId?: string | null;
+  organizationId?: string | null;
   event: Stripe.Event;
 }) {
   const service = createServiceClient();
   const lookup = input.subscriptionId
-    ? service.from("atlas_billing_entitlements").select("id,email,provisioning_status").eq("stripe_subscription_id", input.subscriptionId).maybeSingle()
+    ? service.from("atlas_billing_entitlements").select("id,email,provisioning_status,user_id,organization_id").eq("stripe_subscription_id", input.subscriptionId).maybeSingle()
     : input.checkoutSessionId
-      ? service.from("atlas_billing_entitlements").select("id,email,provisioning_status").eq("stripe_checkout_session_id", input.checkoutSessionId).maybeSingle()
+      ? service.from("atlas_billing_entitlements").select("id,email,provisioning_status,user_id,organization_id").eq("stripe_checkout_session_id", input.checkoutSessionId).maybeSingle()
       : Promise.resolve({ data: null, error: null });
   const existing = await lookup;
   if (existing.error) throw existing.error;
@@ -120,6 +123,8 @@ async function upsertEntitlement(input: {
     cancel_at_period_end: input.cancelAtPeriodEnd,
     last_stripe_event_id: input.event.id,
     updated_at: new Date().toISOString(),
+    ...(input.userId !== undefined ? { user_id: input.userId } : {}),
+    ...(input.organizationId !== undefined ? { organization_id: input.organizationId } : {}),
   };
 
   const insertPayload = { ...payload, provisioning_status: input.provisioningStatus ?? "pending" };
@@ -156,8 +161,9 @@ async function handleCheckoutCompleted(event: Stripe.Event, session: Stripe.Chec
     cancelAtPeriodEnd = record.cancel_at_period_end;
   }
 
-  await upsertEntitlement({
-    email: emailFromSession(session),
+  const email = await resolveCheckoutEmail(stripe, session);
+  const billing = {
+    email,
     customerId: customerId(session.customer),
     subscriptionId: subscription,
     checkoutSessionId: session.id,
@@ -167,6 +173,19 @@ async function handleCheckoutCompleted(event: Stripe.Event, session: Stripe.Chec
     currentPeriodEnd,
     cancelAtPeriodEnd,
     event,
+  };
+
+  await upsertEntitlement({
+    ...billing,
+    provisioningStatus: provisioningStatusForCheckoutEmail(email),
+  });
+
+  const workspace = await provisionPaidAtlasWorkspace({ email, session });
+  await upsertEntitlement({
+    ...billing,
+    provisioningStatus: workspace.status === "linked" ? "linked" : "failed",
+    userId: workspace.status === "linked" ? workspace.userId : undefined,
+    organizationId: workspace.status === "linked" ? workspace.organizationId : undefined,
   });
 }
 

@@ -1,5 +1,7 @@
 import type { AtlasPricingPlanSlug } from "@/lib/pricing";
 
+export const ATLAS_CHECKOUT_SUCCESS_PATH = "/checkout/success";
+
 const planPaymentLinks: Record<AtlasPricingPlanSlug, string> = {
   basic: process.env.NEXT_PUBLIC_STRIPE_ATLAS_BASIC_URL?.trim() ?? "",
   grow: process.env.NEXT_PUBLIC_STRIPE_ATLAS_GROW_URL?.trim() ?? "",
