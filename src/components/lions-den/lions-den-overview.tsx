@@ -129,6 +129,29 @@ export function LionsDenOverview({
         />
       </section>
 
+      {sisDashboard ? (
+        <section className="grid gap-3 sm:grid-cols-3">
+          <CountCard
+            href={href("/client")}
+            label={spanish ? "Leads SIS" : "SIS leads"}
+            note={spanish ? "Consultas en este espacio." : "Inquiries in this workspace."}
+            value={sisDashboard.counts.leads}
+          />
+          <CountCard
+            href={href("/client")}
+            label={spanish ? "Cotizaciones" : "Quotes"}
+            note={spanish ? "Cotizaciones DEMO o reales." : "DEMO or live quotes."}
+            value={sisDashboard.counts.quotes}
+          />
+          <CountCard
+            href={href("/client")}
+            label={spanish ? "Pedidos" : "Orders"}
+            note={spanish ? "Pedidos en el escritorio." : "Orders on the desk."}
+            value={sisDashboard.counts.orders}
+          />
+        </section>
+      ) : null}
+
       <section className="rounded-[1.2rem] border border-[#d5d0c4] bg-white p-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -237,6 +260,11 @@ export function LionsDenOverview({
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <h4 className="font-semibold text-[#071b42]">{prospect.name}</h4>
+                    {prospect.contactName || prospect.contactPhone ? (
+                      <p className="mt-1 text-sm text-[#071b42]">
+                        {[prospect.contactName, prospect.contactPhone].filter(Boolean).join(" · ")}
+                      </p>
+                    ) : null}
                     {prospect.nextAction ? (
                       <p className="mt-1 text-sm text-[#33415c]">{prospect.nextAction}</p>
                     ) : null}
