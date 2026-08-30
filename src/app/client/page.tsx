@@ -94,7 +94,7 @@ export default async function ClientDashboardPage({
     : null;
 
   const isSisWorkspace = isSisOrganization(primaryOrganization);
-  const useLionsDen = usesLionsDenHub(primaryOrganization?.slug);
+  const useLionsDen = usesLionsDenHub(primaryOrganization);
   const dashboard = primaryOrganization && !isSisWorkspace && !useLionsDen
     ? await getClientDashboardData(primaryOrganization.id)
     : null;
@@ -141,7 +141,7 @@ export default async function ClientDashboardPage({
             : "We could not load the requested client preview. Confirm the organization slug and workspace access."}
         </StatusAlert>
       ) : null}
-      {previewOrgSlug && previewOrganization && !previewOrganization.data ? (
+      {previewOrgSlug && previewOrganization && !previewOrganization.data && !primaryOrganization ? (
         <StatusAlert tone="amber">
           {spanish ? "No se encontró ninguna organización para el identificador de vista previa" : "No organization was found for preview slug"}{" "}
           &ldquo;{previewOrgSlug}&rdquo;.
@@ -228,7 +228,7 @@ export default async function ClientDashboardPage({
             drafts={drafts}
             notes={notes && !notes.setupRequired ? notes.data : []}
             organizationId={primaryOrganization?.id}
-            organizationName={primaryOrganization?.name ?? "SIS Custom Creations"}
+            organizationName={primaryOrganization?.name ?? (wantsSisLionsDen ? "SIS Custom Creations" : "")}
             previewOrgSlug={workspace.previewOrgSlug || undefined}
             prospects={prospects}
             reviewPile={reviewItems}

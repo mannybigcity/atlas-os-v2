@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { assertCanApplyOrganizationIdentityPatch } from "@/lib/client-portal/protected-organization";
 import { isSuperAdminEmail } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
@@ -305,6 +306,25 @@ export async function acceptHunterReviewItem(formData: FormData) {
   }
 
   const supabase = await createClient();
+  const { data: workspace } = await supabase
+    .from("organizations")
+    .select("id, name, slug")
+    .eq("id", organizationId)
+    .maybeSingle();
+  try {
+    assertCanApplyOrganizationIdentityPatch(workspace, {
+      name: formData.get("organizationName") ?? undefined,
+      slug: formData.get("organizationSlug") ?? undefined,
+      industry: formData.get("industry") ?? undefined,
+      about: formData.get("about") ?? undefined,
+      owners: formData.get("owners") ?? undefined,
+      logo: formData.get("logo") ?? undefined,
+      profile: formData.get("profile") ?? undefined,
+    });
+  } catch {
+    redirect("/client/hunter?hunter=protected");
+  }
+
   const { data: item, error: itemError } = await supabase
     .from("organization_hunter_review_items")
     .select(

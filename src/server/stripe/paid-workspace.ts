@@ -3,6 +3,7 @@ import "server-only";
 import type Stripe from "stripe";
 import { getSiteUrl } from "@/lib/env";
 import { createServiceClient } from "@/lib/supabase/service";
+import { assertNotProvisioningProtectedOrganization } from "@/lib/client-portal/protected-organization";
 import {
   isUsableCheckoutEmail,
   nextWorkspaceSlugCandidate,
@@ -185,6 +186,7 @@ async function ensureOwnerWorkspace(
 }
 
 async function createUniqueOrganization(service: ServiceClient, name: string, desiredSlug: string) {
+  assertNotProvisioningProtectedOrganization({ name, slug: desiredSlug });
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const slug = nextWorkspaceSlugCandidate(desiredSlug, attempt);
     const { data, error } = await service

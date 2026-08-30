@@ -84,6 +84,49 @@ export function keepPrimaryOrganizationForSisRequest<T extends { name?: string |
   return undefined;
 }
 
+export function resolveOperatorDeskOrganization<T extends { name?: string | null; slug?: string | null }>(input: {
+  previewOrgSlug?: string | null;
+  workspaceSlug?: string | null;
+  previewOrganization?: T | null;
+  membershipOrganizations?: Array<T | null | undefined>;
+  directory?: Array<T | null | undefined> | null;
+}): T | undefined {
+  const membershipOrganizations = (input.membershipOrganizations ?? []).filter(
+    (organization): organization is T => Boolean(organization),
+  );
+  const directory = (input.directory ?? []).filter(
+    (organization): organization is T => Boolean(organization),
+  );
+  const sisRequested = isSisLionsDenRequest(input.previewOrgSlug, input.workspaceSlug);
+
+  if (sisRequested) {
+    const requestedSlug = input.previewOrgSlug || input.workspaceSlug || SIS_LIONS_DEN_PREVIEW_SLUG;
+    return (
+      (input.previewOrganization && isSisOrganization(input.previewOrganization)
+        ? input.previewOrganization
+        : undefined) ??
+      membershipOrganizations.find((organization) => isSisOrganization(organization)) ??
+      findOrganizationByPreviewSlug(requestedSlug, directory) ??
+      directory.find((organization) => isSisOrganization(organization))
+    );
+  }
+
+  if (input.previewOrganization) {
+    return input.previewOrganization;
+  }
+
+  const requestedWorkspace = String(input.workspaceSlug ?? "").trim();
+  if (requestedWorkspace) {
+    return (
+      membershipOrganizations.find((organization) =>
+        organizationSlugsMatch(organization.slug, requestedWorkspace),
+      ) ?? findOrganizationByPreviewSlug(requestedWorkspace, directory)
+    );
+  }
+
+  return membershipOrganizations[0];
+}
+
 export function sisLionsDenPreviewHref(
   organizations?: Array<{ name?: string | null; slug?: string | null }> | null,
 ) {

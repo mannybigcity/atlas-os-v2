@@ -39,7 +39,7 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
   const spanish = language === "es";
   const workspace = await getClientWorkspaceContext("/client/david", params);
   const { isClientPreview, previewOrgSlug, primaryOrganization } = workspace;
-  const useLionsDen = usesLionsDenHub(primaryOrganization?.slug);
+  const useLionsDen = usesLionsDenHub(primaryOrganization);
   const aiRequests = primaryOrganization
     ? await getClientAiRequests(primaryOrganization.id, 8)
     : null;

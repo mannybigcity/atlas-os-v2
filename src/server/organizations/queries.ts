@@ -1,8 +1,11 @@
 import {
   escapeIlikeExact,
   findOrganizationByPreviewSlug,
+  isSisOrganization,
+  isSisWorkspaceSlug,
   organizationSlugsMatch,
 } from "@/lib/client-portal/identity";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type OrganizationSummary = {
@@ -152,54 +155,126 @@ export async function getOrganizationsForSuperAdmin(): Promise<
   };
 }
 
-export async function getOrganizationBySlugForSuperAdmin(
-  slug: string,
-): Promise<WorkspaceQueryResult<OrganizationSummary | null>> {
-  const requested = slug.trim();
-  const supabase = await createClient();
-  const { data, error } = await supabase
+async function lookupOrganizationBySlug(
+  client: { from: (table: string) => any },
+  requested: string,
+): Promise<OrganizationSummary | null> {
+  const { data, error } = await client
     .from("organizations")
     .select("id, name, slug, created_at")
     .eq("slug", requested)
     .maybeSingle();
 
-  if (error) {
-    return {
-      data: null,
-      setupRequired: true,
-      error: error.message,
-    };
+  if (!error && data) {
+    return normalizeOrganization(data as OrganizationRow);
   }
 
-  if (data) {
+  const insensitive = await client
+    .from("organizations")
+    .select("id, name, slug, created_at")
+    .ilike("slug", escapeIlikeExact(requested))
+    .limit(5);
+
+  if (!insensitive.error) {
+    const rows = (insensitive.data ?? []) as OrganizationRow[];
+    const match =
+      rows.find((row) => organizationSlugsMatch(row.slug, requested)) ??
+      (isSisWorkspaceSlug(requested)
+        ? rows.find((row) => isSisOrganization(row))
+        : undefined) ??
+      rows[0];
+    if (match) {
+      return normalizeOrganization(match);
+    }
+  }
+
+  return null;
+}
+
+function pickOrganizationFromDirectory(
+  requested: string,
+  organizations: OrganizationSummary[],
+) {
+  return (
+    findOrganizationByPreviewSlug(requested, organizations) ??
+    (isSisWorkspaceSlug(requested)
+      ? organizations.find((organization) => isSisOrganization(organization))
+      : undefined) ??
+    null
+  );
+}
+
+export async function listOrganizationsForOperator(): Promise<OrganizationSummary[]> {
+  const viaUser = await getOrganizationsForSuperAdmin();
+  if (!viaUser.setupRequired && viaUser.data.some((organization) => organization.id)) {
+    if (!viaUser.data.some((organization) => isSisOrganization(organization))) {
+      const viaAdmin = await listOrganizationsWithServiceRole();
+      if (viaAdmin.some((organization) => isSisOrganization(organization))) {
+        return viaAdmin;
+      }
+    }
+    return viaUser.data;
+  }
+
+  const viaAdmin = await listOrganizationsWithServiceRole();
+  return viaAdmin.length > 0 ? viaAdmin : viaUser.data;
+}
+
+async function listOrganizationsWithServiceRole(): Promise<OrganizationSummary[]> {
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("organizations")
+      .select("id, name, slug, created_at")
+      .order("created_at", { ascending: false });
+    if (error || !data) {
+      return [];
+    }
+    return (data as OrganizationRow[]).map(normalizeOrganization);
+  } catch {
+    return [];
+  }
+}
+
+export async function getOrganizationBySlugForSuperAdmin(
+  slug: string,
+): Promise<WorkspaceQueryResult<OrganizationSummary | null>> {
+  const requested = slug.trim();
+  const supabase = await createClient();
+  const fromUser = await lookupOrganizationBySlug(supabase, requested);
+  if (fromUser) {
     return {
-      data: normalizeOrganization(data as OrganizationRow),
+      data: fromUser,
       setupRequired: false,
       error: null,
     };
   }
 
-  const insensitive = await supabase
-    .from("organizations")
-    .select("id, name, slug, created_at")
-    .ilike("slug", escapeIlikeExact(requested))
-    .limit(2);
-
-  if (!insensitive.error) {
-    const rows = (insensitive.data ?? []) as OrganizationRow[];
-    const match =
-      rows.find((row) => organizationSlugsMatch(row.slug, requested)) ?? rows[0];
-    if (match) {
+  const organizations = await getOrganizationsForSuperAdmin();
+  if (!organizations.setupRequired) {
+    const fallback = pickOrganizationFromDirectory(requested, organizations.data);
+    if (fallback) {
       return {
-        data: normalizeOrganization(match),
+        data: fallback,
         setupRequired: false,
         error: null,
       };
     }
   }
 
-  const organizations = await getOrganizationsForSuperAdmin();
-  if (organizations.setupRequired) {
+  const viaAdmin = await listOrganizationsWithServiceRole();
+  if (viaAdmin.length > 0) {
+    const fromAdminDirectory = pickOrganizationFromDirectory(requested, viaAdmin);
+    if (fromAdminDirectory) {
+      return {
+        data: fromAdminDirectory,
+        setupRequired: false,
+        error: null,
+      };
+    }
+  }
+
+  if (organizations.setupRequired && viaAdmin.length === 0) {
     return {
       data: null,
       setupRequired: true,
@@ -207,9 +282,8 @@ export async function getOrganizationBySlugForSuperAdmin(
     };
   }
 
-  const fallback = findOrganizationByPreviewSlug(requested, organizations.data);
   return {
-    data: fallback ?? null,
+    data: null,
     setupRequired: false,
     error: null,
   };

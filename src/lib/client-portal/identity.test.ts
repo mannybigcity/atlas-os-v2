@@ -13,6 +13,7 @@ import {
   isSisWorkspaceSlug,
   keepPrimaryOrganizationForSisRequest,
   organizationSlugsMatch,
+  resolveOperatorDeskOrganization,
   shouldShowSuperAdminCrm,
   sisLionsDenPreviewHref,
   SIS_LIONS_DEN_PREVIEW_SLUG,
@@ -163,4 +164,44 @@ test("a SIS Lion's Den request does not fall through to QTIME", () => {
     keepPrimaryOrganizationForSisRequest(qtime, "", "qtime-productions")?.slug,
     "qtime-productions",
   );
+});
+
+test("super admin opening SIS gets the SIS workspace id even when the first membership is QTIME", () => {
+  const qtime = { id: "org-qtime", name: "QTime Productions", slug: "qtime-productions" };
+  const sis = { id: "org-sis", name: "SIS Custom Creations", slug: "SIS-DIY-big-complete-showcase" };
+
+  const fromDirectory = resolveOperatorDeskOrganization({
+    previewOrgSlug: SIS_LIONS_DEN_PREVIEW_SLUG,
+    membershipOrganizations: [qtime],
+    directory: [qtime, sis],
+  });
+  assert.equal(fromDirectory?.id, "org-sis");
+  assert.equal(fromDirectory?.name, "SIS Custom Creations");
+
+  const fromMembership = resolveOperatorDeskOrganization({
+    previewOrgSlug: "sis-diy-big-complete-showcase",
+    previewOrganization: null,
+    membershipOrganizations: [qtime, sis],
+    directory: [],
+  });
+  assert.equal(fromMembership?.id, "org-sis");
+
+  const mixedCase = resolveOperatorDeskOrganization({
+    previewOrgSlug: "sis-diy-big-complete-showcase",
+    previewOrganization: { id: "org-sis", name: "SIS Custom Creations", slug: "SIS-DIY-big-complete-showcase" },
+    membershipOrganizations: [qtime],
+  });
+  assert.equal(mixedCase?.id, "org-sis");
+});
+
+test("a SIS preview request never treats SIS as a guest and never returns QTIME", () => {
+  const qtime = { id: "org-qtime", name: "QTime Productions", slug: "qtime-productions" };
+  const resolved = resolveOperatorDeskOrganization({
+    previewOrgSlug: SIS_LIONS_DEN_PREVIEW_SLUG,
+    previewOrganization: qtime,
+    membershipOrganizations: [qtime],
+    directory: [qtime],
+  });
+  assert.equal(resolved, undefined);
+  assert.equal(isGuestClientPreview({ name: "SIS Custom Creations", slug: "sis-diy" }), false);
 });

@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { assertCanApplyOrganizationIdentityPatch } from "@/lib/client-portal/protected-organization";
 import { createClient } from "@/lib/supabase/server";
 import { requireSuperAdmin } from "@/server/auth/guards";
 
@@ -25,12 +26,26 @@ export async function saveAdminBusinessProfile(formData: FormData) {
   const supabase = await createClient();
   const { data: organization, error: organizationError } = await supabase
     .from("organizations")
-    .select("id")
+    .select("id, name, slug")
     .eq("id", organizationId)
     .maybeSingle();
 
   if (organizationError || !organization) {
     redirect("/lions-den?profile=invalid#client-intelligence");
+  }
+
+  try {
+    assertCanApplyOrganizationIdentityPatch(organization, {
+      name: formData.get("name") ?? undefined,
+      slug: formData.get("slug") ?? undefined,
+      industry: formData.get("industry") ?? undefined,
+      about: formData.get("about") ?? undefined,
+      owners: formData.get("owners") ?? undefined,
+      logo: formData.get("logo") ?? undefined,
+      profile: formData.get("profile") ?? undefined,
+    });
+  } catch {
+    redirect("/lions-den?profile=protected#client-intelligence");
   }
 
   const { error } = await supabase.from("business_profiles").upsert({

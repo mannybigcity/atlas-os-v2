@@ -51,6 +51,14 @@ export function LionsDenProspectsBoard({
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h3 className="font-semibold text-[#071b42]">{prospect.name}</h3>
+                  {prospect.contactName || prospect.contactPhone ? (
+                    <p className="mt-1 text-sm font-medium text-[#071b42]">
+                      {[prospect.contactName, prospect.contactPhone].filter(Boolean).join(" · ")}
+                    </p>
+                  ) : null}
+                  {prospect.contactEmail ? (
+                    <p className="mt-1 text-sm text-[#5c6578]">{prospect.contactEmail}</p>
+                  ) : null}
                   <p className="mt-1 text-sm text-[#5c6578]">{prospect.researchSummary}</p>
                 </div>
                 <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
@@ -59,6 +67,11 @@ export function LionsDenProspectsBoard({
               </div>
               {prospect.nextAction ? (
                 <p className="mt-2 text-sm font-medium text-[#071b42]">{prospect.nextAction}</p>
+              ) : null}
+              {prospect.events[0] ? (
+                <p className="mt-2 text-xs uppercase tracking-[0.12em] text-[#5c6578]">
+                  {prospect.events[prospect.events.length - 1]?.summary}
+                </p>
               ) : null}
               {prospect.sourceUrl ? (
                 <a

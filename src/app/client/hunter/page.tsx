@@ -44,6 +44,7 @@ function hunterStatusCopy(code: string | undefined, spanish: boolean) {
     dismiss_failed: { en: "The listing could not be dismissed.", es: "No se pudo descartar la ficha.", tone: "warn" },
     missing: { en: "That review item was not found.", es: "No se encontró ese hallazgo.", tone: "warn" },
     invalid: { en: "That review action was not valid.", es: "Esa acción de revisión no fue válida.", tone: "warn" },
+    protected: { en: "SIS Custom Creations is protected. HUNTER cannot change the company name, slug, or identity.", es: "SIS Custom Creations está protegida. HUNTER no puede cambiar el nombre, identificador ni la identidad de la empresa.", tone: "warn" },
   };
   return code ? messages[code] ?? null : null;
 }
@@ -54,7 +55,7 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
   const spanish = language === "es";
   const workspace = await getClientWorkspaceContext("/client/hunter", params);
   const { isClientPreview, previewOrgSlug, primaryOrganization } = workspace;
-  const useLionsDen = usesLionsDenHub(primaryOrganization?.slug);
+  const useLionsDen = usesLionsDenHub(primaryOrganization);
   const aiRequests = primaryOrganization
     ? await getClientAiRequests(primaryOrganization.id, 8)
     : null;
