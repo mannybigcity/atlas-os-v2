@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { useSiteLanguage } from "@/components/language-switcher";
+import { ATLAS_STAFF_PROMPT_LIMIT, composeAtlasStaffPrompt } from "@/lib/lions-den/atlas-staff-prompt";
 import { submitClientAiRequest } from "@/server/client-ai/actions";
 import { initialClientAiActionState } from "@/server/client-ai/types";
 import type { ClientAiDailyUsage, ClientAiRequest } from "@/server/client-ai/queries";
@@ -16,13 +17,29 @@ type AtlasStaffPaneProps = {
   compact?: boolean;
 };
 
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+function speechRecognitionCtor() {
+  if (typeof window === "undefined") return null;
+  const SpeechWindow = window as Window & {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  };
+  return SpeechWindow.SpeechRecognition ?? SpeechWindow.webkitSpeechRecognition ?? null;
+}
+
 export function AtlasStaffPane({
   organizationId,
-  organizationName,
-  previewMode,
   requests,
-  dailyUsage,
-  compact = false,
 }: AtlasStaffPaneProps) {
   const language = useSiteLanguage();
   const spanish = language === "es";
@@ -30,126 +47,216 @@ export function AtlasStaffPane({
     submitClientAiRequest,
     initialClientAiActionState,
   );
-  const latest = requests[0] ?? null;
-  const usageLabel = dailyUsage
-    ? dailyUsage.limit === null
-      ? spanish
-        ? `${dailyUsage.used} hoy`
-        : `${dailyUsage.used} today`
-      : spanish
-        ? `${dailyUsage.used} de ${dailyUsage.limit} hoy`
-        : `${dailyUsage.used} of ${dailyUsage.limit} today`
-    : null;
+  const [draft, setDraft] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [listening, setListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const canSend = Boolean(organizationId) && !pending;
+  const thread = [...requests].slice(0, 8).reverse();
+
+  useEffect(() => {
+    setSpeechSupported(Boolean(speechRecognitionCtor()));
+    return () => {
+      recognitionRef.current?.stop();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (state.status === "success") {
+      setDraft("");
+      setAttachment(null);
+    }
+  }, [state.status, state.requestId]);
+
+  function toggleMic() {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+
+    const Ctor = speechRecognitionCtor();
+    if (!Ctor) return;
+    const recognition = new Ctor();
+    recognition.lang = spanish ? "es-US" : "en-US";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.onresult = (event) => {
+      const last = event.results[event.results.length - 1];
+      const spoken = String(last?.[0]?.transcript ?? "").trim();
+      if (spoken) {
+        setDraft((current) => (current ? `${current.trim()} ${spoken}` : spoken).slice(0, ATLAS_STAFF_PROMPT_LIMIT));
+      }
+    };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    recognitionRef.current = recognition;
+    setListening(true);
+    recognition.start();
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!canSend) return;
+    const prompt = await composeAtlasStaffPrompt(draft, attachment);
+    if (prompt.length < 2) return;
+    const formData = new FormData(form);
+    formData.set("prompt", prompt);
+    formAction(formData);
+  }
 
   return (
     <section
-      aria-label={spanish ? "Personal de ATLAS" : "ATLAS staff"}
-      className={`flex h-full min-h-0 flex-col ${compact ? "p-3" : "p-4 sm:p-5"}`}
+      aria-label="Atlas"
+      className="flex h-full min-h-0 flex-col bg-[#fbfaf4]"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8a6a12]">
-            {spanish ? "Personal de ATLAS" : "ATLAS staff"}
-          </p>
-          <h2 className={`mt-1 flex items-center gap-2 font-semibold tracking-[-0.04em] text-[#071b42] ${compact ? "text-base" : "text-xl"}`}>
-            <Image
-              alt=""
-              className="h-6 w-6 shrink-0 object-contain"
-              height={56}
-              src="/brand/atlas-logo.png"
-              width={56}
-            />
-            {spanish ? "Pregunta a Atlas" : "Ask Atlas"}
-          </h2>
+      <div className="flex shrink-0 flex-col items-center px-3 pt-3">
+        <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-[#f5b932] bg-[#071b42] shadow-[0_8px_18px_rgba(7,27,66,0.18)]">
+          <Image
+            alt="Atlas"
+            className="h-full w-full scale-125 object-cover object-[center_18%]"
+            height={320}
+            src="/kingdom-sprites/crops/atlas-front.png"
+            width={320}
+          />
         </div>
-        {usageLabel ? (
-          <p className="w-fit rounded-full border border-[#d8c27a] bg-[#fff8e6] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#071b42]">
-            {usageLabel}
-          </p>
+        <h2 className="mt-1 font-[family-name:var(--font-display)] text-sm font-semibold tracking-wide text-[#071b42]">
+          Atlas
+        </h2>
+      </div>
+
+      <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-auto px-3">
+        {thread.map((item) => (
+          <article className="space-y-1.5" key={item.id}>
+            <p className="ml-6 rounded-2xl rounded-br-sm bg-white px-2.5 py-1.5 text-xs leading-5 text-[#071b42] ring-1 ring-[#ece7d8]">
+              {item.prompt}
+            </p>
+            <p className="mr-4 rounded-2xl rounded-bl-sm bg-[#071b42] px-2.5 py-1.5 text-xs leading-5 text-white">
+              {item.response}
+            </p>
+          </article>
+        ))}
+        {state.status !== "idle" ? (
+          <article className="space-y-1.5">
+            {state.error ? (
+              <p className="rounded-2xl bg-[#fff1f1] px-2.5 py-1.5 text-xs leading-5 text-[#8a1f1f]">
+                {state.error}
+              </p>
+            ) : null}
+            {state.answer ? (
+              <p className="mr-4 rounded-2xl rounded-bl-sm bg-[#071b42] px-2.5 py-1.5 text-xs leading-5 text-white">
+                {state.answer}
+              </p>
+            ) : null}
+          </article>
         ) : null}
       </div>
-      <p className={`mt-1 text-[#33415c] ${compact ? "text-xs leading-5" : "mt-2 text-sm leading-6"}`}>
-        {spanish
-          ? `ATLAS es personal interno para ${organizationName || "este espacio"}, no un closer. No actúa hacia afuera sin tu aprobación.`
-          : `ATLAS is staff, not a closer, for ${organizationName || "this workspace"}. No external action without your approval.`}
-      </p>
 
-      {previewMode ? (
-        <p className={`rounded-xl border border-dashed border-[#d8c27a] bg-[#fff8e6] text-[#071b42] ${compact ? "mt-3 p-3 text-xs leading-5" : "mt-4 rounded-2xl p-4 text-sm leading-6"}`}>
-          {spanish
-            ? "Vista previa: el chat de personal no envía solicitudes en este modo."
-            : "Preview: staff chat does not send requests in this mode."}
-        </p>
-      ) : (
-        <form action={formAction} className={compact ? "mt-3 space-y-2" : "mt-4 space-y-3"}>
-          <input name="organizationId" type="hidden" value={organizationId} />
-          <input name="role" type="hidden" value="atlas" />
-          <input name="scopeMode" type="hidden" value="business_only" />
-          <label className="block">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#071b42]/70">
-              {spanish ? "Nota para el personal" : "Note to staff"}
-            </span>
-            <textarea
-              className={`mt-1 w-full rounded-xl border border-[#d5d0c4] bg-white px-3 py-2 text-sm leading-5 text-[#071b42] outline-none transition placeholder:text-[#8a93a3] focus:border-[#f5b932] focus:ring-4 focus:ring-[#f5b932]/20 ${compact ? "min-h-20" : "min-h-28 rounded-2xl py-3 leading-6"}`}
-              name="prompt"
-              placeholder={spanish
-                ? "Pide al personal el próximo paso interno. No pedirá llamadas, correos ni publicaciones."
-                : "Ask staff for the next internal step. It will not call, email, or post."}
-              required
-            />
-          </label>
+      <form className="shrink-0 border-t border-[#ece7d8] bg-white p-2" onSubmit={onSubmit}>
+        <input name="organizationId" type="hidden" value={organizationId} />
+        <input name="role" type="hidden" value="atlas" />
+        <input name="scopeMode" type="hidden" value="business_only" />
+        <input
+          accept="image/*,.pdf,.txt,.md,.csv,.json,.doc,.docx"
+          className="hidden"
+          onChange={(event) => {
+            setAttachment(event.target.files?.[0] ?? null);
+            event.target.value = "";
+          }}
+          ref={fileRef}
+          type="file"
+        />
+        {attachment ? (
+          <p className="mb-1 truncate px-1 text-[11px] text-[#5c6578]">
+            {attachment.name}
+            <button
+              className="ml-1 font-semibold text-[#071b42]"
+              onClick={() => setAttachment(null)}
+              type="button"
+            >
+              ×
+            </button>
+          </p>
+        ) : null}
+        <label className="sr-only" htmlFor="atlas-staff-prompt">
+          {spanish ? "Mensaje para Atlas" : "Message Atlas"}
+        </label>
+        <textarea
+          className="min-h-16 w-full resize-none rounded-xl border border-[#d5d0c4] bg-[#fbfaf4] px-2.5 py-2 text-sm leading-5 text-[#071b42] outline-none placeholder:text-[#8a93a3] focus:border-[#f5b932] focus:ring-2 focus:ring-[#f5b932]/30"
+          id="atlas-staff-prompt"
+          maxLength={ATLAS_STAFF_PROMPT_LIMIT}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder={spanish ? "Habla con Atlas" : "Talk to Atlas"}
+          value={draft}
+        />
+        <div className="mt-1.5 flex items-center gap-1">
           <button
-            className={`w-full rounded-full bg-[#071b42] text-sm font-semibold text-white transition hover:bg-[#0c2b63] disabled:cursor-wait disabled:opacity-60 ${compact ? "px-3 py-2" : "px-4 py-3"}`}
-            disabled={pending}
+            aria-label={spanish ? "Adjuntar archivo" : "Attach a file"}
+            className="grid h-8 w-8 place-items-center rounded-full text-[#071b42] hover:bg-[#fff8e6]"
+            onClick={() => fileRef.current?.click()}
+            title={spanish ? "Adjuntar" : "Attach"}
+            type="button"
+          >
+            <PaperclipIcon />
+          </button>
+          <button
+            aria-label={spanish ? "Hablar" : "Speak"}
+            aria-pressed={listening}
+            className={`grid h-8 w-8 place-items-center rounded-full hover:bg-[#fff8e6] disabled:opacity-40 ${listening ? "bg-[#071b42] text-[#f5b932]" : "text-[#071b42]"}`}
+            disabled={!speechSupported}
+            onClick={toggleMic}
+            title={speechSupported ? (spanish ? "Hablar" : "Speak") : (spanish ? "Voz no disponible" : "Speech not available")}
+            type="button"
+          >
+            <MicIcon />
+          </button>
+          <button
+            aria-label={spanish ? "Respuestas habladas, más adelante" : "Spoken replies later"}
+            className="grid h-8 w-8 place-items-center rounded-full text-[#c5c1b6]"
+            disabled
+            title={spanish ? "Más adelante" : "Later"}
+            type="button"
+          >
+            <SpeakerIcon />
+          </button>
+          <button
+            className="ml-auto h-8 rounded-full bg-[#071b42] px-3 text-xs font-semibold text-white disabled:opacity-40"
+            disabled={!canSend || (draft.trim().length < 2 && !attachment)}
             type="submit"
           >
-            {pending
-              ? spanish ? "Pensando…" : "Thinking…"
-              : spanish ? "Preguntar a ATLAS" : "Ask ATLAS"}
+            {pending ? "…" : spanish ? "Enviar" : "Send"}
           </button>
-        </form>
-      )}
-
-      {!previewMode && state.status !== "idle" ? (
-        <div className={`mt-3 overflow-auto rounded-xl border border-[#d5d0c4] bg-white text-sm leading-5 text-[#071b42] ${compact ? "max-h-28 p-3" : "mt-4 rounded-2xl p-4 leading-6"}`}>
-          {state.error ? <p className="text-rose-800">{state.error}</p> : null}
-          {state.answer ? <p className="whitespace-pre-wrap">{state.answer}</p> : null}
-          {state.nextStep ? (
-            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#071b42]/70">
-              {spanish ? "Próximo paso" : "Next step"}: {state.nextStep}
-            </p>
-          ) : null}
         </div>
-      ) : null}
-
-      <div className={`mt-3 border-t border-[#d5d0c4] ${compact ? "pt-2" : "mt-5 pt-4"}`}>
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#071b42]/60">
-          {spanish ? "Aprobación humana" : "Human approval"}
-        </p>
-        <p className={`mt-1 text-[#33415c] ${compact ? "text-xs leading-5" : "mt-2 text-sm leading-6"}`}>
-          {spanish
-            ? "Sin llamadas, correos ni SMS. Sin publicar en redes. Tú apruebas cualquier acción externa."
-            : "No calls, email, or SMS. No social posting. You approve any external action."}
-        </p>
-      </div>
-
-      <div className="mt-auto min-h-0 pt-3">
-        {latest ? (
-          <article className="rounded-xl border border-[#d5d0c4] bg-white p-3 text-xs leading-5 text-[#33415c]">
-            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#071b42]/60">
-              {spanish ? "Última nota" : "Latest note"}
-            </p>
-            <p className="mt-1 font-semibold text-[#071b42]">{latest.prompt}</p>
-            <p className="mt-1 line-clamp-3">{latest.response}</p>
-          </article>
-        ) : (
-          <p className="rounded-xl border border-dashed border-[#d5d0c4] p-3 text-xs leading-5 text-[#5c6578]">
-            {spanish
-              ? "Todavía no hay notas de personal. Escribe la primera cuando quieras."
-              : "No staff notes yet. Write the first one when you need it."}
-          </p>
-        )}
-      </div>
+      </form>
     </section>
+  );
+}
+
+function PaperclipIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16">
+      <path d="M21.4 11.6 12 21a5.5 5.5 0 1 1-7.8-7.8l9.9-9.9a3.5 3.5 0 0 1 5 5l-9.9 9.8a1.5 1.5 0 1 1-2.1-2.1l8.5-8.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16">
+      <rect height="10" rx="3" stroke="currentColor" strokeWidth="1.8" width="6" x="9" y="3" />
+      <path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function SpeakerIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16">
+      <path d="M4 10v4h4l5 4V6L8 10H4Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.8" />
+      <path d="m16 9 5 6M21 9l-5 6" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+    </svg>
   );
 }

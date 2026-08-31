@@ -268,8 +268,13 @@ body:has(.lions-den-hub) footer {
     padding: 0.5rem 0.6rem;
   }
   .lions-den-hub-staff {
+    display: flex;
     min-height: 0;
-    overflow: auto;
+    overflow: hidden;
+  }
+  .lions-den-hub-staff > * {
+    flex: 1 1 auto;
+    min-height: 0;
   }
   .ld-desk {
     display: grid;
