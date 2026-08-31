@@ -267,7 +267,7 @@ export function AtlasHomepage() {
               <p className="atlas-hero-lede">{t.heroCopy}</p>
               <div className="atlas-hero-actions">
                 <Link className="atlas-button gold" href={withSiteLanguage("/start-trial", language)}>{t.trial}</Link>
-                <Link className="atlas-button gold" href={withSiteLanguage("/pricing#plans", language)}>{t.primary}</Link>
+                <Link className="atlas-button outline" href={withSiteLanguage("/pricing#plans", language)}>{t.primary}</Link>
                 <Link className="atlas-button outline" href={withSiteLanguage("/assessment", language)}>{t.secondary}</Link>
               </div>
             </div>
