@@ -172,3 +172,138 @@ body:has(.lions-den-hub) footer {
   display: none;
 }
 
+.ld-alert {
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.ld-panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #d5d0c4;
+  border-radius: 0.7rem;
+  background: #fff;
+}
+.ld-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  border-bottom: 1px solid #ece7d8;
+  background: #fbfaf4;
+}
+.ld-panel-head p {
+  margin: 0;
+  color: #8a6a12;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.ld-panel-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 0.35rem 0.5rem;
+}
+.ld-empty {
+  margin: 0.15rem 0;
+  padding: 0.45rem 0.5rem;
+  border: 1px dashed #d8c27a;
+  border-radius: 0.5rem;
+  background: #fff8e6;
+  color: #33415c;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.ld-desk,
+.ld-desk-pipeline,
+.ld-desk-work {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+@media (min-width: 768px) {
+  .ld-desk-work {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1280px) {
+  html:has(.lions-den-hub),
+  body:has(.lions-den-hub) {
+    height: 100%;
+    overflow: hidden;
+  }
+  .lions-den-hub {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .lions-den-hub-body {
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-columns: 12rem minmax(0, 1fr) 17rem;
+  }
+  .lions-den-hub-nav {
+    min-height: 0;
+    overflow: auto;
+  }
+  .lions-den-hub-main {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+  }
+  .lions-den-hub-main[data-board="overview"] {
+    overflow: hidden;
+    padding: 0.5rem 0.6rem;
+  }
+  .lions-den-hub-staff {
+    min-height: 0;
+    overflow: auto;
+  }
+  .ld-desk {
+    display: grid;
+    height: 100%;
+    min-height: 0;
+    grid-template-columns: minmax(16.25rem, 21.25rem) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 0.45rem;
+  }
+  .ld-desk-metrics { grid-column: 1 / -1; }
+  .ld-desk-pipeline {
+    display: grid;
+    grid-row: 2 / 4;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1.15fr) auto;
+    gap: 0.45rem;
+  }
+  .ld-desk-followup,
+  .ld-desk-work {
+    min-height: 0;
+  }
+  .ld-desk-work {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    gap: 0.45rem;
+  }
+  .ld-desk-work > * {
+    min-height: 0;
+    height: 100%;
+  }
+  .ld-desk .ld-calendar,
+  .ld-desk .ld-notes {
+    min-height: 0;
+    height: 100%;
+  }
+}
+

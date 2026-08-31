@@ -40,6 +40,7 @@ type ClientsCalendarProps = {
   followUpItems: CalendarSeedItem[];
   storageKey?: string;
   tone?: "crm" | "desk";
+  compact?: boolean;
 };
 
 const defaultDraft: CalendarDraft = {
@@ -192,6 +193,7 @@ export function ClientsCalendar({
   followUpItems,
   storageKey = "atlas-clients-calendar-v1",
   tone = "crm",
+  compact = false,
 }: ClientsCalendarProps) {
   const language = useSiteLanguage();
   const spanish = language === "es";
@@ -327,6 +329,88 @@ export function ClientsCalendar({
       items: allItems.filter((item) => sameDay(new Date(item.dateTime), date)),
     }));
   }, [allItems, monthDays, selectedDate, view, weekDays]);
+
+  if (compact) {
+    const weekdayLabels = spanish
+      ? ["D", "L", "M", "X", "J", "V", "S"]
+      : ["S", "M", "T", "W", "T", "F", "S"];
+
+    return (
+      <section className="ld-calendar ld-panel">
+        <div className="ld-panel-head">
+          <div className="flex min-w-0 items-center gap-2">
+            <p>{spanish ? "Calendario" : "Calendar"}</p>
+            <button
+              className="text-xs font-semibold text-[#071b42]"
+              onClick={() => setSelectedDate(addDays(monthStart, -1))}
+              type="button"
+            >
+              ‹
+            </button>
+            <span className="truncate text-xs font-semibold text-[#071b42]">
+              {formatMonthLabel(selectedDate, language)}
+            </span>
+            <button
+              className="text-xs font-semibold text-[#071b42]"
+              onClick={() => setSelectedDate(addDays(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1), 0))}
+              type="button"
+            >
+              ›
+            </button>
+          </div>
+          <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#5c6578]">
+            {allItems.length}
+          </span>
+        </div>
+        <div className="ld-panel-body flex min-h-0 flex-col gap-2">
+          <div className="grid grid-cols-7 gap-px">
+            {weekdayLabels.map((label, index) => (
+              <div className="py-0.5 text-center text-[9px] font-black uppercase tracking-[0.12em] text-[#8a93a3]" key={`${label}-${index}`}>
+                {label}
+              </div>
+            ))}
+            {monthDays.map((date) => {
+              const items = allItems.filter((item) => sameDay(new Date(item.dateTime), date));
+              const active = sameDay(date, selectedDate);
+              const outside = date.getMonth() !== selectedDate.getMonth();
+              return (
+                <button
+                  className={`flex h-6 min-h-0 w-full flex-col items-center justify-center rounded-sm text-[11px] leading-none ${
+                    active
+                      ? "bg-[#071b42] font-semibold text-[#f5b932]"
+                      : outside
+                        ? "text-[#c5c1b6]"
+                        : "text-[#071b42] hover:bg-[#fff8e6]"
+                  }`}
+                  key={date.toISOString()}
+                  onClick={() => setSelectedDate(date)}
+                  type="button"
+                >
+                  {date.getDate()}
+                  <span className={`mt-0.5 h-1 w-1 rounded-full ${items.length ? "bg-[#f5b932]" : "bg-transparent"}`} />
+                </button>
+              );
+            })}
+          </div>
+          <div className="min-h-0 flex-1 overflow-auto border-t border-[#ece7d8] pt-2">
+            {selectedItems.length === 0 ? (
+              <p className="ld-empty">
+                {spanish ? "Nada en esta fecha." : "Nothing on this date."}
+              </p>
+            ) : (
+              selectedItems.slice(0, 4).map((item) => (
+                <p className="truncate py-0.5 text-xs text-[#071b42]" key={item.id}>
+                  <span className="font-semibold">{formatTime(item.dateTime, language)}</span>
+                  {" · "}
+                  {item.title}
+                </p>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={skin.section}>
