@@ -1,9 +1,17 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { useSiteLanguage } from "@/components/language-switcher";
+import { ATLAS_LION_SRC } from "@/lib/lions-den/atlas-brand";
 import { ATLAS_STAFF_PROMPT_LIMIT, composeAtlasStaffPrompt } from "@/lib/lions-den/atlas-staff-prompt";
+import {
+  atlasAskUsageFromCounts,
+  atlasAskUsageLabel,
+  isAtlasAskCapped,
+  type AtlasAskPlan,
+} from "@/lib/lions-den/atlas-quota";
 import { submitClientAiRequest } from "@/server/client-ai/actions";
 import { initialClientAiActionState } from "@/server/client-ai/types";
 import type { ClientAiDailyUsage, ClientAiRequest } from "@/server/client-ai/queries";
@@ -37,9 +45,14 @@ function speechRecognitionCtor() {
   return SpeechWindow.SpeechRecognition ?? SpeechWindow.webkitSpeechRecognition ?? null;
 }
 
+function draftStorageKey(organizationId: string) {
+  return `lions-den-atlas-draft:${organizationId || "desk"}`;
+}
+
 export function AtlasStaffPane({
   organizationId,
   requests,
+  dailyUsage,
 }: AtlasStaffPaneProps) {
   const language = useSiteLanguage();
   const spanish = language === "es";
@@ -51,10 +64,16 @@ export function AtlasStaffPane({
   const [attachment, setAttachment] = useState<File | null>(null);
   const [listening, setListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [usage, setUsage] = useState<ClientAiDailyUsage>(
+    dailyUsage ?? atlasAskUsageFromCounts(0, "basic"),
+  );
   const fileRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const canSend = Boolean(organizationId) && !pending;
+  const plan = usage.plan as AtlasAskPlan;
+  const capped = isAtlasAskCapped(usage.used, plan);
+  const canSend = Boolean(organizationId) && !pending && !capped;
   const thread = [...requests].slice(0, 8).reverse();
+  const usageLabel = atlasAskUsageLabel(usage.used, plan);
 
   useEffect(() => {
     setSpeechSupported(Boolean(speechRecognitionCtor()));
@@ -64,13 +83,36 @@ export function AtlasStaffPane({
   }, []);
 
   useEffect(() => {
+    if (dailyUsage) setUsage(dailyUsage);
+  }, [dailyUsage]);
+
+  useEffect(() => {
+    if (state.dailyUsage) setUsage(state.dailyUsage);
+  }, [state.dailyUsage]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.sessionStorage.getItem(draftStorageKey(organizationId));
+    if (stored) setDraft(stored.slice(0, ATLAS_STAFF_PROMPT_LIMIT));
+  }, [organizationId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(draftStorageKey(organizationId), draft);
+  }, [draft, organizationId]);
+
+  useEffect(() => {
     if (state.status === "success") {
       setDraft("");
       setAttachment(null);
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem(draftStorageKey(organizationId));
+      }
     }
-  }, [state.status, state.requestId]);
+  }, [state.status, state.requestId, organizationId]);
 
   function toggleMic() {
+    if (capped) return;
     if (listening) {
       recognitionRef.current?.stop();
       setListening(false);
@@ -110,22 +152,30 @@ export function AtlasStaffPane({
 
   return (
     <section
-      aria-label="Atlas"
+      aria-label="Talk to Atlas"
       className="flex h-full min-h-0 flex-col bg-[#fbfaf4]"
     >
       <div className="flex shrink-0 flex-col items-center px-3 pt-3">
-        <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-[#f5b932] bg-[#071b42] shadow-[0_8px_18px_rgba(7,27,66,0.18)]">
+        <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-[#f5b932] bg-black shadow-[0_8px_18px_rgba(7,27,66,0.18)]">
           <Image
             alt="Atlas"
-            className="h-full w-full scale-125 object-cover object-[center_18%]"
+            className="h-full w-full object-contain"
             height={320}
-            src="/kingdom-sprites/crops/atlas-front.png"
+            src={ATLAS_LION_SRC}
             width={320}
           />
         </div>
         <h2 className="mt-1 font-[family-name:var(--font-display)] text-sm font-semibold tracking-wide text-[#071b42]">
           Atlas
         </h2>
+        <p className="mt-0.5 text-[11px] font-black tracking-[0.12em] text-[#8a6a12]">
+          {usageLabel}
+          {plan === "unlimited" ? (
+            <span className="ml-1 font-semibold tracking-normal text-[#5c6578]">
+              {spanish ? "hoy" : "today"}
+            </span>
+          ) : null}
+        </p>
       </div>
 
       <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-auto px-3">
@@ -155,82 +205,100 @@ export function AtlasStaffPane({
         ) : null}
       </div>
 
-      <form className="shrink-0 border-t border-[#ece7d8] bg-white p-2" onSubmit={onSubmit}>
-        <input name="organizationId" type="hidden" value={organizationId} />
-        <input name="role" type="hidden" value="atlas" />
-        <input name="scopeMode" type="hidden" value="business_only" />
-        <input
-          accept="image/*,.pdf,.txt,.md,.csv,.json,.doc,.docx"
-          className="hidden"
-          onChange={(event) => {
-            setAttachment(event.target.files?.[0] ?? null);
-            event.target.value = "";
-          }}
-          ref={fileRef}
-          type="file"
-        />
-        {attachment ? (
-          <p className="mb-1 truncate px-1 text-[11px] text-[#5c6578]">
-            {attachment.name}
+      {capped ? (
+        <div className="shrink-0 border-t border-[#ece7d8] bg-white px-3 py-2 text-[11px] leading-4 text-[#071b42]">
+          <p className="font-semibold">
+            {usage.planLabel} {usageLabel} {spanish ? "hoy." : "today."}
+          </p>
+          <p className="mt-1 text-[#33415c]">
+            {spanish
+              ? "GROW son 10 al día. UNLIMITED no tiene tope."
+              : "GROW is 10/day. UNLIMITED is uncapped."}
+          </p>
+          <Link className="mt-1 inline-block font-semibold text-[#071b42] underline" href="/pricing">
+            {spanish ? "Subir de plan" : "Upgrade"}
+          </Link>
+        </div>
+      ) : (
+        <form className="shrink-0 border-t border-[#ece7d8] bg-white p-2" onSubmit={onSubmit}>
+          <input name="organizationId" type="hidden" value={organizationId} />
+          <input name="role" type="hidden" value="atlas" />
+          <input name="scopeMode" type="hidden" value="business_only" />
+          <input
+            accept="image/*,.pdf,.txt,.md,.csv,.json,.doc,.docx"
+            className="hidden"
+            onChange={(event) => {
+              setAttachment(event.target.files?.[0] ?? null);
+              event.target.value = "";
+            }}
+            ref={fileRef}
+            type="file"
+          />
+          {attachment ? (
+            <p className="mb-1 truncate px-1 text-[11px] text-[#5c6578]">
+              {attachment.name}
+              <button
+                className="ml-1 font-semibold text-[#071b42]"
+                onClick={() => setAttachment(null)}
+                type="button"
+              >
+                ×
+              </button>
+            </p>
+          ) : null}
+          <label className="sr-only" htmlFor="atlas-staff-prompt">
+            {spanish ? "Mensaje para Atlas" : "Message Atlas"}
+          </label>
+          <textarea
+            className="min-h-16 w-full resize-none rounded-xl border border-[#d5d0c4] bg-[#fbfaf4] px-2.5 py-2 text-sm leading-5 text-[#071b42] outline-none placeholder:text-[#8a93a3] focus:border-[#f5b932] focus:ring-2 focus:ring-[#f5b932]/30 disabled:opacity-50"
+            disabled={!organizationId || pending}
+            id="atlas-staff-prompt"
+            maxLength={ATLAS_STAFF_PROMPT_LIMIT}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder={spanish ? "Habla con Atlas" : "Talk to Atlas"}
+            value={draft}
+          />
+          <div className="mt-1.5 flex items-center gap-1">
             <button
-              className="ml-1 font-semibold text-[#071b42]"
-              onClick={() => setAttachment(null)}
+              aria-label={spanish ? "Adjuntar archivo" : "Attach a file"}
+              className="grid h-8 w-8 place-items-center rounded-full text-[#071b42] hover:bg-[#fff8e6] disabled:opacity-40"
+              disabled={!organizationId || pending}
+              onClick={() => fileRef.current?.click()}
+              title={spanish ? "Adjuntar" : "Attach"}
               type="button"
             >
-              ×
+              <PaperclipIcon />
             </button>
-          </p>
-        ) : null}
-        <label className="sr-only" htmlFor="atlas-staff-prompt">
-          {spanish ? "Mensaje para Atlas" : "Message Atlas"}
-        </label>
-        <textarea
-          className="min-h-16 w-full resize-none rounded-xl border border-[#d5d0c4] bg-[#fbfaf4] px-2.5 py-2 text-sm leading-5 text-[#071b42] outline-none placeholder:text-[#8a93a3] focus:border-[#f5b932] focus:ring-2 focus:ring-[#f5b932]/30"
-          id="atlas-staff-prompt"
-          maxLength={ATLAS_STAFF_PROMPT_LIMIT}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder={spanish ? "Habla con Atlas" : "Talk to Atlas"}
-          value={draft}
-        />
-        <div className="mt-1.5 flex items-center gap-1">
-          <button
-            aria-label={spanish ? "Adjuntar archivo" : "Attach a file"}
-            className="grid h-8 w-8 place-items-center rounded-full text-[#071b42] hover:bg-[#fff8e6]"
-            onClick={() => fileRef.current?.click()}
-            title={spanish ? "Adjuntar" : "Attach"}
-            type="button"
-          >
-            <PaperclipIcon />
-          </button>
-          <button
-            aria-label={spanish ? "Hablar" : "Speak"}
-            aria-pressed={listening}
-            className={`grid h-8 w-8 place-items-center rounded-full hover:bg-[#fff8e6] disabled:opacity-40 ${listening ? "bg-[#071b42] text-[#f5b932]" : "text-[#071b42]"}`}
-            disabled={!speechSupported}
-            onClick={toggleMic}
-            title={speechSupported ? (spanish ? "Hablar" : "Speak") : (spanish ? "Voz no disponible" : "Speech not available")}
-            type="button"
-          >
-            <MicIcon />
-          </button>
-          <button
-            aria-label={spanish ? "Respuestas habladas, más adelante" : "Spoken replies later"}
-            className="grid h-8 w-8 place-items-center rounded-full text-[#c5c1b6]"
-            disabled
-            title={spanish ? "Más adelante" : "Later"}
-            type="button"
-          >
-            <SpeakerIcon />
-          </button>
-          <button
-            className="ml-auto h-8 rounded-full bg-[#071b42] px-3 text-xs font-semibold text-white disabled:opacity-40"
-            disabled={!canSend || (draft.trim().length < 2 && !attachment)}
-            type="submit"
-          >
-            {pending ? "…" : spanish ? "Enviar" : "Send"}
-          </button>
-        </div>
-      </form>
+            <button
+              aria-label={spanish ? "Hablar" : "Speak"}
+              aria-pressed={listening}
+              className={`grid h-8 w-8 place-items-center rounded-full hover:bg-[#fff8e6] disabled:opacity-40 ${listening ? "bg-[#071b42] text-[#f5b932]" : "text-[#071b42]"}`}
+              disabled={!speechSupported || !organizationId || pending}
+              onClick={toggleMic}
+              title={speechSupported ? (spanish ? "Hablar" : "Speak") : (spanish ? "Voz no disponible" : "Speech not available")}
+              type="button"
+            >
+              <MicIcon />
+            </button>
+            <button
+              aria-label={spanish ? "Respuestas habladas, más adelante" : "Spoken replies later"}
+              className="grid h-8 w-8 place-items-center rounded-full text-[#c5c1b6]"
+              disabled
+              title={spanish ? "Más adelante" : "Later"}
+              type="button"
+            >
+              <SpeakerIcon />
+            </button>
+            <button
+              className="ml-auto h-8 rounded-full bg-[#071b42] px-3 text-xs font-semibold text-white disabled:opacity-40"
+              disabled={!canSend || (draft.trim().length < 2 && !attachment)}
+              type="submit"
+            >
+              {pending ? "…" : spanish ? "Enviar" : "Send"}
+            </button>
+          </div>
+        </form>
+      )}
     </section>
   );
 }

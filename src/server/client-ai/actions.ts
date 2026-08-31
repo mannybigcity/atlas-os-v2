@@ -17,7 +17,6 @@ import { getClientDashboardData } from "@/server/client-dashboard/queries";
 import {
   decideClientAiRoute,
   getClientAiRoleSpec,
-  isBusinessRelevantPrompt,
   type ClientAiRole,
 } from "@/server/client-ai/guardrails";
 import {
@@ -26,12 +25,18 @@ import {
   type ClientAiResponse,
 } from "@/server/client-ai/types";
 import {
-  clientAiPlanLimits,
-  getClientAiDailyQuestionCount,
-  starterDailyQuestionLimit,
+  getClientAiDailyUsage,
   type ClientAiDailyUsage,
-  type ClientAiPlan,
 } from "@/server/client-ai/queries";
+import {
+  atlasAskUsageFromCounts,
+  isAtlasAskCapped,
+  normalizeAtlasAskPlan,
+} from "@/lib/lions-den/atlas-quota";
+import {
+  ATLAS_OFF_TOPIC_REPLY,
+  isLionDenJobPrompt,
+} from "@/lib/lions-den/atlas-job-scope";
 
 const clientAiResponseSchema = {
   type: "object",
@@ -343,22 +348,14 @@ function unloggedClientAiResponse(input: {
 
 type ClientAiReservationRow = {
   allowed: boolean;
-  plan: ClientAiPlan;
+  plan: string;
   used: number;
   limit: number | null;
   remaining: number | null;
 };
 
 function reservationUsage(row: ClientAiReservationRow): ClientAiDailyUsage {
-  const plan = row.plan in clientAiPlanLimits ? row.plan : "basic";
-  const limit = clientAiPlanLimits[plan];
-  return {
-    plan,
-    planLabel: plan === "unlimited" ? "Unlimited" : plan === "growth" ? "Growth" : "Basic",
-    used: Math.max(0, Number(row.used) || 0),
-    limit,
-    remaining: limit === null ? null : Math.max(0, Number(row.remaining) || 0),
-  };
+  return atlasAskUsageFromCounts(row.used, normalizeAtlasAskPlan(row.plan));
 }
 
 async function reserveClientAiQuestion(organizationId: string) {
@@ -372,6 +369,11 @@ async function reserveClientAiQuestion(organizationId: string) {
 
   const reservation = row as ClientAiReservationRow;
   return { error: null, usage: reservationUsage(reservation), allowed: reservation.allowed };
+}
+
+async function commitSuccessfulAsk(organizationId: string, fallback: ClientAiDailyUsage) {
+  const reservation = await reserveClientAiQuestion(organizationId);
+  return reservation.usage ?? atlasAskUsageFromCounts(fallback.used + 1, fallback.plan);
 }
 
 export async function submitClientAiRequest(
@@ -422,9 +424,8 @@ export async function submitClientAiRequest(
     };
   }
 
-  if (scopeMode === "business_only" && !isBusinessRelevantPrompt(prompt)) {
-    const response =
-      "I can only answer questions about your business, clients, follow-up, content, prospects, or operations in this workspace.";
+  if (scopeMode === "business_only" && !isLionDenJobPrompt(prompt)) {
+    const response = ATLAS_OFF_TOPIC_REPLY;
 
     try {
       const logged = await logClientAiRequest({
@@ -446,7 +447,7 @@ export async function submitClientAiRequest(
         requestId: logged.id,
         createdAt: logged.createdAt,
         answer: response,
-        nextStep: "Ask a question about your business or your customer work.",
+        nextStep: "Ask about work on this desk.",
         missingInputs: [],
         error: null,
       };
@@ -457,7 +458,7 @@ export async function submitClientAiRequest(
         routedTo: role,
         scopeStatus: "declined",
         answer: response,
-        nextStep: "Ask a question about your business or your customer work.",
+        nextStep: "Ask about work on this desk.",
       });
     }
   }
@@ -541,8 +542,8 @@ export async function submitClientAiRequest(
     }
   }
 
-  const reservation = await reserveClientAiQuestion(organizationId);
-  if (reservation.error || !reservation.usage) {
+  const usageLookup = await getClientAiDailyUsage(organizationId);
+  if (usageLookup.setupRequired) {
     return {
       ...initialClientAiActionState,
       status: "failed",
@@ -550,14 +551,19 @@ export async function submitClientAiRequest(
       error: "Workspace question usage could not be verified. Try again shortly.",
     };
   }
-
-  if (!reservation.allowed) {
+  const currentUsage = usageLookup.data;
+  if (isAtlasAskCapped(currentUsage.used, currentUsage.plan)) {
+    const shown = currentUsage.limit === null
+      ? String(currentUsage.used)
+      : `${currentUsage.used}/${currentUsage.limit}`;
+    const response = `${currentUsage.planLabel} ${shown} today. GROW is 10/day. UNLIMITED is uncapped.`;
     return {
       ...initialClientAiActionState,
       status: "blocked",
       role,
-      dailyUsage: reservation.usage,
-      error: `${reservation.usage.planLabel} has reached its daily Ask Atlas limit. It resets tomorrow.`,
+      dailyUsage: currentUsage,
+      answer: response,
+      error: response,
     };
   }
 
@@ -567,6 +573,7 @@ export async function submitClientAiRequest(
   if (decision.scopeStatus === "rerouted" && resolvedRole === "atlas") {
     const response =
       decision.reason ?? "That question belongs with the coordinator.";
+    const dailyUsage = await commitSuccessfulAsk(organizationId, currentUsage);
 
     try {
       const logged = await logClientAiRequest({
@@ -591,7 +598,7 @@ export async function submitClientAiRequest(
         nextStep: "Switch to the coordinator for a workspace-wide answer.",
         missingInputs: [],
         error: null,
-        dailyUsage: reservation.usage,
+        dailyUsage,
       };
     } catch {
       return unloggedClientAiResponse({
@@ -601,7 +608,7 @@ export async function submitClientAiRequest(
         scopeStatus: decision.scopeStatus,
         answer: response,
         nextStep: "Switch to the coordinator for a workspace-wide answer.",
-        dailyUsage: reservation.usage,
+        dailyUsage,
       });
     }
   }
@@ -623,6 +630,8 @@ export async function submitClientAiRequest(
       maxOutputTokens: 1_200,
       instructions: [
         `You are ${roleSpec.title} inside a protected client dashboard.`,
+        `You only answer Lion's Den desk work for this client: pipeline, prospects, follow-up, notes, calendar, HUNTER pile, MICAH drafts, and their business on this desk.`,
+        `Refuse trivia and anything that is not their job in this CRM. Never send email, SMS, calls, or social posts.`,
         `Follow the guardrails below exactly.`,
         `Use only the supplied workspace context and do not invent facts, metrics, events, or results.`,
         `Never browse the web, scrape sources, send messages, publish content, spend money, or change credentials.`,
@@ -671,7 +680,7 @@ export async function submitClientAiRequest(
         nextStep: "Try again after checking the server configuration.",
         missingInputs: [],
         error: null,
-        dailyUsage: reservation.usage,
+        dailyUsage: currentUsage,
       };
     } catch {
       return unloggedClientAiResponse({
@@ -681,11 +690,12 @@ export async function submitClientAiRequest(
         scopeStatus: "in_scope",
         answer: response,
         nextStep: "Try again after checking the server configuration.",
-        dailyUsage: reservation.usage,
+        dailyUsage: currentUsage,
       });
     }
   }
 
+  const dailyUsage = await commitSuccessfulAsk(organizationId, currentUsage);
   const responseText = formatRequestResponse({
     answer: result.value.answer,
     nextStep: result.value.nextStep,
@@ -715,7 +725,7 @@ export async function submitClientAiRequest(
       nextStep: result.value.nextStep,
       missingInputs: result.value.missingInputs,
       error: null,
-      dailyUsage: reservation.usage,
+      dailyUsage,
     };
   } catch {
     return unloggedClientAiResponse({
@@ -726,26 +736,7 @@ export async function submitClientAiRequest(
       answer: result.value.answer,
       nextStep: result.value.nextStep,
       missingInputs: result.value.missingInputs,
-      dailyUsage: reservation.usage,
+      dailyUsage,
     });
-  }
-
-  const dailyUsage = await getClientAiDailyQuestionCount(organizationId);
-  if (dailyUsage.error) {
-    return {
-      ...initialClientAiActionState,
-      status: "failed",
-      role,
-      error: "Workspace question usage could not be verified. Try again shortly.",
-    };
-  }
-
-  if (dailyUsage.count >= starterDailyQuestionLimit) {
-    return {
-      ...initialClientAiActionState,
-      status: "blocked",
-      role,
-      error: "Today’s 10 included workspace questions have been used. Higher-tier limits are not active yet.",
-    };
   }
 }
