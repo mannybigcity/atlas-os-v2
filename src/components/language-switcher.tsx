@@ -3,10 +3,10 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useSyncExternalStore } from "react";
 import {
-  normalizeSiteLanguage,
   SITE_LANGUAGE_COOKIE,
   SITE_LANGUAGE_MAX_AGE,
   SITE_LANGUAGE_STORAGE_KEY,
+  resolveSiteLanguage,
   siteLanguageFromSearch,
   type SiteLanguage,
 } from "@/lib/site-language";
@@ -17,13 +17,11 @@ function readCookie(name: string) {
 }
 
 function getBrowserLanguage() {
-  const queryLanguage = siteLanguageFromSearch(window.location.search);
-  if (queryLanguage) return queryLanguage;
-
-  const cookieLanguage = readCookie(SITE_LANGUAGE_COOKIE);
-  if (cookieLanguage) return normalizeSiteLanguage(cookieLanguage);
-
-  return normalizeSiteLanguage(window.localStorage.getItem(SITE_LANGUAGE_STORAGE_KEY));
+  return resolveSiteLanguage({
+    search: window.location.search,
+    cookie: readCookie(SITE_LANGUAGE_COOKIE),
+    storage: window.localStorage.getItem(SITE_LANGUAGE_STORAGE_KEY),
+  });
 }
 
 function subscribeToLanguage(onChange: () => void) {
@@ -37,13 +35,15 @@ function subscribeToLanguage(onChange: () => void) {
   };
 }
 
-export function persistSiteLanguage(language: SiteLanguage) {
+export function persistSiteLanguage(language: SiteLanguage, options?: { updateUrl?: boolean }) {
   document.cookie = `${SITE_LANGUAGE_COOKIE}=${language}; Path=/; Max-Age=${SITE_LANGUAGE_MAX_AGE}; SameSite=Lax`;
   window.localStorage.setItem(SITE_LANGUAGE_STORAGE_KEY, language);
-  const url = new URL(window.location.href);
-  if (language === "es") url.searchParams.set("lang", "es");
-  else url.searchParams.delete("lang");
-  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  if (options?.updateUrl !== false) {
+    const url = new URL(window.location.href);
+    if (language === "es") url.searchParams.set("lang", "es");
+    else url.searchParams.delete("lang");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }
   document.documentElement.lang = language;
   window.dispatchEvent(new Event("atlas-language-change"));
 }
@@ -53,16 +53,24 @@ export function useSiteLanguage(initialLanguage: SiteLanguage = "en") {
   const language = useSyncExternalStore(subscribeToLanguage, getBrowserLanguage, () => initialLanguage);
 
   useEffect(() => {
+    const queryLanguage = siteLanguageFromSearch(window.location.search);
+    if (queryLanguage) {
+      const cookieLanguage = readCookie(SITE_LANGUAGE_COOKIE);
+      const storedLanguage = window.localStorage.getItem(SITE_LANGUAGE_STORAGE_KEY);
+      if (cookieLanguage !== queryLanguage || storedLanguage !== queryLanguage) {
+        persistSiteLanguage(queryLanguage, { updateUrl: false });
+      }
+    }
     document.documentElement.lang = language;
   }, [language, pathname]);
 
   return language;
 }
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ initialLanguage = "en" }: { initialLanguage?: SiteLanguage }) {
   const router = useRouter();
   const pathname = usePathname();
-  const language = useSiteLanguage();
+  const language = useSiteLanguage(initialLanguage);
   const spanish = language === "es";
 
   function changeLanguage(nextLanguage: SiteLanguage) {
