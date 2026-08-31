@@ -44,28 +44,22 @@ export async function LionsDenClientHub({
   const orgLabel = String(organizationName ?? "").trim();
 
   return (
-    <div className="lions-den-hub min-h-screen bg-white text-[#071b42]">
-      <header className="border-b border-[#0a2a5c] bg-[#071b42] text-white">
-        <div className="flex flex-col gap-4 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#f5b932]">
+    <div className="lions-den-hub bg-white text-[#071b42]">
+      <header className="shrink-0 border-b border-[#0a2a5c] bg-[#071b42] text-white">
+        <div className="flex items-center justify-between gap-3 px-3 py-2">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f5b932]">
               {portalName}
             </p>
-            {orgLabel ? (
-              <h1 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-[-0.04em]">
-                {orgLabel}
-              </h1>
-            ) : (
-              <h1 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-[-0.04em]">
-                {spanish ? "Escritorio de trabajo" : "Working desk"}
-              </h1>
-            )}
+            <h1 className="truncate font-[family-name:var(--font-display)] text-lg leading-tight tracking-[-0.03em] sm:text-xl">
+              {orgLabel || (spanish ? "Escritorio de trabajo" : "Working desk")}
+            </h1>
           </div>
-          <nav aria-label={spanish ? "Acciones del espacio" : "Workspace actions"} className="flex flex-wrap items-center gap-2">
+          <nav aria-label={spanish ? "Acciones del espacio" : "Workspace actions"} className="flex shrink-0 flex-wrap items-center gap-2">
             {workspaces.length > 1
               ? workspaces.map((workspace) => (
                   <Link
-                    className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                       workspace.name === organizationName
                         ? "border-[#f5b932] bg-[#f5b932] text-[#071b42]"
                         : "border-white/25 bg-transparent text-white hover:border-[#f5b932]"
@@ -80,7 +74,7 @@ export async function LionsDenClientHub({
             <LanguageSwitcher />
             <form action={signOut}>
               <button
-                className="rounded-full bg-[#f5b932] px-3.5 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#ffd266]"
+                className="rounded-full bg-[#f5b932] px-3 py-1.5 text-xs font-semibold text-[#071b42] transition hover:bg-[#ffd266]"
                 type="submit"
               >
                 {spanish ? "Cerrar sesión" : "Sign out"}
@@ -90,24 +84,19 @@ export async function LionsDenClientHub({
         </div>
       </header>
 
-      <div className="grid gap-0 xl:grid-cols-[15rem_minmax(0,1fr)_20rem]">
-        <aside className="border-b border-[#0a2a5c] bg-[#071b42] text-white xl:min-h-[calc(100vh-4.5rem)] xl:border-b-0 xl:border-r">
-          <div className="hidden px-4 pt-5 xl:block">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#f5b932]">
+      <div className="lions-den-hub-body">
+        <aside className="lions-den-hub-nav border-b border-[#0a2a5c] bg-[#071b42] text-white xl:border-b-0 xl:border-r">
+          <div className="hidden px-3 pt-3 xl:block">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f5b932]">
               {spanish ? "Menú del escritorio" : "Desk menu"}
             </p>
-            <p className="mt-2 text-xs leading-5 text-white/70">
-              {spanish
-                ? "Prioridades, seguimiento y herramientas. ATLAS está a la derecha."
-                : "Priorities, follow-up, and tools. ATLAS stays on the right."}
-            </p>
           </div>
-          <nav aria-label={spanish ? "The Lion’s Den" : "The Lion’s Den"} className="flex gap-2 overflow-x-auto p-3 xl:block xl:space-y-1 xl:overflow-visible xl:p-4">
+          <nav aria-label="The Lion’s Den" className="flex gap-1 overflow-x-auto p-2 xl:block xl:space-y-0.5 xl:overflow-visible xl:p-3">
             {lionsDenBoards.map((item) => {
               const active = item.id === board;
               return (
                 <Link
-                  className={`block shrink-0 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
+                  className={`block shrink-0 rounded-md px-2.5 py-1.5 text-sm font-semibold transition ${
                     active
                       ? "bg-[#f5b932] text-[#071b42]"
                       : "text-white/85 hover:bg-white/10 hover:text-white"
@@ -122,10 +111,13 @@ export async function LionsDenClientHub({
           </nav>
         </aside>
 
-        <main className="min-w-0 bg-white p-4 sm:p-6">{children}</main>
+        <main className="lions-den-hub-main min-w-0 bg-[#f7f5ee] p-3 sm:p-4" data-board={board}>
+          {children}
+        </main>
 
-        <aside className="border-t border-[#d5d0c4] bg-[#fbfaf4] xl:border-t-0 xl:border-l">
+        <aside className="lions-den-hub-staff border-t border-[#d5d0c4] bg-[#fbfaf4] xl:border-t-0 xl:border-l">
           <AtlasStaffPane
+            compact
             dailyUsage={aiUsage}
             organizationId={organizationId ?? ""}
             organizationName={orgLabel || portalName}

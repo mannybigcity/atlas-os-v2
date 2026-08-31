@@ -62,7 +62,7 @@ function StatusAlert({
   };
 
   return (
-    <div className={`rounded-2xl border p-5 text-sm leading-6 ${classes[tone]}`}>
+    <div className={`ld-alert rounded-2xl border text-sm leading-6 ${classes[tone]}`}>
       {children}
     </div>
   );
@@ -111,7 +111,7 @@ export default async function ClientDashboardPage({
     : [null, null, null, null];
 
   const alerts = (
-    <div className="mb-5 space-y-4">
+    <div className="mb-2 space-y-2 empty:hidden">
       {params?.status === "welcome" ? (
         <StatusAlert>
           {spanish ? "The Lion’s Den está listo." : "The Lion’s Den is ready."}

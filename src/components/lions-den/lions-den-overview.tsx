@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createSisPartyEvent } from "@/server/sis-workspace/actions";
+import { acceptHunterReviewItem, dismissHunterReviewItem } from "@/server/hunter/actions";
 import type { SisDashboardData } from "@/server/sis-workspace/queries";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import type { HunterReviewItem } from "@/server/hunter/review";
@@ -24,9 +25,8 @@ type LionsDenOverviewProps = {
   notes: OrganizationNote[];
 };
 
-function formatDate(value: string | null) {
-  if (!value) return null;
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
+function isDemoLabel(value: string | null | undefined) {
+  return /\bdemo\b/i.test(String(value ?? ""));
 }
 
 export function LionsDenOverview({
@@ -79,94 +79,194 @@ export function LionsDenOverview({
   const dueTodayItems = [...queues.overdue, ...queues.today];
 
   return (
-    <div className="space-y-5">
-      <section className="border-b border-[#d8c27a] pb-5">
-        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8a6a12]">
-          {organizationName}
-        </p>
-        <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl tracking-[-0.05em] text-[#071b42] sm:text-4xl">
-          {spanish ? "La fortuna está en el seguimiento." : "The fortune is in the follow-up."}
-        </h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-[#33415c]">
-          {spanish
-            ? "Escritorio de trabajo: seguimiento de hoy y mañana, calendario, notas y la lista de llamadas. ATLAS responde a la derecha. Nadie se contacta sin tu aprobación."
-            : "Working desk: follow-up for today and tomorrow, calendar, notes, and the call list. ATLAS answers on the right. Nobody is contacted without your approval."}
-        </p>
+    <div aria-label={spanish ? `Escritorio de ${organizationName || "The Lion’s Den"}` : `${organizationName || "The Lion’s Den"} desk`} className="ld-desk">
+      <section className="ld-desk-metrics grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8">
+        <MetricChip href={href("/client/prospects")} label={spanish ? "Prospectos" : "Prospects"} value={prospects.length} />
+        <MetricChip href={href("/client/david")} label={spanish ? "Hoy" : "Due today"} value={dueTodayCount} />
+        <MetricChip href={href("/client/notes")} label={spanish ? "Notas" : "Notes"} value={notes.length} />
+        <MetricChip href={href("/client/hunter")} label={spanish ? "HUNTER" : "HUNTER"} value={reviewPile.length} />
+        {sisDashboard ? (
+          <>
+            <MetricChip href={href("/client")} label={spanish ? "Leads SIS" : "SIS leads"} value={sisDashboard.counts.leads} />
+            <MetricChip href={href("/client")} label={spanish ? "Cotiz." : "Quotes"} value={sisDashboard.counts.quotes} />
+            <MetricChip href={href("/client")} label={spanish ? "Pedidos" : "Orders"} value={sisDashboard.counts.orders} />
+          </>
+        ) : null}
+        <MetricChip href={href("/client/micah")} label="MICAH" value={drafts.length} />
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <CountCard
-          href={href("/client/prospects")}
-          label={spanish ? "Prospectos" : "Prospects"}
-          note={spanish ? "Lista de llamadas aceptada." : "Accepted call list."}
-          value={prospects.length}
-        />
-        <CountCard
-          href={href("/client/david")}
-          label={spanish ? "Para hoy" : "Due today"}
-          note={
-            queues.overdue.length > 0
-              ? spanish
-                ? `${queues.overdue.length} atrasados.`
-                : `${queues.overdue.length} overdue.`
-              : spanish
-                ? "Necesita atención ahora."
-                : "Needs attention now."
-          }
-          value={dueTodayCount}
-        />
-        <CountCard
-          href={href("/client/notes")}
-          label={spanish ? "Notas" : "Notes"}
-          note={spanish ? "Solo este espacio." : "This workspace only."}
-          value={notes.length}
-        />
-        <CountCard
-          href={href("/client/hunter")}
-          label={spanish ? "Revisión HUNTER" : "HUNTER review"}
-          note={spanish ? "Esperando tu aceptación." : "Waiting for you to accept."}
-          value={reviewPile.length}
-        />
-      </section>
-
-      {sisDashboard ? (
-        <section className="grid gap-3 sm:grid-cols-3">
-          <CountCard
-            href={href("/client")}
-            label={spanish ? "Leads SIS" : "SIS leads"}
-            note={spanish ? "Consultas en este espacio." : "Inquiries in this workspace."}
-            value={sisDashboard.counts.leads}
-          />
-          <CountCard
-            href={href("/client")}
-            label={spanish ? "Cotizaciones" : "Quotes"}
-            note={spanish ? "Cotizaciones DEMO o reales." : "DEMO or live quotes."}
-            value={sisDashboard.counts.quotes}
-          />
-          <CountCard
-            href={href("/client")}
-            label={spanish ? "Pedidos" : "Orders"}
-            note={spanish ? "Pedidos en el escritorio." : "Orders on the desk."}
-            value={sisDashboard.counts.orders}
-          />
-        </section>
-      ) : null}
-
-      <section className="rounded-[1.2rem] border border-[#d5d0c4] bg-white p-5">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#8a6a12]">
-              {spanish ? "Fechas de seguimiento" : "Follow-up dates"}
-            </p>
-            <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#071b42]">
-              {spanish ? "Hoy y mañana" : "Today and tomorrow"}
-            </h3>
+      <div className="ld-desk-pipeline">
+        <section className="ld-panel">
+          <div className="ld-panel-head">
+            <p>HUNTER</p>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#5c6578]">
+                {reviewPile.length}
+              </span>
+              <Link className="text-[11px] font-semibold text-[#071b42] underline" href={href("/client/hunter")}>
+                {spanish ? "Abrir" : "Open"}
+              </Link>
+            </div>
           </div>
-          <Link className="text-sm font-semibold text-[#071b42] underline" href={href("/client/david")}>
-            {spanish ? "Abrir seguimiento" : "Open follow-up"}
+          <div className="ld-panel-body">
+            {reviewPile.length === 0 ? (
+              <p className="ld-empty">
+                {spanish
+                  ? "Nada en la pila. Busca en HUNTER. Aceptar mueve el hallazgo a Prospectos. Nadie se contacta desde aquí."
+                  : "Nothing in the pile. Search in HUNTER. Accept moves a find into Prospects. Nobody is contacted from here."}
+              </p>
+            ) : (
+              reviewPile.slice(0, 8).map((item) => (
+                <article className="border-b border-[#ece7d8] py-1.5 last:border-b-0" key={item.id}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1">
+                        <h3 className="truncate text-sm font-semibold text-[#071b42]">{item.name}</h3>
+                        {isDemoLabel(item.name) ? <DemoBadge /> : null}
+                      </div>
+                      {item.formattedAddress ? (
+                        <p className="truncate text-[11px] text-[#5c6578]">{item.formattedAddress}</p>
+                      ) : null}
+                    </div>
+                    {organizationId ? (
+                      <div className="flex shrink-0 gap-1">
+                        <form action={acceptHunterReviewItem}>
+                          <input name="organizationId" type="hidden" value={organizationId} />
+                          <input name="reviewItemId" type="hidden" value={item.id} />
+                          <button className="rounded bg-[#071b42] px-2 py-1 text-[10px] font-semibold text-white" type="submit">
+                            {spanish ? "Aceptar" : "Accept"}
+                          </button>
+                        </form>
+                        <form action={dismissHunterReviewItem}>
+                          <input name="organizationId" type="hidden" value={organizationId} />
+                          <input name="reviewItemId" type="hidden" value={item.id} />
+                          <button className="rounded border border-[#d5d0c4] bg-white px-2 py-1 text-[10px] font-semibold text-[#5c6578]" type="submit">
+                            {spanish ? "Quitar" : "Dismiss"}
+                          </button>
+                        </form>
+                      </div>
+                    ) : null}
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="ld-panel">
+          <div className="ld-panel-head">
+            <p>{spanish ? "Prospectos" : "Prospects"}</p>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#5c6578]">
+                {prospects.length}
+              </span>
+              <Link className="text-[11px] font-semibold text-[#071b42] underline" href={href("/client/prospects")}>
+                {spanish ? "Abrir" : "Open"}
+              </Link>
+            </div>
+          </div>
+          <div className="ld-panel-body">
+            {prospects.length === 0 ? (
+              <p className="ld-empty">
+                {spanish
+                  ? "Lista de llamadas vacía. Acepta un hallazgo de HUNTER. Atlas no llama, escribe ni envía SMS."
+                  : "Call list empty. Accept a HUNTER find. Atlas does not call, email, or text."}
+              </p>
+            ) : (
+              prospects.slice(0, 10).map((prospect) => (
+                <article className="border-b border-[#ece7d8] py-1.5 last:border-b-0" key={prospect.id}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1">
+                        <h3 className="truncate text-sm font-semibold text-[#071b42]">{prospect.name}</h3>
+                        {isDemoLabel(prospect.name) ? <DemoBadge /> : null}
+                      </div>
+                      {prospect.contactName || prospect.contactPhone ? (
+                        <p className="truncate text-[11px] text-[#071b42]">
+                          {[prospect.contactName, prospect.contactPhone].filter(Boolean).join(" · ")}
+                        </p>
+                      ) : null}
+                      {prospect.nextAction ? (
+                        <p className="truncate text-[11px] text-[#33415c]">{prospect.nextAction}</p>
+                      ) : null}
+                    </div>
+                    <span className="shrink-0 rounded-full bg-[#fff8e6] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#071b42]">
+                      {prospect.stage.replaceAll("_", " ")}
+                    </span>
+                  </div>
+                </article>
+              ))
+            )}
+            {sisDashboard ? (
+              <div className="mt-2 border-t border-[#ece7d8] pt-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#8a6a12]">
+                  {spanish ? "Fiestas SIS" : "SIS parties"}
+                </p>
+                {partyEvents.length === 0 ? (
+                  <p className="mt-1 text-[11px] text-[#5c6578]">
+                    {spanish ? "Ninguna fiesta en el tablero." : "No parties on the board."}
+                  </p>
+                ) : (
+                  partyEvents.slice(0, 4).map((event) => (
+                    <Link className="flex items-center justify-between gap-2 py-1 text-xs" href={`/client/sis/party/${event.id}`} key={event.id}>
+                      <span className="truncate font-semibold text-[#071b42]">{event.hostName}</span>
+                      <span className="shrink-0 uppercase tracking-[0.08em] text-[#5c6578]">{event.stage.replaceAll("_", " ")}</span>
+                    </Link>
+                  ))
+                )}
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-[11px] font-semibold text-[#071b42]">
+                    {spanish ? "Agregar consulta" : "Add party inquiry"}
+                  </summary>
+                  <form action={createSisPartyEvent} className="mt-2 grid gap-1.5">
+                    <input aria-label="Host name" className="rounded-md border border-[#d5d0c4] px-2 py-1 text-xs" name="hostName" placeholder={spanish ? "Nombre del anfitrión" : "Host name"} required />
+                    <input aria-label="Phone" className="rounded-md border border-[#d5d0c4] px-2 py-1 text-xs" name="phone" placeholder={spanish ? "Teléfono" : "Phone"} />
+                    <input aria-label="Next action" className="rounded-md border border-[#d5d0c4] px-2 py-1 text-xs" name="nextAction" placeholder={spanish ? "Próxima acción" : "Required next action"} required />
+                    <input aria-label="Next action due date" className="rounded-md border border-[#d5d0c4] px-2 py-1 text-xs" name="nextActionDue" required type="date" />
+                    <button className="rounded-md bg-[#f5b932] px-2 py-1 text-xs font-semibold text-[#071b42]" type="submit">
+                      {spanish ? "Agregar" : "Add"}
+                    </button>
+                  </form>
+                </details>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="ld-panel">
+          <div className="ld-panel-head">
+            <p>MICAH</p>
+            <Link className="text-[11px] font-semibold text-[#071b42] underline" href={href("/client/micah")}>
+              {spanish ? "Galería" : "Gallery"}
+            </Link>
+          </div>
+          <div className="ld-panel-body">
+            {drafts.length === 0 ? (
+              <p className="ld-empty">
+                {spanish ? "No hay borradores para descargar. MICAH no publica." : "No drafts to download. MICAH does not publish."}
+              </p>
+            ) : (
+              <ul className="space-y-1">
+                {drafts.slice(0, 4).map((draft) => (
+                  <li className="flex items-center justify-between gap-2 text-xs" key={draft.id}>
+                    <span className="truncate font-semibold text-[#071b42]">{draft.title || draft.headline}</span>
+                    {isDemoLabel(draft.title) || isDemoLabel(draft.headline) ? <DemoBadge /> : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      </div>
+
+      <section className="ld-desk-followup ld-panel">
+        <div className="ld-panel-head">
+          <p>{spanish ? "Seguimiento" : "Follow-up"}</p>
+          <Link className="text-[11px] font-semibold text-[#071b42] underline" href={href("/client/david")}>
+            {spanish ? "Abrir" : "Open"}
           </Link>
         </div>
-        <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <div className="ld-panel-body grid min-h-0 grid-cols-1 gap-2 md:grid-cols-3">
           <QueueColumn
             emptyText={spanish ? "Cola despejada." : "Queue clear."}
             items={dueTodayItems}
@@ -175,27 +275,21 @@ export function LionsDenOverview({
             spanish={spanish}
           />
           <QueueColumn
-            emptyText={spanish ? "Nada en cola para mañana." : "Nothing queued for tomorrow."}
+            emptyText={spanish ? "Nada para mañana." : "Nothing for tomorrow."}
             items={queues.tomorrow}
             label={spanish ? "Mañana" : "Tomorrow"}
             spanish={spanish}
           />
+          <QueueColumn
+            emptyText={spanish ? "Nada más adelante." : "Nothing later."}
+            items={queues.later}
+            label={spanish ? "Luego" : "Later"}
+            spanish={spanish}
+          />
         </div>
-        {queues.later.length > 0 ? (
-          <div className="mt-4 border-t border-[#ece7d8] pt-4">
-            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#5c6578]">
-              {spanish ? "Más adelante" : "Later"}
-            </p>
-            <div className="mt-2 divide-y divide-[#ece7d8]">
-              {queues.later.slice(0, 4).map((item) => (
-                <QueueRow item={item} key={item.id} />
-              ))}
-            </div>
-          </div>
-        ) : null}
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+      <section className="ld-desk-work">
         {organizationId ? (
           <LionsDenCalendarBoard
             compact
@@ -205,10 +299,14 @@ export function LionsDenOverview({
             spanish={spanish}
           />
         ) : (
-          <EmptyDeskCard
-            body={spanish ? "Asigna un espacio de trabajo para ver fechas." : "Assign a workspace to see dates."}
-            title={spanish ? "Calendario no disponible" : "Calendar unavailable"}
-          />
+          <div className="ld-panel">
+            <div className="ld-panel-head">
+              <p>{spanish ? "Calendario" : "Calendar"}</p>
+            </div>
+            <div className="ld-panel-body">
+              <p className="ld-empty">{spanish ? "Asigna un espacio de trabajo para ver fechas." : "Assign a workspace to see dates."}</p>
+            </div>
+          </div>
         )}
         {organizationId ? (
           <LionsDenNotesBoard
@@ -220,168 +318,42 @@ export function LionsDenOverview({
             spanish={spanish}
           />
         ) : (
-          <EmptyDeskCard
-            body={spanish ? "Asigna un espacio de trabajo para escribir notas." : "Assign a workspace to write notes."}
-            title={spanish ? "Notas no disponibles" : "Notes unavailable"}
-          />
-        )}
-      </section>
-
-      <section className="rounded-[1.2rem] border border-[#d5d0c4] bg-white p-5">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#8a6a12]">
-              {spanish ? "Prospectos" : "Prospects"}
-            </p>
-            <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#071b42]">
-              {spanish ? "Lista de llamadas" : "Call list"}
-            </h3>
-            <p className="mt-1 text-sm leading-6 text-[#33415c]">
-              {spanish
-                ? "Solo negocios que ya aceptaste. Atlas no llama, escribe ni envía SMS."
-                : "Only businesses you already accepted. Atlas does not call, email, or text."}
-            </p>
-          </div>
-          <Link className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white" href={href("/client/prospects")}>
-            {spanish ? "Abrir prospectos" : "Open prospects"}
-          </Link>
-        </div>
-
-        {prospects.length === 0 ? (
-          <p className="mt-4 rounded-xl border border-dashed border-[#d8c27a] bg-[#fff8e6] p-4 text-sm leading-6 text-[#071b42]">
-            {spanish
-              ? "La lista de llamadas está vacía. Acepta un hallazgo de HUNTER cuando esté listo. No se inventan contactos aquí."
-              : "The call list is empty. Accept a HUNTER find when you are ready. No contacts are invented here."}
-          </p>
-        ) : (
-          <div className="mt-4 divide-y divide-[#ece7d8]">
-            {prospects.slice(0, 8).map((prospect) => (
-              <article className="py-3" key={prospect.id}>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h4 className="font-semibold text-[#071b42]">{prospect.name}</h4>
-                    {prospect.contactName || prospect.contactPhone ? (
-                      <p className="mt-1 text-sm text-[#071b42]">
-                        {[prospect.contactName, prospect.contactPhone].filter(Boolean).join(" · ")}
-                      </p>
-                    ) : null}
-                    {prospect.nextAction ? (
-                      <p className="mt-1 text-sm text-[#33415c]">{prospect.nextAction}</p>
-                    ) : null}
-                  </div>
-                  <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
-                    {prospect.stage.replaceAll("_", " ")}
-                  </span>
-                </div>
-              </article>
-            ))}
+          <div className="ld-panel">
+            <div className="ld-panel-head">
+              <p>{spanish ? "Notas" : "Notes"}</p>
+            </div>
+            <div className="ld-panel-body">
+              <p className="ld-empty">{spanish ? "Asigna un espacio de trabajo para escribir notas." : "Assign a workspace to write notes."}</p>
+            </div>
           </div>
         )}
       </section>
 
-      {sisDashboard ? (
-        <section className="rounded-[1.2rem] border border-[#d5d0c4] bg-white p-5">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#8a6a12]">
-                {spanish ? "Fiestas SIS" : "SIS parties"}
-              </p>
-              <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#071b42]">
-                {spanish ? "Consultas de fiesta" : "Party inquiries"}
-              </h3>
-            </div>
-            <p className="text-xs uppercase tracking-[0.12em] text-[#5c6578]">
-              {partyEvents.length === 0
-                ? spanish
-                  ? "Ninguna fiesta en el tablero."
-                  : "No parties on the board."
-                : `${partyEvents.length} ${spanish ? "en el tablero" : "on the board"}`}
-            </p>
-          </div>
-          {partyEvents.length === 0 ? (
-            <p className="mt-4 rounded-xl border border-dashed border-[#d5d0c4] bg-[#fbfaf4] p-4 text-sm leading-6 text-[#5c6578]">
-              {spanish
-                ? "No hay consultas de fiesta. Agrega la primera abajo."
-                : "No party inquiries. Add the first one below."}
-            </p>
-          ) : (
-            <div className="mt-4 divide-y divide-[#ece7d8]">
-              {partyEvents.slice(0, 8).map((event) => (
-                <Link
-                  className="flex flex-col gap-1 py-3 transition hover:text-[#071b42] sm:flex-row sm:items-center sm:justify-between"
-                  href={`/client/sis/party/${event.id}`}
-                  key={event.id}
-                >
-                  <span className="font-semibold text-[#071b42]">{event.hostName}</span>
-                  <span className="text-xs uppercase tracking-[0.12em] text-[#5c6578]">
-                    {event.stage.replaceAll("_", " ")}
-                    {event.partyStartsAt ? ` · ${formatDate(event.partyStartsAt)}` : ""}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          <form action={createSisPartyEvent} className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <input aria-label="Host name" className="rounded-xl border border-[#d5d0c4] px-3 py-2 text-sm" name="hostName" placeholder={spanish ? "Nombre del anfitrión" : "Host name"} required />
-            <input aria-label="Phone" className="rounded-xl border border-[#d5d0c4] px-3 py-2 text-sm" name="phone" placeholder={spanish ? "Teléfono" : "Phone"} />
-            <input aria-label="Email" className="rounded-xl border border-[#d5d0c4] px-3 py-2 text-sm" name="email" placeholder="Email" type="email" />
-            <input aria-label="Guest count" className="rounded-xl border border-[#d5d0c4] px-3 py-2 text-sm" min="1" name="guestCount" placeholder={spanish ? "Invitados" : "Guest count"} type="number" />
-            <input aria-label="Next action" className="rounded-xl border border-[#d5d0c4] px-3 py-2 text-sm md:col-span-2" name="nextAction" placeholder={spanish ? "Próxima acción" : "Required next action"} required />
-            <input aria-label="Next action due date" className="rounded-xl border border-[#d5d0c4] px-3 py-2 text-sm" name="nextActionDue" required type="date" />
-            <button className="rounded-xl bg-[#f5b932] px-4 py-2 text-sm font-semibold text-[#071b42] hover:bg-[#ffd266]" type="submit">
-              {spanish ? "Agregar consulta" : "Add party inquiry"}
-            </button>
-          </form>
-        </section>
-      ) : null}
-
-      <section className="grid gap-3 md:grid-cols-2">
-        <Link className="rounded-[1.2rem] border border-[#d5d0c4] bg-white p-4" href={href("/client/hunter")}>
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#8a6a12]">HUNTER</p>
-          <p className="mt-2 text-sm leading-6 text-[#33415c]">
-            {reviewPile.length === 0
-              ? spanish
-                ? "La pila de revisión está vacía. Nadie se contacta desde aquí."
-                : "The review pile is empty. Nobody is contacted from here."
-              : spanish
-                ? `${reviewPile.length} hallazgos esperando tu aceptación.`
-                : `${reviewPile.length} finds waiting for you to accept.`}
-          </p>
-        </Link>
-        <Link className="rounded-[1.2rem] border border-[#d5d0c4] bg-white p-4" href={href("/client/micah")}>
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#8a6a12]">MICAH</p>
-          <p className="mt-2 text-sm leading-6 text-[#33415c]">
-            {drafts.length === 0
-              ? spanish
-                ? "No hay borradores para descargar."
-                : "No drafts to download."
-              : spanish
-                ? `${drafts.length} borradores listos para descargar y publicar tú mismo.`
-                : `${drafts.length} drafts ready to download and post yourself.`}
-          </p>
-        </Link>
-      </section>
     </div>
   );
 }
 
-function CountCard({
+function DemoBadge() {
+  return (
+    <span className="rounded-full bg-[#fff8e6] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-[#8a6a12]">
+      DEMO
+    </span>
+  );
+}
+
+function MetricChip({
   href,
   label,
-  note,
   value,
 }: {
   href: string;
   label: string;
-  note: string;
   value: number;
 }) {
   return (
-    <Link className="rounded-[1.1rem] border border-[#d5d0c4] bg-white px-4 py-4" href={href}>
-      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5c6578]">{label}</p>
-      <p className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#071b42]">{value}</p>
-      <p className="mt-1 text-xs leading-5 text-[#5c6578]">{note}</p>
+    <Link className="flex items-center justify-between gap-2 rounded-md border border-[#d5d0c4] bg-white px-2.5 py-1.5" href={href}>
+      <span className="truncate text-[10px] font-black uppercase tracking-[0.12em] text-[#5c6578]">{label}</span>
+      <span className="font-[family-name:var(--font-display)] text-lg leading-none text-[#071b42]">{value}</span>
     </Link>
   );
 }
@@ -400,21 +372,17 @@ function QueueColumn({
   spanish: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-[#ece7d8] bg-[#fbfaf4] p-4">
-      <div className="flex items-center justify-between gap-3">
-        <h4 className="text-lg font-semibold text-[#071b42]">{label}</h4>
-        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5c6578]">
-          {items.length}
-        </span>
+    <div className="min-h-0 overflow-auto rounded-md border border-[#ece7d8] bg-[#fbfaf4] p-2">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-sm font-semibold text-[#071b42]">{label}</h4>
+        <span className="text-[10px] font-semibold text-[#5c6578]">{items.length}</span>
       </div>
       {items.length === 0 ? (
-        <p className="mt-3 text-sm leading-6 text-[#5c6578]">{emptyText}</p>
+        <p className="mt-2 text-xs leading-5 text-[#5c6578]">{emptyText}</p>
       ) : (
-        <div className="mt-3 divide-y divide-[#ece7d8]">
-          {items.map((item) => (
-            <QueueRow item={item} key={item.id} overdue={overdueIds?.has(item.id)} overdueLabel={spanish ? "Atrasado" : "Overdue"} />
-          ))}
-        </div>
+        items.slice(0, 8).map((item) => (
+          <QueueRow item={item} key={item.id} overdue={overdueIds?.has(item.id)} overdueLabel={spanish ? "Atrasado" : "Overdue"} />
+        ))
       )}
     </div>
   );
@@ -431,34 +399,26 @@ function QueueRow({
 }) {
   const inner = (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="font-semibold text-[#071b42]">{item.title}</p>
+      <div className="flex flex-wrap items-center gap-1">
+        <p className="truncate text-xs font-semibold text-[#071b42]">{item.title}</p>
+        {isDemoLabel(item.title) ? <DemoBadge /> : null}
         {overdue ? (
-          <span className="rounded-full bg-[#fff1f1] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a1f1f]">
+          <span className="rounded-full bg-[#fff1f1] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8a1f1f]">
             {overdueLabel}
           </span>
         ) : null}
       </div>
-      {item.detail ? <p className="mt-1 text-sm text-[#33415c]">{item.detail}</p> : null}
+      {item.detail ? <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-[#33415c]">{item.detail}</p> : null}
     </>
   );
 
   if (item.href) {
     return (
-      <Link className="block py-3" href={item.href}>
+      <Link className="block border-b border-[#ece7d8] py-1.5 last:border-b-0" href={item.href}>
         {inner}
       </Link>
     );
   }
 
-  return <div className="py-3">{inner}</div>;
-}
-
-function EmptyDeskCard({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-[1.2rem] border border-dashed border-[#d8c27a] bg-[#fff8e6] p-5">
-      <h3 className="text-lg font-semibold text-[#071b42]">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-[#33415c]">{body}</p>
-    </div>
-  );
+  return <div className="border-b border-[#ece7d8] py-1.5 last:border-b-0">{inner}</div>;
 }

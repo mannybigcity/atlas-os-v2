@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import type { WorkspaceQueryResult } from "@/server/organizations/queries";
 import type { ClientAiRole } from "@/server/client-ai/guardrails";
+import {
+  ATLAS_ASK_LIMITS,
+  atlasAskUsageFromCounts,
+  normalizeAtlasAskPlan,
+  type AtlasAskPlan,
+} from "@/lib/lions-den/atlas-quota";
 
 export type ClientAiRequest = {
   id: string;
@@ -15,7 +21,7 @@ export type ClientAiRequest = {
   createdAt: string;
 };
 
-export type ClientAiPlan = "basic" | "growth" | "unlimited";
+export type ClientAiPlan = AtlasAskPlan;
 
 export type ClientAiDailyUsage = {
   plan: ClientAiPlan;
@@ -26,23 +32,15 @@ export type ClientAiDailyUsage = {
 };
 
 export const clientAiPlanLimits: Record<ClientAiPlan, number | null> = {
-  basic: 5,
-  growth: 20,
-  unlimited: null,
+  ...ATLAS_ASK_LIMITS,
 };
 
 export function defaultClientAiDailyUsage(): ClientAiDailyUsage {
-  return {
-    plan: "basic",
-    planLabel: "Basic",
-    used: 0,
-    limit: clientAiPlanLimits.basic,
-    remaining: clientAiPlanLimits.basic,
-  };
+  return atlasAskUsageFromCounts(0, "basic");
 }
 
 type ClientAiDailyUsageRow = {
-  plan: ClientAiPlan;
+  plan: string;
   used: number;
   limit: number | null;
   remaining: number | null;
@@ -72,18 +70,11 @@ export async function getClientAiDailyUsage(
       error: "AI usage is unavailable.",
     };
   }
-  const plan = row.plan in clientAiPlanLimits ? row.plan : "basic";
-  const limit = clientAiPlanLimits[plan];
   const used = Math.max(0, Number(row.used) || 0);
+  const plan = normalizeAtlasAskPlan(row.plan);
 
   return {
-    data: {
-      plan,
-      planLabel: plan === "unlimited" ? "Unlimited" : plan === "growth" ? "Growth" : "Basic",
-      used,
-      limit,
-      remaining: limit === null ? null : Math.max(0, Number(row.remaining) || 0),
-    },
+    data: atlasAskUsageFromCounts(used, plan),
     setupRequired: false,
     error: null,
   };
