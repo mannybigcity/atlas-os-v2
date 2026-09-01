@@ -28,10 +28,16 @@ export function isAfeCrmDemoSlug(slug: string | null | undefined) {
   return organizationSlugsMatch(slug, AFE_CRM_DEMO_SLUG);
 }
 
+export function isAfeCrmDemoName(name?: string | null) {
+  const value = String(name ?? "").trim();
+  return /afe[\s_-]*crm[\s_-]*demo/i.test(value) || /atlas\s+crm\s+demo/i.test(value);
+}
+
 export function isAfeCrmDemoOrganization(
   organization?: { name?: string | null; slug?: string | null } | null,
 ) {
-  return isAfeCrmDemoSlug(organization?.slug);
+  if (!organization || isSisOrganization(organization)) return false;
+  return isAfeCrmDemoSlug(organization.slug) || isAfeCrmDemoName(organization.name);
 }
 
 export function isAfeClientDeskOrganization(
@@ -75,6 +81,10 @@ export function findOrganizationByPreviewSlug<T extends { name?: string | null; 
 
   if (isSisWorkspaceSlug(requested)) {
     return organizations?.find((organization) => isSisOrganization(organization));
+  }
+
+  if (isAfeCrmDemoSlug(requested)) {
+    return organizations?.find((organization) => isAfeCrmDemoOrganization(organization));
   }
 
   return undefined;

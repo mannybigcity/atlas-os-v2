@@ -8,6 +8,7 @@ import {
   findOrganizationByPreviewSlug,
   getClientPortalName,
   isAfeClientDeskOrganization,
+  isAfeCrmDemoName,
   isAfeCrmDemoOrganization,
   isAfeCrmDemoSlug,
   isGuestClientPreview,
@@ -109,6 +110,15 @@ test("AFE DEMO desk is afe-crm-demo, not SIS, and is not a guest preview", () =>
   assert.equal(isAfeCrmDemoSlug(AFE_CRM_DEMO_SLUG), true);
   assert.equal(isAfeCrmDemoSlug(SIS_LIONS_DEN_PREVIEW_SLUG), false);
   assert.equal(isAfeCrmDemoOrganization({ name: "Atlas CRM DEMO", slug: "afe-crm-demo" }), true);
+  assert.equal(isAfeCrmDemoName("Atlas CRM DEMO"), true);
+  assert.equal(
+    isAfeCrmDemoOrganization({ name: "Atlas CRM DEMO", slug: "atlas-crm-demo" }),
+    true,
+  );
+  assert.equal(
+    isAfeCrmDemoOrganization({ name: "SIS Custom Creations", slug: "afe-crm-demo" }),
+    false,
+  );
   assert.equal(
     isAfeClientDeskOrganization({ name: "Atlas CRM DEMO", slug: "afe-crm-demo" }),
     true,
@@ -269,6 +279,15 @@ test("default desk prefers an AFE membership and never auto-opens SIS", () => {
     })?.id,
     "org-afe",
   );
+
+  const byName = findOrganizationByPreviewSlug("afe-crm-demo", [
+    { name: "QTime Productions", slug: "qtime-productions" },
+    { name: "Atlas CRM DEMO", slug: "atlas-crm-demo" },
+    { name: "SIS Custom Creations", slug: "sis-diy-big-complete-showcase" },
+  ]);
+  assert.equal(byName?.name, "Atlas CRM DEMO");
+  assert.equal(byName?.slug, "atlas-crm-demo");
+  assert.ok(Boolean(afe.id));
 });
 
 test("a SIS preview request never treats SIS as a guest and never returns QTIME", () => {

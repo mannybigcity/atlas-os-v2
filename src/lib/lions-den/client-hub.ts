@@ -30,7 +30,7 @@ export const lionsDenBoards: Array<{
 export function usesLionsDenHub(
   slugOrOrganization?: string | { name?: string | null; slug?: string | null } | null,
 ) {
-  if (!slugOrOrganization) return true;
+  if (!slugOrOrganization) return false;
   if (typeof slugOrOrganization === "string") {
     return !isQTimeWorkspaceSlug(slugOrOrganization);
   }
