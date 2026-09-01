@@ -21,26 +21,37 @@ const SAFE_ERROR_MESSAGES: Record<IntegrationErrorCode, string> = {
 
 export class IntegrationConfigurationError extends Error {
   readonly code = "integration_not_configured";
+  readonly provider: IntegrationProvider;
+  readonly variableName: string;
 
-  constructor(
-    readonly provider: IntegrationProvider,
-    readonly variableName: string,
-  ) {
+  constructor(provider: IntegrationProvider, variableName: string) {
     super(`${provider} is not configured on the server.`);
     this.name = "IntegrationConfigurationError";
+    this.provider = provider;
+    this.variableName = variableName;
   }
 }
 
 export class IntegrationRequestError extends Error {
+  readonly provider: IntegrationProvider;
+  readonly code: IntegrationErrorCode;
+  readonly options: {
+    status: number | null;
+    retryable: boolean;
+  };
+
   constructor(
-    readonly provider: IntegrationProvider,
-    readonly code: IntegrationErrorCode,
-    readonly options: {
+    provider: IntegrationProvider,
+    code: IntegrationErrorCode,
+    options: {
       status: number | null;
       retryable: boolean;
     } = { status: null, retryable: false },
   ) {
     super(SAFE_ERROR_MESSAGES[code]);
     this.name = "IntegrationRequestError";
+    this.provider = provider;
+    this.code = code;
+    this.options = options;
   }
 }

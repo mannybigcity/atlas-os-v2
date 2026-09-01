@@ -3,7 +3,7 @@ import { env } from "node:process";
 import {
   IntegrationConfigurationError,
   type IntegrationProvider,
-} from "@/server/integrations/errors";
+} from "./errors.ts";
 
 export type ServerIntegrationSecretName =
   | "GOOGLE_PLACES_API_KEY"
