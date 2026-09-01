@@ -10,6 +10,7 @@ import {
 } from "../../lib/lions-den/atlas-quota.ts";
 import { ATLAS_OFF_TOPIC_REPLY } from "../../lib/lions-den/atlas-job-scope.ts";
 import {
+  ATLAS_INCOMPLETE_RESPONSE_MESSAGE,
   clientAiUserFacingError,
   createSubmitClientAiRequest,
   parseClientAiResponse,
@@ -18,6 +19,7 @@ import {
 } from "./execute-request.ts";
 import { initialClientAiActionState } from "./types.ts";
 import type { ClientAiDailyUsage } from "./queries.ts";
+import { MAX_OPENAI_OUTPUT_TOKENS } from "../integrations/openai-responses.ts";
 
 const DEMO_ORG_ID = "org-afe-crm-demo";
 const DEMO_ORG = {
@@ -69,12 +71,14 @@ function createHarness(options: {
   let used = options.used ?? 0;
   let generateCalls = 0;
   let reserveCalls = 0;
+  const tokenCaps: number[] = [];
   const plan = options.plan ?? "basic";
 
   const generate: ClientAiRequestDeps["generateStructuredText"] =
     options.generate ??
     (async (request) => {
       generateCalls += 1;
+      tokenCaps.push(request.maxOutputTokens ?? -1);
       if (options.generateError) throw options.generateError;
       return {
         value: request.parse({
@@ -125,7 +129,7 @@ function createHarness(options: {
 
   return {
     submit: createSubmitClientAiRequest(deps),
-    stats: () => ({ used, generateCalls, reserveCalls }),
+    stats: () => ({ used, generateCalls, reserveCalls, tokenCaps }),
   };
 }
 
@@ -153,6 +157,10 @@ test("IntegrationConfigurationError maps to AI is not enabled on this site", () 
     clientAiUserFacingError(new IntegrationRequestError("openai", "provider_error")),
     /OpenAI request failed \(provider_error\)/,
   );
+  assert.equal(
+    clientAiUserFacingError(new IntegrationRequestError("openai", "incomplete_response")),
+    ATLAS_INCOMPLETE_RESPONSE_MESSAGE,
+  );
 });
 
 test("parseClientAiResponse requires a 20-character answer, nextStep, and missingInputs", () => {
@@ -179,6 +187,7 @@ test("founder DEMO desk asks: in-scope 0→1, off-topic stays 1, in-scope 1→2"
   assert.equal(stats().generateCalls, 1);
   assert.equal(stats().reserveCalls, 1);
   assert.equal(stats().used, 1);
+  assert.deepEqual(stats().tokenCaps, [MAX_OPENAI_OUTPUT_TOKENS]);
 
   const offTopic = await submit(initialClientAiActionState, askForm(OFF_TOPIC_WEATHER));
   assert.equal(offTopic.status, "blocked");
@@ -245,6 +254,22 @@ test("failed OpenAI calls do not burn a credit and surface the error", async () 
   assert.equal(result.dailyUsage?.used, 0);
   assert.equal(stats().reserveCalls, 0);
   assert.equal(stats().used, 0);
+});
+
+test("incomplete_response does not burn a credit and asks for a shorter desk question", async () => {
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    generateError: new IntegrationRequestError("openai", "incomplete_response"),
+  });
+  const result = await submit(initialClientAiActionState, askForm(IN_SCOPE_FOLLOW_UP));
+  assert.equal(result.status, "failed");
+  assert.equal(result.error, ATLAS_INCOMPLETE_RESPONSE_MESSAGE);
+  assert.equal(result.answer, ATLAS_INCOMPLETE_RESPONSE_MESSAGE);
+  assert.doesNotMatch(String(result.error), /incomplete_response/);
+  assert.equal(result.dailyUsage?.used, 0);
+  assert.equal(stats().reserveCalls, 0);
+  assert.equal(stats().used, 0);
+  assert.deepEqual(stats().tokenCaps, [MAX_OPENAI_OUTPUT_TOKENS]);
 });
 
 test("AI not enabled is a visible error and does not count", async () => {

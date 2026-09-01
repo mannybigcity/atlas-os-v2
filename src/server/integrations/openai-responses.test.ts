@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { generateStructuredText } from "./openai-responses.ts";
-import { IntegrationConfigurationError } from "./errors.ts";
+import { generateStructuredText, MAX_OPENAI_OUTPUT_TOKENS } from "./openai-responses.ts";
+import { IntegrationConfigurationError, IntegrationRequestError } from "./errors.ts";
 
 const schema = {
   type: "object",
@@ -42,6 +42,32 @@ const completedResponse = {
   ],
   usage: { input_tokens: 8, output_tokens: 4, total_tokens: 12 },
 };
+
+const incompleteResponse = {
+  ...completedResponse,
+  id: "resp_incomplete",
+  status: "incomplete",
+  incomplete_details: { reason: "max_output_tokens" },
+  output_text: '{"ok":',
+};
+
+async function readRequestJson(input: RequestInfo | URL, init?: RequestInit) {
+  const rawBody = init?.body;
+  if (typeof rawBody === "string") {
+    return JSON.parse(rawBody) as { max_output_tokens?: number };
+  }
+  if (rawBody instanceof Uint8Array) {
+    return JSON.parse(new TextDecoder().decode(rawBody)) as {
+      max_output_tokens?: number;
+    };
+  }
+
+  if (input instanceof Request) {
+    return (await input.clone().json()) as { max_output_tokens?: number };
+  }
+
+  return {};
+}
 
 test("generateStructuredText posts to OPENAI_BASE_URL/responses, not api.openai.com", async () => {
   const previousKey = process.env.OPENAI_API_KEY;
@@ -93,5 +119,73 @@ test("generateStructuredText fails closed when AI is not enabled", async () => {
     );
   } finally {
     process.env.OPENAI_API_KEY = previousKey;
+  }
+});
+
+test("incomplete_response retries once at MAX_OPENAI_OUTPUT_TOKENS when the first cap is lower", async () => {
+  const previousKey = process.env.OPENAI_API_KEY;
+  const previousBase = process.env.OPENAI_BASE_URL;
+  process.env.OPENAI_API_KEY = "gateway-placeholder";
+  process.env.OPENAI_BASE_URL = "https://ai-gateway.example/v1";
+
+  const tokenCaps: number[] = [];
+  try {
+    const result = await generateStructuredText({
+      schemaName: "atlas_gateway_probe",
+      schema,
+      instructions: "Return JSON only.",
+      input: "What's on follow-up today for this DEMO desk?",
+      maxOutputTokens: 1_200,
+      parse: parseOk,
+      fetchImplementation: async (input, init) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const body = await readRequestJson(input, init);
+        tokenCaps.push(body.max_output_tokens ?? -1);
+        if ((body.max_output_tokens ?? 0) < MAX_OPENAI_OUTPUT_TOKENS) {
+          return jsonResponse(url, 200, incompleteResponse);
+        }
+        return jsonResponse(url, 200, completedResponse);
+      },
+    });
+
+    assert.equal(result.value.ok, true);
+    assert.deepEqual(tokenCaps, [1_200, MAX_OPENAI_OUTPUT_TOKENS]);
+  } finally {
+    process.env.OPENAI_API_KEY = previousKey;
+    process.env.OPENAI_BASE_URL = previousBase;
+  }
+});
+
+test("incomplete_response at the max cap does not retry and maps cleanly", async () => {
+  const previousKey = process.env.OPENAI_API_KEY;
+  const previousBase = process.env.OPENAI_BASE_URL;
+  process.env.OPENAI_API_KEY = "gateway-placeholder";
+  process.env.OPENAI_BASE_URL = "https://ai-gateway.example/v1";
+
+  const tokenCaps: number[] = [];
+  try {
+    await assert.rejects(
+      () =>
+        generateStructuredText({
+          schemaName: "atlas_gateway_probe",
+          schema,
+          instructions: "Return JSON only.",
+          input: "What's on follow-up today for this DEMO desk?",
+          maxOutputTokens: MAX_OPENAI_OUTPUT_TOKENS,
+          parse: parseOk,
+          fetchImplementation: async (input, init) => {
+            const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+            const body = await readRequestJson(input, init);
+            tokenCaps.push(body.max_output_tokens ?? -1);
+            return jsonResponse(url, 200, incompleteResponse);
+          },
+        }),
+      (error: unknown) =>
+        error instanceof IntegrationRequestError && error.code === "incomplete_response",
+    );
+    assert.deepEqual(tokenCaps, [MAX_OPENAI_OUTPUT_TOKENS]);
+  } finally {
+    process.env.OPENAI_API_KEY = previousKey;
+    process.env.OPENAI_BASE_URL = previousBase;
   }
 });
