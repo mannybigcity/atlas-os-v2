@@ -3,9 +3,10 @@ import {
   IntegrationRequestError,
 } from "../integrations/errors.ts";
 import { AI_NOT_ENABLED_MESSAGE } from "../integrations/openai-gateway.ts";
-import type {
-  OpenAIStructuredTextRequest,
-  OpenAIStructuredTextResult,
+import {
+  MAX_OPENAI_OUTPUT_TOKENS,
+  type OpenAIStructuredTextRequest,
+  type OpenAIStructuredTextResult,
 } from "../integrations/openai-responses.ts";
 import {
   atlasAskUsageFromCounts,
@@ -130,12 +131,19 @@ export function parseClientAiResponse(value: unknown): ClientAiResponse {
   };
 }
 
+export const ATLAS_INCOMPLETE_RESPONSE_MESSAGE =
+  "Atlas ran out of room on that answer. Ask a shorter desk question.";
+
 export function clientAiUserFacingError(error: unknown) {
   if (error instanceof IntegrationConfigurationError) {
     return AI_NOT_ENABLED_MESSAGE;
   }
 
   if (error instanceof IntegrationRequestError) {
+    if (error.code === "incomplete_response") {
+      return ATLAS_INCOMPLETE_RESPONSE_MESSAGE;
+    }
+
     return `OpenAI request failed (${error.code}).`;
   }
 
@@ -673,7 +681,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
       result = await deps.generateStructuredText({
         schemaName: `client_${resolvedRole}_response`,
         schema: clientAiResponseSchema,
-        maxOutputTokens: 1_200,
+        maxOutputTokens: MAX_OPENAI_OUTPUT_TOKENS,
         instructions: [
           `You are ${roleSpec.title} inside a protected client dashboard.`,
           `You only answer Lion's Den desk work for this client: pipeline, prospects, follow-up, notes, calendar, HUNTER pile, MICAH drafts, and their business on this desk.`,

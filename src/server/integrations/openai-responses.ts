@@ -369,51 +369,72 @@ export async function generateStructuredText<T>(
     maxOutputTokens: normalized.maxOutputTokens,
   });
 
-  try {
-    const response = await client.responses.create(body, {
-      signal: request.signal,
-    });
-    const payload = response as OpenAIResponsePayload;
-
-    if (payload.status === "incomplete") {
-      throw new IntegrationRequestError("openai", "incomplete_response");
-    }
-
-    if (
-      typeof payload.status === "string" &&
-      payload.status !== "completed"
-    ) {
-      throw new IntegrationRequestError("openai", "invalid_response");
-    }
-
-    return {
-      value: parseStructuredOutput(getOutputText(payload), request.parse),
-      model: typeof payload.model === "string" ? payload.model : configuredModel,
-      responseId: typeof payload.id === "string" ? payload.id : null,
-      usage: normalizeUsage(payload.usage),
+  async function attempt(maxOutputTokens: number): Promise<OpenAIStructuredTextResult<T>> {
+    const attemptBody = {
+      ...body,
+      max_output_tokens: maxOutputTokens,
     };
-  } catch (error) {
-    if (
-      error instanceof IntegrationConfigurationError ||
-      error instanceof IntegrationRequestError
-    ) {
-      throw error;
-    }
 
-    if (error instanceof NotFoundError) {
-      return generateViaChatCompletions(client, {
-        model: configuredModel,
-        schemaName: normalized.schemaName,
-        schema: normalized.schema,
-        instructions: normalized.instructions,
-        prompt: normalized.input,
-        maxOutputTokens: normalized.maxOutputTokens,
-        parse: request.parse,
+    try {
+      const response = await client.responses.create(attemptBody, {
         signal: request.signal,
       });
+      const payload = response as OpenAIResponsePayload;
+
+      if (payload.status === "incomplete") {
+        throw new IntegrationRequestError("openai", "incomplete_response");
+      }
+
+      if (
+        typeof payload.status === "string" &&
+        payload.status !== "completed"
+      ) {
+        throw new IntegrationRequestError("openai", "invalid_response");
+      }
+
+      return {
+        value: parseStructuredOutput(getOutputText(payload), request.parse),
+        model: typeof payload.model === "string" ? payload.model : configuredModel,
+        responseId: typeof payload.id === "string" ? payload.id : null,
+        usage: normalizeUsage(payload.usage),
+      };
+    } catch (error) {
+      if (
+        error instanceof IntegrationConfigurationError ||
+        error instanceof IntegrationRequestError
+      ) {
+        throw error;
+      }
+
+      if (error instanceof NotFoundError) {
+        return generateViaChatCompletions(client, {
+          model: configuredModel,
+          schemaName: normalized.schemaName,
+          schema: normalized.schema,
+          instructions: normalized.instructions,
+          prompt: normalized.input,
+          maxOutputTokens,
+          parse: request.parse,
+          signal: request.signal,
+        });
+      }
+
+      throwMappedOpenAIError(error);
+    }
+  }
+
+  try {
+    return await attempt(normalized.maxOutputTokens);
+  } catch (error) {
+    if (
+      error instanceof IntegrationRequestError &&
+      error.code === "incomplete_response" &&
+      normalized.maxOutputTokens < MAX_OPENAI_OUTPUT_TOKENS
+    ) {
+      return await attempt(MAX_OPENAI_OUTPUT_TOKENS);
     }
 
-    throwMappedOpenAIError(error);
+    throw error;
   }
 }
 
