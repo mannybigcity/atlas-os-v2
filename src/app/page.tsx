@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AtlasHomepage } from "@/components/atlas-homepage";
+import { getSiteLanguage } from "@/lib/site-language-server";
 
 export const metadata: Metadata = {
   title: "Atlas For Entrepreneurs | Find More Leads, Follow Up Faster, Close More Deals",
@@ -43,5 +44,8 @@ export default async function Home({ searchParams }: HomePageProps) {
     redirect(`/auth/callback?code=${encodeURIComponent(code)}&next=/reset-password`);
   }
 
-  return <AtlasHomepage />;
+  const lang = typeof params?.lang === "string" ? params.lang : undefined;
+  const language = await getSiteLanguage(lang);
+
+  return <AtlasHomepage initialLanguage={language} />;
 }

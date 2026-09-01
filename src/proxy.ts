@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabaseEnv, isSuperAdminEmail } from "@/lib/env";
+import {
+  SITE_LANGUAGE_COOKIE,
+  SITE_LANGUAGE_MAX_AGE,
+} from "@/lib/site-language";
 
 const protectedRoutes = ["/client", "/clients", "/lions-den", "/security"];
 const privateAtlasHosts = new Set(["app.ramfamatlas.com"]);
@@ -22,6 +26,17 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request,
   });
+
+  const lang = request.nextUrl.searchParams.get("lang");
+  if (lang === "en" || lang === "es") {
+    request.cookies.set(SITE_LANGUAGE_COOKIE, lang);
+    response = NextResponse.next({ request });
+    response.cookies.set(SITE_LANGUAGE_COOKIE, lang, {
+      maxAge: SITE_LANGUAGE_MAX_AGE,
+      path: "/",
+      sameSite: "lax",
+    });
+  }
 
   const pathname = request.nextUrl.pathname;
 

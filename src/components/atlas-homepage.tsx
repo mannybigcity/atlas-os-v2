@@ -3,11 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { RecoveryLinkRedirect } from "@/components/recovery-link-redirect";
-import { useSyncExternalStore } from "react";
+import { useSiteLanguage } from "@/components/language-switcher";
 import { SiteHeader } from "@/components/site-header";
-import { withSiteLanguage } from "@/lib/site-language";
-
-type Language = "en" | "es";
+import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
 
 type WorkflowStep = {
   title: string;
@@ -58,7 +56,7 @@ function IndustryGlyph({ index }: { index: number }) {
   return glyph;
 }
 
-const copy: Record<Language, LandingCopy> = {
+const copy: Record<SiteLanguage, LandingCopy> = {
   en: {
     eyebrow: "ATLAS FOR ENTREPRENEURS",
     headline: ["YOU CARRY THE FAMILY.", "ATLAS CARRIES THE BUSINESS."],
@@ -188,25 +186,7 @@ const copy: Record<Language, LandingCopy> = {
   },
 };
 
-function getStoredLanguage(): Language {
-  if (typeof window === "undefined") return "en";
-  if (new URLSearchParams(window.location.search).get("lang") === "es") return "es";
-  if (document.cookie.split(";").some((value) => value.trim() === "atlas_language=es")) return "es";
-  const saved = window.localStorage.getItem("afe-language");
-  return saved === "es" ? "es" : "en";
-}
-
-function subscribeToLanguage(onChange: () => void) {
-  if (typeof window === "undefined") return () => undefined;
-  window.addEventListener("storage", onChange);
-  window.addEventListener("atlas-language-change", onChange);
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener("atlas-language-change", onChange);
-  };
-}
-
-function DashboardPreview({ language }: { language: Language }) {
+function DashboardPreview({ language }: { language: SiteLanguage }) {
   const spanish = language === "es";
 
   return (
@@ -249,14 +229,14 @@ function DashboardPreview({ language }: { language: Language }) {
   );
 }
 
-export function AtlasHomepage() {
-  const language = useSyncExternalStore(subscribeToLanguage, getStoredLanguage, () => "en") as Language;
+export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: SiteLanguage }) {
+  const language = useSiteLanguage(initialLanguage);
   const t = copy[language];
 
   return (
     <div className="atlas-site">
       <RecoveryLinkRedirect />
-      <SiteHeader active="home" />
+      <SiteHeader active="home" initialLanguage={initialLanguage} />
 
       <main>
         <section className="atlas-hero-section" aria-labelledby="atlas-title">
