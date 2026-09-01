@@ -2,10 +2,10 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getSiteUrl, isSuperAdminEmail } from "@/lib/env";
+import { getSiteUrl } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
-import { ensureTrialProfile } from "@/server/trials/profile";
+import { ensureTrialProfile, getTrialProfile } from "@/server/trials/profile";
 
 export async function signInWithPassword(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -27,11 +27,28 @@ export async function signInWithPassword(formData: FormData) {
     redirect(`/login?error=invalid_credentials&next=${encodeURIComponent(nextPath)}`);
   }
 
-  if (typeof requestedNext !== "string" || requestedNext.length === 0) {
-    redirect(isSuperAdminEmail(data.user.email) ? "/lions-den" : "/client");
+  const signedInNext =
+    typeof requestedNext !== "string" || requestedNext.length === 0
+      ? "/client"
+      : nextPath;
+
+  let trialProfile = null;
+  try {
+    trialProfile = await getTrialProfile(data.user.id);
+  } catch (error) {
+    console.error("Atlas trial profile guard failed", error);
+  }
+  if (
+    trialProfile &&
+    (signedInNext === "/client" ||
+      signedInNext.startsWith("/client/") ||
+      signedInNext === "/lions-den" ||
+      signedInNext.startsWith("/lions-den/"))
+  ) {
+    redirect("/starter");
   }
 
-  redirect(nextPath);
+  redirect(signedInNext);
 }
 
 export async function signOut() {

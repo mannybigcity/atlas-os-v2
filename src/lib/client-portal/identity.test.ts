@@ -1,9 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  AFE_CRM_DEMO_SLUG,
+  afeCrmDemoPreviewHref,
+  defaultLionsDenDeskHref,
   escapeIlikeExact,
   findOrganizationByPreviewSlug,
   getClientPortalName,
+  isAfeClientDeskOrganization,
+  isAfeCrmDemoOrganization,
+  isAfeCrmDemoSlug,
   isGuestClientPreview,
   isQTimeProductions,
   isQTimeWorkspaceSlug,
@@ -80,14 +86,14 @@ test("SIS preview and selected workspace skip the super-admin CRM", () => {
   assert.equal(isSisLionsDenRequest("sis-custom-creations", ""), false);
 });
 
-test("super-admin CRM stays the default when no SIS view is requested", () => {
+test("super-admin CRM is never the /client front door", () => {
   assert.equal(
     shouldShowSuperAdminCrm({
       isSuperAdmin: true,
       isClientPreview: false,
       selectedWorkspaceSlug: "",
     }),
-    true,
+    false,
   );
   assert.equal(
     shouldShowSuperAdminCrm({
@@ -97,6 +103,36 @@ test("super-admin CRM stays the default when no SIS view is requested", () => {
     }),
     false,
   );
+});
+
+test("AFE DEMO desk is afe-crm-demo, not SIS, and is not a guest preview", () => {
+  assert.equal(isAfeCrmDemoSlug(AFE_CRM_DEMO_SLUG), true);
+  assert.equal(isAfeCrmDemoSlug(SIS_LIONS_DEN_PREVIEW_SLUG), false);
+  assert.equal(isAfeCrmDemoOrganization({ name: "Atlas CRM DEMO", slug: "afe-crm-demo" }), true);
+  assert.equal(
+    isAfeClientDeskOrganization({ name: "Atlas CRM DEMO", slug: "afe-crm-demo" }),
+    true,
+  );
+  assert.equal(
+    isAfeClientDeskOrganization({ name: "SIS Custom Creations", slug: SIS_LIONS_DEN_PREVIEW_SLUG }),
+    false,
+  );
+  assert.equal(
+    isAfeClientDeskOrganization({ name: "QTime Productions", slug: "qtime-productions" }),
+    false,
+  );
+  assert.equal(
+    isGuestClientPreview({ name: "Atlas CRM DEMO", slug: "afe-crm-demo" }),
+    false,
+  );
+  assert.equal(defaultLionsDenDeskHref(), "/client");
+  assert.equal(afeCrmDemoPreviewHref(), "/client?previewOrg=afe-crm-demo");
+  assert.equal(
+    afeCrmDemoPreviewHref([{ name: "Atlas CRM DEMO", slug: "AFE-CRM-DEMO" }]),
+    "/client?previewOrg=AFE-CRM-DEMO",
+  );
+  assert.doesNotMatch(defaultLionsDenDeskHref(), /sis-diy/i);
+  assert.doesNotMatch(afeCrmDemoPreviewHref(), /sis-diy/i);
 });
 
 test("admin Lion's Den door uses the live SIS slug or a matched organization", () => {
@@ -192,6 +228,47 @@ test("super admin opening SIS gets the SIS workspace id even when the first memb
     membershipOrganizations: [qtime],
   });
   assert.equal(mixedCase?.id, "org-sis");
+});
+
+test("default desk prefers an AFE membership and never auto-opens SIS", () => {
+  const qtime = { id: "org-qtime", name: "QTime Productions", slug: "qtime-productions" };
+  const sis = { id: "org-sis", name: "SIS Custom Creations", slug: "SIS-DIY-big-complete-showcase" };
+  const afe = { id: "org-afe", name: "Atlas CRM DEMO", slug: "afe-crm-demo" };
+  const harbor = { id: "org-harbor", name: "Harbor Lights Studio", slug: "harbor-lights" };
+
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      membershipOrganizations: [sis, qtime, harbor],
+    })?.id,
+    "org-harbor",
+  );
+
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      previewOrgSlug: AFE_CRM_DEMO_SLUG,
+      membershipOrganizations: [sis, qtime],
+      directory: [sis, qtime, afe],
+    })?.id,
+    "org-afe",
+  );
+
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      previewOrgSlug: AFE_CRM_DEMO_SLUG,
+      membershipOrganizations: [sis],
+      directory: [sis],
+    }),
+    undefined,
+  );
+
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      preferAfeDemoDesk: true,
+      membershipOrganizations: [sis, qtime],
+      directory: [sis, qtime, afe],
+    })?.id,
+    "org-afe",
+  );
 });
 
 test("a SIS preview request never treats SIS as a guest and never returns QTIME", () => {

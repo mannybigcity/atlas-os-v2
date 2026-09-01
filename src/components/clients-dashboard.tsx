@@ -14,7 +14,7 @@ import type { OrganizationSummary } from "@/server/organizations/queries";
 import type { ClientDashboardData } from "@/server/client-dashboard/queries";
 import type { ClientWorkspaceContext } from "@/server/client-workspace/context";
 import type { SalesEvent, SalesProspect } from "@/server/sales/queries";
-import { isSisOrganization, sisLionsDenPreviewHref } from "@/lib/client-portal/identity";
+import { defaultLionsDenDeskHref, isSisOrganization } from "@/lib/client-portal/identity";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import type { SiteLanguage } from "@/lib/site-language";
 
@@ -604,7 +604,7 @@ export async function ClientCrmDashboard({
   const approvalsQueue = sortedProspects.filter((prospect) =>
     ["review_ready", "approved_for_outreach"].includes(prospect.status),
   );
-  const sisPreviewHref = sisLionsDenPreviewHref(organizations);
+  const lionsDenDeskHref = defaultLionsDenDeskHref();
   const qtimeOrganization = organizations.find((org) => org.slug === "qtime-productions") ?? null;
   const qtimeWorkspace = previewWorkspace?.isClientPreview ? previewWorkspace : null;
   const qtimeDashboard = qtimeWorkspace && previewDashboard ? previewDashboard : null;
@@ -671,9 +671,9 @@ export async function ClientCrmDashboard({
           </div>
           <Link
             className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#f5b932] px-4 text-center text-sm font-black text-[#071b42] transition hover:bg-[#ffd064]"
-            href={sisPreviewHref}
+            href={lionsDenDeskHref}
           >
-            {spanish ? "Abrir Lion’s Den (SIS Custom Creations)" : "Open Lion's Den (SIS Custom Creations)"}
+            {spanish ? "Abrir Lion’s Den" : "Open Lion's Den"}
           </Link>
         </div>
 
@@ -729,9 +729,9 @@ export async function ClientCrmDashboard({
             </div>
             <Link
               className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#071b42] px-5 text-sm font-black text-[#f5b932] transition hover:bg-[#0a2659]"
-              href={sisPreviewHref}
+              href={lionsDenDeskHref}
             >
-              {spanish ? "Abrir Lion’s Den (SIS Custom Creations)" : "Open Lion's Den (SIS Custom Creations)"}
+              {spanish ? "Abrir Lion’s Den" : "Open Lion's Den"}
             </Link>
           </div>
           {!qtimePreviewActive ? (

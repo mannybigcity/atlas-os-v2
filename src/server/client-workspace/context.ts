@@ -1,6 +1,9 @@
 import type { User } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
 import { isSuperAdminEmail } from "@/lib/env";
 import {
+  AFE_CRM_DEMO_SLUG,
+  isAfeClientDeskOrganization,
   isGuestClientPreview,
   isSisLionsDenRequest,
   isSisOrganization,
@@ -9,6 +12,7 @@ import {
   resolveOperatorDeskOrganization,
 } from "@/lib/client-portal/identity";
 import { requireUser } from "@/server/auth/guards";
+import { getTrialProfile } from "@/server/trials/profile";
 import {
   getOrganizationBySlugForSuperAdmin,
   getUserMemberships,
@@ -56,22 +60,45 @@ export async function getClientWorkspaceContext(
   searchParams?: ClientWorkspaceSearchParams,
 ): Promise<ClientWorkspaceContext> {
   const user = await requireUser(nextPath);
+  let trialProfile = null;
+  try {
+    trialProfile = await getTrialProfile(user.id);
+  } catch (error) {
+    console.error("Atlas trial profile guard failed", error);
+  }
+  if (trialProfile) {
+    redirect("/starter");
+  }
   const isSuperAdmin = isSuperAdminEmail(user.email);
+  const personalMemberships = await getUserMemberships(user.id);
+  const membershipOrganizations = personalMemberships.data.map(
+    (membership) => membership.organization,
+  );
+  const hasAfeDeskMembership = membershipOrganizations.some((organization) =>
+    isAfeClientDeskOrganization(organization),
+  );
   const requestedPreviewOrgSlug = isSuperAdmin
     ? String(searchParams?.previewOrg ?? "").trim().toLowerCase()
     : "";
   const requestedWorkspaceSlug = isSafeOrganizationSlug(String(searchParams?.workspace ?? "").trim())
     ? String(searchParams?.workspace ?? "").trim().toLowerCase()
     : "";
-  const previewOrgSlug = isSafeOrganizationSlug(requestedPreviewOrgSlug)
+  let previewOrgSlug = isSafeOrganizationSlug(requestedPreviewOrgSlug)
     ? requestedPreviewOrgSlug
     : isSuperAdmin && isSisWorkspaceSlug(requestedWorkspaceSlug)
       ? requestedWorkspaceSlug
       : "";
+  const preferAfeDemoDesk =
+    isSuperAdmin &&
+    !previewOrgSlug &&
+    !requestedWorkspaceSlug &&
+    !hasAfeDeskMembership;
+  if (preferAfeDemoDesk) {
+    previewOrgSlug = AFE_CRM_DEMO_SLUG;
+  }
   const previewOrganization = previewOrgSlug
     ? await getOrganizationBySlugForSuperAdmin(previewOrgSlug)
     : null;
-  const personalMemberships = await getUserMemberships(user.id);
   const loadedPreviewOrganization =
     previewOrganization && !previewOrganization.setupRequired
       ? previewOrganization.data
@@ -89,8 +116,9 @@ export async function getClientWorkspaceContext(
     previewOrgSlug: loadedPreviewOrganization?.slug || previewOrgSlug,
     workspaceSlug: requestedWorkspaceSlug,
     previewOrganization: loadedPreviewOrganization,
-    membershipOrganizations: personalMemberships.data.map((membership) => membership.organization),
+    membershipOrganizations,
     directory,
+    preferAfeDemoDesk,
   });
   const resolvedPreviewOrgSlug =
     primaryOrganization?.slug?.trim() ||

@@ -6,7 +6,7 @@ import { ClientPortalShell } from "@/components/client-portal-shell";
 import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenOverview } from "@/components/lions-den/lions-den-overview";
-import { isSisLionsDenRequest, isSisOrganization, shouldShowSuperAdminCrm } from "@/lib/client-portal/identity";
+import { isQTimeWorkspaceSlug, isSisLionsDenRequest, isSisOrganization, shouldShowSuperAdminCrm } from "@/lib/client-portal/identity";
 import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
@@ -94,7 +94,9 @@ export default async function ClientDashboardPage({
     : null;
 
   const isSisWorkspace = isSisOrganization(primaryOrganization);
-  const useLionsDen = usesLionsDenHub(primaryOrganization);
+  const useLionsDen =
+    usesLionsDenHub(primaryOrganization) ||
+    (workspace.isSuperAdmin && !isQTimeWorkspaceSlug(primaryOrganization?.slug));
   const dashboard = primaryOrganization && !isSisWorkspace && !useLionsDen
     ? await getClientDashboardData(primaryOrganization.id)
     : null;
@@ -208,7 +210,7 @@ export default async function ClientDashboardPage({
     );
   }
 
-  if ((useLionsDen && primaryOrganization) || (wantsSisLionsDen && !organizations)) {
+  if ((useLionsDen || wantsSisLionsDen) && !organizations) {
     const prospects = pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : [];
     const reviewItems = reviewPile && !reviewPile.setupRequired ? reviewPile.data : [];
     const drafts = studio && !studio.setupRequired ? studio.data.drafts : [];
@@ -228,7 +230,7 @@ export default async function ClientDashboardPage({
             drafts={drafts}
             notes={notes && !notes.setupRequired ? notes.data : []}
             organizationId={primaryOrganization?.id}
-            organizationName={primaryOrganization?.name ?? (wantsSisLionsDen ? "SIS Custom Creations" : "")}
+            organizationName={primaryOrganization?.name ?? (wantsSisLionsDen ? "SIS Custom Creations" : "The Lion’s Den")}
             previewOrgSlug={workspace.previewOrgSlug || undefined}
             prospects={prospects}
             reviewPile={reviewItems}
