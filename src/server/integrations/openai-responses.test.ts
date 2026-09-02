@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { generateStructuredText, MAX_OPENAI_OUTPUT_TOKENS } from "./openai-responses.ts";
+import {
+  generateStructuredText,
+  MAX_OPENAI_OUTPUT_TOKENS,
+  openaiCompatibleJsonSchema,
+} from "./openai-responses.ts";
 import { IntegrationConfigurationError, IntegrationRequestError } from "./errors.ts";
 
 const schema = {
@@ -54,16 +58,14 @@ const incompleteResponse = {
 async function readRequestJson(input: RequestInfo | URL, init?: RequestInit) {
   const rawBody = init?.body;
   if (typeof rawBody === "string") {
-    return JSON.parse(rawBody) as { max_output_tokens?: number };
+    return JSON.parse(rawBody) as Record<string, unknown>;
   }
   if (rawBody instanceof Uint8Array) {
-    return JSON.parse(new TextDecoder().decode(rawBody)) as {
-      max_output_tokens?: number;
-    };
+    return JSON.parse(new TextDecoder().decode(rawBody)) as Record<string, unknown>;
   }
 
   if (input instanceof Request) {
-    return (await input.clone().json()) as { max_output_tokens?: number };
+    return (await input.clone().json()) as Record<string, unknown>;
   }
 
   return {};
@@ -140,7 +142,7 @@ test("incomplete_response retries once at MAX_OPENAI_OUTPUT_TOKENS when the firs
       fetchImplementation: async (input, init) => {
         const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
         const body = await readRequestJson(input, init);
-        tokenCaps.push(body.max_output_tokens ?? -1);
+        tokenCaps.push(Number(body.max_output_tokens ?? -1));
         if ((body.max_output_tokens ?? 0) < MAX_OPENAI_OUTPUT_TOKENS) {
           return jsonResponse(url, 200, incompleteResponse);
         }
@@ -176,7 +178,7 @@ test("incomplete_response at the max cap does not retry and maps cleanly", async
           fetchImplementation: async (input, init) => {
             const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
             const body = await readRequestJson(input, init);
-            tokenCaps.push(body.max_output_tokens ?? -1);
+            tokenCaps.push(Number(body.max_output_tokens ?? -1));
             return jsonResponse(url, 200, incompleteResponse);
           },
         }),
@@ -184,6 +186,88 @@ test("incomplete_response at the max cap does not retry and maps cleanly", async
         error instanceof IntegrationRequestError && error.code === "incomplete_response",
     );
     assert.deepEqual(tokenCaps, [MAX_OPENAI_OUTPUT_TOKENS]);
+  } finally {
+    process.env.OPENAI_API_KEY = previousKey;
+    process.env.OPENAI_BASE_URL = previousBase;
+  }
+});
+
+test("openaiCompatibleJsonSchema strips structured-output keywords OpenAI rejects", () => {
+  const compatible = openaiCompatibleJsonSchema({
+    type: "object",
+    additionalProperties: false,
+    required: ["answer", "nextStep", "missingInputs"],
+    properties: {
+      answer: { type: "string", minLength: 20, maxLength: 1600 },
+      nextStep: { type: "string", minLength: 5, maxLength: 200 },
+      missingInputs: {
+        type: "array",
+        minItems: 0,
+        maxItems: 4,
+        items: { type: "string", minLength: 3, maxLength: 120 },
+      },
+    },
+  });
+  const serialized = JSON.stringify(compatible);
+  assert.equal(compatible.additionalProperties, false);
+  assert.deepEqual(compatible.required, ["answer", "nextStep", "missingInputs"]);
+  assert.doesNotMatch(serialized, /minLength|maxLength|minItems|maxItems|minimum|maximum/);
+  assert.match(serialized, /"type":"string"/);
+});
+
+test("generateStructuredText posts Responses json_schema, not Images API fields", async () => {
+  const previousKey = process.env.OPENAI_API_KEY;
+  const previousBase = process.env.OPENAI_BASE_URL;
+  process.env.OPENAI_API_KEY = "gateway-placeholder";
+  process.env.OPENAI_BASE_URL = "https://ai-gateway.example/v1";
+
+  const posted: Array<{ url: string; body: Record<string, unknown> }> = [];
+  try {
+    await generateStructuredText({
+      schemaName: "client_micah_response",
+      schema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["answer", "nextStep", "missingInputs"],
+        properties: {
+          answer: { type: "string", minLength: 20, maxLength: 1600 },
+          nextStep: { type: "string", minLength: 5, maxLength: 200 },
+          missingInputs: {
+            type: "array",
+            minItems: 0,
+            maxItems: 4,
+            items: { type: "string", minLength: 3, maxLength: 120 },
+          },
+        },
+      },
+      instructions: "Return JSON only. Never publish to Facebook or Instagram.",
+      input: JSON.stringify({ userPrompt: "Make a Facebook post and a flyer image for Labor Day" }),
+      parse: parseOk,
+      fetchImplementation: async (input, init) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const body = await readRequestJson(input, init);
+        posted.push({ url, body });
+        return jsonResponse(url, 200, completedResponse);
+      },
+    });
+
+    assert.equal(posted.length, 1);
+    assert.match(posted[0]?.url ?? "", /\/responses$/);
+    assert.doesNotMatch(posted[0]?.url ?? "", /\/images/);
+    assert.doesNotMatch(JSON.stringify(posted[0]?.body ?? {}), /"size"|"quality"|"moderation"|"output_format"|dall-e|gpt-image/);
+
+    const text = posted[0]?.body.text as
+      | { format?: { type?: string; name?: string; strict?: boolean; schema?: unknown } }
+      | undefined;
+    assert.equal(text?.format?.type, "json_schema");
+    assert.equal(text?.format?.name, "client_micah_response");
+    assert.equal(text?.format?.strict, true);
+    assert.doesNotMatch(
+      JSON.stringify(text?.format?.schema ?? {}),
+      /minLength|maxLength|minItems|maxItems/,
+    );
+    assert.equal(posted[0]?.body.store, false);
+    assert.equal(posted[0]?.body.background, false);
   } finally {
     process.env.OPENAI_API_KEY = previousKey;
     process.env.OPENAI_BASE_URL = previousBase;

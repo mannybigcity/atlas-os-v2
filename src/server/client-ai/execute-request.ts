@@ -841,70 +841,80 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
         prompt,
       });
 
-      if (draft.status === "success") {
-        let answer = withStaffHandoff("micah", draft.message);
-        try {
-          const spoken = await deps.generateStructuredText({
-            schemaName: "client_micah_response",
-            schema: clientAiResponseSchema,
-            maxOutputTokens: MAX_OPENAI_OUTPUT_TOKENS,
-            instructions: [
-              `You are ${roleSpec.title} inside a protected client dashboard.`,
-              `A gallery draft was already saved. Confirm it in the chat. Never claim it was posted live.`,
-              `Never send email, SMS, calls, or social posts.`,
-              `Return only the requested JSON.`,
-            ].join("\n"),
-            input: JSON.stringify({
-              userPrompt: prompt,
-              draftTitle: draft.title,
-              draftHeadline: draft.headline,
-            }),
-            parse: parseClientAiResponse,
-          });
-          answer = withStaffHandoff(
-            "micah",
-            `${spoken.value.answer}\n\n${draft.message}`.slice(0, 1600),
-          );
-        } catch {
-          answer = withStaffHandoff("micah", draft.message);
-        }
-
-        const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+      const answer = withStaffHandoff("micah", draft.message);
+      if (draft.status !== "success") {
         try {
           const logged = await deps.logClientAiRequest({
             organizationId,
             requestedBy: user.id,
             role,
             scopeStatus: decision.scopeStatus,
-            status: "succeeded",
+            status: "failed",
             prompt,
             response: answer,
             routedTo: "micah",
           });
           return {
-            status: "success",
+            status: "failed",
             role,
             routedTo: "micah",
             scopeStatus: decision.scopeStatus,
             requestId: logged.id,
             createdAt: logged.createdAt,
             answer,
-            nextStep: "Open MICAH, download the draft, and post it yourself if you want it live.",
+            nextStep: "Open MICAH and try the ask again. Nothing was posted.",
             missingInputs: [],
             error: null,
-            dailyUsage,
+            dailyUsage: currentUsage,
           };
         } catch {
           return unloggedClientAiResponse({
-            status: "success",
+            status: "failed",
             role,
             routedTo: "micah",
             scopeStatus: decision.scopeStatus,
             answer,
-            nextStep: "Open MICAH, download the draft, and post it yourself if you want it live.",
-            dailyUsage,
+            nextStep: "Open MICAH and try the ask again. Nothing was posted.",
+            dailyUsage: currentUsage,
           });
         }
+      }
+
+      const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+      try {
+        const logged = await deps.logClientAiRequest({
+          organizationId,
+          requestedBy: user.id,
+          role,
+          scopeStatus: decision.scopeStatus,
+          status: "succeeded",
+          prompt,
+          response: answer,
+          routedTo: "micah",
+        });
+        return {
+          status: "success",
+          role,
+          routedTo: "micah",
+          scopeStatus: decision.scopeStatus,
+          requestId: logged.id,
+          createdAt: logged.createdAt,
+          answer,
+          nextStep: "Open MICAH, download the draft, and post it yourself if you want it live.",
+          missingInputs: [],
+          error: null,
+          dailyUsage,
+        };
+      } catch {
+        return unloggedClientAiResponse({
+          status: "success",
+          role,
+          routedTo: "micah",
+          scopeStatus: decision.scopeStatus,
+          answer,
+          nextStep: "Open MICAH, download the draft, and post it yourself if you want it live.",
+          dailyUsage,
+        });
       }
     }
 

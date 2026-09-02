@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import {
   buildMicahDraftCopy,
   buildMicahDraftSvg,
@@ -26,6 +27,36 @@ export type MicahGalleryDraftResult = {
   message: string;
 };
 
+async function writeMicahDraft(
+  row: Record<string, unknown>,
+  event: Record<string, unknown>,
+) {
+  const writers: Array<
+    Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>
+  > = [await createClient()];
+  try {
+    writers.push(createAdminClient());
+  } catch {
+    // Service-role is optional. Super-admins can insert through the user session.
+  }
+
+  for (const client of writers) {
+    const { data, error } = await client
+      .from("organization_content_drafts")
+      .insert(row)
+      .select("id")
+      .single();
+    if (error || !data?.id) continue;
+    await client.from("organization_content_draft_events").insert({
+      ...event,
+      draft_id: data.id,
+    });
+    return String(data.id);
+  }
+
+  return null;
+}
+
 export async function createMicahGalleryDraft(
   input: MicahGalleryDraftInput,
 ): Promise<MicahGalleryDraftResult> {
@@ -33,7 +64,10 @@ export async function createMicahGalleryDraft(
   const headline = clipDraftText(input.headline || copy.headline, 120);
   const title = clipDraftText(input.title || copy.title, 160);
   const caption = clipDraftText(input.caption || copy.caption, 2200);
-  const supportingText = clipDraftText(input.prompt, 240) || "Client request";
+  const supportingText = clipDraftText(
+    copy.supportingText || input.prompt,
+    240,
+  ) || "Client request";
   const imageSvg = buildMicahDraftSvg({
     headline,
     supportingText,
@@ -41,37 +75,38 @@ export async function createMicahGalleryDraft(
   });
   const today = new Date().toISOString().slice(0, 10);
   const slot = slotForMicahPrompt(input.prompt);
+  const row = {
+    organization_id: input.organizationId,
+    draft_date: today,
+    slot,
+    campaign: "Talk to Atlas",
+    title,
+    headline,
+    supporting_text: supportingText,
+    caption,
+    call_to_action: "Download this draft and post it yourself.",
+    platforms: ["instagram", "facebook"],
+    visual_style: "atlas_branded",
+    image_svg: imageSvg,
+    status: "ready_for_review",
+    generated_by: "micah",
+    generation_source: "manual",
+    metadata: {
+      source: "atlas_chat",
+      no_live_post: true,
+      requested_by: input.userId,
+    },
+  };
 
   try {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from("organization_content_drafts")
-      .insert({
-        organization_id: input.organizationId,
-        draft_date: today,
-        slot,
-        campaign: "Talk to Atlas",
-        title,
-        headline,
-        supporting_text: supportingText,
-        caption,
-        call_to_action: "Download this draft and post it yourself.",
-        platforms: ["instagram", "facebook"],
-        visual_style: "atlas_branded",
-        image_svg: imageSvg,
-        status: "ready_for_review",
-        generated_by: "micah",
-        generation_source: "manual",
-        metadata: {
-          source: "atlas_chat",
-          no_live_post: true,
-          requested_by: input.userId,
-        },
-      })
-      .select("id")
-      .single();
-
-    if (error || !data?.id) {
+    const draftId = await writeMicahDraft(row, {
+      organization_id: input.organizationId,
+      event_type: "created",
+      note: "MICAH prepared this draft from Talk to Atlas. It was not published.",
+      actor_user_id: input.userId,
+      actor_label: "MICAH",
+    });
+    if (!draftId) {
       return {
         status: "error",
         draftId: null,
@@ -82,21 +117,12 @@ export async function createMicahGalleryDraft(
       };
     }
 
-    await supabase.from("organization_content_draft_events").insert({
-      draft_id: data.id,
-      organization_id: input.organizationId,
-      event_type: "created",
-      note: "MICAH prepared this draft from Talk to Atlas. It was not published.",
-      actor_user_id: input.userId,
-      actor_label: "MICAH",
-    });
-
     revalidatePath("/client/micah");
     revalidatePath("/client");
 
     return {
       status: "success",
-      draftId: data.id as string,
+      draftId,
       title,
       headline,
       caption,

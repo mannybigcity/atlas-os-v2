@@ -356,16 +356,17 @@ test("Atlas chat box routes a flyer ask to MICAH and stores a gallery draft", as
   let drafted = 0;
   const { submit, stats } = createHarness({
     isSuperAdmin: true,
+    generateError: new IntegrationRequestError("openai", "output_validation_failed"),
     createMicahGalleryDraft: async () => {
       drafted += 1;
       return {
         status: "success",
         draftId: "draft-1",
-        title: "MICAH draft: Labor Day flyer",
-        headline: "Labor Day flyer",
+        title: "MICAH draft: Labor Day",
+        headline: "Labor Day",
         caption: "Draft only. Download this file and post it yourself.",
         message:
-          "MICAH saved a downloadable draft in the gallery: Labor Day flyer. Nothing was posted to Facebook or Instagram. Open MICAH to download it and post it yourself.",
+          "MICAH saved a downloadable draft in the gallery: Labor Day. Nothing was posted to Facebook or Instagram. Open MICAH to download it and post it yourself.",
       };
     },
   });
@@ -375,10 +376,39 @@ test("Atlas chat box routes a flyer ask to MICAH and stores a gallery draft", as
   );
   assert.equal(result.status, "success");
   assert.equal(result.routedTo, "micah");
+  assert.equal(result.error, null);
   assert.equal(drafted, 1);
+  assert.equal(stats().generateCalls, 0);
   assert.match(String(result.answer), /did not publish|Nothing was posted/i);
   assert.match(String(result.answer), /Handed to MICAH/);
+  assert.doesNotMatch(String(result.answer), /output_validation_failed/);
   assert.equal(stats().used, 1);
+});
+
+test("MICAH flyer asks do not fall through to OpenAI when the gallery save fails", async () => {
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    generateError: new IntegrationRequestError("openai", "output_validation_failed"),
+    createMicahGalleryDraft: async () => ({
+      status: "error",
+      draftId: null,
+      title: "MICAH draft: Labor Day",
+      headline: "Labor Day",
+      caption: "Draft only.",
+      message: "MICAH could not save the draft to the gallery. Try again from Talk to Atlas.",
+    }),
+  });
+  const result = await submit(
+    initialClientAiActionState,
+    askForm("Make a Facebook post and a flyer image for Labor Day"),
+  );
+  assert.equal(result.status, "failed");
+  assert.equal(result.routedTo, "micah");
+  assert.equal(stats().generateCalls, 0);
+  assert.equal(stats().used, 0);
+  assert.match(String(result.answer), /could not save the draft/);
+  assert.doesNotMatch(String(result.answer), /output_validation_failed/);
+  assert.equal(result.error, null);
 });
 
 test("Atlas chat box routes a local-business find to HUNTER review pile, not outreach", async () => {

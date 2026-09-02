@@ -29,13 +29,36 @@ export function readOfficialAtlasLogoDataUri() {
   }
 }
 
+function headlineFromPrompt(source: string) {
+  const cleaned = source.replace(/^answer:\s*/i, "").replace(/\s+/g, " ").trim();
+  const occasion = cleaned.match(/\b(?:for|about)\s+(.+)$/i)?.[1]?.trim();
+  if (occasion && occasion.length >= 2 && occasion.length <= 72) return occasion;
+  return (
+    cleaned
+      .replace(/^(make|create|design|draft|write)\s+(a|an|the)\s+/i, "")
+      .trim() || cleaned
+  );
+}
+
 export function buildMicahDraftCopy(prompt: string, answer?: string | null) {
   const source = (answer || prompt).replace(/\s+/g, " ").trim();
-  const headline = clipDraftText(source.replace(/^answer:\s*/i, ""), 72) || "Client draft";
+  const headline = clipDraftText(headlineFromPrompt(source), 72) || "Client draft";
   const title = clipDraftText(`MICAH draft: ${headline}`, 140);
-  const captionBase = clipDraftText(source, 900);
-  const caption = `${captionBase}\n\nDraft only. Download this file and post it yourself. Atlas did not publish to Facebook or Instagram.`;
-  return { title, headline, caption: clipDraftText(caption, 2100) };
+  const supportingText = clipDraftText(
+    "Navy and gold Atlas draft. Download the file and post it yourself.",
+    90,
+  );
+  const caption = clipDraftText(
+    [
+      headline,
+      "",
+      supportingText,
+      "",
+      "Draft only. Download this file and post it yourself. Atlas did not publish to Facebook or Instagram.",
+    ].join("\n"),
+    2100,
+  );
+  return { title, headline, supportingText, caption };
 }
 
 export function buildMicahDraftSvg(input: {
