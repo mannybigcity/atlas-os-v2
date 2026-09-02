@@ -71,7 +71,9 @@ export function AtlasStaffPane({
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const plan = usage.plan as AtlasAskPlan;
   const capped = isAtlasAskCapped(usage.used, plan);
-  const canSend = Boolean(organizationId) && !pending && !capped;
+  const hasWorkspace = Boolean(organizationId);
+  const composerLocked = pending || capped;
+  const canSend = hasWorkspace && !composerLocked;
   const thread = [...requests].slice(0, 8).reverse();
   const usageLabel = atlasAskUsageLabel(usage.used, plan);
 
@@ -179,6 +181,13 @@ export function AtlasStaffPane({
       </div>
 
       <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-auto px-3">
+        {thread.length === 0 && state.status === "idle" ? (
+          <p className="rounded-2xl bg-white px-2.5 py-1.5 text-xs leading-5 text-[#5c6578] ring-1 ring-[#ece7d8]">
+            {spanish
+              ? "Pregunta por el seguimiento, los prospectos DEMO o lo que toca hoy en este escritorio."
+              : "Ask about follow-up, DEMO companies on this desk, or what is due today."}
+          </p>
+        ) : null}
         {thread.map((item) => (
           <article className="space-y-1.5" key={item.id}>
             <p className="ml-6 rounded-2xl rounded-br-sm bg-white px-2.5 py-1.5 text-xs leading-5 text-[#071b42] ring-1 ring-[#ece7d8]">
@@ -192,7 +201,7 @@ export function AtlasStaffPane({
         {state.status !== "idle" ? (
           <article className="space-y-1.5">
             {state.error ? (
-              <p className="rounded-2xl bg-[#fff1f1] px-2.5 py-1.5 text-xs leading-5 text-[#8a1f1f]">
+              <p className="rounded-2xl bg-[#fff1f1] px-2.5 py-1.5 text-xs leading-5 text-[#8a1f1f]" role="alert">
                 {state.error}
               </p>
             ) : null}
@@ -202,6 +211,13 @@ export function AtlasStaffPane({
               </p>
             ) : null}
           </article>
+        ) : null}
+        {!hasWorkspace ? (
+          <p className="rounded-2xl bg-[#fff1f1] px-2.5 py-1.5 text-xs leading-5 text-[#8a1f1f]" role="alert">
+            {spanish
+              ? "Selecciona un espacio de trabajo para hablar con Atlas."
+              : "Select a workspace to talk to Atlas."}
+          </p>
         ) : null}
       </div>
 
@@ -251,7 +267,7 @@ export function AtlasStaffPane({
           </label>
           <textarea
             className="min-h-16 w-full resize-none rounded-xl border border-[#d5d0c4] bg-[#fbfaf4] px-2.5 py-2 text-sm leading-5 text-[#071b42] outline-none placeholder:text-[#8a93a3] focus:border-[#f5b932] focus:ring-2 focus:ring-[#f5b932]/30 disabled:opacity-50"
-            disabled={!organizationId || pending}
+            disabled={!hasWorkspace || composerLocked}
             id="atlas-staff-prompt"
             maxLength={ATLAS_STAFF_PROMPT_LIMIT}
             onChange={(event) => setDraft(event.target.value)}
@@ -262,7 +278,7 @@ export function AtlasStaffPane({
             <button
               aria-label={spanish ? "Adjuntar archivo" : "Attach a file"}
               className="grid h-8 w-8 place-items-center rounded-full text-[#071b42] hover:bg-[#fff8e6] disabled:opacity-40"
-              disabled={!organizationId || pending}
+              disabled={!hasWorkspace || composerLocked}
               onClick={() => fileRef.current?.click()}
               title={spanish ? "Adjuntar" : "Attach"}
               type="button"
@@ -273,7 +289,7 @@ export function AtlasStaffPane({
               aria-label={spanish ? "Hablar" : "Speak"}
               aria-pressed={listening}
               className={`grid h-8 w-8 place-items-center rounded-full hover:bg-[#fff8e6] disabled:opacity-40 ${listening ? "bg-[#071b42] text-[#f5b932]" : "text-[#071b42]"}`}
-              disabled={!speechSupported || !organizationId || pending}
+              disabled={!speechSupported || !hasWorkspace || composerLocked}
               onClick={toggleMic}
               title={speechSupported ? (spanish ? "Hablar" : "Speak") : (spanish ? "Voz no disponible" : "Speech not available")}
               type="button"

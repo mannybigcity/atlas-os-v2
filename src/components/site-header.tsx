@@ -3,14 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LanguageSwitcher, useSiteLanguage } from "@/components/language-switcher";
-import { withSiteLanguage } from "@/lib/site-language";
+import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
 
 type SiteHeaderProps = {
   active?: "home" | "pricing" | "snapshot" | "login";
+  initialLanguage?: SiteLanguage;
 };
 
-export function SiteHeader({ active }: SiteHeaderProps) {
-  const language = useSiteLanguage();
+export function SiteHeader({ active, initialLanguage = "en" }: SiteHeaderProps) {
+  const language = useSiteLanguage(initialLanguage);
   const spanish = language === "es";
   const navItems = [
     { href: "/", label: spanish ? "Inicio" : "Home", name: "home" },
@@ -60,7 +61,7 @@ export function SiteHeader({ active }: SiteHeaderProps) {
               {item.label}
             </Link>
           ))}
-          <LanguageSwitcher />
+          <LanguageSwitcher initialLanguage={initialLanguage} />
           <Link
             className="rounded-full bg-[#f5b932] px-4 py-2 text-sm font-black !text-[#071b42] shadow-[0_8px_20px_rgba(245,185,50,0.2)] transition hover:bg-[#ffd064] hover:!text-[#071b42]"
             href={withSiteLanguage("/start-trial", language)}
@@ -69,7 +70,7 @@ export function SiteHeader({ active }: SiteHeaderProps) {
           </Link>
         </nav>
         <nav aria-label={spanish ? "Navegación móvil" : "Mobile navigation"} className="flex shrink-0 items-center gap-2 lg:hidden">
-          <LanguageSwitcher />
+          <LanguageSwitcher initialLanguage={initialLanguage} />
           <Link
             aria-label={spanish ? "Crear una cuenta. Comenzar prueba gratis de 7 días" : "Create an account. Start 7-day free trial"}
             className="rounded-full bg-[#f5b932] px-3 py-2 text-xs font-black !text-[#071b42] transition hover:bg-[#ffd064] hover:!text-[#071b42]"

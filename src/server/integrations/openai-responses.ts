@@ -1,10 +1,14 @@
-import { IntegrationRequestError } from "@/server/integrations/errors";
-import {
-  getOpenAIModel,
-  requireServerIntegrationSecret,
-} from "@/server/integrations/server-env";
+import { env } from "node:process";
 
-const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
+import OpenAI, { APIError, APIConnectionError, NotFoundError } from "openai";
+
+import {
+  IntegrationConfigurationError,
+  IntegrationRequestError,
+} from "./errors.ts";
+import { isOpenAIConfigured } from "./openai-gateway.ts";
+import { getOpenAIModel } from "./server-env.ts";
+
 const DEFAULT_OPENAI_MAX_OUTPUT_TOKENS = 1_200;
 
 export const MAX_OPENAI_OUTPUT_TOKENS = 4_000;
@@ -72,8 +76,10 @@ function normalizeUsage(value: unknown): OpenAIUsage {
 
   const usage = value as {
     input_tokens?: unknown;
+    prompt_tokens?: unknown;
     input_tokens_details?: unknown;
     output_tokens?: unknown;
+    completion_tokens?: unknown;
     output_tokens_details?: unknown;
     total_tokens?: unknown;
   };
@@ -91,9 +97,9 @@ function normalizeUsage(value: unknown): OpenAIUsage {
       : {};
 
   return {
-    inputTokens: normalizeTokenCount(usage.input_tokens),
+    inputTokens: normalizeTokenCount(usage.input_tokens ?? usage.prompt_tokens),
     cachedInputTokens: normalizeTokenCount(inputDetails.cached_tokens),
-    outputTokens: normalizeTokenCount(usage.output_tokens),
+    outputTokens: normalizeTokenCount(usage.output_tokens ?? usage.completion_tokens),
     reasoningTokens: normalizeTokenCount(outputDetails.reasoning_tokens),
     totalTokens: normalizeTokenCount(usage.total_tokens),
   };
@@ -194,82 +200,62 @@ function normalizeRequest<T>(request: OpenAIStructuredTextRequest<T>) {
   };
 }
 
-export async function generateStructuredText<T>(
-  request: OpenAIStructuredTextRequest<T>,
-): Promise<OpenAIStructuredTextResult<T>> {
-  const normalized = normalizeRequest(request);
-  const apiKey = requireServerIntegrationSecret("OPENAI_API_KEY");
-  const configuredModel = getOpenAIModel();
-  let response: Response;
+function assertOpenAIConfigured() {
+  if (typeof window !== "undefined") {
+    throw new Error("Server integration modules cannot run in a browser.");
+  }
+
+  if (!isOpenAIConfigured(env.OPENAI_API_KEY)) {
+    throw new IntegrationConfigurationError("openai", "OPENAI_API_KEY");
+  }
+}
+
+function createGatewayOpenAIClient(fetchImplementation?: typeof fetch) {
+  assertOpenAIConfigured();
 
   try {
-    response = await (request.fetchImplementation ?? fetch)(
-      OPENAI_RESPONSES_URL,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: configuredModel,
-          instructions: normalized.instructions,
-          input: normalized.input,
-          max_output_tokens: normalized.maxOutputTokens,
-          store: false,
-          background: false,
-          truncation: "disabled",
-          text: {
-            format: {
-              type: "json_schema",
-              name: normalized.schemaName,
-              strict: true,
-              schema: normalized.schema,
-            },
-          },
-        }),
-        cache: "no-store",
-        signal: request.signal,
-      },
-    );
+    // Bare client: Netlify AI Gateway injects OPENAI_API_KEY + OPENAI_BASE_URL.
+    // Never pass apiKey or baseURL — a user-set key disables gateway injection.
+    return fetchImplementation
+      ? new OpenAI({ fetch: fetchImplementation })
+      : new OpenAI();
   } catch {
+    throw new IntegrationConfigurationError("openai", "OPENAI_API_KEY");
+  }
+}
+
+function throwMappedOpenAIError(error: unknown): never {
+  if (
+    error instanceof IntegrationConfigurationError ||
+    error instanceof IntegrationRequestError
+  ) {
+    throw error;
+  }
+
+  if (error instanceof APIConnectionError) {
     throw new IntegrationRequestError("openai", "network_error", {
       status: null,
       retryable: true,
     });
   }
 
-  if (!response.ok) {
+  if (error instanceof APIError) {
     throw new IntegrationRequestError("openai", "provider_error", {
-      status: response.status,
-      retryable: response.status === 429 || response.status >= 500,
+      status: error.status ?? null,
+      retryable: error.status === 429 || (error.status ?? 0) >= 500,
     });
   }
 
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    throw new IntegrationRequestError("openai", "invalid_response");
-  }
+  throw new IntegrationRequestError("openai", "network_error", {
+    status: null,
+    retryable: true,
+  });
+}
 
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    throw new IntegrationRequestError("openai", "invalid_response");
-  }
-
-  const responsePayload = payload as OpenAIResponsePayload;
-  if (responsePayload.status === "incomplete") {
-    throw new IntegrationRequestError("openai", "incomplete_response");
-  }
-
-  if (
-    typeof responsePayload.status === "string" &&
-    responsePayload.status !== "completed"
-  ) {
-    throw new IntegrationRequestError("openai", "invalid_response");
-  }
-
-  const outputText = getOutputText(responsePayload);
+function parseStructuredOutput<T>(
+  outputText: string | null,
+  parse: (value: unknown) => T,
+): T {
   if (!outputText) {
     throw new IntegrationRequestError("openai", "invalid_response");
   }
@@ -281,24 +267,175 @@ export async function generateStructuredText<T>(
     throw new IntegrationRequestError("openai", "invalid_response");
   }
 
-  let value: T;
   try {
-    value = request.parse(parsedValue);
+    return parse(parsedValue);
   } catch {
-    throw new IntegrationRequestError(
-      "openai",
-      "output_validation_failed",
-    );
+    throw new IntegrationRequestError("openai", "output_validation_failed");
   }
+}
 
+function responsesBody(input: {
+  model: string;
+  schemaName: string;
+  schema: JsonSchema;
+  instructions: string;
+  prompt: string;
+  maxOutputTokens: number;
+}) {
   return {
-    value,
-    model:
-      typeof responsePayload.model === "string"
-        ? responsePayload.model
-        : configuredModel,
-    responseId:
-      typeof responsePayload.id === "string" ? responsePayload.id : null,
-    usage: normalizeUsage(responsePayload.usage),
+    model: input.model,
+    instructions: input.instructions,
+    input: input.prompt,
+    max_output_tokens: input.maxOutputTokens,
+    store: false,
+    background: false,
+    truncation: "disabled" as const,
+    text: {
+      format: {
+        type: "json_schema" as const,
+        name: input.schemaName,
+        strict: true,
+        schema: input.schema,
+      },
+    },
   };
 }
+
+async function generateViaChatCompletions<T>(
+  client: OpenAI,
+  input: {
+    model: string;
+    schemaName: string;
+    schema: JsonSchema;
+    instructions: string;
+    prompt: string;
+    maxOutputTokens: number;
+    parse: (value: unknown) => T;
+    signal?: AbortSignal;
+  },
+): Promise<OpenAIStructuredTextResult<T>> {
+  let completion: Awaited<ReturnType<typeof client.chat.completions.create>>;
+
+  try {
+    completion = await client.chat.completions.create(
+      {
+        model: input.model,
+        messages: [
+          { role: "system", content: input.instructions },
+          { role: "user", content: input.prompt },
+        ],
+        max_completion_tokens: input.maxOutputTokens,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: input.schemaName,
+            strict: true,
+            schema: input.schema,
+          },
+        },
+      },
+      { signal: input.signal },
+    );
+  } catch (error) {
+    throwMappedOpenAIError(error);
+  }
+
+  const outputText =
+    completion.choices[0]?.message?.content?.trim() ||
+    (typeof (completion as { output_text?: unknown }).output_text === "string"
+      ? String((completion as { output_text?: string }).output_text).trim()
+      : null);
+
+  return {
+    value: parseStructuredOutput(outputText, input.parse),
+    model: completion.model || input.model,
+    responseId: completion.id ?? null,
+    usage: normalizeUsage(completion.usage),
+  };
+}
+
+export async function generateStructuredText<T>(
+  request: OpenAIStructuredTextRequest<T>,
+): Promise<OpenAIStructuredTextResult<T>> {
+  const normalized = normalizeRequest(request);
+  const configuredModel = getOpenAIModel();
+  const client = createGatewayOpenAIClient(request.fetchImplementation);
+  const body = responsesBody({
+    model: configuredModel,
+    schemaName: normalized.schemaName,
+    schema: normalized.schema,
+    instructions: normalized.instructions,
+    prompt: normalized.input,
+    maxOutputTokens: normalized.maxOutputTokens,
+  });
+
+  async function attempt(maxOutputTokens: number): Promise<OpenAIStructuredTextResult<T>> {
+    const attemptBody = {
+      ...body,
+      max_output_tokens: maxOutputTokens,
+    };
+
+    try {
+      const response = await client.responses.create(attemptBody, {
+        signal: request.signal,
+      });
+      const payload = response as OpenAIResponsePayload;
+
+      if (payload.status === "incomplete") {
+        throw new IntegrationRequestError("openai", "incomplete_response");
+      }
+
+      if (
+        typeof payload.status === "string" &&
+        payload.status !== "completed"
+      ) {
+        throw new IntegrationRequestError("openai", "invalid_response");
+      }
+
+      return {
+        value: parseStructuredOutput(getOutputText(payload), request.parse),
+        model: typeof payload.model === "string" ? payload.model : configuredModel,
+        responseId: typeof payload.id === "string" ? payload.id : null,
+        usage: normalizeUsage(payload.usage),
+      };
+    } catch (error) {
+      if (
+        error instanceof IntegrationConfigurationError ||
+        error instanceof IntegrationRequestError
+      ) {
+        throw error;
+      }
+
+      if (error instanceof NotFoundError) {
+        return generateViaChatCompletions(client, {
+          model: configuredModel,
+          schemaName: normalized.schemaName,
+          schema: normalized.schema,
+          instructions: normalized.instructions,
+          prompt: normalized.input,
+          maxOutputTokens,
+          parse: request.parse,
+          signal: request.signal,
+        });
+      }
+
+      throwMappedOpenAIError(error);
+    }
+  }
+
+  try {
+    return await attempt(normalized.maxOutputTokens);
+  } catch (error) {
+    if (
+      error instanceof IntegrationRequestError &&
+      error.code === "incomplete_response" &&
+      normalized.maxOutputTokens < MAX_OPENAI_OUTPUT_TOKENS
+    ) {
+      return await attempt(MAX_OPENAI_OUTPUT_TOKENS);
+    }
+
+    throw error;
+  }
+}
+
+export { openAIResponsesUrl } from "./openai-gateway.ts";

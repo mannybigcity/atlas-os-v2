@@ -13,6 +13,21 @@ export function siteLanguageFromSearch(search: string): SiteLanguage | null {
   return value === null ? null : normalizeSiteLanguage(value);
 }
 
+/**
+ * Query `lang` wins over cookie/storage so `/?lang=en` cannot stay stuck on a
+ * leftover Spanish preference. Missing query/cookie/storage defaults to English.
+ */
+export function resolveSiteLanguage(input: {
+  search?: string | null;
+  cookie?: string | null;
+  storage?: string | null;
+}): SiteLanguage {
+  const fromSearch = siteLanguageFromSearch(input.search ?? "");
+  if (fromSearch) return fromSearch;
+  if (input.cookie) return normalizeSiteLanguage(input.cookie);
+  return normalizeSiteLanguage(input.storage);
+}
+
 export function withSiteLanguage(href: string, language: SiteLanguage) {
   if (language === "en" || href.startsWith("mailto:") || href.startsWith("#")) return href;
 
