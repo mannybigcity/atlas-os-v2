@@ -6,6 +6,7 @@ import { useActionState, useEffect, useRef, useState, type FormEvent } from "rea
 import { useSiteLanguage } from "@/components/language-switcher";
 import { ATLAS_LION_SRC } from "@/lib/lions-den/atlas-brand";
 import { ATLAS_STAFF_PROMPT_LIMIT, composeAtlasStaffPrompt } from "@/lib/lions-den/atlas-staff-prompt";
+import { atlasStaffCanSend } from "@/lib/lions-den/atlas-staff-send";
 import {
   atlasAskUsageFromCounts,
   atlasAskUsageLabel,
@@ -19,7 +20,6 @@ import type { ClientAiDailyUsage, ClientAiRequest } from "@/server/client-ai/que
 type AtlasStaffPaneProps = {
   organizationId: string;
   organizationName: string;
-  previewMode: boolean;
   requests: ClientAiRequest[];
   dailyUsage?: ClientAiDailyUsage | null;
   compact?: boolean;
@@ -73,7 +73,7 @@ export function AtlasStaffPane({
   const capped = isAtlasAskCapped(usage.used, plan);
   const hasWorkspace = Boolean(organizationId);
   const composerLocked = pending || capped;
-  const canSend = hasWorkspace && !composerLocked;
+  const canSend = atlasStaffCanSend({ organizationId, pending, capped });
   const thread = [...requests].slice(0, 8).reverse();
   const usageLabel = atlasAskUsageLabel(usage.used, plan);
 

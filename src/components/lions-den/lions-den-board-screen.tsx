@@ -32,7 +32,6 @@ export async function LionsDenBoardScreen({
       board={board}
       organizationId={organization?.id ?? ""}
       organizationName={organization?.name}
-      previewMode={workspace.isClientPreview}
       previewOrgSlug={workspace.previewOrgSlug || undefined}
       workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       workspaces={workspace.memberships.data.flatMap((membership) =>

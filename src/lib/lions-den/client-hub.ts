@@ -1,4 +1,8 @@
-import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
+import {
+  isAfeCrmDemoOrganization,
+  isQTimeWorkspaceSlug,
+  isSisOrganization,
+} from "../client-portal/identity.ts";
 
 export type LionsDenBoard =
   | "overview"
@@ -35,7 +39,11 @@ export function usesLionsDenHub(
     return !isQTimeWorkspaceSlug(slugOrOrganization);
   }
   if (isQTimeWorkspaceSlug(slugOrOrganization.slug)) return false;
-  return Boolean(slugOrOrganization.slug) || isSisOrganization(slugOrOrganization);
+  return (
+    Boolean(slugOrOrganization.slug) ||
+    isSisOrganization(slugOrOrganization) ||
+    isAfeCrmDemoOrganization(slugOrOrganization)
+  );
 }
 
 export function lionsDenHref(path: string, previewOrgSlug?: string, workspaceSlug?: string) {
