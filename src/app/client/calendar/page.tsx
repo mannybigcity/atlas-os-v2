@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenCalendarBoard } from "@/components/lions-den/lions-den-calendar";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
+import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
 import { getSisDashboardData } from "@/server/sis-workspace/queries";
@@ -44,7 +45,9 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
         <LionsDenCalendarBoard
           organizationId={organization.id}
           partyEvents={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.partyEvents : []}
-          prospects={pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []}
+          prospects={(pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
+            presentLiveDeskOpportunity(organization, item),
+          )}
           spanish={language === "es"}
         />
       ) : (

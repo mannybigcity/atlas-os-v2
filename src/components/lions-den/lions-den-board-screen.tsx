@@ -1,4 +1,6 @@
 import { LionsDenClientHub } from "@/components/lions-den/lions-den-client-hub";
+import { getClientPortalOrgLabel } from "@/lib/client-portal/identity";
+import { presentLiveDeskAiRequest } from "@/lib/lions-den/live-desk";
 import type { LionsDenBoard } from "@/lib/lions-den/client-hub";
 import {
   defaultClientAiDailyUsage,
@@ -25,19 +27,28 @@ export async function LionsDenBoardScreen({
       ])
     : [null, null];
 
+  const visibleRequests =
+    aiRequests && !aiRequests.setupRequired
+      ? aiRequests.data.map((request) => presentLiveDeskAiRequest(organization, request))
+      : [];
+
   return (
     <LionsDenClientHub
-      aiRequests={aiRequests && !aiRequests.setupRequired ? aiRequests.data : []}
+      aiRequests={visibleRequests}
       aiUsage={aiUsage && !aiUsage.setupRequired ? aiUsage.data : defaultClientAiDailyUsage()}
       board={board}
       organizationId={organization?.id ?? ""}
       organizationName={organization?.name}
+      organizationSlug={organization?.slug}
       previewMode={workspace.isClientPreview}
       previewOrgSlug={workspace.previewOrgSlug || undefined}
       workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       workspaces={workspace.memberships.data.flatMap((membership) =>
         membership.organization
-          ? [{ name: membership.organization.name, slug: membership.organization.slug ?? "" }]
+          ? [{
+              name: getClientPortalOrgLabel(membership.organization) || membership.organization.name,
+              slug: membership.organization.slug ?? "",
+            }]
           : [],
       )}
     >

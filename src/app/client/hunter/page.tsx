@@ -6,6 +6,7 @@ import { HunterReviewPile } from "@/components/lions-den/hunter-review-pile";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
+import { presentLiveDeskReviewItem } from "@/lib/lions-den/live-desk";
 import {
   clientWorkspaceHref,
   getClientWorkspaceContext,
@@ -82,7 +83,9 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
 
       {primaryOrganization ? (
         <HunterReviewPile
-          items={reviewPile && !reviewPile.setupRequired ? reviewPile.data : []}
+          items={(reviewPile && !reviewPile.setupRequired ? reviewPile.data : []).map((item) =>
+            presentLiveDeskReviewItem(primaryOrganization, item),
+          )}
           organizationId={primaryOrganization.id}
           setupRequired={Boolean(reviewPile?.setupRequired)}
           spanish={spanish}

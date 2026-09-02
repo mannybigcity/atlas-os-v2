@@ -25,10 +25,6 @@ type LionsDenOverviewProps = {
   notes: OrganizationNote[];
 };
 
-function isDemoLabel(value: string | null | undefined) {
-  return /\bdemo\b/i.test(String(value ?? ""));
-}
-
 export function LionsDenOverview({
   organizationId,
   organizationName,
@@ -122,7 +118,6 @@ export function LionsDenOverview({
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1">
                         <h3 className="truncate text-sm font-semibold text-[#071b42]">{item.name}</h3>
-                        {isDemoLabel(item.name) ? <DemoBadge /> : null}
                       </div>
                       {item.formattedAddress ? (
                         <p className="truncate text-[11px] text-[#5c6578]">{item.formattedAddress}</p>
@@ -179,7 +174,6 @@ export function LionsDenOverview({
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1">
                         <h3 className="truncate text-sm font-semibold text-[#071b42]">{prospect.name}</h3>
-                        {isDemoLabel(prospect.name) ? <DemoBadge /> : null}
                       </div>
                       {prospect.contactName || prospect.contactPhone ? (
                         <p className="truncate text-[11px] text-[#071b42]">
@@ -250,7 +244,6 @@ export function LionsDenOverview({
                 {drafts.slice(0, 4).map((draft) => (
                   <li className="flex items-center justify-between gap-2 text-xs" key={draft.id}>
                     <span className="truncate font-semibold text-[#071b42]">{draft.title || draft.headline}</span>
-                    {isDemoLabel(draft.title) || isDemoLabel(draft.headline) ? <DemoBadge /> : null}
                   </li>
                 ))}
               </ul>
@@ -333,14 +326,6 @@ export function LionsDenOverview({
   );
 }
 
-function DemoBadge() {
-  return (
-    <span className="rounded-full bg-[#fff8e6] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-[#8a6a12]">
-      DEMO
-    </span>
-  );
-}
-
 function MetricChip({
   href,
   label,
@@ -401,7 +386,6 @@ function QueueRow({
     <>
       <div className="flex flex-wrap items-center gap-1">
         <p className="truncate text-xs font-semibold text-[#071b42]">{item.title}</p>
-        {isDemoLabel(item.title) ? <DemoBadge /> : null}
         {overdue ? (
           <span className="rounded-full bg-[#fff1f1] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8a1f1f]">
             {overdueLabel}

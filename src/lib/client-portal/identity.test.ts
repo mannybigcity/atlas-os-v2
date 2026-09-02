@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   AFE_CRM_DEMO_SLUG,
+  AFE_CRM_LIVE_NAME,
   afeCrmDemoPreviewHref,
   defaultLionsDenDeskHref,
   escapeIlikeExact,
   findOrganizationByPreviewSlug,
   getClientPortalName,
+  getClientPortalOrgLabel,
   isAfeClientDeskOrganization,
   isAfeCrmDemoName,
   isAfeCrmDemoOrganization,
@@ -25,6 +27,7 @@ import {
   sisLionsDenPreviewHref,
   SIS_LIONS_DEN_PREVIEW_SLUG,
 } from "./identity.ts";
+import { lionsDenHubChromeCopy } from "../lions-den/live-desk.ts";
 
 test("SIS owner-facing chrome is The Lion's Den, not a DAVID or CRM label", () => {
   assert.equal(getClientPortalName("SIS Custom Creations"), "The Lion’s Den");
@@ -106,11 +109,16 @@ test("super-admin CRM is never the /client front door", () => {
   );
 });
 
-test("AFE DEMO desk is afe-crm-demo, not SIS, and is not a guest preview", () => {
+test("AFE desk is afe-crm-demo, not SIS, and is not a guest preview", () => {
+  const liveDesk = { name: AFE_CRM_LIVE_NAME, slug: AFE_CRM_DEMO_SLUG };
   assert.equal(isAfeCrmDemoSlug(AFE_CRM_DEMO_SLUG), true);
   assert.equal(isAfeCrmDemoSlug(SIS_LIONS_DEN_PREVIEW_SLUG), false);
+  assert.equal(isAfeCrmDemoOrganization(liveDesk), true);
+  assert.equal(isAfeCrmDemoOrganization({ name: "AFE CRM DEMO", slug: "afe-crm-demo" }), true);
   assert.equal(isAfeCrmDemoOrganization({ name: "Atlas CRM DEMO", slug: "afe-crm-demo" }), true);
+  assert.equal(isAfeCrmDemoName("AFE CRM DEMO"), true);
   assert.equal(isAfeCrmDemoName("Atlas CRM DEMO"), true);
+  assert.equal(isAfeCrmDemoName(AFE_CRM_LIVE_NAME), false);
   assert.equal(
     isAfeCrmDemoOrganization({ name: "Atlas CRM DEMO", slug: "atlas-crm-demo" }),
     true,
@@ -119,10 +127,7 @@ test("AFE DEMO desk is afe-crm-demo, not SIS, and is not a guest preview", () =>
     isAfeCrmDemoOrganization({ name: "SIS Custom Creations", slug: "afe-crm-demo" }),
     false,
   );
-  assert.equal(
-    isAfeClientDeskOrganization({ name: "Atlas CRM DEMO", slug: "afe-crm-demo" }),
-    true,
-  );
+  assert.equal(isAfeClientDeskOrganization(liveDesk), true);
   assert.equal(
     isAfeClientDeskOrganization({ name: "SIS Custom Creations", slug: SIS_LIONS_DEN_PREVIEW_SLUG }),
     false,
@@ -131,18 +136,35 @@ test("AFE DEMO desk is afe-crm-demo, not SIS, and is not a guest preview", () =>
     isAfeClientDeskOrganization({ name: "QTime Productions", slug: "qtime-productions" }),
     false,
   );
-  assert.equal(
-    isGuestClientPreview({ name: "Atlas CRM DEMO", slug: "afe-crm-demo" }),
-    false,
-  );
+  assert.equal(isGuestClientPreview(liveDesk), false);
   assert.equal(defaultLionsDenDeskHref(), "/client");
   assert.equal(afeCrmDemoPreviewHref(), "/client?previewOrg=afe-crm-demo");
   assert.equal(
-    afeCrmDemoPreviewHref([{ name: "Atlas CRM DEMO", slug: "AFE-CRM-DEMO" }]),
+    afeCrmDemoPreviewHref([{ name: AFE_CRM_LIVE_NAME, slug: "AFE-CRM-DEMO" }]),
     "/client?previewOrg=AFE-CRM-DEMO",
   );
   assert.doesNotMatch(defaultLionsDenDeskHref(), /sis-diy/i);
   assert.doesNotMatch(afeCrmDemoPreviewHref(), /sis-diy/i);
+});
+
+test("AFE desk chrome is The Lion's Den / Atlas and never includes DEMO", () => {
+  const liveDesk = { name: AFE_CRM_LIVE_NAME, slug: AFE_CRM_DEMO_SLUG };
+  const oldName = { name: "AFE CRM DEMO", slug: AFE_CRM_DEMO_SLUG };
+  const chrome = lionsDenHubChromeCopy(liveDesk);
+  const chromeEs = lionsDenHubChromeCopy(liveDesk, true);
+  const oldChrome = lionsDenHubChromeCopy(oldName);
+
+  assert.equal(getClientPortalName(liveDesk.name, liveDesk), "The Lion’s Den");
+  assert.equal(getClientPortalName(oldName.name, oldName), "The Lion’s Den");
+  assert.equal(getClientPortalOrgLabel(liveDesk), "Atlas");
+  assert.equal(getClientPortalOrgLabel(oldName), "Atlas");
+  assert.doesNotMatch(getClientPortalName(liveDesk.name, liveDesk), /DEMO/i);
+  assert.doesNotMatch(getClientPortalOrgLabel(liveDesk), /DEMO/i);
+  assert.doesNotMatch(`${chrome.portalName} ${chrome.orgLabel} ${chrome.atlasEmpty}`, /demo/i);
+  assert.doesNotMatch(`${chromeEs.portalName} ${chromeEs.orgLabel} ${chromeEs.atlasEmpty}`, /demo/i);
+  assert.doesNotMatch(`${oldChrome.portalName} ${oldChrome.orgLabel}`, /demo/i);
+  assert.doesNotMatch(chrome.atlasEmpty, /sample|preview desk|fake/i);
+  assert.doesNotMatch(getClientPortalName(liveDesk.name, liveDesk), /DAVID/);
 });
 
 test("admin Lion's Den door uses the live SIS slug or a matched organization", () => {
@@ -243,7 +265,7 @@ test("super admin opening SIS gets the SIS workspace id even when the first memb
 test("default desk prefers an AFE membership and never auto-opens SIS", () => {
   const qtime = { id: "org-qtime", name: "QTime Productions", slug: "qtime-productions" };
   const sis = { id: "org-sis", name: "SIS Custom Creations", slug: "SIS-DIY-big-complete-showcase" };
-  const afe = { id: "org-afe", name: "Atlas CRM DEMO", slug: "afe-crm-demo" };
+  const afe = { id: "org-afe", name: AFE_CRM_LIVE_NAME, slug: "afe-crm-demo" };
   const harbor = { id: "org-harbor", name: "Harbor Lights Studio", slug: "harbor-lights" };
 
   assert.equal(
@@ -287,6 +309,14 @@ test("default desk prefers an AFE membership and never auto-opens SIS", () => {
   ]);
   assert.equal(byName?.name, "Atlas CRM DEMO");
   assert.equal(byName?.slug, "atlas-crm-demo");
+
+  const byLiveName = findOrganizationByPreviewSlug("afe-crm-demo", [
+    { name: "QTime Productions", slug: "qtime-productions" },
+    { name: AFE_CRM_LIVE_NAME, slug: AFE_CRM_DEMO_SLUG },
+    { name: "SIS Custom Creations", slug: "sis-diy-big-complete-showcase" },
+  ]);
+  assert.equal(byLiveName?.name, AFE_CRM_LIVE_NAME);
+  assert.equal(byLiveName?.slug, AFE_CRM_DEMO_SLUG);
   assert.ok(Boolean(afe.id));
 });
 

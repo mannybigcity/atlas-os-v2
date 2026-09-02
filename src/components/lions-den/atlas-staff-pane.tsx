@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { ATLAS_LION_SRC } from "@/lib/lions-den/atlas-brand";
+import { ATLAS_STAFF_EMPTY_EN, ATLAS_STAFF_EMPTY_ES } from "@/lib/lions-den/live-desk";
 import { ATLAS_STAFF_PROMPT_LIMIT, composeAtlasStaffPrompt } from "@/lib/lions-den/atlas-staff-prompt";
 import {
   atlasAskUsageFromCounts,
@@ -183,9 +184,7 @@ export function AtlasStaffPane({
       <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-auto px-3">
         {thread.length === 0 && state.status === "idle" ? (
           <p className="rounded-2xl bg-white px-2.5 py-1.5 text-xs leading-5 text-[#5c6578] ring-1 ring-[#ece7d8]">
-            {spanish
-              ? "Pregunta por el seguimiento, los prospectos DEMO o lo que toca hoy en este escritorio."
-              : "Ask about follow-up, DEMO companies on this desk, or what is due today."}
+            {spanish ? ATLAS_STAFF_EMPTY_ES : ATLAS_STAFF_EMPTY_EN}
           </p>
         ) : null}
         {thread.map((item) => (

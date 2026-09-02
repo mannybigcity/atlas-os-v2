@@ -4,6 +4,7 @@ import { ClientContentStudio } from "@/components/client-content-studio";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
+import { presentLiveDeskDraft } from "@/lib/lions-den/live-desk";
 import {
   clientWorkspaceHref,
   getClientWorkspaceContext,
@@ -65,7 +66,10 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
         <ClientContentStudio
           canReview={canEditBusinessProfile}
           organizationId={primaryOrganization.id}
-          studio={studio.data}
+          studio={{
+            ...studio.data,
+            drafts: studio.data.drafts.map((draft) => presentLiveDeskDraft(primaryOrganization, draft)),
+          }}
         />
       ) : null}
     </div>

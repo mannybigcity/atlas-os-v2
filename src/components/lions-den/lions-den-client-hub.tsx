@@ -3,7 +3,7 @@ import Link from "next/link";
 import { signOut } from "@/server/auth/actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AtlasStaffPane } from "@/components/lions-den/atlas-staff-pane";
-import { getClientPortalName } from "@/lib/client-portal/identity";
+import { getClientPortalName, getClientPortalOrgLabel } from "@/lib/client-portal/identity";
 import {
   lionsDenBoards,
   lionsDenHref,
@@ -17,6 +17,7 @@ type LionsDenClientHubProps = {
   board: LionsDenBoard;
   organizationId?: string;
   organizationName?: string | null;
+  organizationSlug?: string | null;
   previewOrgSlug?: string;
   workspaceSlug?: string;
   workspaces?: Array<{ name: string; slug: string }>;
@@ -30,6 +31,7 @@ export async function LionsDenClientHub({
   board,
   organizationId,
   organizationName,
+  organizationSlug,
   previewOrgSlug,
   workspaceSlug,
   workspaces = [],
@@ -40,8 +42,9 @@ export async function LionsDenClientHub({
 }: LionsDenClientHubProps) {
   const language = await getSiteLanguage();
   const spanish = language === "es";
-  const portalName = getClientPortalName(organizationName);
-  const orgLabel = String(organizationName ?? "").trim();
+  const organization = { name: organizationName, slug: organizationSlug };
+  const portalName = getClientPortalName(organizationName, organization);
+  const orgLabel = getClientPortalOrgLabel(organization);
 
   return (
     <div className="lions-den-hub bg-white text-[#071b42]">
@@ -60,14 +63,14 @@ export async function LionsDenClientHub({
               ? workspaces.map((workspace) => (
                   <Link
                     className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                      workspace.name === organizationName
+                      workspace.slug === organizationSlug || workspace.name === organizationName
                         ? "border-[#f5b932] bg-[#f5b932] text-[#071b42]"
                         : "border-white/25 bg-transparent text-white hover:border-[#f5b932]"
                     }`}
                     href={`/client?workspace=${encodeURIComponent(workspace.slug)}`}
                     key={workspace.slug}
                   >
-                    {workspace.name}
+                    {getClientPortalOrgLabel(workspace) || workspace.name}
                   </Link>
                 ))
               : null}

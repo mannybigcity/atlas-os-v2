@@ -4,6 +4,7 @@ import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenFollowUpBoard } from "@/components/lions-den/lions-den-follow-up";
 import { isSisOrganization } from "@/lib/client-portal/identity";
+import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
 import {
   clientWorkspaceHref,
@@ -62,7 +63,9 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
         <LionsDenFollowUpBoard
           inboxTasks={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.inboxTasks : []}
           partyEvents={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.partyEvents : []}
-          prospects={pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []}
+          prospects={(pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
+            presentLiveDeskOpportunity(primaryOrganization, item),
+          )}
           spanish={spanish}
         />
       </LionsDenBoardScreen>

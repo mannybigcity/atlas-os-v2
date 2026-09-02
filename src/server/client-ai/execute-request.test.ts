@@ -24,18 +24,18 @@ import { MAX_OPENAI_OUTPUT_TOKENS } from "../integrations/openai-responses.ts";
 const DEMO_ORG_ID = "org-afe-crm-demo";
 const DEMO_ORG = {
   id: DEMO_ORG_ID,
-  name: "AFE CRM Demo",
+  name: "Atlas",
   slug: "afe-crm-demo",
 };
 
 const IN_SCOPE_FOLLOW_UP =
-  "What follow-up is due for ABC Plumbing (DEMO) on this desk?";
+  "What follow-up is due for ABC Plumbing on this desk?";
 const OFF_TOPIC_WEATHER = "What's the weather this weekend?";
 const IN_SCOPE_COMPANIES =
-  "Who are the DEMO companies on this desk: ABC Plumbing, 123 Catering, XYZ Electric?";
+  "Who are the companies on this desk: ABC Plumbing, 123 Catering, XYZ Electric?";
 
 const DESK_ANSWER =
-  "ABC Plumbing (DEMO) is due today. 123 Catering (DEMO) is tomorrow and XYZ Electric (DEMO) is later. Atlas has not contacted them.";
+  "ABC Plumbing is due today. 123 Catering is tomorrow and XYZ Electric is later. Atlas has not contacted them.";
 
 function emptyDashboard() {
   const missing = { data: null, setupRequired: true as const, error: "unavailable" };
@@ -83,7 +83,7 @@ function createHarness(options: {
       return {
         value: request.parse({
           answer: DESK_ANSWER,
-          nextStep: "Work the next DEMO follow-up on this desk.",
+          nextStep: "Work the next follow-up on this desk.",
           missingInputs: [],
         }),
         model: "gpt-5-mini",
@@ -166,7 +166,7 @@ test("IntegrationConfigurationError maps to AI is not enabled on this site", () 
 test("parseClientAiResponse requires a 20-character answer, nextStep, and missingInputs", () => {
   const value = parseClientAiResponse({
     answer: DESK_ANSWER,
-    nextStep: "Call the salesman-owned DEMO follow-up.",
+    nextStep: "Call the salesman-owned follow-up.",
     missingInputs: [],
   });
   assert.ok(value.answer.length >= 20);
@@ -175,13 +175,13 @@ test("parseClientAiResponse requires a 20-character answer, nextStep, and missin
   );
 });
 
-test("founder DEMO desk asks: in-scope 0→1, off-topic stays 1, in-scope 1→2", async () => {
+test("founder AFE desk asks: in-scope 0→1, off-topic stays 1, in-scope 1→2", async () => {
   const { submit, stats } = createHarness({ isSuperAdmin: true });
 
   const first = await submit(initialClientAiActionState, askForm(IN_SCOPE_FOLLOW_UP));
   assert.equal(first.status, "success");
   assert.equal(first.error, null);
-  assert.match(String(first.answer), /ABC Plumbing \(DEMO\)/);
+  assert.match(String(first.answer), /ABC Plumbing/);
   assert.equal(first.dailyUsage?.used, 1);
   assert.equal(first.dailyUsage?.limit, 5);
   assert.equal(stats().generateCalls, 1);
@@ -199,15 +199,15 @@ test("founder DEMO desk asks: in-scope 0→1, off-topic stays 1, in-scope 1→2"
 
   const second = await submit(initialClientAiActionState, askForm(IN_SCOPE_COMPANIES));
   assert.equal(second.status, "success");
-  assert.match(String(second.answer), /123 Catering \(DEMO\)/);
-  assert.match(String(second.answer), /XYZ Electric \(DEMO\)/);
+  assert.match(String(second.answer), /123 Catering/);
+  assert.match(String(second.answer), /XYZ Electric/);
   assert.equal(second.dailyUsage?.used, 2);
   assert.equal(stats().generateCalls, 2);
   assert.equal(stats().reserveCalls, 2);
   assert.equal(stats().used, 2);
 });
 
-test("super-admin preview of afe-crm-demo does not need DEMO membership", async () => {
+test("super-admin preview of afe-crm-demo does not need AFE desk membership", async () => {
   const { submit, stats } = createHarness({
     isSuperAdmin: true,
     memberships: async () => ({ data: [], setupRequired: false, error: null }),
@@ -217,7 +217,7 @@ test("super-admin preview of afe-crm-demo does not need DEMO membership", async 
   assert.equal(stats().used, 1);
 });
 
-test("member-less non-admin cannot ask on DEMO", async () => {
+test("member-less non-admin cannot ask on the AFE desk", async () => {
   const { submit, stats } = createHarness({
     isSuperAdmin: false,
     memberships: async () => ({ data: [], setupRequired: false, error: null }),
