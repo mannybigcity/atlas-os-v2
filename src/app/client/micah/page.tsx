@@ -3,7 +3,7 @@ import { ClientMicahIntake } from "@/components/client-micah-intake";
 import { ClientContentStudio } from "@/components/client-content-studio";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
-import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
+import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
 import {
   clientWorkspaceHref,
   getClientWorkspaceContext,
@@ -41,7 +41,6 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
     previewOrgSlug,
     primaryOrganization,
   } = workspace;
-  const useLionsDen = usesLionsDenHub(primaryOrganization);
   const studio = primaryOrganization
     ? await getContentStudio(primaryOrganization.id)
     : null;
@@ -71,38 +70,38 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
     </div>
   );
 
-  if (useLionsDen) {
+  if (isQTimeWorkspaceSlug(primaryOrganization?.slug)) {
     return (
-      <LionsDenBoardScreen board="micah" workspace={workspace}>
-        {board}
-      </LionsDenBoardScreen>
+      <ClientWorkspaceScreen
+        backHref={clientWorkspaceHref("/client", previewOrgSlug)}
+        description={spanish
+          ? "El Estudio de Contenido prepara imágenes sociales, textos, direcciones de campaña y borradores para revisión antes de publicar cualquier cosa."
+          : "Content Studio prepares social images, captions, campaign directions, and post drafts for review before anything goes public."}
+        eyebrow={spanish ? "Estudio de Contenido" : "Content Studio"}
+        organizationName={primaryOrganization?.name}
+        previewMode={isClientPreview}
+      >
+        {studio && !studio.setupRequired && primaryOrganization ? (
+          <div className="space-y-5">
+            <ClientMicahIntake
+              organizationId={primaryOrganization.id}
+              previewMode={isClientPreview}
+              recentRequests={
+                aiRequests && !aiRequests.setupRequired ? aiRequests.data : []
+              }
+            />
+            {board}
+          </div>
+        ) : (
+          board
+        )}
+      </ClientWorkspaceScreen>
     );
   }
 
   return (
-    <ClientWorkspaceScreen
-      backHref={clientWorkspaceHref("/client", previewOrgSlug)}
-      description={spanish
-        ? "El Estudio de Contenido prepara imágenes sociales, textos, direcciones de campaña y borradores para revisión antes de publicar cualquier cosa."
-        : "Content Studio prepares social images, captions, campaign directions, and post drafts for review before anything goes public."}
-      eyebrow={spanish ? "Estudio de Contenido" : "Content Studio"}
-      organizationName={primaryOrganization?.name}
-      previewMode={isClientPreview}
-    >
-      {studio && !studio.setupRequired && primaryOrganization ? (
-        <div className="space-y-5">
-          <ClientMicahIntake
-            organizationId={primaryOrganization.id}
-            previewMode={isClientPreview}
-            recentRequests={
-              aiRequests && !aiRequests.setupRequired ? aiRequests.data : []
-            }
-          />
-          {board}
-        </div>
-      ) : (
-        board
-      )}
-    </ClientWorkspaceScreen>
+    <LionsDenBoardScreen board="micah" workspace={workspace}>
+      {board}
+    </LionsDenBoardScreen>
   );
 }

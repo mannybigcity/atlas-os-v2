@@ -20,7 +20,6 @@ type LionsDenClientHubProps = {
   previewOrgSlug?: string;
   workspaceSlug?: string;
   workspaces?: Array<{ name: string; slug: string }>;
-  previewMode?: boolean;
   aiRequests?: ClientAiRequest[];
   aiUsage?: ClientAiDailyUsage | null;
   children: ReactNode;
@@ -33,7 +32,6 @@ export async function LionsDenClientHub({
   previewOrgSlug,
   workspaceSlug,
   workspaces = [],
-  previewMode = false,
   aiRequests = [],
   aiUsage = null,
   children,
@@ -121,7 +119,6 @@ export async function LionsDenClientHub({
             dailyUsage={aiUsage}
             organizationId={organizationId ?? ""}
             organizationName={orgLabel || portalName}
-            previewMode={previewMode || !organizationId}
             requests={aiRequests}
           />
         </aside>

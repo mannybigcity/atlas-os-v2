@@ -3,8 +3,7 @@ import { ClientPilotWorkspace } from "@/components/client-pilot-workspace";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenFollowUpBoard } from "@/components/lions-den/lions-den-follow-up";
-import { isSisOrganization } from "@/lib/client-portal/identity";
-import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
+import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
 import {
   clientWorkspaceHref,
   getClientWorkspaceContext,
@@ -39,7 +38,6 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
   const spanish = language === "es";
   const workspace = await getClientWorkspaceContext("/client/david", params);
   const { isClientPreview, previewOrgSlug, primaryOrganization } = workspace;
-  const useLionsDen = usesLionsDenHub(primaryOrganization);
   const aiRequests = primaryOrganization
     ? await getClientAiRequests(primaryOrganization.id, 8)
     : null;
@@ -56,7 +54,7 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
     ? await getSisDashboardData(primaryOrganization.id)
     : null;
 
-  if (useLionsDen) {
+  if (!isQTimeWorkspaceSlug(primaryOrganization?.slug)) {
     return (
       <LionsDenBoardScreen board="follow-up" workspace={workspace}>
         <LionsDenFollowUpBoard
