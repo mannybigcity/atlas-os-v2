@@ -2,17 +2,19 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
-  buildMicahDraftCopy,
-  buildMicahDraftSvg,
+  buildMicahWeekPack,
   clipDraftText,
+  isMicahDemeanor,
   readOfficialAtlasLogoDataUri,
-  slotForMicahPrompt,
+  type MicahDemeanor,
 } from "./gallery-art.ts";
 
 export type MicahGalleryDraftInput = {
   organizationId: string;
   userId: string;
   prompt: string;
+  demeanor: MicahDemeanor;
+  demoDesk?: boolean;
   headline?: string | null;
   caption?: string | null;
   title?: string | null;
@@ -21,14 +23,16 @@ export type MicahGalleryDraftInput = {
 export type MicahGalleryDraftResult = {
   status: "success" | "error";
   draftId: string | null;
+  draftIds: string[];
   title: string;
   headline: string;
   caption: string;
+  count: number;
   message: string;
 };
 
-async function writeMicahDraft(
-  row: Record<string, unknown>,
+async function writeMicahWeekRows(
+  rows: Record<string, unknown>[],
   event: Record<string, unknown>,
 ) {
   const writers: Array<
@@ -43,15 +47,51 @@ async function writeMicahDraft(
   for (const client of writers) {
     const { data, error } = await client
       .from("organization_content_drafts")
-      .insert(row)
-      .select("id")
-      .single();
-    if (error || !data?.id) continue;
-    await client.from("organization_content_draft_events").insert({
-      ...event,
-      draft_id: data.id,
-    });
-    return String(data.id);
+      .upsert(rows, { onConflict: "organization_id,draft_date,slot" })
+      .select("id");
+    if (error || !data?.length) continue;
+    const ids = data.map((row) => String((row as { id: string }).id));
+    await client.from("organization_content_draft_events").insert(
+      ids.map((draftId) => ({
+        ...event,
+        draft_id: draftId,
+      })),
+    );
+    return ids;
+  }
+
+  return null;
+}
+
+export async function readMicahDemeanor(
+  organizationId: string,
+): Promise<MicahDemeanor | null> {
+  const readers: Array<
+    Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>
+  > = [await createClient()];
+  try {
+    readers.push(createAdminClient());
+  } catch {
+    // Service-role is optional for members who can already read their drafts.
+  }
+
+  for (const client of readers) {
+    try {
+      const { data, error } = await client
+        .from("organization_content_drafts")
+        .select("metadata")
+        .eq("organization_id", organizationId)
+        .contains("metadata", { week_pack: true })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error || !data) continue;
+      const value = (data as { metadata?: { micah_demeanor?: unknown } }).metadata
+        ?.micah_demeanor;
+      if (isMicahDemeanor(value)) return value;
+    } catch {
+      // Try the next reader.
+    }
   }
 
   return null;
@@ -60,59 +100,64 @@ async function writeMicahDraft(
 export async function createMicahGalleryDraft(
   input: MicahGalleryDraftInput,
 ): Promise<MicahGalleryDraftResult> {
-  const copy = buildMicahDraftCopy(input.prompt, input.caption ?? input.headline);
-  const headline = clipDraftText(input.headline || copy.headline, 120);
-  const title = clipDraftText(input.title || copy.title, 160);
-  const caption = clipDraftText(input.caption || copy.caption, 2200);
-  const supportingText = clipDraftText(
-    copy.supportingText || input.prompt,
-    240,
-  ) || "Client request";
-  const imageSvg = buildMicahDraftSvg({
-    headline,
-    supportingText,
+  const cards = buildMicahWeekPack({
+    prompt: input.prompt,
+    demeanor: input.demeanor,
+    demoDesk: input.demoDesk,
     logoDataUri: readOfficialAtlasLogoDataUri(),
+    weekKey: `week-${new Date().toISOString().slice(0, 10)}`,
   });
+  const first = cards[0];
+  const title = clipDraftText(input.title || first?.title || "MICAH week pack", 160);
+  const headline = clipDraftText(input.headline || first?.headline || "This week", 120);
+  const caption = clipDraftText(input.caption || first?.caption || "", 2200);
   const today = new Date().toISOString().slice(0, 10);
-  const slot = slotForMicahPrompt(input.prompt);
-  const row = {
+  const rows = cards.map((card) => ({
     organization_id: input.organizationId,
     draft_date: today,
-    slot,
-    campaign: "Talk to Atlas",
-    title,
-    headline,
-    supporting_text: supportingText,
-    caption,
+    slot: card.slot,
+    campaign: "Week pack",
+    title: card.title,
+    headline: card.headline,
+    supporting_text: card.supportingText,
+    caption: card.caption,
     call_to_action: "Download this draft and post it yourself.",
     platforms: ["instagram", "facebook"],
     visual_style: "atlas_branded",
-    image_svg: imageSvg,
+    image_svg: card.imageSvg,
     status: "ready_for_review",
     generated_by: "micah",
     generation_source: "manual",
     metadata: {
       source: "atlas_chat",
+      week_pack: true,
+      week_day: card.day,
+      weekday: card.weekday,
+      micah_demeanor: input.demeanor,
+      company_name: card.companyName,
+      demo_labeled: card.demoLabeled,
       no_live_post: true,
       requested_by: input.userId,
     },
-  };
+  }));
 
   try {
-    const draftId = await writeMicahDraft(row, {
+    const draftIds = await writeMicahWeekRows(rows, {
       organization_id: input.organizationId,
       event_type: "created",
-      note: "MICAH prepared this draft from Talk to Atlas. It was not published.",
+      note: "MICAH prepared a 7-day week pack from Talk to Atlas. It was not published.",
       actor_user_id: input.userId,
       actor_label: "MICAH",
     });
-    if (!draftId) {
+    if (!draftIds?.length) {
       return {
         status: "error",
         draftId: null,
+        draftIds: [],
         title,
         headline,
         caption,
+        count: 0,
         message: "MICAH could not save the draft to the gallery. Try again from Talk to Atlas.",
       };
     }
@@ -122,19 +167,23 @@ export async function createMicahGalleryDraft(
 
     return {
       status: "success",
-      draftId,
+      draftId: draftIds[0] ?? null,
+      draftIds,
       title,
       headline,
       caption,
-      message: `MICAH saved a downloadable draft in the gallery: ${title}. Nothing was posted to Facebook or Instagram. Open MICAH to download it and post it yourself.`,
+      count: draftIds.length,
+      message: `MICAH saved a 7-day week pack in the gallery (${draftIds.length} downloadable cards). Nothing was posted to Facebook or Instagram. Open MICAH to copy captions and download the files.`,
     };
   } catch {
     return {
       status: "error",
       draftId: null,
+      draftIds: [],
       title,
       headline,
       caption,
+      count: 0,
       message: "MICAH could not save the draft to the gallery. Try again from Talk to Atlas.",
     };
   }

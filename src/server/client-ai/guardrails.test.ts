@@ -17,6 +17,7 @@ test("Talk to Atlas without a staff click still routes social work to MICAH", ()
   assert.equal(decision.scopeStatus, "rerouted");
   assert.equal(decision.blocked, false);
   assert.equal(isMicahCreatePrompt("Make a Facebook post and a flyer image for Labor Day"), true);
+  assert.equal(isMicahCreatePrompt("Make a week of posts for 123 Catering"), true);
 });
 
 test("Talk to Atlas routes local-business finds to HUNTER", () => {

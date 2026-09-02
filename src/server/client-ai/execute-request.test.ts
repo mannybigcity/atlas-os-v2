@@ -69,6 +69,8 @@ function createHarness(options: {
   generateError?: unknown;
   runHunterChatSearch?: ClientAiRequestDeps["runHunterChatSearch"];
   createMicahGalleryDraft?: ClientAiRequestDeps["createMicahGalleryDraft"];
+  readMicahDemeanor?: ClientAiRequestDeps["readMicahDemeanor"];
+  getOrganizationIdentity?: ClientAiRequestDeps["getOrganizationIdentity"];
 }) {
   let used = options.used ?? 0;
   let generateCalls = 0;
@@ -135,6 +137,8 @@ function createHarness(options: {
     }),
     runHunterChatSearch: options.runHunterChatSearch,
     createMicahGalleryDraft: options.createMicahGalleryDraft,
+    readMicahDemeanor: options.readMicahDemeanor,
+    getOrganizationIdentity: options.getOrganizationIdentity,
   };
 
   return {
@@ -352,7 +356,7 @@ test("DAVID still answers from workspace context if the model call fails", async
   assert.equal(stats().used, 1);
 });
 
-test("Atlas chat box routes a flyer ask to MICAH and stores a gallery draft", async () => {
+test("MICAH asks for a week voice once when demeanor is unset", async () => {
   let drafted = 0;
   const { submit, stats } = createHarness({
     isSuperAdmin: true,
@@ -362,11 +366,90 @@ test("Atlas chat box routes a flyer ask to MICAH and stores a gallery draft", as
       return {
         status: "success",
         draftId: "draft-1",
-        title: "MICAH draft: Labor Day",
+        draftIds: ["draft-1"],
+        title: "Day 1",
+        headline: "Labor Day",
+        caption: "Draft only.",
+        count: 7,
+        message: "saved a 7-day week pack",
+      };
+    },
+  });
+  const result = await submit(
+    initialClientAiActionState,
+    askForm("Make a Facebook post and a flyer image for Labor Day"),
+  );
+  assert.equal(result.status, "blocked");
+  assert.equal(result.scopeStatus, "needs_input");
+  assert.equal(result.routedTo, "micah");
+  assert.equal(drafted, 0);
+  assert.equal(stats().generateCalls, 0);
+  assert.equal(stats().used, 0);
+  assert.match(String(result.answer), /Pick a voice/);
+  assert.match(String(result.answer), /Handed to MICAH/);
+  assert.doesNotMatch(String(result.answer), /Faith is not used on the DEMO desk/);
+});
+
+test("one MICAH action saves a 7-day week pack after Friendly/local is chosen", async () => {
+  const drafts: Array<{ demeanor: string; demoDesk?: boolean; prompt: string }> = [];
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    generateError: new IntegrationRequestError("openai", "output_validation_failed"),
+    createMicahGalleryDraft: async (input) => {
+      drafts.push({
+        demeanor: input.demeanor,
+        demoDesk: input.demoDesk,
+        prompt: input.prompt,
+      });
+      return {
+        status: "success",
+        draftId: "draft-1",
+        draftIds: ["d1", "d2", "d3", "d4", "d5", "d6", "d7"],
+        title: "Day 1 · Monday · Labor Day",
         headline: "Labor Day",
         caption: "Draft only. Download this file and post it yourself.",
+        count: 7,
         message:
-          "MICAH saved a downloadable draft in the gallery: Labor Day. Nothing was posted to Facebook or Instagram. Open MICAH to download it and post it yourself.",
+          "MICAH saved a 7-day week pack in the gallery (7 downloadable cards). Nothing was posted to Facebook or Instagram. Open MICAH to copy captions and download the files.",
+      };
+    },
+  });
+  const result = await submit(
+    initialClientAiActionState,
+    askForm("Make a week of Facebook posts and flyer images for Labor Day. Friendly/local."),
+  );
+  assert.equal(result.status, "success");
+  assert.equal(result.routedTo, "micah");
+  assert.equal(result.error, null);
+  assert.equal(drafts.length, 1);
+  assert.equal(drafts[0]?.demeanor, "friendly_local");
+  assert.equal(stats().generateCalls, 0);
+  assert.match(String(result.answer), /7-day week pack|copy captions/i);
+  assert.match(String(result.answer), /Handed to MICAH/);
+  assert.match(String(result.nextStep), /copy a caption/i);
+  assert.doesNotMatch(String(result.answer), /output_validation_failed/);
+  assert.equal(stats().used, 1);
+});
+
+test("stored MICAH demeanor is reused and Faith is never defaulted on the DEMO desk", async () => {
+  const drafts: string[] = [];
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    getOrganizationIdentity: async () => DEMO_ORG,
+    readMicahDemeanor: async () => "straight",
+    createMicahGalleryDraft: async (input) => {
+      drafts.push(input.demeanor);
+      assert.equal(input.demoDesk, true);
+      return {
+        status: "success",
+        draftId: "draft-1",
+        draftIds: ["d1", "d2", "d3", "d4", "d5", "d6", "d7"],
+        title: "Week pack",
+        headline: "This week",
+        caption: "DEMO draft. Download this file and post it yourself.",
+        count: 7,
+        message:
+          "MICAH saved a 7-day week pack in the gallery (7 downloadable cards). Nothing was posted to Facebook or Instagram.",
       };
     },
   });
@@ -375,26 +458,52 @@ test("Atlas chat box routes a flyer ask to MICAH and stores a gallery draft", as
     askForm("Make a Facebook post and a flyer image for Labor Day"),
   );
   assert.equal(result.status, "success");
-  assert.equal(result.routedTo, "micah");
-  assert.equal(result.error, null);
-  assert.equal(drafted, 1);
+  assert.deepEqual(drafts, ["straight"]);
   assert.equal(stats().generateCalls, 0);
-  assert.match(String(result.answer), /did not publish|Nothing was posted/i);
-  assert.match(String(result.answer), /Handed to MICAH/);
-  assert.doesNotMatch(String(result.answer), /output_validation_failed/);
-  assert.equal(stats().used, 1);
+  assert.doesNotMatch(String(result.answer), /\bFaith\b/);
+});
+
+test("DEMO desk never stores Faith even if the prompt asks for it", async () => {
+  let drafted = 0;
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    getOrganizationIdentity: async () => DEMO_ORG,
+    createMicahGalleryDraft: async () => {
+      drafted += 1;
+      return {
+        status: "success",
+        draftId: "draft-1",
+        title: "Week pack",
+        headline: "This week",
+        caption: "Draft only.",
+        message: "saved",
+      };
+    },
+  });
+  const result = await submit(
+    initialClientAiActionState,
+    askForm("Make a week of posts. Faith."),
+  );
+  assert.equal(result.status, "blocked");
+  assert.equal(result.scopeStatus, "needs_input");
+  assert.equal(drafted, 0);
+  assert.equal(stats().generateCalls, 0);
+  assert.match(String(result.answer), /Faith is not used on the DEMO desk/);
 });
 
 test("MICAH flyer asks do not fall through to OpenAI when the gallery save fails", async () => {
   const { submit, stats } = createHarness({
     isSuperAdmin: true,
     generateError: new IntegrationRequestError("openai", "output_validation_failed"),
+    readMicahDemeanor: async () => "motivational",
     createMicahGalleryDraft: async () => ({
       status: "error",
       draftId: null,
+      draftIds: [],
       title: "MICAH draft: Labor Day",
       headline: "Labor Day",
       caption: "Draft only.",
+      count: 0,
       message: "MICAH could not save the draft to the gallery. Try again from Talk to Atlas.",
     }),
   });
