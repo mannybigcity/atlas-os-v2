@@ -35,7 +35,9 @@ import {
   resolveOperatorDeskOrganization,
   resolvedSampleDeskLoginEmail,
   canEnsureAfeOperatorDesk,
+  canEnsureSisWorkingOrg,
   shouldOpenAfeOperatorDesk,
+  shouldOpenSisWorkingDesk,
   shouldShowSuperAdminCrm,
   sisLionsDenPreviewHref,
   SIS_LIONS_DEN_PREVIEW_SLUG,
@@ -387,7 +389,11 @@ test("admin default desk never resolves to afe-crm-demo and prefers the AFE oper
   assert.equal(shouldOpenAfeOperatorDesk({ hasPreviewOrganization: true }), false);
   assert.equal(shouldOpenAfeOperatorDesk({ requestedWorkspaceSlug: "qtime-productions" }), false);
   assert.equal(shouldOpenAfeOperatorDesk({}), true);
-  assert.equal(canEnsureAfeOperatorDesk(FOUNDER_MAILBOX_EMAIL), true);
+  assert.equal(canEnsureAfeOperatorDesk(FOUNDER_MAILBOX_EMAIL), false);
+  assert.equal(canEnsureSisWorkingOrg(FOUNDER_MAILBOX_EMAIL), true);
+  assert.equal(canEnsureSisWorkingOrg(SAMPLE_DESK_LOGIN_EMAIL), false);
+  assert.equal(shouldOpenSisWorkingDesk({ isFounderMailbox: true }), true);
+  assert.equal(shouldOpenSisWorkingDesk({ isFounderMailbox: true, seesSampleDesk: true }), false);
   assert.equal(canEnsureAfeOperatorDesk(SAMPLE_DESK_LOGIN_EMAIL), false);
   assert.equal(canEnsureAfeOperatorDesk("owner@example.com", null, true), true);
   assert.equal(canEnsureAfeOperatorDesk(SAMPLE_DESK_LOGIN_EMAIL, SAMPLE_DESK_LOGIN_EMAIL, true), false);
@@ -407,4 +413,36 @@ test("a SIS preview request never treats SIS as a guest and never returns QTIME"
   });
   assert.equal(resolved, undefined);
   assert.equal(isGuestClientPreview({ name: "SIS Custom Creations", slug: "sis-diy" }), false);
+});
+
+test("founder working desk resolves to SIS even with empty memberships", () => {
+  const sis = { id: "org-sis", name: "SIS Custom Creations", slug: SIS_LIONS_DEN_PREVIEW_SLUG };
+  const sample = { id: "org-sample", name: SAMPLE_DESK_DISPLAY_NAME, slug: "afe-crm-demo" };
+  const admin = { id: "org-admin", name: AFE_OPERATOR_DESK_NAME, slug: AFE_OPERATOR_DESK_SLUG };
+
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      preferSisWorkingDesk: true,
+      membershipOrganizations: [],
+      directory: [admin, sample, sis],
+    })?.id,
+    "org-sis",
+  );
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      preferSisWorkingDesk: true,
+      allowSampleDesk: true,
+      membershipOrganizations: [sample, sis],
+      directory: [sample, sis],
+    })?.id,
+    "org-sample",
+  );
+  assert.notEqual(
+    resolveOperatorDeskOrganization({
+      preferSisWorkingDesk: true,
+      membershipOrganizations: [sis],
+      directory: [sis, sample],
+    })?.id,
+    "org-sample",
+  );
 });

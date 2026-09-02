@@ -259,37 +259,36 @@ export function LionsDenOverview({
         </section>
       </div>
 
-      <section className="ld-desk-followup ld-panel">
-        <div className="ld-panel-head">
-          <p>{spanish ? "Seguimiento" : "Follow-up"}</p>
-          <Link className="text-[11px] font-semibold text-[#071b42] underline" href={href("/client/david")}>
-            {spanish ? "Abrir" : "Open"}
-          </Link>
-        </div>
-        <div className="ld-panel-body grid min-h-0 grid-cols-1 gap-2 md:grid-cols-3">
-          <QueueColumn
-            emptyText={spanish ? "Cola despejada." : "Queue clear."}
-            items={dueTodayItems}
-            label={spanish ? "Hoy" : "Today"}
-            overdueIds={new Set(queues.overdue.map((item) => item.id))}
-            spanish={spanish}
-          />
-          <QueueColumn
-            emptyText={spanish ? "Nada para mañana." : "Nothing for tomorrow."}
-            items={queues.tomorrow}
-            label={spanish ? "Mañana" : "Tomorrow"}
-            spanish={spanish}
-          />
-          <QueueColumn
-            emptyText={spanish ? "Nada más adelante." : "Nothing later."}
-            items={queues.later}
-            label={spanish ? "Luego" : "Later"}
-            spanish={spanish}
-          />
-        </div>
-      </section>
-
-      <section className="ld-desk-work">
+      <section className="ld-desk-followup">
+        <section className="ld-panel">
+          <div className="ld-panel-head">
+            <p>{spanish ? "Seguimiento" : "Follow-up"}</p>
+            <Link className="text-[11px] font-semibold text-[#071b42] underline" href={href("/client/david")}>
+              {spanish ? "Abrir" : "Open"}
+            </Link>
+          </div>
+          <div className="ld-panel-body grid min-h-0 grid-cols-1 gap-2 md:grid-cols-3">
+            <QueueColumn
+              emptyText={spanish ? "Cola despejada." : "Queue clear."}
+              items={dueTodayItems}
+              label={spanish ? "Hoy" : "Today"}
+              overdueIds={new Set(queues.overdue.map((item) => item.id))}
+              spanish={spanish}
+            />
+            <QueueColumn
+              emptyText={spanish ? "Nada para mañana." : "Nothing for tomorrow."}
+              items={queues.tomorrow}
+              label={spanish ? "Mañana" : "Tomorrow"}
+              spanish={spanish}
+            />
+            <QueueColumn
+              emptyText={spanish ? "Nada más adelante." : "Nothing later."}
+              items={queues.later}
+              label={spanish ? "Luego" : "Later"}
+              spanish={spanish}
+            />
+          </div>
+        </section>
         {organizationId ? (
           <LionsDenCalendarBoard
             compact
@@ -308,6 +307,9 @@ export function LionsDenOverview({
             </div>
           </div>
         )}
+      </section>
+
+      <section className="ld-desk-work">
         {organizationId ? (
           <LionsDenNotesBoard
             canCreate={canCreateNotes}

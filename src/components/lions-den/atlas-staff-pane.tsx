@@ -3,10 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { ATLAS_LION_SRC } from "@/lib/lions-den/atlas-brand";
 import { ATLAS_STAFF_PROMPT_LIMIT, composeAtlasStaffPrompt } from "@/lib/lions-den/atlas-staff-prompt";
 import { atlasStaffCanSend } from "@/lib/lions-den/atlas-staff-send";
+import { atlasDeskNextHref } from "@/lib/lions-den/atlas-desk-route";
 import {
   atlasAskUsageFromCounts,
   atlasAskUsageLabel,
@@ -59,12 +61,12 @@ export function AtlasStaffPane({
 }: AtlasStaffPaneProps) {
   const language = useSiteLanguage();
   const spanish = language === "es";
+  const router = useRouter();
   const [state, formAction, pending] = useActionState(
     submitClientAiRequest,
     initialClientAiActionState,
   );
   const [draft, setDraft] = useState("");
-  const [staffRole, setStaffRole] = useState<"atlas" | "hunter" | "micah" | "david">("atlas");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [listening, setListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
@@ -73,6 +75,8 @@ export function AtlasStaffPane({
   );
   const fileRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const lastPromptRef = useRef("");
+  const lastNavKeyRef = useRef("");
   const plan = usage.plan as AtlasAskPlan;
   const capped = isAtlasAskCapped(usage.used, plan);
   const hasWorkspace = Boolean(organizationId);
@@ -117,6 +121,21 @@ export function AtlasStaffPane({
     }
   }, [state.status, state.requestId, organizationId]);
 
+  useEffect(() => {
+    if (state.status === "idle") return;
+    const navKey = `${state.requestId ?? ""}:${state.status}:${state.routedTo ?? ""}:${state.answer ?? ""}`;
+    if (lastNavKeyRef.current === navKey) return;
+    const href = atlasDeskNextHref({
+      prompt: lastPromptRef.current,
+      routedTo: state.routedTo,
+      status: state.status,
+      scopeStatus: state.scopeStatus,
+    });
+    if (!href) return;
+    lastNavKeyRef.current = navKey;
+    router.push(href);
+  }, [router, state.answer, state.requestId, state.routedTo, state.scopeStatus, state.status]);
+
   function toggleMic() {
     if (capped) return;
     if (listening) {
@@ -151,6 +170,7 @@ export function AtlasStaffPane({
     if (!canSend) return;
     const prompt = await composeAtlasStaffPrompt(draft, attachment);
     if (prompt.length < 2) return;
+    lastPromptRef.current = prompt;
     const formData = new FormData(form);
     formData.set("prompt", prompt);
     formAction(formData);
@@ -246,35 +266,8 @@ export function AtlasStaffPane({
       ) : (
         <form className="shrink-0 border-t border-[#ece7d8] bg-white p-2" onSubmit={onSubmit}>
           <input name="organizationId" type="hidden" value={organizationId} />
-          <input name="role" type="hidden" value={staffRole} />
+          <input name="role" type="hidden" value="atlas" />
           <input name="scopeMode" type="hidden" value="business_only" />
-          <div className="mb-1.5 flex flex-wrap gap-1" role="group" aria-label={spanish ? "Personal de Atlas" : "Atlas staff"}>
-            {(
-              [
-                ["atlas", spanish ? "Habla con Atlas" : "Talk to Atlas"],
-                ["hunter", "HUNTER"],
-                ["micah", "MICAH"],
-                ["david", "DAVID"],
-              ] as const
-            ).map(([role, label]) => {
-              const active = staffRole === role;
-              return (
-                <button
-                  className={`h-7 rounded-full px-2.5 text-[11px] font-semibold ${
-                    active
-                      ? "bg-[#071b42] text-[#f5b932]"
-                      : "bg-[#fff8e6] text-[#071b42] hover:bg-[#f5b932]/40"
-                  }`}
-                  disabled={!hasWorkspace || composerLocked}
-                  key={role}
-                  onClick={() => setStaffRole(role)}
-                  type="button"
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
           <input
             accept="image/*,.pdf,.txt,.md,.csv,.json,.doc,.docx"
             className="hidden"

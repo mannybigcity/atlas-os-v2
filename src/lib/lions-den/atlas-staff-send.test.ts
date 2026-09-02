@@ -80,21 +80,40 @@ test("every founder Lion's Den board mounts LionsDenBoardScreen and the live Atl
   const pane = readRepo("src/components/lions-den/atlas-staff-pane.tsx");
   assert.match(pane, /Talk to Atlas/);
   assert.match(pane, /submitClientAiRequest/);
-  assert.match(pane, /HUNTER/);
-  assert.match(pane, /MICAH/);
-  assert.match(pane, /DAVID/);
-  assert.match(pane, /staffRole/);
-  assert.match(pane, /staffHandoffLine/);
+  assert.match(pane, /atlasDeskNextHref/);
+  assert.match(pane, /value="atlas"/);
+  assert.doesNotMatch(pane, /staffRole/);
+  assert.doesNotMatch(pane, /setStaffRole/);
+  assert.doesNotMatch(pane, /Atlas staff/);
   assert.doesNotMatch(pane, /previewMode/);
   assert.doesNotMatch(pane, /staff chat does not send/);
   assert.doesNotMatch(pane, /staff, not a closer/);
+
+  const followUp = readRepo("src/components/lions-den/lions-den-follow-up.tsx");
+  assert.match(followUp, /THE FORTUNE IS IN THE FOLLOW-UP/);
+  assert.match(followUp, /font-extrabold/);
+  assert.match(followUp, /uppercase/);
+  assert.doesNotMatch(followUp, /The fortune is in the follow-up\./);
 
   const handoff = readRepo("src/lib/lions-den/atlas-staff-handoff.ts");
   assert.match(handoff, /Handed to DAVID/);
   assert.match(handoff, /Handed to HUNTER/);
   assert.match(handoff, /Handed to MICAH/);
 
-  const hub = readRepo("src/components/lions-den/lions-den-client-hub.tsx");
-  assert.match(hub, /<AtlasStaffPane/);
-  assert.doesNotMatch(hub, /previewMode/);
+  const overview = readRepo("src/components/lions-den/lions-den-overview.tsx");
+  assert.match(overview, /ld-desk-followup/);
+  assert.match(overview, /LionsDenCalendarBoard/);
+  const followupIndex = overview.indexOf('className="ld-desk-followup"');
+  const calendarIndex = overview.indexOf("<LionsDenCalendarBoard");
+  const notesWorkIndex = overview.lastIndexOf("ld-desk-work");
+  assert.ok(followupIndex > 0 && calendarIndex > followupIndex);
+  assert.ok(notesWorkIndex > calendarIndex);
+
+  const notes = readRepo("src/components/lions-den/lions-den-notes.tsx");
+  assert.match(notes, /name="noteType"/);
+  assert.match(notes, /name="attention"/);
+
+  const layout = readRepo("src/app/layout.tsx");
+  assert.match(layout, /Inter/);
+  assert.match(layout, /--font-ui/);
 });

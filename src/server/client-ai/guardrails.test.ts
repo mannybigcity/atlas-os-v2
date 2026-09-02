@@ -63,6 +63,7 @@ test("city and Google Places hunts still route to HUNTER", () => {
     "Find plumbers in Houston, TX",
     "find prospects in Houston",
     "find leads in Katy, TX",
+    "leads in Galveston, TX",
     "google places daycares near 77065",
   ]) {
     assert.equal(detectSpecialistLane(prompt), "hunter", prompt);

@@ -810,7 +810,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
             requestId: logged.id,
             createdAt: logged.createdAt,
             answer: response,
-            nextStep: "Open HUNTER and try the search form, or send the ask again.",
+            nextStep: "Try the search again with a business type and city or ZIP. Atlas will not contact anyone.",
             missingInputs: [],
             error: response,
             dailyUsage: currentUsage,
@@ -822,7 +822,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
             routedTo: "hunter",
             scopeStatus: decision.scopeStatus,
             answer: response,
-            nextStep: "Open HUNTER and try the search form, or send the ask again.",
+            nextStep: "Try the search again with a business type and city or ZIP. Atlas will not contact anyone.",
             dailyUsage: currentUsage,
             error: response,
           });
@@ -849,7 +849,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
           requestId: logged.id,
           createdAt: logged.createdAt,
           answer: response,
-          nextStep: "Open HUNTER and accept finds into Prospects. Atlas will not contact them.",
+          nextStep: "Review the finds on Prospects and accept the ones you want. Atlas will not contact them.",
           missingInputs: [],
           error: null,
           dailyUsage,
@@ -861,7 +861,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
           routedTo: "hunter",
           scopeStatus: decision.scopeStatus,
           answer: response,
-          nextStep: "Open HUNTER and accept finds into Prospects. Atlas will not contact them.",
+          nextStep: "Review the finds on Prospects and accept the ones you want. Atlas will not contact them.",
           dailyUsage,
         });
       }
@@ -958,7 +958,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
             requestId: logged.id,
             createdAt: logged.createdAt,
             answer,
-            nextStep: "Open MICAH and try the ask again. Nothing was posted.",
+            nextStep: "Ask again from Talk to Atlas. Nothing was posted.",
             missingInputs: [],
             error: null,
             dailyUsage: currentUsage,
@@ -970,7 +970,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
             routedTo: "micah",
             scopeStatus: decision.scopeStatus,
             answer,
-            nextStep: "Open MICAH and try the ask again. Nothing was posted.",
+            nextStep: "Ask again from Talk to Atlas. Nothing was posted.",
             dailyUsage: currentUsage,
           });
         }
@@ -996,7 +996,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
           requestId: logged.id,
           createdAt: logged.createdAt,
           answer,
-          nextStep: "Open MICAH, copy a caption, download the day-card, and post it yourself if you want it live.",
+          nextStep: "The gallery has the week pack. Copy a caption, download a card, and post it yourself if you want it live.",
           missingInputs: [],
           error: null,
           dailyUsage,
@@ -1008,7 +1008,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
           routedTo: "micah",
           scopeStatus: decision.scopeStatus,
           answer,
-          nextStep: "Open MICAH, copy a caption, download the day-card, and post it yourself if you want it live.",
+          nextStep: "The gallery has the week pack. Copy a caption, download a card, and post it yourself if you want it live.",
           dailyUsage,
         });
       }

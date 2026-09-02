@@ -16,10 +16,12 @@ import {
   organizationsVisibleToActor,
   resolveOperatorDeskOrganization,
   shouldOpenAfeOperatorDesk,
+  shouldOpenSisWorkingDesk,
 } from "@/lib/client-portal/identity";
 import { requireUser } from "@/server/auth/guards";
 import { getTrialProfile } from "@/server/trials/profile";
 import { ensureAfeOperatorDeskAccess } from "@/server/organizations/afe-operator-desk";
+import { ensureSisWorkingOrgAccess } from "@/server/organizations/sis-working-org";
 import {
   getOrganizationBySlugForSuperAdmin,
   getUserMemberships,
@@ -94,7 +96,12 @@ export async function getClientWorkspaceContext(
   }
   const isSuperAdmin = isSuperAdminEmail(user.email);
   const seesSampleDesk = canSeeSampleDesk(user.email, getConfiguredDemoLoginEmail());
-  const canUseOperatorDesk = isSuperAdmin || isFounderMailboxEmail(user.email);
+  const founderMailbox = isFounderMailboxEmail(user.email);
+  const canUseOperatorDesk = isSuperAdmin || founderMailbox;
+  const wantsSisWorkingDesk = shouldOpenSisWorkingDesk({
+    seesSampleDesk,
+    isFounderMailbox: founderMailbox,
+  });
   const personalMemberships = await getUserMemberships(user.id);
   const visibleOrganizations = organizationsVisibleToActor(
     personalMemberships.data.map((membership) => membership.organization),
@@ -138,6 +145,7 @@ export async function getClientWorkspaceContext(
   );
   const needsOperatorDesk =
     canUseOperatorDesk &&
+    !wantsSisWorkingDesk &&
     shouldOpenAfeOperatorDesk({
       seesSampleDesk,
       sisRequested,
@@ -146,9 +154,10 @@ export async function getClientWorkspaceContext(
     }) &&
     !visibleOrganizations.some((organization) => isAfeClientDeskOrganization(organization));
   const needsDirectory =
-    isSuperAdmin &&
     !seesSampleDesk &&
-    ((sisRequested && !isSisOrganization(loadedPreviewOrganization)) || needsOperatorDesk);
+    (wantsSisWorkingDesk ||
+      (isSuperAdmin &&
+        ((sisRequested && !isSisOrganization(loadedPreviewOrganization)) || needsOperatorDesk)));
   const directory = organizationsVisibleToActor(
     needsDirectory ? await listOrganizationsForOperator() : [],
     false,
@@ -160,8 +169,23 @@ export async function getClientWorkspaceContext(
     membershipOrganizations: visibleOrganizations,
     directory,
     allowSampleDesk: seesSampleDesk,
+    preferSisWorkingDesk: wantsSisWorkingDesk,
   });
-  if (needsOperatorDesk && (!primaryOrganization || !isAfeClientDeskOrganization(primaryOrganization))) {
+  if (wantsSisWorkingDesk) {
+    try {
+      const sisDesk = await ensureSisWorkingOrgAccess(user.id, user.email);
+      if (sisDesk && isSisOrganization(sisDesk) && !isAfeCrmDemoOrganization(sisDesk)) {
+        primaryOrganization = sisDesk;
+      }
+    } catch (error) {
+      console.error("SIS working org ensure failed", error);
+    }
+  }
+  if (
+    !wantsSisWorkingDesk &&
+    needsOperatorDesk &&
+    (!primaryOrganization || !isAfeClientDeskOrganization(primaryOrganization))
+  ) {
     try {
       const operatorDesk = await ensureAfeOperatorDeskAccess(user.id, user.email);
       if (operatorDesk && isAfeOperatorDeskOrganization(operatorDesk) && !isAfeCrmDemoOrganization(operatorDesk)) {
@@ -188,6 +212,8 @@ export async function getClientWorkspaceContext(
     !isAfeCrmDemoOrganization(primaryOrganization) &&
     (Boolean(loadedPreviewOrganization) ||
       sisRequested ||
+      wantsSisWorkingDesk ||
+      isSisOrganization(primaryOrganization) ||
       isAfeOperatorDeskOrganization(primaryOrganization));
   const memberships: WorkspaceQueryResult<MembershipSummary[]> = shouldPinResolvedOrganization
     ? {

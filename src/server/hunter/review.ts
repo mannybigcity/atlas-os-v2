@@ -84,7 +84,9 @@ export function parseHunterChatQuery(prompt: string) {
     .replace(/\b\d{5}(?:-\d{4})?\b/g, " ")
     .replace(/[,:]+/g, " ")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim() || (/\b(leads?|prospects?|local\s+businesses?|businesses?)\b/i.test(raw)
+      ? "local businesses"
+      : "");
 
   return buildHunterSearchQuery({
     service,
@@ -145,8 +147,8 @@ export function formatHunterChatAnswer(result: {
     .join("\n");
 
   const listing = names
-    ? `\n\n${names}\n\nOpen HUNTER to accept or dismiss. Atlas did not call, email, or text anyone.`
-    : " Open HUNTER to review the pile. Atlas did not call, email, or text anyone.";
+    ? `\n\n${names}\n\nAccept finds on Prospects when you want them on the call list. Atlas did not call, email, or text anyone.`
+    : " Accept finds on Prospects when you want them on the call list. Atlas did not call, email, or text anyone.";
 
   return `${result.message}${listing}`.slice(0, 1600);
 }
