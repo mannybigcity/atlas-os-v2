@@ -9,6 +9,7 @@ import {
   canSeeSampleDesk,
   organizationsVisibleToActor,
   resolveOperatorDeskOrganization,
+  shouldOpenAfeOperatorDesk,
 } from "./identity.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -67,6 +68,9 @@ test("workspace context no longer auto-attaches afe-crm-demo to admin", () => {
   assert.doesNotMatch(context, /preferAfeDemoDesk/);
   assert.match(context, /canSeeSampleDesk/);
   assert.match(context, /isSampleDeskPreviewRequest/);
+  assert.match(context, /ensureAfeOperatorDeskAccess/);
+  assert.match(context, /shouldOpenAfeOperatorDesk/);
+  assert.doesNotMatch(context, /getAfeCrmDemoOrganization/);
 
   const login = readRepo("src/app/login/page.tsx");
   assert.match(login, /signInToSampleDesk/);
@@ -97,4 +101,50 @@ test("HUNTER still writes the review pile and MICAH stays gallery-only", () => {
   const gallery = readRepo("src/server/content-studio/gallery-draft.ts");
   assert.match(gallery, /did not publish|was not published/);
   assert.doesNotMatch(gallery, /auto-post|Blotato|BlackTwist/);
+});
+
+test("admin /client renders the Lion's Den CRM desk, not the empty PRIVATE CRM shell", () => {
+  const page = readRepo("src/app/client/page.tsx");
+  assert.match(page, /clientOverviewRendersLionsDen/);
+  assert.match(page, /LionsDenBoardScreen/);
+  assert.match(page, /LionsDenOverview/);
+  assert.match(page, /Talk to Atlas|LionsDenBoardScreen/);
+  const fallbackIndex = page.lastIndexOf("ClientPortalShell");
+  const lionsDenIndex = page.indexOf("LionsDenBoardScreen");
+  assert.ok(lionsDenIndex > 0);
+  assert.ok(fallbackIndex > lionsDenIndex);
+
+  const hub = readRepo("src/lib/lions-den/client-hub.ts");
+  assert.match(hub, /clientOverviewRendersLionsDen/);
+  assert.match(hub, /label: "Summary"/);
+  assert.doesNotMatch(hub, /ABC Plumbing|123 Catering|XYZ Electric/);
+
+  const operator = readRepo("src/server/organizations/afe-operator-desk.ts");
+  assert.match(operator, /AFE_OPERATOR_DESK_SLUG/);
+  assert.match(operator, /canEnsureAfeOperatorDesk/);
+  assert.doesNotMatch(operator, /afe-crm-demo/);
+  assert.doesNotMatch(operator, /ABC Plumbing|123 Catering|XYZ Electric/);
+  assert.doesNotMatch(operator, /upsertSampleDeskRecords|upsertSisDemoDeskRecords/);
+});
+
+test("demo user still only sees the sample org and admin never opens it", () => {
+  const admin = { id: "org-admin", name: "Atlas For Entrepreneurs", slug: "atlas-for-entrepreneurs" };
+  const sample = { id: "org-sample", name: "Sample desk", slug: "afe-crm-demo" };
+  assert.equal(canSeeSampleDesk(FOUNDER_MAILBOX_EMAIL), false);
+  assert.equal(canSeeSampleDesk(SAMPLE_DESK_LOGIN_EMAIL), true);
+  assert.equal(shouldOpenAfeOperatorDesk({ seesSampleDesk: true }), false);
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      allowSampleDesk: true,
+      membershipOrganizations: [admin, sample],
+    })?.id,
+    "org-sample",
+  );
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      membershipOrganizations: [sample],
+      directory: [admin, sample],
+    })?.id,
+    "org-admin",
+  );
 });

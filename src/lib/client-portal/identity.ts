@@ -19,6 +19,8 @@ export function isQTimeProductions(organizationName: string | null | undefined) 
 
 export const SIS_LIONS_DEN_PREVIEW_SLUG = "sis-diy-big-complete-showcase";
 export const AFE_CRM_DEMO_SLUG = "afe-crm-demo";
+export const AFE_OPERATOR_DESK_SLUG = "atlas-for-entrepreneurs";
+export const AFE_OPERATOR_DESK_NAME = "Atlas For Entrepreneurs";
 export const SAMPLE_DESK_DISPLAY_NAME = "Sample desk";
 export const SAMPLE_DESK_LOGIN_EMAIL = "atlasforentrepreneurs+demo@gmail.com";
 export const FOUNDER_MAILBOX_EMAIL = "atlasforentrepreneurs@gmail.com";
@@ -100,12 +102,64 @@ export function isAfeCrmDemoOrganization(
   return isAfeCrmDemoSlug(organization.slug) || isAfeCrmDemoName(organization.name);
 }
 
+export function isAfeOperatorDeskSlug(slug: string | null | undefined) {
+  return organizationSlugsMatch(slug, AFE_OPERATOR_DESK_SLUG);
+}
+
+export function isAfeOperatorDeskName(name?: string | null) {
+  return /^atlas\s+for\s+entrepreneurs$/i.test(String(name ?? "").trim());
+}
+
+export function isAfeOperatorDeskOrganization(
+  organization?: { name?: string | null; slug?: string | null } | null,
+) {
+  if (!organization || isSisOrganization(organization) || isAfeCrmDemoOrganization(organization)) {
+    return false;
+  }
+  if (isQTimeWorkspaceSlug(organization.slug)) return false;
+  return isAfeOperatorDeskSlug(organization.slug) || isAfeOperatorDeskName(organization.name);
+}
+
 export function isAfeClientDeskOrganization(
   organization?: { name?: string | null; slug?: string | null } | null,
 ) {
   if (!organization?.slug) return false;
-  if (isAfeCrmDemoOrganization(organization)) return false;
-  return !isSisOrganization(organization) && !isQTimeWorkspaceSlug(organization.slug);
+  if (isAfeCrmDemoOrganization(organization) || isSisOrganization(organization)) return false;
+  if (isQTimeWorkspaceSlug(organization.slug)) return false;
+  return true;
+}
+
+export function pickAfeOperatorDesk<T extends { name?: string | null; slug?: string | null }>(
+  organizations?: Array<T | null | undefined> | null,
+) {
+  return (organizations ?? []).find((organization): organization is T =>
+    Boolean(organization && isAfeOperatorDeskOrganization(organization)),
+  );
+}
+
+export function canEnsureAfeOperatorDesk(
+  email?: string | null,
+  configuredDemoEmail?: string | null,
+  isSuperAdmin = false,
+) {
+  if (canSeeSampleDesk(email, configuredDemoEmail)) return false;
+  return isFounderMailboxEmail(email) || isSuperAdmin;
+}
+
+export function shouldOpenAfeOperatorDesk(input: {
+  seesSampleDesk?: boolean;
+  sisRequested?: boolean;
+  hasPreviewOrganization?: boolean;
+  requestedWorkspaceSlug?: string | null;
+}) {
+  if (input.seesSampleDesk) return false;
+  if (input.sisRequested) return false;
+  if (input.hasPreviewOrganization) return false;
+  const requestedWorkspace = String(input.requestedWorkspaceSlug ?? "").trim();
+  if (requestedWorkspace && !isAfeOperatorDeskSlug(requestedWorkspace) && !isAfeCrmDemoSlug(requestedWorkspace)) {
+    return false;
+  }
+  return true;
 }
 
 export function isSampleDeskPreviewRequest(
@@ -155,6 +209,10 @@ export function findOrganizationByPreviewSlug<T extends { name?: string | null; 
     return organizations?.find((organization) => isAfeCrmDemoOrganization(organization));
   }
 
+  if (isAfeOperatorDeskSlug(requested)) {
+    return organizations?.find((organization) => isAfeOperatorDeskOrganization(organization));
+  }
+
   return undefined;
 }
 
@@ -164,7 +222,8 @@ export function isGuestClientPreview(
   return (
     Boolean(organization) &&
     !isSisOrganization(organization) &&
-    !isAfeCrmDemoOrganization(organization)
+    !isAfeCrmDemoOrganization(organization) &&
+    !isAfeOperatorDeskOrganization(organization)
   );
 }
 
@@ -249,6 +308,14 @@ export function resolveOperatorDeskOrganization<T extends { name?: string | null
     return afeDeskMembership;
   }
 
+  const operatorDesk =
+    membershipOrganizations.find((organization) => isAfeOperatorDeskOrganization(organization)) ??
+    pickAfeOperatorDesk(directory) ??
+    findOrganizationByPreviewSlug(AFE_OPERATOR_DESK_SLUG, directory);
+  if (operatorDesk && !isAfeCrmDemoOrganization(operatorDesk)) {
+    return operatorDesk;
+  }
+
   return membershipOrganizations[0];
 }
 
@@ -287,7 +354,7 @@ export function shouldShowSuperAdminCrm(_input: {
 export function getClientPortalName(organizationName: string | null | undefined) {
   const name = cleanOrganizationName(String(organizationName ?? ""));
 
-  if (!name || isSisCustomCreations(name) || isAfeCrmDemoName(name)) {
+  if (!name || isSisCustomCreations(name) || isAfeCrmDemoName(name) || isAfeOperatorDeskName(name)) {
     return "The Lion’s Den";
   }
 

@@ -1,5 +1,6 @@
 import {
   isAfeCrmDemoOrganization,
+  isAfeOperatorDeskOrganization,
   isQTimeWorkspaceSlug,
   isSisOrganization,
 } from "../client-portal/identity.ts";
@@ -22,7 +23,7 @@ export const lionsDenBoards: Array<{
   label: string;
   labelEs: string;
 }> = [
-  { id: "overview", href: "/client", label: "Overview", labelEs: "Resumen" },
+  { id: "overview", href: "/client", label: "Summary", labelEs: "Resumen" },
   { id: "prospects", href: "/client/prospects", label: "Prospects", labelEs: "Prospectos" },
   { id: "follow-up", href: "/client/david", label: "Follow-up", labelEs: "Seguimiento" },
   { id: "calendar", href: "/client/calendar", label: "Calendar", labelEs: "Calendario" },
@@ -42,8 +43,18 @@ export function usesLionsDenHub(
   return (
     Boolean(slugOrOrganization.slug) ||
     isSisOrganization(slugOrOrganization) ||
-    isAfeCrmDemoOrganization(slugOrOrganization)
+    isAfeCrmDemoOrganization(slugOrOrganization) ||
+    isAfeOperatorDeskOrganization(slugOrOrganization)
   );
+}
+
+export function clientOverviewRendersLionsDen(
+  organization?: string | { name?: string | null; slug?: string | null } | null,
+  options?: { showSuperAdminCrm?: boolean },
+) {
+  if (options?.showSuperAdminCrm) return false;
+  const slug = typeof organization === "string" ? organization : organization?.slug;
+  return !isQTimeWorkspaceSlug(slug);
 }
 
 export function lionsDenHref(path: string, previewOrgSlug?: string, workspaceSlug?: string) {
