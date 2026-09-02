@@ -48,8 +48,12 @@ export function usesLionsDenHub(
 
 export function lionsDenHref(path: string, previewOrgSlug?: string, workspaceSlug?: string) {
   const params = new URLSearchParams();
-  if (previewOrgSlug) params.set("previewOrg", previewOrgSlug);
-  if (workspaceSlug) params.set("workspace", workspaceSlug);
+  if (previewOrgSlug && !isAfeCrmDemoOrganization({ slug: previewOrgSlug })) {
+    params.set("previewOrg", previewOrgSlug);
+  }
+  if (workspaceSlug && !isAfeCrmDemoOrganization({ slug: workspaceSlug })) {
+    params.set("workspace", workspaceSlug);
+  }
   const query = params.toString();
   return query ? `${path}?${query}` : path;
 }

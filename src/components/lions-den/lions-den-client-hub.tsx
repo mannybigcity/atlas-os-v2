@@ -3,7 +3,7 @@ import Link from "next/link";
 import { signOut } from "@/server/auth/actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AtlasStaffPane } from "@/components/lions-den/atlas-staff-pane";
-import { getClientPortalName } from "@/lib/client-portal/identity";
+import { getClientPortalName, isAfeCrmDemoOrganization } from "@/lib/client-portal/identity";
 import {
   lionsDenBoards,
   lionsDenHref,
@@ -120,6 +120,7 @@ export async function LionsDenClientHub({
             organizationId={organizationId ?? ""}
             organizationName={orgLabel || portalName}
             requests={aiRequests}
+            sampleDesk={isAfeCrmDemoOrganization({ name: organizationName, slug: workspaceSlug })}
           />
         </aside>
       </div>

@@ -41,7 +41,7 @@ export function captionBodyBlocks(caption: string) {
     .map((block) => block.trim())
     .filter(Boolean);
   const textBlocks = blocks.filter((block) => !/^#/.test(block));
-  if (textBlocks[0] && /^DEMO\b/i.test(textBlocks[0])) {
+  if (textBlocks[0] && /^(DEMO|Sample draft)\b/i.test(textBlocks[0])) {
     textBlocks.shift();
   }
   return textBlocks;
@@ -82,9 +82,6 @@ export function gradeKingdomCaption(input: {
 
   if (body.length !== 3) {
     reasons.push("Caption must be hook, payoff, then one CTA.");
-  }
-  if (input.demoLabeled && !/\bDEMO\b/.test(input.caption)) {
-    reasons.push("DEMO drafts must keep the DEMO label.");
   }
   if (BANNED_VOICE.test(input.caption) || BANNED_VOICE.test(input.instagramCaption ?? "") || BANNED_VOICE.test(input.linkedinCaption ?? "")) {
     reasons.push("Drop synergy, thought-leader, hustle-bro, and generic creator voice.");
@@ -176,9 +173,8 @@ const LINKEDIN_TAGS = [
   ["#MainStreet", "#LocalOwner", "#ServiceWork"],
 ] as const;
 
-function withDemoTag(tags: readonly string[], demoLabeled: boolean, max: number) {
-  const next = demoLabeled ? ["#DEMO", ...tags] : [...tags];
-  return [...new Set(next)].slice(0, max);
+function withDemoTag(tags: readonly string[], _demoLabeled: boolean, max: number) {
+  return [...new Set([...tags])].slice(0, max);
 }
 
 export function kingdomHashtags(input: {

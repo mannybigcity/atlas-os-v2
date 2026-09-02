@@ -49,7 +49,7 @@ function notesReturnPath(formData: FormData, status: string) {
   const next = new URLSearchParams();
   const previewOrg = params.get("previewOrg");
   const workspace = params.get("workspace");
-  if (previewOrg && /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(previewOrg)) {
+  if (previewOrg && /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(previewOrg) && !/^afe-crm-demo$/i.test(previewOrg)) {
     next.set("previewOrg", previewOrg);
   }
   if (workspace && /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(workspace)) {

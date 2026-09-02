@@ -21,21 +21,29 @@ import { initialClientAiActionState } from "./types.ts";
 import type { ClientAiDailyUsage } from "./queries.ts";
 import { MAX_OPENAI_OUTPUT_TOKENS } from "../integrations/openai-responses.ts";
 
+import { SAMPLE_DESK_LOGIN_EMAIL } from "../../lib/client-portal/identity.ts";
+
 const DEMO_ORG_ID = "org-afe-crm-demo";
 const DEMO_ORG = {
   id: DEMO_ORG_ID,
-  name: "AFE CRM Demo",
+  name: "Sample desk",
   slug: "afe-crm-demo",
 };
 
+const DEMO_MEMBERSHIPS: ClientAiRequestDeps["getUserMemberships"] = async () => ({
+  data: [{ organization: DEMO_ORG }],
+  setupRequired: false,
+  error: null,
+});
+
 const IN_SCOPE_FOLLOW_UP =
-  "What follow-up is due for ABC Plumbing (DEMO) on this desk?";
+  "What follow-up is due for ABC Plumbing on this desk?";
 const OFF_TOPIC_WEATHER = "What's the weather this weekend?";
 const IN_SCOPE_COMPANIES =
-  "Who are the DEMO companies on this desk: ABC Plumbing, 123 Catering, XYZ Electric?";
+  "Who are the companies on this desk: ABC Plumbing, 123 Catering, XYZ Electric?";
 
 const DESK_ANSWER =
-  "ABC Plumbing (DEMO) is due today. 123 Catering (DEMO) is tomorrow and XYZ Electric (DEMO) is later. Atlas has not contacted them.";
+  "ABC Plumbing is due today. 123 Catering is tomorrow and XYZ Electric is later. Atlas has not contacted them.";
 
 function emptyDashboard() {
   const missing = { data: null, setupRequired: true as const, error: "unavailable" };
@@ -64,6 +72,7 @@ function createHarness(options: {
   plan?: ClientAiDailyUsage["plan"];
   setupRequired?: boolean;
   isSuperAdmin?: boolean;
+  email?: string;
   memberships?: ClientAiRequestDeps["getUserMemberships"];
   generate?: ClientAiRequestDeps["generateStructuredText"];
   generateError?: unknown;
@@ -90,7 +99,7 @@ function createHarness(options: {
       return {
         value: request.parse({
           answer: DESK_ANSWER,
-          nextStep: "Work the next DEMO follow-up on this desk.",
+          nextStep: "Work the next follow-up on this desk.",
           missingInputs: [],
         }),
         model: "gpt-5-mini",
@@ -106,11 +115,17 @@ function createHarness(options: {
     });
 
   const deps: ClientAiRequestDeps = {
-    requireUser: async () => ({ id: "founder", email: "founder@example.com" }),
+    requireUser: async () => ({
+      id: "founder",
+      email: options.email ?? SAMPLE_DESK_LOGIN_EMAIL,
+    }),
     isSuperAdminEmail: () => options.isSuperAdmin ?? true,
     getUserMemberships:
-      options.memberships ??
-      (async () => ({ data: [], setupRequired: false, error: null })),
+      options.memberships ?? DEMO_MEMBERSHIPS,
+    configuredDemoLoginEmail: SAMPLE_DESK_LOGIN_EMAIL,
+    getOrganizationIdentity:
+      options.getOrganizationIdentity ??
+      (async (organizationId) => (organizationId === DEMO_ORG_ID ? DEMO_ORG : null)),
     getClientAiDailyUsage: async () => ({
       data: atlasAskUsageFromCounts(used, plan),
       setupRequired: options.setupRequired ?? false,
@@ -138,7 +153,6 @@ function createHarness(options: {
     runHunterChatSearch: options.runHunterChatSearch,
     createMicahGalleryDraft: options.createMicahGalleryDraft,
     readMicahDemeanor: options.readMicahDemeanor,
-    getOrganizationIdentity: options.getOrganizationIdentity,
   };
 
   return {
@@ -180,7 +194,7 @@ test("IntegrationConfigurationError maps to AI is not enabled on this site", () 
 test("parseClientAiResponse requires a 20-character answer, nextStep, and missingInputs", () => {
   const value = parseClientAiResponse({
     answer: DESK_ANSWER,
-    nextStep: "Call the salesman-owned DEMO follow-up.",
+    nextStep: "Call the salesman-owned follow-up.",
     missingInputs: [],
   });
   assert.ok(value.answer.length >= 20);
@@ -197,7 +211,7 @@ test("founder DEMO desk asks: in-scope 0→1, off-topic stays 1, in-scope 1→2"
   assert.equal(first.error, null);
   assert.equal(first.routedTo, "david");
   assert.match(String(first.answer), /Handed to DAVID/);
-  assert.match(String(first.answer), /ABC Plumbing \(DEMO\)/);
+  assert.match(String(first.answer), /ABC Plumbing/);
   assert.doesNotMatch(String(first.answer), /belongs with the coordinator/);
   assert.deepEqual(stats().markdownRoles, ["david"]);
   assert.deepEqual(stats().schemaNames, ["client_david_response"]);
@@ -218,18 +232,31 @@ test("founder DEMO desk asks: in-scope 0→1, off-topic stays 1, in-scope 1→2"
 
   const second = await submit(initialClientAiActionState, askForm(IN_SCOPE_COMPANIES));
   assert.equal(second.status, "success");
-  assert.match(String(second.answer), /123 Catering \(DEMO\)/);
-  assert.match(String(second.answer), /XYZ Electric \(DEMO\)/);
+  assert.match(String(second.answer), /123 Catering/);
+  assert.match(String(second.answer), /XYZ Electric/);
   assert.equal(second.dailyUsage?.used, 2);
   assert.equal(stats().generateCalls, 2);
   assert.equal(stats().reserveCalls, 2);
   assert.equal(stats().used, 2);
 });
 
-test("super-admin preview of afe-crm-demo does not need DEMO membership", async () => {
+test("super-admin preview of afe-crm-demo cannot hijack without the sample login", async () => {
   const { submit, stats } = createHarness({
     isSuperAdmin: true,
+    email: "founder@example.com",
     memberships: async () => ({ data: [], setupRequired: false, error: null }),
+  });
+  const result = await submit(initialClientAiActionState, askForm(IN_SCOPE_FOLLOW_UP));
+  assert.equal(result.status, "blocked");
+  assert.match(String(result.error), /not assigned/);
+  assert.equal(stats().used, 0);
+});
+
+test("sample desk login can ask on afe-crm-demo", async () => {
+  const { submit, stats } = createHarness({
+    isSuperAdmin: false,
+    email: SAMPLE_DESK_LOGIN_EMAIL,
+    memberships: DEMO_MEMBERSHIPS,
   });
   const result = await submit(initialClientAiActionState, askForm(IN_SCOPE_FOLLOW_UP));
   assert.equal(result.status, "success");
@@ -238,7 +265,7 @@ test("super-admin preview of afe-crm-demo does not need DEMO membership", async 
 
 test("member-less non-admin cannot ask on DEMO", async () => {
   const { submit, stats } = createHarness({
-    isSuperAdmin: false,
+    email: "founder@example.com",
     memberships: async () => ({ data: [], setupRequired: false, error: null }),
   });
   const result = await submit(initialClientAiActionState, askForm(IN_SCOPE_FOLLOW_UP));
@@ -387,7 +414,7 @@ test("MICAH asks for a week voice once when demeanor is unset", async () => {
   assert.equal(stats().used, 0);
   assert.match(String(result.answer), /Pick a voice/);
   assert.match(String(result.answer), /Handed to MICAH/);
-  assert.doesNotMatch(String(result.answer), /Faith is not used on the DEMO desk/);
+  assert.doesNotMatch(String(result.answer), /Faith is not used on this desk/);
 });
 
 test("one MICAH action saves a 7-day week pack after Friendly/local is chosen", async () => {
@@ -488,7 +515,7 @@ test("DEMO desk never stores Faith even if the prompt asks for it", async () => 
   assert.equal(result.scopeStatus, "needs_input");
   assert.equal(drafted, 0);
   assert.equal(stats().generateCalls, 0);
-  assert.match(String(result.answer), /Faith is not used on the DEMO desk/);
+  assert.match(String(result.answer), /Faith is not used on this desk/);
 });
 
 test("MICAH flyer asks do not fall through to OpenAI when the gallery save fails", async () => {

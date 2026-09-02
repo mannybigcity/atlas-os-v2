@@ -24,7 +24,7 @@ import {
   isMicahCreatePrompt,
   type ClientAiRole,
 } from "./guardrails.ts";
-import { isAfeCrmDemoOrganization } from "../../lib/client-portal/identity.ts";
+import { isAfeCrmDemoOrganization, canSeeSampleDesk } from "../../lib/client-portal/identity.ts";
 import {
   demeanorAskMessage,
   resolveMicahDemeanor,
@@ -138,6 +138,7 @@ export type ClientAiRequestDeps = {
   getOrganizationIdentity?: (
     organizationId: string,
   ) => Promise<{ name?: string | null; slug?: string | null } | null>;
+  configuredDemoLoginEmail?: string | null;
 };
 
 export function parseClientAiResponse(value: unknown): ClientAiResponse {
@@ -615,8 +616,9 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
     }
 
     const isSuperAdmin = deps.isSuperAdminEmail(user.email);
+    const seesSampleDesk = canSeeSampleDesk(user.email, deps.configuredDemoLoginEmail);
     const memberships = await deps.getUserMemberships(user.id);
-    if (memberships.setupRequired && !isSuperAdmin) {
+    if (memberships.setupRequired && !isSuperAdmin && !seesSampleDesk) {
       return {
         ...initialClientAiActionState,
         status: "failed",
@@ -625,9 +627,29 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
       };
     }
 
-    const membership = memberships.data.find(
+    const visibleMemberships = memberships.data.filter((entry) => {
+      const organization = entry.organization;
+      if (!organization) return false;
+      return seesSampleDesk
+        ? isAfeCrmDemoOrganization(organization)
+        : !isAfeCrmDemoOrganization(organization);
+    });
+    const membership = visibleMemberships.find(
       (entry) => entry.organization?.id === organizationId,
     );
+    const identity =
+      membership?.organization ??
+      (await deps.getOrganizationIdentity?.(organizationId)) ??
+      null;
+
+    if (isAfeCrmDemoOrganization(identity) && !seesSampleDesk) {
+      return {
+        ...initialClientAiActionState,
+        status: "blocked",
+        role,
+        error: "That workspace is not assigned to your account.",
+      };
+    }
 
     if (!membership && !isSuperAdmin) {
       return {

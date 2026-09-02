@@ -5,7 +5,7 @@ import path from "node:path";
 
 import { createClient } from "@/lib/supabase/server";
 import { generateStructuredText } from "@/server/integrations/openai-responses";
-import { isSuperAdminEmail } from "@/lib/env";
+import { getConfiguredDemoLoginEmail, isSuperAdminEmail } from "@/lib/env";
 import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
@@ -156,6 +156,7 @@ const executeClientAiRequest = createSubmitClientAiRequest({
   createMicahGalleryDraft,
   readMicahDemeanor,
   getOrganizationIdentity,
+  configuredDemoLoginEmail: getConfiguredDemoLoginEmail(),
 });
 
 export async function submitClientAiRequest(

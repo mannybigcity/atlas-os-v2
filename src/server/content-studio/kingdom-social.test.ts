@@ -11,25 +11,25 @@ import { buildMicahWeekPack } from "./gallery-art.ts";
 
 test("Kingdom grader requires hook, payoff, one CTA, and Facebook 1–3 hashtags", () => {
   const caption = assembleKingdomCaption({
-    hook: "Monday is here. ABC Plumbing (DEMO) can use it.",
+    hook: "Monday is here. ABC Plumbing can use it.",
     payoff: "Crew hats are ready for the shop.",
     cta: "Call or stop in if you want this done this week.",
     hashtags: ["#DEMO", "#CrewHats"],
-    demoLabel: "DEMO draft for ABC Plumbing (DEMO). Keep the DEMO label.",
+    demoLabel: "Sample draft for ABC Plumbing. Download and post it yourself.",
   });
   const instagram = assembleKingdomCaption({
-    hook: "Monday is here. ABC Plumbing (DEMO) can use it.",
+    hook: "Monday is here. ABC Plumbing can use it.",
     payoff: "Crew hats are ready for the shop.",
     cta: "Call or stop in if you want this done this week.",
     hashtags: ["#HoustonTrades", "#Workwear", "#LocalCrew"],
-    demoLabel: "DEMO draft for ABC Plumbing (DEMO). Keep the DEMO label.",
+    demoLabel: "Sample draft for ABC Plumbing. Download and post it yourself.",
   });
   const linkedin = assembleKingdomCaption({
-    hook: "Monday is here. ABC Plumbing (DEMO) can use it.",
+    hook: "Monday is here. ABC Plumbing can use it.",
     payoff: "Crew hats are ready for the shop.",
     cta: "Call or stop in if you want this done this week.",
     hashtags: ["#SmallBusiness", "#TradesWork", "#LocalService"],
-    demoLabel: "DEMO draft for ABC Plumbing (DEMO). Keep the DEMO label.",
+    demoLabel: "Sample draft for ABC Plumbing. Download and post it yourself.",
   });
   const grade = gradeKingdomCaption({
     caption,
@@ -99,7 +99,7 @@ test("graded MICAH week pack keeps Facebook home hashtags distinct from IG/Linke
     assert.equal(sameHashtagSet(grade.facebookHashtags, grade.instagramHashtags), false);
     assert.equal(sameHashtagSet(grade.facebookHashtags, grade.linkedinHashtags), false);
     assert.equal(sameHashtagSet(grade.instagramHashtags, grade.linkedinHashtags), false);
-    assert.match(card.caption, /\bDEMO\b/);
+    assert.doesNotMatch(card.caption, /\bDEMO\b/);
     assert.doesNotMatch(card.caption, /synergy|thought-leader|hustle|blotato|blacktwist/i);
     assert.doesNotMatch(card.caption, /SIS Custom Creations/i);
   }

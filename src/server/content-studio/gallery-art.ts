@@ -123,9 +123,9 @@ export const MICAH_WEEK_DAYS = [
 ] as const;
 
 const AFE_DEMO_COMPANIES = [
-  { name: "ABC Plumbing (DEMO)", hook: "crew hats and shop pride" },
-  { name: "123 Catering (DEMO)", hook: "tasting night and Friday fish fry" },
-  { name: "XYZ Electric (DEMO)", hook: "same-week installs done right" },
+  { name: "ABC Plumbing", hook: "crew hats and shop pride" },
+  { name: "123 Catering", hook: "tasting night and Friday fish fry" },
+  { name: "XYZ Electric", hook: "same-week installs done right" },
 ] as const;
 
 export function isMicahDemeanor(value: unknown): value is MicahDemeanor {
@@ -168,7 +168,7 @@ export function demeanorAskMessage(input: {
     ? "Motivational, Friendly/local, Comical, or Straight"
     : "Motivational, Friendly/local, Comical, Straight, or Faith (only if you want faith)";
   const faithNote = input.blockedFaithOnDemo
-    ? "Faith is not used on the DEMO desk. "
+    ? "Faith is not used on this desk. "
     : "";
   return `${faithNote}Pick a voice for this week's MICAH pack: ${options}. Atlas will remember it for this workspace. Nothing is posted to Facebook or Instagram.`;
 }
@@ -222,7 +222,7 @@ export function buildMicahWeekPack(input: {
       : clipDraftText(`${theme} · ${item.weekday}`, 72);
     const supportingText = clipDraftText(
       input.demoDesk
-        ? `DEMO · ${company.hook}. Download and post it yourself.`
+        ? `${company.hook}. Download and post it yourself.`
         : "Navy and gold Atlas draft. Download the file and post it yourself.",
       90,
     );
@@ -238,7 +238,7 @@ export function buildMicahWeekPack(input: {
       demoLabeled: Boolean(input.demoDesk),
     });
     const demoLabel = input.demoDesk
-      ? `DEMO draft for ${company.name}. Keep the DEMO label.`
+      ? `Sample draft for ${company.name}. Download and post it yourself.`
       : null;
     const caption = clipCaptionText(
       assembleKingdomCaption({
@@ -362,7 +362,7 @@ export function selectMicahWeekGallery(
 
   if (options.demoDesk) {
     return buildMicahWeekPack({
-      prompt: "Week of DEMO desk posts for ABC Plumbing, 123 Catering, and XYZ Electric",
+      prompt: "Week of posts for ABC Plumbing, 123 Catering, and XYZ Electric",
       demeanor: "straight",
       demoDesk: true,
       logoDataUri: options.logoDataUri,

@@ -6,6 +6,12 @@ import { getSiteUrl } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
 import { ensureTrialProfile, getTrialProfile } from "@/server/trials/profile";
+import {
+  ensureSampleDeskAccess,
+  getSampleDeskSignInCredentials,
+  provisionSampleDeskLoginUser,
+  sampleDeskLoginUnavailableRedirect,
+} from "@/server/auth/sample-desk";
 
 export async function signInWithPassword(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -25,6 +31,14 @@ export async function signInWithPassword(formData: FormData) {
 
   if (error) {
     redirect(`/login?error=invalid_credentials&next=${encodeURIComponent(nextPath)}`);
+  }
+
+  if (data.user) {
+    try {
+      await ensureSampleDeskAccess(data.user.id, data.user.email ?? email);
+    } catch (provisionError) {
+      console.error("Atlas sample desk membership ensure failed", provisionError);
+    }
   }
 
   const signedInNext =
@@ -49,6 +63,32 @@ export async function signInWithPassword(formData: FormData) {
   }
 
   redirect(signedInNext);
+}
+
+export async function signInToSampleDesk() {
+  const credentials = getSampleDeskSignInCredentials();
+  if (!credentials) {
+    redirect(sampleDeskLoginUnavailableRedirect());
+  }
+
+  try {
+    await provisionSampleDeskLoginUser();
+  } catch (error) {
+    console.error("Atlas sample desk provision failed", error);
+    redirect(sampleDeskLoginUnavailableRedirect());
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: credentials.email,
+    password: credentials.password,
+  });
+
+  if (error) {
+    redirect(sampleDeskLoginUnavailableRedirect());
+  }
+
+  redirect("/client");
 }
 
 export async function signOut() {
