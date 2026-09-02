@@ -1,5 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import {
+  assembleKingdomCaption,
+  gradeKingdomCaption,
+  kingdomCaptionParts,
+  kingdomHashtags,
+} from "./kingdom-social.ts";
 
 const ATLAS_LOGO_PATH = join(process.cwd(), "public/brand/atlas-logo.png");
 const NAVY = "#071b42";
@@ -15,6 +21,16 @@ function escapeXml(value: string) {
 
 export function clipDraftText(value: string, max: number) {
   const trimmed = value.replace(/\s+/g, " ").trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max - 1).trim()}…`;
+}
+
+export function clipCaptionText(value: string, max: number) {
+  const trimmed = value
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
   if (trimmed.length <= max) return trimmed;
   return `${trimmed.slice(0, max - 1).trim()}…`;
 }
@@ -158,23 +174,11 @@ export function demeanorAskMessage(input: {
 }
 
 export function captionForClipboard(caption: string) {
-  return caption.replace(/\s+/g, " ").trim();
-}
-
-function captionVoice(demeanor: MicahDemeanor, headline: string, company: string) {
-  const who = company || "your business";
-  switch (demeanor) {
-    case "motivational":
-      return `Show up this week. ${headline} — ${who} is ready.`;
-    case "friendly_local":
-      return `Hey neighbors — ${headline}. ${who} would love to see you.`;
-    case "comical":
-      return `Nobody asked for a boring post. ${headline}. ${who} kept it simple.`;
-    case "faith":
-      return `Grateful for this week. ${headline}. ${who} is here if you need us.`;
-    default:
-      return `${headline}. ${who}.`;
-  }
+  return caption
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
 }
 
 export type MicahWeekCard = {
@@ -186,9 +190,13 @@ export type MicahWeekCard = {
   headline: string;
   supportingText: string;
   caption: string;
+  instagramCaption: string;
+  linkedinCaption: string;
+  cta: string;
   imageSvg: string;
   companyName: string;
   demoLabeled: boolean;
+  gradePass: boolean;
 };
 
 export function buildMicahWeekPack(input: {
@@ -201,6 +209,8 @@ export function buildMicahWeekPack(input: {
   const theme = clipDraftText(headlineFromPrompt(input.prompt), 72) || "This week";
   const weekKey = input.weekKey || "week";
   const logoDataUri = input.logoDataUri ?? null;
+  const demeanor =
+    input.demoDesk && input.demeanor === "faith" ? "straight" : input.demeanor;
 
   return MICAH_WEEK_DAYS.map((item, index) => {
     const company = input.demoDesk
@@ -216,14 +226,42 @@ export function buildMicahWeekPack(input: {
         : "Navy and gold Atlas draft. Download the file and post it yourself.",
       90,
     );
-    const caption = clipDraftText(
-      [
-        captionVoice(input.demeanor, headline, company.name),
-        "",
-        input.demoDesk ? `DEMO draft for ${company.name}. Keep the DEMO label.` : supportingText,
-        "",
-        "Draft only. Download this file and post it yourself. Atlas did not publish to Facebook or Instagram.",
-      ].join("\n"),
+    const parts = kingdomCaptionParts({
+      demeanor,
+      weekday: item.weekday,
+      headline,
+      companyName: company.name,
+      hookDetail: company.hook,
+    });
+    const tags = kingdomHashtags({
+      day: item.day,
+      demoLabeled: Boolean(input.demoDesk),
+    });
+    const demoLabel = input.demoDesk
+      ? `DEMO draft for ${company.name}. Keep the DEMO label.`
+      : null;
+    const caption = clipCaptionText(
+      assembleKingdomCaption({
+        ...parts,
+        hashtags: tags.facebook,
+        demoLabel,
+      }),
+      2100,
+    );
+    const instagramCaption = clipCaptionText(
+      assembleKingdomCaption({
+        ...parts,
+        hashtags: tags.instagram,
+        demoLabel,
+      }),
+      2100,
+    );
+    const linkedinCaption = clipCaptionText(
+      assembleKingdomCaption({
+        ...parts,
+        hashtags: tags.linkedin,
+        demoLabel,
+      }),
       2100,
     );
     const title = clipDraftText(
@@ -232,6 +270,12 @@ export function buildMicahWeekPack(input: {
         : `Day ${item.day} · ${item.weekday} · ${theme}`,
       140,
     );
+    const grade = gradeKingdomCaption({
+      caption,
+      instagramCaption,
+      linkedinCaption,
+      demoLabeled: Boolean(input.demoDesk),
+    });
     return {
       day: item.day,
       weekday: item.weekday,
@@ -241,8 +285,12 @@ export function buildMicahWeekPack(input: {
       headline,
       supportingText,
       caption,
+      instagramCaption,
+      linkedinCaption,
+      cta: parts.cta,
       companyName: company.name,
       demoLabeled: Boolean(input.demoDesk),
+      gradePass: grade.pass,
       imageSvg: buildMicahDraftSvg({
         headline,
         supportingText,
@@ -298,9 +346,13 @@ export function selectMicahWeekGallery(
       headline: draft.headline,
       supportingText: draft.supportingText || "Download this draft and post it yourself.",
       caption: draft.caption,
+      instagramCaption: String(draft.metadata.instagram_caption ?? ""),
+      linkedinCaption: String(draft.metadata.linkedin_caption ?? ""),
+      cta: String(draft.metadata.kingdom_cta ?? ""),
       imageSvg,
       companyName: String(draft.metadata.company_name ?? ""),
       demoLabeled: Boolean(draft.metadata.demo_labeled),
+      gradePass: draft.metadata.kingdom_grade !== "fail",
     };
   };
 

@@ -11,8 +11,11 @@ export type MicahWeekGalleryCard = {
   title: string;
   headline: string;
   caption: string;
+  instagramCaption?: string;
+  linkedinCaption?: string;
   imageSvg: string;
   demoLabeled: boolean;
+  gradePass?: boolean;
 };
 
 type MicahWeekGalleryProps = {
@@ -27,7 +30,24 @@ function svgDataUrl(svg: string) {
 }
 
 function captionForCopy(caption: string) {
-  return caption.replace(/\s+/g, " ").trim();
+  return caption
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+async function writeClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = text;
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand("copy");
+    area.remove();
+  }
 }
 
 function MicahDayCard({
@@ -42,24 +62,19 @@ function MicahDayCard({
   spanish: boolean;
 }) {
   const [caption, setCaption] = useState(card.caption);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"facebook" | "instagram" | "linkedin" | null>(
+    null,
+  );
   const source = svgDataUrl(card.imageSvg);
   const fileName = `micah-day-${card.day}-${card.weekday.toLowerCase()}.svg`;
 
-  async function copyCaption() {
-    const text = captionForCopy(caption);
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      const area = document.createElement("textarea");
-      area.value = text;
-      document.body.appendChild(area);
-      area.select();
-      document.execCommand("copy");
-      area.remove();
-    }
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
+  async function copyVariant(
+    value: string,
+    which: "facebook" | "instagram" | "linkedin",
+  ) {
+    await writeClipboard(captionForCopy(value));
+    setCopied(which);
+    window.setTimeout(() => setCopied(null), 1600);
   }
 
   return (
@@ -78,9 +93,16 @@ function MicahDayCard({
       </div>
 
       <div className="p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#f5b932]">
-          {card.dayLabel}
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#f5b932]">
+            {card.dayLabel}
+          </p>
+          {card.gradePass !== false ? (
+            <span className="rounded-full bg-[#fff8e6] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
+              {spanish ? "Calificado" : "Graded"}
+            </span>
+          ) : null}
+        </div>
         <h3 className="mt-2 text-lg font-bold text-slate-950">{card.title}</h3>
         {card.demoLabeled ? (
           <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#071b42]">
@@ -89,10 +111,12 @@ function MicahDayCard({
         ) : null}
 
         <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-          {spanish ? "Texto para copiar" : "Caption to copy"}
+          {spanish
+            ? "Facebook (gancho, valor, un llamado)"
+            : "Facebook caption (hook, payoff, one CTA)"}
         </label>
         <textarea
-          className="mt-2 min-h-28 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#071b42] focus:ring-4 focus:ring-[#fff8e6]"
+          className="mt-2 min-h-36 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#071b42] focus:ring-4 focus:ring-[#fff8e6]"
           onChange={(event) => setCaption(event.target.value)}
           value={caption}
         />
@@ -100,17 +124,47 @@ function MicahDayCard({
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0c2b63]"
-            onClick={() => void copyCaption()}
+            onClick={() => void copyVariant(caption, "facebook")}
             type="button"
           >
-            {copied
+            {copied === "facebook"
               ? spanish
                 ? "Copiado"
                 : "Copied"
               : spanish
-                ? "Copiar texto"
+                ? "Copiar Facebook"
                 : "Copy caption"}
           </button>
+          {card.instagramCaption ? (
+            <button
+              className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+              onClick={() => void copyVariant(card.instagramCaption ?? "", "instagram")}
+              type="button"
+            >
+              {copied === "instagram"
+                ? spanish
+                  ? "Copiado"
+                  : "Copied"
+                : spanish
+                  ? "Copiar Instagram"
+                  : "Copy Instagram"}
+            </button>
+          ) : null}
+          {card.linkedinCaption ? (
+            <button
+              className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+              onClick={() => void copyVariant(card.linkedinCaption ?? "", "linkedin")}
+              type="button"
+            >
+              {copied === "linkedin"
+                ? spanish
+                  ? "Copiado"
+                  : "Copied"
+                : spanish
+                  ? "Copiar LinkedIn"
+                  : "Copy LinkedIn"}
+            </button>
+          ) : null}
           <a
             className="inline-flex rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
             download={fileName}

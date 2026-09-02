@@ -3,11 +3,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   buildMicahWeekPack,
+  clipCaptionText,
   clipDraftText,
   isMicahDemeanor,
   readOfficialAtlasLogoDataUri,
   type MicahDemeanor,
 } from "./gallery-art.ts";
+import { gradeKingdomWeek } from "./kingdom-social.ts";
 
 export type MicahGalleryDraftInput = {
   organizationId: string;
@@ -110,7 +112,21 @@ export async function createMicahGalleryDraft(
   const first = cards[0];
   const title = clipDraftText(input.title || first?.title || "MICAH week pack", 160);
   const headline = clipDraftText(input.headline || first?.headline || "This week", 120);
-  const caption = clipDraftText(input.caption || first?.caption || "", 2200);
+  const caption = clipCaptionText(input.caption || first?.caption || "", 2200);
+  const grade = gradeKingdomWeek(cards);
+  if (!grade.pass) {
+    return {
+      status: "error",
+      draftId: null,
+      draftIds: [],
+      title,
+      headline,
+      caption,
+      count: 0,
+      message:
+        "MICAH held the week pack. Captions must be hook, payoff, and one CTA before they reach the gallery. Nothing was posted.",
+    };
+  }
   const today = new Date().toISOString().slice(0, 10);
   const rows = cards.map((card) => ({
     organization_id: input.organizationId,
@@ -121,8 +137,8 @@ export async function createMicahGalleryDraft(
     headline: card.headline,
     supporting_text: card.supportingText,
     caption: card.caption,
-    call_to_action: "Download this draft and post it yourself.",
-    platforms: ["instagram", "facebook"],
+    call_to_action: clipDraftText(card.cta, 240),
+    platforms: ["facebook", "instagram", "linkedin"],
     visual_style: "atlas_branded",
     image_svg: card.imageSvg,
     status: "ready_for_review",
@@ -136,7 +152,12 @@ export async function createMicahGalleryDraft(
       micah_demeanor: input.demeanor,
       company_name: card.companyName,
       demo_labeled: card.demoLabeled,
+      instagram_caption: card.instagramCaption,
+      linkedin_caption: card.linkedinCaption,
+      kingdom_cta: card.cta,
+      kingdom_grade: "pass",
       no_live_post: true,
+      no_scheduler: true,
       requested_by: input.userId,
     },
   }));

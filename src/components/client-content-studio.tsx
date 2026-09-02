@@ -41,8 +41,8 @@ export async function ClientContentStudio({
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[#33415c]">
             {spanish
-              ? "Cada tarjeta tiene un gráfico descargable y un texto que puedes copiar. MICAH no publica en Facebook ni Instagram. El calendario de citas está en Calendario."
-              : "Each card has a downloadable navy/gold graphic and a caption you can copy. MICAH does not post to Facebook or Instagram. Appointments stay on Calendar."}
+              ? "Facebook es la casa: gancho, valor y un llamado, con 1 a 3 hashtags. Instagram y LinkedIn usan otros hashtags. MICAH no publica ni programa nada. El calendario de citas está en Calendario."
+              : "Facebook is home: hook, payoff, one CTA, and 1–3 hashtags. Instagram and LinkedIn use different hashtag sets. MICAH does not post or schedule. Appointments stay on Calendar."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

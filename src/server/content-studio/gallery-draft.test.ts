@@ -12,6 +12,7 @@ import {
   resolveMicahDemeanor,
   selectMicahWeekGallery,
 } from "./gallery-art.ts";
+import { gradeKingdomWeek } from "./kingdom-social.ts";
 
 test("MICAH gallery drafts are navy/gold downloadable SVGs and never live posts", () => {
   const copy = buildMicahDraftCopy("Make a Facebook post and a flyer image for Labor Day");
@@ -72,15 +73,16 @@ test("MICAH week pack is 7 navy/gold day-cards with copyable captions", () => {
   assert.equal(cards.some((card) => /XYZ Electric \(DEMO\)/.test(card.title)), true);
   for (const card of cards) {
     assert.match(card.dayLabel, /DAY \d/);
-    assert.match(card.caption, /did not publish/);
     assert.match(card.caption, /DEMO draft/);
+    assert.match(captionForClipboard(card.caption), /\n\n/);
     assert.doesNotMatch(card.caption, /SIS Custom Creations/i);
     assert.match(card.imageSvg, /#071b42/);
     assert.match(card.imageSvg, /#f5b932/);
     assert.match(card.imageSvg, /DAY \d/);
     assert.doesNotMatch(card.imageSvg, /from-blue-950|to-blue-700/);
-    assert.equal(captionForClipboard(card.caption).includes("\n"), false);
+    assert.equal(card.gradePass, true);
   }
+  assert.equal(gradeKingdomWeek(cards).pass, true);
 });
 
 test("demeanor is parsed once and Faith is never the DEMO default", () => {
@@ -106,6 +108,14 @@ test("demeanor is parsed once and Faith is never the DEMO default", () => {
 
   const unset = resolveMicahDemeanor({ prompt: "Make a week of posts" });
   assert.equal(unset.demeanor, null);
+
+  const coerced = buildMicahWeekPack({
+    prompt: "Make a week of posts. Faith.",
+    demeanor: "faith",
+    demoDesk: true,
+  });
+  assert.equal(coerced.every((card) => !/Grateful for/i.test(card.caption)), true);
+  assert.equal(gradeKingdomWeek(coerced).pass, true);
 });
 
 test("AFE DEMO gallery shows 7 day-cards instead of the old blue placeholder boxes", () => {
