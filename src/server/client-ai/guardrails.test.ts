@@ -43,6 +43,33 @@ test("Talk to Atlas routes pipeline, follow-up, and client satisfaction to DAVID
   );
 });
 
+test("desk CRM prospect questions route to DAVID, not HUNTER", () => {
+  for (const prompt of [
+    "who are the prospects on this desk?",
+    "Who are the prospects on this pipeline?",
+    "What are the names of the prospects on this desk?",
+    "list the prospects on this desk",
+    "find prospects on this desk",
+  ]) {
+    assert.equal(detectSpecialistLane(prompt), "david", prompt);
+    assert.equal(decideClientAiRoute({ role: "atlas", prompt }).routedTo, "david", prompt);
+    assert.equal(isHunterFindPrompt(prompt), false, prompt);
+  }
+});
+
+test("city and Google Places hunts still route to HUNTER", () => {
+  for (const prompt of [
+    "Find plumbers in Houston, TX",
+    "find prospects in Houston",
+    "find leads in Katy, TX",
+    "google places daycares near 77065",
+  ]) {
+    assert.equal(detectSpecialistLane(prompt), "hunter", prompt);
+    assert.equal(decideClientAiRoute({ role: "atlas", prompt }).routedTo, "hunter", prompt);
+    assert.equal(isHunterFindPrompt(prompt), true, prompt);
+  }
+});
+
 test("staff HUNTER / MICAH / DAVID buttons keep their lane when the ask matches", () => {
   assert.equal(
     decideClientAiRoute({ role: "hunter", prompt: "Find local daycares near 77065" }).routedTo,
