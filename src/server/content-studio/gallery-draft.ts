@@ -194,7 +194,7 @@ export async function createMicahGalleryDraft(
       headline,
       caption,
       count: draftIds.length,
-      message: `MICAH saved a 7-day week pack in the gallery (${draftIds.length} downloadable cards). Nothing was posted to Facebook or Instagram. Open MICAH to copy captions and download the files.`,
+      message: `MICAH saved a 7-day week pack in the gallery (${draftIds.length} downloadable cards). Nothing was posted to Facebook or Instagram. Copy captions and download the files from the gallery.`,
     };
   } catch {
     return {

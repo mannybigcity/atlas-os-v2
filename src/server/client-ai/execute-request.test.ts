@@ -437,7 +437,7 @@ test("one MICAH action saves a 7-day week pack after Friendly/local is chosen", 
         caption: "Draft only. Download this file and post it yourself.",
         count: 7,
         message:
-          "MICAH saved a 7-day week pack in the gallery (7 downloadable cards). Nothing was posted to Facebook or Instagram. Open MICAH to copy captions and download the files.",
+          "MICAH saved a 7-day week pack in the gallery (7 downloadable cards). Nothing was posted to Facebook or Instagram. Copy captions and download the files from the gallery.",
       };
     },
   });
@@ -595,6 +595,41 @@ test("Atlas chat box routes a local-business find to HUNTER review pile, not out
   assert.match(String(result.answer), /Houston Pipe Co/);
   assert.doesNotMatch(String(result.answer), /emailed|called these businesses/i);
   assert.equal(stats().used, 1);
+});
+
+test("Talk to Atlas starts a HUNTER search from leads in a city without a staff click", async () => {
+  let query = "";
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    runHunterChatSearch: async ({ prompt }) => {
+      query = prompt;
+      return {
+        status: "success",
+        message:
+          "10 Google Maps results. 10 listings saved to the REVIEW PILE. They are not Prospects until you accept them. Atlas will not email, call, or text anyone.",
+        query: prompt,
+        persistedCount: 10,
+        places: [
+          {
+            placeId: "g1",
+            name: "Galveston Shop",
+            formattedAddress: "Galveston, TX",
+            googleMapsUrl: "https://maps.google.com/?cid=1",
+            websiteUrl: null,
+            primaryType: "store",
+            businessStatus: "OPERATIONAL",
+          },
+        ],
+      };
+    },
+  });
+  const result = await submit(initialClientAiActionState, askForm("leads in Galveston, TX"));
+  assert.equal(result.status, "success");
+  assert.equal(result.routedTo, "hunter");
+  assert.equal(query, "leads in Galveston, TX");
+  assert.equal(stats().generateCalls, 0);
+  assert.match(String(result.nextStep), /Prospects/);
+  assert.doesNotMatch(String(result.nextStep), /Open HUNTER|tap HUNTER/i);
 });
 
 test("HUNTER chat search without a market asks for ZIP or city and does not count", async () => {

@@ -83,4 +83,10 @@ test("chat prompts parse into a HUNTER search without becoming Prospects", () =>
 
   const missing = parseHunterChatQuery("find prospects");
   assert.equal(missing.ok, false);
+
+  const galveston = parseHunterChatQuery("leads in Galveston, TX");
+  assert.equal(galveston.ok, true);
+  if (galveston.ok) {
+    assert.match(galveston.textQuery, /local businesses in Galveston, TX/);
+  }
 });

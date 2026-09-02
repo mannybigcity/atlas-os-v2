@@ -9,6 +9,7 @@ import {
   isAfeOperatorDeskSlug,
   isSisOrganization,
   isSisWorkspaceSlug,
+  SIS_LIONS_DEN_PREVIEW_SLUG,
   organizationSlugsMatch,
   pickAfeOperatorDesk,
 } from "@/lib/client-portal/identity";
@@ -340,6 +341,16 @@ export async function getAfeCrmDemoOrganization(): Promise<OrganizationSummary |
         isAfeCrmDemoOrganization(organization),
     ) ?? null
   );
+}
+
+export async function getSisProtectedOrganization(): Promise<OrganizationSummary | null> {
+  const bySlug = await getOrganizationBySlugForSuperAdmin(SIS_LIONS_DEN_PREVIEW_SLUG);
+  if (bySlug.data?.id && isSisOrganization(bySlug.data)) {
+    return bySlug.data;
+  }
+
+  const directory = await listOrganizationsForOperator();
+  return directory.find((organization) => Boolean(organization.id) && isSisOrganization(organization)) ?? null;
 }
 
 export async function getAfeOperatorDeskOrganization(): Promise<OrganizationSummary | null> {

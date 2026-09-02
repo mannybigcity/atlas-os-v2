@@ -18,6 +18,7 @@ export function isQTimeProductions(organizationName: string | null | undefined) 
 }
 
 export const SIS_LIONS_DEN_PREVIEW_SLUG = "sis-diy-big-complete-showcase";
+export const SIS_WORKING_ORG_NAME = "SIS Custom Creations";
 export const AFE_CRM_DEMO_SLUG = "afe-crm-demo";
 export const AFE_OPERATOR_DESK_SLUG = "atlas-for-entrepreneurs";
 export const AFE_OPERATOR_DESK_NAME = "Atlas For Entrepreneurs";
@@ -143,7 +144,24 @@ export function canEnsureAfeOperatorDesk(
   isSuperAdmin = false,
 ) {
   if (canSeeSampleDesk(email, configuredDemoEmail)) return false;
-  return isFounderMailboxEmail(email) || isSuperAdmin;
+  if (isFounderMailboxEmail(email)) return false;
+  return isSuperAdmin;
+}
+
+export function canEnsureSisWorkingOrg(
+  email?: string | null,
+  configuredDemoEmail?: string | null,
+) {
+  if (canSeeSampleDesk(email, configuredDemoEmail)) return false;
+  return isFounderMailboxEmail(email);
+}
+
+export function shouldOpenSisWorkingDesk(input: {
+  seesSampleDesk?: boolean;
+  isFounderMailbox?: boolean;
+}) {
+  if (input.seesSampleDesk) return false;
+  return Boolean(input.isFounderMailbox);
 }
 
 export function shouldOpenAfeOperatorDesk(input: {
@@ -250,6 +268,7 @@ export function resolveOperatorDeskOrganization<T extends { name?: string | null
   membershipOrganizations?: Array<T | null | undefined>;
   directory?: Array<T | null | undefined> | null;
   allowSampleDesk?: boolean;
+  preferSisWorkingDesk?: boolean;
 }): T | undefined {
   const allowSampleDesk = Boolean(input.allowSampleDesk);
   const membershipOrganizations = organizationsVisibleToActor(
@@ -265,6 +284,7 @@ export function resolveOperatorDeskOrganization<T extends { name?: string | null
       ? input.previewOrganization
       : null;
   const sisRequested = isSisLionsDenRequest(input.previewOrgSlug, input.workspaceSlug);
+  const preferSisWorkingDesk = Boolean(input.preferSisWorkingDesk) && !allowSampleDesk;
 
   if (allowSampleDesk) {
     return (
@@ -276,7 +296,7 @@ export function resolveOperatorDeskOrganization<T extends { name?: string | null
     );
   }
 
-  if (sisRequested) {
+  if (preferSisWorkingDesk || sisRequested) {
     const requestedSlug = input.previewOrgSlug || input.workspaceSlug || SIS_LIONS_DEN_PREVIEW_SLUG;
     return (
       (previewOrganization && isSisOrganization(previewOrganization)

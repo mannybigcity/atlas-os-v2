@@ -68,6 +68,8 @@ test("workspace context no longer auto-attaches afe-crm-demo to admin", () => {
   assert.doesNotMatch(context, /preferAfeDemoDesk/);
   assert.match(context, /canSeeSampleDesk/);
   assert.match(context, /isSampleDeskPreviewRequest/);
+  assert.match(context, /ensureSisWorkingOrgAccess/);
+  assert.match(context, /shouldOpenSisWorkingDesk/);
   assert.match(context, /ensureAfeOperatorDeskAccess/);
   assert.match(context, /shouldOpenAfeOperatorDesk/);
   assert.doesNotMatch(context, /getAfeCrmDemoOrganization/);

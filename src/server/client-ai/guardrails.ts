@@ -227,7 +227,12 @@ export function looksLikeHunterSearch(prompt: string) {
   if (/\b\d{5}\b/.test(normalized) && /\b(find|search|look\s*up|places|business)/.test(normalized)) {
     return true;
   }
-  return /\b(find|search|look\s*up)\b.+\b(in|near|around)\s+(?!the\b|this\b|my\b|our\b)/.test(
+  if (/\b(find|search|look\s*up)\b.+\b(in|near|around)\s+(?!the\b|this\b|my\b|our\b)/.test(
+    normalized,
+  )) {
+    return true;
+  }
+  return /\b(leads?|prospects?|local\s+businesses?|businesses?)\b.+\b(in|near|around)\s+(?!the\b|this\b|my\b|our\b)/.test(
     normalized,
   );
 }

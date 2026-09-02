@@ -62,8 +62,10 @@ function notesReturnPath(formData: FormData, status: string) {
 export async function createOrganizationNote(formData: FormData) {
   const user = await requireUser("/client");
   const organizationId = String(formData.get("organizationId") ?? "").trim();
-  const title = textValue(formData, "title");
-  const body = textValue(formData, "body");
+  const noteType = String(formData.get("noteType") ?? "general").trim().toLowerCase();
+  const attention = String(formData.get("attention") ?? "desk").trim().toLowerCase();
+  let title = textValue(formData, "title");
+  let body = textValue(formData, "body");
 
   if (!organizationId) {
     redirect(notesReturnPath(formData, "missing_organization"));
@@ -75,6 +77,21 @@ export async function createOrganizationNote(formData: FormData) {
 
   if (!body) {
     redirect(notesReturnPath(formData, "missing_body"));
+  }
+
+  const typeLabel =
+    noteType === "follow-up"
+      ? "Follow-up"
+      : noteType === "call"
+        ? "Call"
+        : noteType === "meeting"
+          ? "Meeting"
+          : null;
+  if (typeLabel && !title.toLowerCase().startsWith(`${typeLabel.toLowerCase()}:`)) {
+    title = `${typeLabel}: ${title}`;
+  }
+  if (attention === "atlas" && !includesAtlasMention(body)) {
+    body = `${body}\n\n@Atlas`;
   }
 
   const supabase = await requireOrganizationMembership(organizationId, user);

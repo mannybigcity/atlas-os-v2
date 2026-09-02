@@ -92,7 +92,33 @@ export function LionsDenNotesBoard({
         <form action={createOrganizationNote} className="rounded-[1.6rem] border border-[#d8c27a] bg-white p-5">
           <input name="organizationId" type="hidden" value={organizationId} />
           {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
-          <label className="block">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-sm font-medium text-[#071b42]">{spanish ? "Tipo" : "Type"}</span>
+              <select
+                className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
+                defaultValue="general"
+                name="noteType"
+              >
+                <option value="general">{spanish ? "General" : "General"}</option>
+                <option value="follow-up">{spanish ? "Seguimiento" : "Follow-up"}</option>
+                <option value="call">{spanish ? "Llamada" : "Call"}</option>
+                <option value="meeting">{spanish ? "Reunión" : "Meeting"}</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-[#071b42]">{spanish ? "Atención" : "Attention"}</span>
+              <select
+                className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
+                defaultValue="desk"
+                name="attention"
+              >
+                <option value="desk">{spanish ? "Queda en el escritorio" : "Stay on the desk"}</option>
+                <option value="atlas">{spanish ? "Pedir a Atlas (@Atlas)" : "Ask Atlas (@Atlas)"}</option>
+              </select>
+            </label>
+          </div>
+          <label className="mt-3 block">
             <span className="text-sm font-medium text-[#071b42]">{spanish ? "Título" : "Title"}</span>
             <input
               className="mt-2 w-full rounded-xl border border-[#d5d0c4] px-4 py-3 text-sm text-[#071b42]"
@@ -127,7 +153,14 @@ export function LionsDenNotesBoard({
         <div className="space-y-3">
           {visibleNotes.map((note) => (
             <article className="rounded-[1.4rem] border border-[#d8c27a] bg-white p-4" key={note.id}>
-              <h3 className="font-semibold text-[#071b42]">{note.title}</h3>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-semibold text-[#071b42]">{note.title}</h3>
+                {note.attentionRequested ? (
+                  <span className="rounded-full bg-[#fff8e6] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6a12]">
+                    {spanish ? "Atención" : "Attention"}
+                  </span>
+                ) : null}
+              </div>
               {note.body ? <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#33415c]">{note.body}</p> : null}
             </article>
           ))}

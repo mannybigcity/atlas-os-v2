@@ -62,8 +62,8 @@ export function LionsDenFollowUpBoard({
         <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#8a6a12]">
           {spanish ? "Seguimiento" : "Follow-up"}
         </p>
-        <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl tracking-[-0.04em] text-[#071b42]">
-          {spanish ? "La fortuna está en el seguimiento." : "The fortune is in the follow-up."}
+        <h2 className="mt-2 font-[family-name:var(--font-ui)] text-3xl font-extrabold uppercase tracking-[0.04em] text-[#071b42]">
+          {spanish ? "LA FORTUNA ESTÁ EN EL SEGUIMIENTO" : "THE FORTUNE IS IN THE FOLLOW-UP"}
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#33415c]">
           {spanish
