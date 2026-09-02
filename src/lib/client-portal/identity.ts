@@ -22,6 +22,9 @@ export const AFE_CRM_DEMO_SLUG = "afe-crm-demo";
 export const SAMPLE_DESK_DISPLAY_NAME = "Sample desk";
 export const SAMPLE_DESK_LOGIN_EMAIL = "atlasforentrepreneurs+demo@gmail.com";
 export const FOUNDER_MAILBOX_EMAIL = "atlasforentrepreneurs@gmail.com";
+// Plus-address login only. Mail arrives at FOUNDER_MAILBOX_EMAIL.
+// Never attach the sample org to the founder mailbox itself.
+// Never use an @atlasforentrepreneurs.com mailbox as the sample login.
 
 export function normalizeLoginEmail(email?: string | null) {
   return String(email ?? "").trim().toLowerCase();

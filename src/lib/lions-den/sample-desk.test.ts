@@ -176,6 +176,8 @@ test("isolated sample desk SQL never seeds SIS and never attaches the founder ma
   assert.match(sql, /Oak Street Vinyl/);
   assert.match(sql, /sis_lions_den_demo_desk/);
   assert.doesNotMatch(sql, /insert\s+into\s+(public\.)?organization_memberships/i);
+  assert.match(sql, /delete\s+from\s+public\.organization_memberships/i);
+  assert.match(sql, new RegExp(SAMPLE_DESK_LOGIN_EMAIL.replace("+", "\\+")));
   assert.equal(sql.toLowerCase().includes(FOUNDER_MAILBOX_EMAIL), false);
 
   const membershipSql = readFileSync(membershipSqlPath, "utf8");
@@ -183,4 +185,9 @@ test("isolated sample desk SQL never seeds SIS and never attaches the founder ma
   assert.match(membershipSql, /DEMO_LOGIN_EMAIL/);
   assert.match(membershipSql, /DEMO_LOGIN_PASSWORD/);
   assert.match(membershipSql, /<> 'atlasforentrepreneurs@gmail.com'/);
+  assert.match(membershipSql, /delete\s+from\s+public\.organization_memberships/i);
+  assert.match(
+    membershipSql,
+    new RegExp(`is distinct from '${SAMPLE_DESK_LOGIN_EMAIL.replace("+", "\\+")}'`),
+  );
 });

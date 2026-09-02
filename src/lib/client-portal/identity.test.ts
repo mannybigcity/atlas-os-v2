@@ -154,13 +154,19 @@ test("AFE sample desk is afe-crm-demo, not SIS, and is not a guest preview", () 
 
 test("sample desk login is the Gmail plus-address, never the founder mailbox", () => {
   assert.equal(SAMPLE_DESK_LOGIN_EMAIL, "atlasforentrepreneurs+demo@gmail.com");
+  assert.match(SAMPLE_DESK_LOGIN_EMAIL, /\+demo@gmail\.com$/);
+  assert.doesNotMatch(SAMPLE_DESK_LOGIN_EMAIL, /@atlasforentrepreneurs\.com$/);
+  assert.notEqual(SAMPLE_DESK_LOGIN_EMAIL, FOUNDER_MAILBOX_EMAIL);
   assert.equal(isSampleDeskLoginEmail(SAMPLE_DESK_LOGIN_EMAIL), true);
   assert.equal(isSampleDeskLoginEmail(FOUNDER_MAILBOX_EMAIL), false);
   assert.equal(isForbiddenSampleDeskLoginEmail(FOUNDER_MAILBOX_EMAIL), true);
   assert.equal(isForbiddenSampleDeskLoginEmail("info@atlasforentrepreneurs.com"), true);
   assert.equal(resolvedSampleDeskLoginEmail(FOUNDER_MAILBOX_EMAIL), SAMPLE_DESK_LOGIN_EMAIL);
+  assert.equal(resolvedSampleDeskLoginEmail("info@atlasforentrepreneurs.com"), SAMPLE_DESK_LOGIN_EMAIL);
   assert.equal(canSeeSampleDesk(FOUNDER_MAILBOX_EMAIL), false);
+  assert.equal(canSeeSampleDesk("info@atlasforentrepreneurs.com"), false);
   assert.equal(canSeeSampleDesk(SAMPLE_DESK_LOGIN_EMAIL), true);
+  assert.equal(isSampleDeskLoginEmail("info@atlasforentrepreneurs.com", "info@atlasforentrepreneurs.com"), false);
   assert.equal(isSampleDeskPreviewRequest("afe-crm-demo", ""), true);
 });
 

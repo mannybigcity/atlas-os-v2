@@ -72,6 +72,17 @@ test("workspace context no longer auto-attaches afe-crm-demo to admin", () => {
   assert.match(login, /signInToSampleDesk/);
   assert.match(login, /Show the desk/);
   assert.doesNotMatch(login, /DEMO_LOGIN_PASSWORD/);
+  assert.doesNotMatch(login, /@atlasforentrepreneurs\.com/);
+  assert.doesNotMatch(login, /atlasforentrepreneurs\+demo@gmail\.com/);
+
+  const identity = readRepo("src/lib/client-portal/identity.ts");
+  assert.match(identity, /SAMPLE_DESK_LOGIN_EMAIL = "atlasforentrepreneurs\+demo@gmail\.com"/);
+  assert.doesNotMatch(identity, /SAMPLE_DESK_LOGIN_EMAIL = "[^"]*@atlasforentrepreneurs\.com"/);
+
+  const script = readRepo("scripts/provision-sample-desk-login.mjs");
+  assert.match(script, /DEFAULT_EMAIL = "atlasforentrepreneurs\+demo@gmail\.com"/);
+  assert.match(script, /email !== requestedEmail/);
+  assert.doesNotMatch(script, /DEFAULT_EMAIL = "[^"]*@atlasforentrepreneurs\.com"/);
 
   const actions = readRepo("src/server/auth/actions.ts");
   assert.match(actions, /getSampleDeskSignInCredentials/);

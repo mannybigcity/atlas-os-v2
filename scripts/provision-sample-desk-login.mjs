@@ -101,6 +101,22 @@ async function main() {
     organizationId = createdOrg.data.id;
   }
 
+  const memberships = await service
+    .from("organization_memberships")
+    .select("id, user_id")
+    .eq("organization_id", organizationId);
+  if (memberships.error) throw new Error(memberships.error.message);
+
+  for (const row of memberships.data ?? []) {
+    const { data, error } = await service.auth.admin.getUserById(String(row.user_id));
+    if (error) continue;
+    const email = normalizeEmail(data.user?.email);
+    if (email !== requestedEmail) {
+      const removed = await service.from("organization_memberships").delete().eq("id", row.id);
+      if (removed.error) throw new Error(removed.error.message);
+    }
+  }
+
   const membership = await service.from("organization_memberships").upsert(
     { user_id: userId, organization_id: organizationId, role: "owner" },
     { onConflict: "organization_id,user_id" },

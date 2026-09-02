@@ -2,9 +2,10 @@
 --
 -- FOUNDER: If production Supabase is not applying repo migrations automatically,
 -- paste this file in the SQL editor. Deploying the site does not apply it.
--- This file is idempotent. It does not create an Auth user and does not
--- attach any membership. It never writes sample companies into SIS.
--- Do not attach the sample desk to the founder Gmail mailbox.
+-- This file is idempotent. It does not create an Auth user. It never writes
+-- sample companies into SIS. Membership on afe-crm-demo is exclusive to
+-- atlasforentrepreneurs+demo@gmail.com; anyone else (including the founder
+-- Gmail mailbox) is detached. Do not attach the founder mailbox.
 
 insert into public.organizations (name, slug)
 select 'Sample desk', 'afe-crm-demo'
@@ -451,3 +452,13 @@ where organization_id in (select id from sis)
     name in ('ABC Plumbing (DEMO)', '123 Catering (DEMO)', 'XYZ Electric (DEMO)')
     or coalesce(metadata->>'demo_kind', '') = 'sis_lions_den_demo_desk'
   );
+
+-- Exclusive sample-desk login: Gmail plus-address only.
+-- Anyone else on this org is detached, including the founder Gmail mailbox.
+delete from public.organization_memberships memberships
+using public.organizations sample, auth.users users
+where memberships.organization_id = sample.id
+  and memberships.user_id = users.id
+  and lower(coalesce(sample.slug, '')) = 'afe-crm-demo'
+  and not public.is_sis_protected_organization(sample.name, sample.slug)
+  and lower(coalesce(users.email, '')) is distinct from 'atlasforentrepreneurs+demo@gmail.com';
