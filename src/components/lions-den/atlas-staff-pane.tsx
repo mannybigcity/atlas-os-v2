@@ -13,6 +13,7 @@ import {
   isAtlasAskCapped,
   type AtlasAskPlan,
 } from "@/lib/lions-den/atlas-quota";
+import { staffHandoffLine } from "@/lib/lions-den/atlas-staff-handoff";
 import { submitClientAiRequest } from "@/server/client-ai/actions";
 import { initialClientAiActionState } from "@/server/client-ai/types";
 import type { ClientAiDailyUsage, ClientAiRequest } from "@/server/client-ai/queries";
@@ -61,6 +62,7 @@ export function AtlasStaffPane({
     initialClientAiActionState,
   );
   const [draft, setDraft] = useState("");
+  const [staffRole, setStaffRole] = useState<"atlas" | "hunter" | "micah" | "david">("atlas");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [listening, setListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
@@ -194,7 +196,7 @@ export function AtlasStaffPane({
               {item.prompt}
             </p>
             <p className="mr-4 rounded-2xl rounded-bl-sm bg-[#071b42] px-2.5 py-1.5 text-xs leading-5 text-white">
-              {item.response}
+              <ThreadAnswer routedTo={item.routedTo} text={item.response} />
             </p>
           </article>
         ))}
@@ -207,7 +209,7 @@ export function AtlasStaffPane({
             ) : null}
             {state.answer ? (
               <p className="mr-4 rounded-2xl rounded-bl-sm bg-[#071b42] px-2.5 py-1.5 text-xs leading-5 text-white">
-                {state.answer}
+                <ThreadAnswer routedTo={state.routedTo} text={state.answer} />
               </p>
             ) : null}
           </article>
@@ -238,8 +240,35 @@ export function AtlasStaffPane({
       ) : (
         <form className="shrink-0 border-t border-[#ece7d8] bg-white p-2" onSubmit={onSubmit}>
           <input name="organizationId" type="hidden" value={organizationId} />
-          <input name="role" type="hidden" value="atlas" />
+          <input name="role" type="hidden" value={staffRole} />
           <input name="scopeMode" type="hidden" value="business_only" />
+          <div className="mb-1.5 flex flex-wrap gap-1" role="group" aria-label={spanish ? "Personal de Atlas" : "Atlas staff"}>
+            {(
+              [
+                ["atlas", spanish ? "Habla con Atlas" : "Talk to Atlas"],
+                ["hunter", "HUNTER"],
+                ["micah", "MICAH"],
+                ["david", "DAVID"],
+              ] as const
+            ).map(([role, label]) => {
+              const active = staffRole === role;
+              return (
+                <button
+                  className={`h-7 rounded-full px-2.5 text-[11px] font-semibold ${
+                    active
+                      ? "bg-[#071b42] text-[#f5b932]"
+                      : "bg-[#fff8e6] text-[#071b42] hover:bg-[#f5b932]/40"
+                  }`}
+                  disabled={!hasWorkspace || composerLocked}
+                  key={role}
+                  onClick={() => setStaffRole(role)}
+                  type="button"
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
           <input
             accept="image/*,.pdf,.txt,.md,.csv,.json,.doc,.docx"
             className="hidden"
@@ -316,6 +345,27 @@ export function AtlasStaffPane({
         </form>
       )}
     </section>
+  );
+}
+
+function ThreadAnswer({
+  text,
+  routedTo,
+}: {
+  text: string;
+  routedTo: "atlas" | "hunter" | "micah" | "david" | null;
+}) {
+  const line = staffHandoffLine(routedTo);
+  const body = line && text.startsWith(line) ? text.slice(line.length).trim() : text;
+  return (
+    <>
+      {line ? (
+        <span className="mb-1 block text-[10px] font-black tracking-[0.14em] text-[#f5b932]">
+          {line}
+        </span>
+      ) : null}
+      {body}
+    </>
   );
 }
 

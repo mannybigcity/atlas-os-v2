@@ -40,9 +40,21 @@ const JOB_KEYWORDS = [
   "check in",
   "content",
   "campaign",
+  "post",
+  "posts",
+  "pic",
+  "picture",
+  "flyer",
+  "social",
+  "image",
+  "instagram",
+  "facebook",
+  "google places",
   "review",
   "queue",
   "workspace",
+  "satisfaction",
+  "satisfied",
 ];
 
 const TRIVIA_PATTERNS = [
@@ -77,6 +89,12 @@ export function isLionDenJobPrompt(prompt: string) {
   if (!normalized) return false;
   if (includesAny(normalized, TRIVIA_PATTERNS) && !includesAny(normalized, JOB_KEYWORDS)) {
     return false;
+  }
+  if (
+    (/\b\d{5}\b/.test(normalized) && /\b(find|search|near|places|business)/.test(normalized)) ||
+    /\b(find|search|look\s*up)\b.+\b(in|near|around)\s+(?!the\b|this\b|my\b|our\b)/.test(normalized)
+  ) {
+    return true;
   }
   return includesAny(normalized, JOB_KEYWORDS);
 }

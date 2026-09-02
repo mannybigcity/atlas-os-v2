@@ -74,9 +74,19 @@ test("every founder Lion's Den board mounts LionsDenBoardScreen and the live Atl
   const pane = readRepo("src/components/lions-den/atlas-staff-pane.tsx");
   assert.match(pane, /Talk to Atlas/);
   assert.match(pane, /submitClientAiRequest/);
+  assert.match(pane, /HUNTER/);
+  assert.match(pane, /MICAH/);
+  assert.match(pane, /DAVID/);
+  assert.match(pane, /staffRole/);
+  assert.match(pane, /staffHandoffLine/);
   assert.doesNotMatch(pane, /previewMode/);
   assert.doesNotMatch(pane, /staff chat does not send/);
   assert.doesNotMatch(pane, /staff, not a closer/);
+
+  const handoff = readRepo("src/lib/lions-den/atlas-staff-handoff.ts");
+  assert.match(handoff, /Handed to DAVID/);
+  assert.match(handoff, /Handed to HUNTER/);
+  assert.match(handoff, /Handed to MICAH/);
 
   const hub = readRepo("src/components/lions-den/lions-den-client-hub.tsx");
   assert.match(hub, /<AtlasStaffPane/);
