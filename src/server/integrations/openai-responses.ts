@@ -18,6 +18,42 @@ export const MAX_OPENAI_SCHEMA_CHARACTERS = 30_000;
 
 export type JsonSchema = Record<string, unknown>;
 
+/** OpenAI structured outputs (strict json_schema) reject these keywords. */
+const UNSUPPORTED_JSON_SCHEMA_KEYWORDS = new Set([
+  "minLength",
+  "maxLength",
+  "minItems",
+  "maxItems",
+  "minimum",
+  "maximum",
+  "exclusiveMinimum",
+  "exclusiveMaximum",
+  "multipleOf",
+  "pattern",
+  "format",
+  "uniqueItems",
+]);
+
+export function openaiCompatibleJsonSchema(schema: JsonSchema): JsonSchema {
+  return stripUnsupportedJsonSchemaKeywords(schema) as JsonSchema;
+}
+
+function stripUnsupportedJsonSchemaKeywords(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stripUnsupportedJsonSchemaKeywords);
+  }
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const result: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (UNSUPPORTED_JSON_SCHEMA_KEYWORDS.has(key)) continue;
+    result[key] = stripUnsupportedJsonSchemaKeywords(child);
+  }
+  return result;
+}
+
 export type OpenAIUsage = {
   inputTokens: number | null;
   cachedInputTokens: number | null;
@@ -295,7 +331,7 @@ function responsesBody(input: {
         type: "json_schema" as const,
         name: input.schemaName,
         strict: true,
-        schema: input.schema,
+        schema: openaiCompatibleJsonSchema(input.schema),
       },
     },
   };
@@ -330,7 +366,7 @@ async function generateViaChatCompletions<T>(
           json_schema: {
             name: input.schemaName,
             strict: true,
-            schema: input.schema,
+            schema: openaiCompatibleJsonSchema(input.schema),
           },
         },
       },

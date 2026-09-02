@@ -44,7 +44,6 @@ const JOB_KEYWORDS = [
   "posts",
   "pic",
   "picture",
-  "flyer",
   "social",
   "image",
   "instagram",
@@ -84,10 +83,14 @@ function includesAny(value: string, keywords: string[]) {
   return keywords.some((keyword) => value.includes(keyword));
 }
 
+function hasJobKeyword(value: string) {
+  return includesAny(value, JOB_KEYWORDS) || /\bweeks?\b/.test(value);
+}
+
 export function isLionDenJobPrompt(prompt: string) {
   const normalized = prompt.trim().toLowerCase();
   if (!normalized) return false;
-  if (includesAny(normalized, TRIVIA_PATTERNS) && !includesAny(normalized, JOB_KEYWORDS)) {
+  if (includesAny(normalized, TRIVIA_PATTERNS) && !hasJobKeyword(normalized)) {
     return false;
   }
   if (
@@ -96,5 +99,5 @@ export function isLionDenJobPrompt(prompt: string) {
   ) {
     return true;
   }
-  return includesAny(normalized, JOB_KEYWORDS);
+  return hasJobKeyword(normalized);
 }

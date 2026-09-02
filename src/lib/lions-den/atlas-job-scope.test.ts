@@ -9,6 +9,7 @@ test("Lion's Den desk questions stay in scope", () => {
   assert.equal(isLionDenJobPrompt("Any notes or calendar items due?"), true);
   assert.equal(isLionDenJobPrompt("Move this prospect through the pipeline"), true);
   assert.equal(isLionDenJobPrompt("Make a Facebook post for Labor Day"), true);
+  assert.equal(isLionDenJobPrompt("Make a week of posts for 123 Catering"), true);
   assert.equal(isLionDenJobPrompt("Find plumbers in Houston, TX"), true);
   assert.equal(isLionDenJobPrompt("How is client satisfaction on this desk?"), true);
 });

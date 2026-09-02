@@ -13,7 +13,11 @@ import {
   getClientAiRoleSpec,
   type ClientAiRole,
 } from "@/server/client-ai/guardrails";
-import { createMicahGalleryDraft } from "@/server/content-studio/gallery-draft";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  createMicahGalleryDraft,
+  readMicahDemeanor,
+} from "@/server/content-studio/gallery-draft";
 import { executeHunterPlacesSearch } from "@/server/hunter/search";
 import { parseHunterChatQuery } from "@/server/hunter/review";
 import {
@@ -99,6 +103,35 @@ async function reserveClientAiQuestion(organizationId: string) {
   return { error: null, usage: reservationUsage(reservation), allowed: reservation.allowed };
 }
 
+async function getOrganizationIdentity(organizationId: string) {
+  const supabase = await createClient();
+  const mapRow = (row: { id?: unknown; slug?: unknown; name?: unknown }) => ({
+    id: String(row.id ?? organizationId),
+    slug: String(row.slug ?? ""),
+    name: String(row.name ?? ""),
+  });
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("id, slug, name")
+    .eq("id", organizationId)
+    .maybeSingle();
+  if (!error && data) return mapRow(data as { id?: unknown; slug?: unknown; name?: unknown });
+
+  try {
+    const admin = createAdminClient();
+    const { data: adminRow } = await admin
+      .from("organizations")
+      .select("id, slug, name")
+      .eq("id", organizationId)
+      .maybeSingle();
+    if (adminRow) return mapRow(adminRow as { id?: unknown; slug?: unknown; name?: unknown });
+  } catch {
+    // Service-role is optional when the user session can already read the org.
+  }
+
+  return null;
+}
+
 const executeClientAiRequest = createSubmitClientAiRequest({
   requireUser: () => requireUser("/client"),
   isSuperAdminEmail,
@@ -121,6 +154,8 @@ const executeClientAiRequest = createSubmitClientAiRequest({
     });
   },
   createMicahGalleryDraft,
+  readMicahDemeanor,
+  getOrganizationIdentity,
 });
 
 export async function submitClientAiRequest(

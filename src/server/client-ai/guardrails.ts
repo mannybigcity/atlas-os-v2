@@ -67,6 +67,8 @@ const roleKeywordSets: Record<ClientAiRole, string[]> = {
     "draft",
     "drafts",
     "visual",
+    "week",
+    "weeks",
     "micah",
   ],
   david: [
@@ -282,7 +284,8 @@ export function isMicahCreatePrompt(prompt: string) {
     "make",
     "design",
     "draft",
-    "graphic",
+    "week",
+    "weeks",
   ]);
 }
 

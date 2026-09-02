@@ -24,6 +24,11 @@ import {
   isMicahCreatePrompt,
   type ClientAiRole,
 } from "./guardrails.ts";
+import { isAfeCrmDemoOrganization } from "../../lib/client-portal/identity.ts";
+import {
+  demeanorAskMessage,
+  resolveMicahDemeanor,
+} from "../content-studio/gallery-art.ts";
 import { withStaffHandoff } from "../../lib/lions-den/atlas-staff-handoff.ts";
 import { formatHunterChatAnswer } from "../hunter/review.ts";
 import {
@@ -50,7 +55,7 @@ export const clientAiResponseSchema = {
 } as const;
 
 type MembershipLike = {
-  organization?: { id: string; name?: string | null } | null;
+  organization?: { id: string; name?: string | null; slug?: string | null } | null;
 };
 
 type Lookup<T> = {
@@ -112,17 +117,27 @@ export type ClientAiRequestDeps = {
     organizationId: string;
     userId: string;
     prompt: string;
+    demeanor: "motivational" | "friendly_local" | "comical" | "straight" | "faith";
+    demoDesk?: boolean;
     headline?: string | null;
     caption?: string | null;
     title?: string | null;
   }) => Promise<{
     status: "success" | "error";
     draftId: string | null;
+    draftIds?: string[];
     title: string;
     headline: string;
     caption: string;
+    count?: number;
     message: string;
   }>;
+  readMicahDemeanor?: (
+    organizationId: string,
+  ) => Promise<"motivational" | "friendly_local" | "comical" | "straight" | "faith" | null>;
+  getOrganizationIdentity?: (
+    organizationId: string,
+  ) => Promise<{ name?: string | null; slug?: string | null } | null>;
 };
 
 export function parseClientAiResponse(value: unknown): ClientAiResponse {
@@ -835,76 +850,145 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
       isMicahCreatePrompt(prompt) &&
       deps.createMicahGalleryDraft
     ) {
+      const identity =
+        membership?.organization ??
+        (await deps.getOrganizationIdentity?.(organizationId)) ??
+        null;
+      const demoDesk = isAfeCrmDemoOrganization(identity);
+      const storedDemeanor = (await deps.readMicahDemeanor?.(organizationId)) ?? null;
+      const resolved = resolveMicahDemeanor({
+        prompt,
+        stored: storedDemeanor,
+        demoDesk,
+      });
+      if (!resolved.demeanor) {
+        const response = withStaffHandoff(
+          "micah",
+          demeanorAskMessage({
+            demoDesk,
+            blockedFaithOnDemo: resolved.blockedFaithOnDemo,
+          }),
+        );
+        try {
+          const logged = await deps.logClientAiRequest({
+            organizationId,
+            requestedBy: user.id,
+            role,
+            scopeStatus: "needs_input",
+            status: "blocked",
+            prompt,
+            response,
+            routedTo: "micah",
+          });
+          return {
+            status: "blocked",
+            role,
+            routedTo: "micah",
+            scopeStatus: "needs_input",
+            requestId: logged.id,
+            createdAt: logged.createdAt,
+            answer: response,
+            nextStep: "Reply with Motivational, Friendly/local, Comical, or Straight.",
+            missingInputs: ["Week voice"],
+            error: null,
+            dailyUsage: currentUsage,
+          };
+        } catch {
+          return unloggedClientAiResponse({
+            status: "blocked",
+            role,
+            routedTo: "micah",
+            scopeStatus: "needs_input",
+            answer: response,
+            nextStep: "Reply with Motivational, Friendly/local, Comical, or Straight.",
+            missingInputs: ["Week voice"],
+            dailyUsage: currentUsage,
+          });
+        }
+      }
+
       const draft = await deps.createMicahGalleryDraft({
         organizationId,
         userId: user.id,
         prompt,
+        demeanor: resolved.demeanor,
+        demoDesk,
       });
 
-      if (draft.status === "success") {
-        let answer = withStaffHandoff("micah", draft.message);
-        try {
-          const spoken = await deps.generateStructuredText({
-            schemaName: "client_micah_response",
-            schema: clientAiResponseSchema,
-            maxOutputTokens: MAX_OPENAI_OUTPUT_TOKENS,
-            instructions: [
-              `You are ${roleSpec.title} inside a protected client dashboard.`,
-              `A gallery draft was already saved. Confirm it in the chat. Never claim it was posted live.`,
-              `Never send email, SMS, calls, or social posts.`,
-              `Return only the requested JSON.`,
-            ].join("\n"),
-            input: JSON.stringify({
-              userPrompt: prompt,
-              draftTitle: draft.title,
-              draftHeadline: draft.headline,
-            }),
-            parse: parseClientAiResponse,
-          });
-          answer = withStaffHandoff(
-            "micah",
-            `${spoken.value.answer}\n\n${draft.message}`.slice(0, 1600),
-          );
-        } catch {
-          answer = withStaffHandoff("micah", draft.message);
-        }
-
-        const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+      const answer = withStaffHandoff("micah", draft.message);
+      if (draft.status !== "success") {
         try {
           const logged = await deps.logClientAiRequest({
             organizationId,
             requestedBy: user.id,
             role,
             scopeStatus: decision.scopeStatus,
-            status: "succeeded",
+            status: "failed",
             prompt,
             response: answer,
             routedTo: "micah",
           });
           return {
-            status: "success",
+            status: "failed",
             role,
             routedTo: "micah",
             scopeStatus: decision.scopeStatus,
             requestId: logged.id,
             createdAt: logged.createdAt,
             answer,
-            nextStep: "Open MICAH, download the draft, and post it yourself if you want it live.",
+            nextStep: "Open MICAH and try the ask again. Nothing was posted.",
             missingInputs: [],
             error: null,
-            dailyUsage,
+            dailyUsage: currentUsage,
           };
         } catch {
           return unloggedClientAiResponse({
-            status: "success",
+            status: "failed",
             role,
             routedTo: "micah",
             scopeStatus: decision.scopeStatus,
             answer,
-            nextStep: "Open MICAH, download the draft, and post it yourself if you want it live.",
-            dailyUsage,
+            nextStep: "Open MICAH and try the ask again. Nothing was posted.",
+            dailyUsage: currentUsage,
           });
         }
+      }
+
+      const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+      try {
+        const logged = await deps.logClientAiRequest({
+          organizationId,
+          requestedBy: user.id,
+          role,
+          scopeStatus: decision.scopeStatus,
+          status: "succeeded",
+          prompt,
+          response: answer,
+          routedTo: "micah",
+        });
+        return {
+          status: "success",
+          role,
+          routedTo: "micah",
+          scopeStatus: decision.scopeStatus,
+          requestId: logged.id,
+          createdAt: logged.createdAt,
+          answer,
+          nextStep: "Open MICAH, copy a caption, download the day-card, and post it yourself if you want it live.",
+          missingInputs: [],
+          error: null,
+          dailyUsage,
+        };
+      } catch {
+        return unloggedClientAiResponse({
+          status: "success",
+          role,
+          routedTo: "micah",
+          scopeStatus: decision.scopeStatus,
+          answer,
+          nextStep: "Open MICAH, copy a caption, download the day-card, and post it yourself if you want it live.",
+          dailyUsage,
+        });
       }
     }
 
