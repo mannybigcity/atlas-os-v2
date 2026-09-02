@@ -7,7 +7,7 @@ import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenOverview } from "@/components/lions-den/lions-den-overview";
 import { isSisLionsDenRequest, isSisOrganization, shouldShowSuperAdminCrm } from "@/lib/client-portal/identity";
-import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
+import { clientOverviewRendersLionsDen, usesLionsDenHub } from "@/lib/lions-den/client-hub";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
 import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
@@ -94,8 +94,10 @@ export default async function ClientDashboardPage({
     : null;
 
   const isSisWorkspace = isSisOrganization(primaryOrganization);
-  const useLionsDen = usesLionsDenHub(primaryOrganization);
-  const dashboard = primaryOrganization && !isSisWorkspace && !useLionsDen
+  const useLionsDen = clientOverviewRendersLionsDen(primaryOrganization, {
+    showSuperAdminCrm: Boolean(organizations),
+  });
+  const dashboard = primaryOrganization && !isSisWorkspace && !usesLionsDenHub(primaryOrganization)
     ? await getClientDashboardData(primaryOrganization.id)
     : null;
   const sisDashboard = primaryOrganization && isSisWorkspace

@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { atlasStaffCanSend } from "./atlas-staff-send.ts";
-import { usesLionsDenHub } from "./client-hub.ts";
+import { clientOverviewRendersLionsDen, usesLionsDenHub } from "./client-hub.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -46,6 +46,12 @@ test("afe-crm-demo uses the Lion's Den hub even when only the DEMO name is prese
   assert.equal(usesLionsDenHub({ name: "SIS Custom Creations", slug: "" }), true);
   assert.equal(usesLionsDenHub("qtime-productions"), false);
   assert.equal(usesLionsDenHub({ name: "QTime Productions", slug: "qtime-productions" }), false);
+  assert.equal(usesLionsDenHub({ name: "Atlas For Entrepreneurs", slug: "atlas-for-entrepreneurs" }), true);
+  assert.equal(clientOverviewRendersLionsDen(null), true);
+  assert.equal(clientOverviewRendersLionsDen({ name: "Atlas For Entrepreneurs", slug: "atlas-for-entrepreneurs" }), true);
+  assert.equal(clientOverviewRendersLionsDen(undefined), true);
+  assert.equal(clientOverviewRendersLionsDen("qtime-productions"), false);
+  assert.equal(clientOverviewRendersLionsDen({ slug: "harbor-lights" }, { showSuperAdminCrm: true }), false);
 });
 
 test("every founder Lion's Den board mounts LionsDenBoardScreen and the live Atlas pane", () => {

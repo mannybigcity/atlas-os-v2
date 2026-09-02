@@ -1,12 +1,16 @@
 import {
   AFE_CRM_DEMO_SLUG,
+  AFE_OPERATOR_DESK_SLUG,
   escapeIlikeExact,
   findOrganizationByPreviewSlug,
   isAfeCrmDemoOrganization,
   isAfeCrmDemoSlug,
+  isAfeOperatorDeskOrganization,
+  isAfeOperatorDeskSlug,
   isSisOrganization,
   isSisWorkspaceSlug,
   organizationSlugsMatch,
+  pickAfeOperatorDesk,
 } from "@/lib/client-portal/identity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -210,6 +214,9 @@ function pickOrganizationFromDirectory(
     (isAfeCrmDemoSlug(requested)
       ? organizations.find((organization) => isAfeCrmDemoOrganization(organization))
       : undefined) ??
+    (isAfeOperatorDeskSlug(requested)
+      ? organizations.find((organization) => isAfeOperatorDeskOrganization(organization))
+      : undefined) ??
     null
   );
 }
@@ -333,6 +340,16 @@ export async function getAfeCrmDemoOrganization(): Promise<OrganizationSummary |
         isAfeCrmDemoOrganization(organization),
     ) ?? null
   );
+}
+
+export async function getAfeOperatorDeskOrganization(): Promise<OrganizationSummary | null> {
+  const bySlug = await getOrganizationBySlugForSuperAdmin(AFE_OPERATOR_DESK_SLUG);
+  if (bySlug.data?.id && isAfeOperatorDeskOrganization(bySlug.data)) {
+    return bySlug.data;
+  }
+
+  const directory = await listOrganizationsForOperator();
+  return pickAfeOperatorDesk(directory.filter((organization) => Boolean(organization.id))) ?? null;
 }
 
 export async function getClientAccessRoster(): Promise<

@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 import { getConfiguredDemoLoginEmail, isSuperAdminEmail } from "@/lib/env";
 import {
   canSeeSampleDesk,
+  isAfeClientDeskOrganization,
   isAfeCrmDemoOrganization,
+  isAfeOperatorDeskOrganization,
+  isFounderMailboxEmail,
   isGuestClientPreview,
   isSampleDeskPreviewRequest,
   isSisLionsDenRequest,
@@ -12,9 +15,11 @@ import {
   organizationSlugsMatch,
   organizationsVisibleToActor,
   resolveOperatorDeskOrganization,
+  shouldOpenAfeOperatorDesk,
 } from "@/lib/client-portal/identity";
 import { requireUser } from "@/server/auth/guards";
 import { getTrialProfile } from "@/server/trials/profile";
+import { ensureAfeOperatorDeskAccess } from "@/server/organizations/afe-operator-desk";
 import {
   getOrganizationBySlugForSuperAdmin,
   getUserMemberships,
@@ -89,6 +94,7 @@ export async function getClientWorkspaceContext(
   }
   const isSuperAdmin = isSuperAdminEmail(user.email);
   const seesSampleDesk = canSeeSampleDesk(user.email, getConfiguredDemoLoginEmail());
+  const canUseOperatorDesk = isSuperAdmin || isFounderMailboxEmail(user.email);
   const personalMemberships = await getUserMemberships(user.id);
   const visibleOrganizations = organizationsVisibleToActor(
     personalMemberships.data.map((membership) => membership.organization),
@@ -130,16 +136,24 @@ export async function getClientWorkspaceContext(
     loadedPreviewOrganization?.slug || previewOrgSlug,
     requestedWorkspaceSlug,
   );
+  const needsOperatorDesk =
+    canUseOperatorDesk &&
+    shouldOpenAfeOperatorDesk({
+      seesSampleDesk,
+      sisRequested,
+      hasPreviewOrganization: Boolean(loadedPreviewOrganization),
+      requestedWorkspaceSlug,
+    }) &&
+    !visibleOrganizations.some((organization) => isAfeClientDeskOrganization(organization));
   const needsDirectory =
     isSuperAdmin &&
     !seesSampleDesk &&
-    sisRequested &&
-    !isSisOrganization(loadedPreviewOrganization);
+    ((sisRequested && !isSisOrganization(loadedPreviewOrganization)) || needsOperatorDesk);
   const directory = organizationsVisibleToActor(
     needsDirectory ? await listOrganizationsForOperator() : [],
     false,
   );
-  const primaryOrganization = resolveOperatorDeskOrganization({
+  let primaryOrganization = resolveOperatorDeskOrganization({
     previewOrgSlug: loadedPreviewOrganization?.slug || previewOrgSlug,
     workspaceSlug: requestedWorkspaceSlug,
     previewOrganization: loadedPreviewOrganization,
@@ -147,6 +161,19 @@ export async function getClientWorkspaceContext(
     directory,
     allowSampleDesk: seesSampleDesk,
   });
+  if (needsOperatorDesk && (!primaryOrganization || !isAfeClientDeskOrganization(primaryOrganization))) {
+    try {
+      const operatorDesk = await ensureAfeOperatorDeskAccess(user.id, user.email);
+      if (operatorDesk && isAfeOperatorDeskOrganization(operatorDesk) && !isAfeCrmDemoOrganization(operatorDesk)) {
+        primaryOrganization = operatorDesk;
+      }
+    } catch (error) {
+      console.error("Atlas operator desk ensure failed", error);
+    }
+  }
+  if (primaryOrganization && isAfeCrmDemoOrganization(primaryOrganization) && !seesSampleDesk) {
+    primaryOrganization = undefined;
+  }
   const resolvedPreviewOrgSlug =
     seesSampleDesk || isAfeCrmDemoOrganization(primaryOrganization)
       ? ""
@@ -156,10 +183,12 @@ export async function getClientWorkspaceContext(
   const isClientPreview = isGuestClientPreview(primaryOrganization);
   const shouldPinResolvedOrganization =
     Boolean(primaryOrganization) &&
-    isSuperAdmin &&
+    canUseOperatorDesk &&
     !seesSampleDesk &&
     !isAfeCrmDemoOrganization(primaryOrganization) &&
-    (Boolean(loadedPreviewOrganization) || sisRequested);
+    (Boolean(loadedPreviewOrganization) ||
+      sisRequested ||
+      isAfeOperatorDeskOrganization(primaryOrganization));
   const memberships: WorkspaceQueryResult<MembershipSummary[]> = shouldPinResolvedOrganization
     ? {
         data: membershipsForOrganizations(visibleMemberships, [primaryOrganization!]),
@@ -185,7 +214,10 @@ export async function getClientWorkspaceContext(
   const canEditBusinessProfile =
     Boolean(primaryOrganization) &&
     !isClientPreview &&
-    (primaryMembership?.role === "owner" || primaryMembership?.role === "admin" || isSuperAdmin);
+    (primaryMembership?.role === "owner" ||
+      primaryMembership?.role === "admin" ||
+      isSuperAdmin ||
+      canUseOperatorDesk);
 
   return {
     user,
