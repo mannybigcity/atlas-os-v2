@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { AFE_CRM_DEMO_SLUG, AFE_CRM_LIVE_NAME } from "../client-portal/identity.ts";
+import { usesLionsDenHub } from "./client-hub.ts";
 import {
   AFE_LIVE_DESK_COMPANIES,
   ATLAS_STAFF_EMPTY_EN,
@@ -75,6 +76,29 @@ test("visible DEMO labels are stripped from AFE desk records and left on other d
 
   const untouched = presentLiveDeskOpportunity(sis, row);
   assert.equal(untouched.name, "ABC Plumbing (DEMO)");
+});
+
+test("MICAH uses the live Lion's Den hub pane and does not restore preview staff copy", () => {
+  const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
+  const micah = readFileSync(join(root, "src/app/client/micah/page.tsx"), "utf8");
+  const pane = readFileSync(join(root, "src/components/lions-den/atlas-staff-pane.tsx"), "utf8");
+  const hub = readFileSync(join(root, "src/components/lions-den/lions-den-client-hub.tsx"), "utf8");
+
+  assert.match(micah, /LionsDenBoardScreen board="micah"/);
+  assert.doesNotMatch(micah, /usesLionsDenHub/);
+  assert.doesNotMatch(micah, /staff chat does not send/);
+  assert.doesNotMatch(micah, /ATLAS staff/);
+  assert.doesNotMatch(micah, /\bDEMO\b/);
+  assert.match(pane, /Talk to Atlas/);
+  assert.match(pane, /submitClientAiRequest/);
+  assert.doesNotMatch(pane, /previewMode/);
+  assert.doesNotMatch(pane, /staff chat does not send/);
+  assert.doesNotMatch(pane, /\bDEMO\b/);
+  assert.match(hub, /<AtlasStaffPane/);
+  assert.doesNotMatch(hub, /previewMode/);
+  assert.equal(usesLionsDenHub({ name: AFE_CRM_LIVE_NAME, slug: AFE_CRM_DEMO_SLUG }), true);
+  assert.equal(usesLionsDenHub({ name: "AFE CRM DEMO", slug: "" }), true);
+  assert.equal(usesLionsDenHub("qtime-productions"), false);
 });
 
 test("AFE live-label SQL only updates slug afe-crm-demo and never deletes or seeds SIS", () => {

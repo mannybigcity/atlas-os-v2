@@ -5,7 +5,7 @@ import { HunterSearch } from "@/components/hunter-search";
 import { HunterReviewPile } from "@/components/lions-den/hunter-review-pile";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
-import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
+import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
 import { presentLiveDeskReviewItem } from "@/lib/lions-den/live-desk";
 import {
   clientWorkspaceHref,
@@ -56,7 +56,6 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
   const spanish = language === "es";
   const workspace = await getClientWorkspaceContext("/client/hunter", params);
   const { isClientPreview, previewOrgSlug, primaryOrganization } = workspace;
-  const useLionsDen = usesLionsDenHub(primaryOrganization);
   const aiRequests = primaryOrganization
     ? await getClientAiRequests(primaryOrganization.id, 8)
     : null;
@@ -98,7 +97,7 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
     </div>
   );
 
-  if (useLionsDen) {
+  if (!isQTimeWorkspaceSlug(primaryOrganization?.slug)) {
     return (
       <LionsDenBoardScreen board="hunter" workspace={workspace}>
         {board}

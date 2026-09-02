@@ -20,7 +20,6 @@ import type { ClientAiDailyUsage, ClientAiRequest } from "@/server/client-ai/que
 type AtlasStaffPaneProps = {
   organizationId: string;
   organizationName: string;
-  previewMode: boolean;
   requests: ClientAiRequest[];
   dailyUsage?: ClientAiDailyUsage | null;
   compact?: boolean;
