@@ -20,8 +20,11 @@ import {
   decideClientAiRoute,
   getClientAiRoleSpec,
   isClientAiRole,
+  isHunterFindPrompt,
+  isMicahCreatePrompt,
   type ClientAiRole,
 } from "./guardrails.ts";
+import { formatHunterChatAnswer } from "../hunter/review.ts";
 import {
   initialClientAiActionState,
   type ClientAiActionState,
@@ -90,6 +93,35 @@ export type ClientAiRequestDeps = {
     response: string;
     routedTo: ClientAiRole | null;
   }) => Promise<{ id: string; createdAt: string }>;
+  runHunterChatSearch?: (input: {
+    organizationId: string;
+    userId: string;
+    prompt: string;
+  }) => Promise<
+    | { status: "needs_input"; message: string }
+    | {
+        status: "success" | "error";
+        message: string;
+        query: string;
+        places: Array<{ name: string; formattedAddress: string | null }>;
+        persistedCount: number;
+      }
+  >;
+  createMicahGalleryDraft?: (input: {
+    organizationId: string;
+    userId: string;
+    prompt: string;
+    headline?: string | null;
+    caption?: string | null;
+    title?: string | null;
+  }) => Promise<{
+    status: "success" | "error";
+    draftId: string | null;
+    title: string;
+    headline: string;
+    caption: string;
+    message: string;
+  }>;
 };
 
 export function parseClientAiResponse(value: unknown): ClientAiResponse {
@@ -626,6 +658,213 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
 
     const resolvedRole = decision.routedTo ?? role;
     const roleSpec = getClientAiRoleSpec(resolvedRole);
+
+    if (
+      resolvedRole === "hunter" &&
+      isHunterFindPrompt(prompt) &&
+      deps.runHunterChatSearch
+    ) {
+      const hunt = await deps.runHunterChatSearch({
+        organizationId,
+        userId: user.id,
+        prompt,
+      });
+
+      if (hunt.status === "needs_input") {
+        const response = hunt.message;
+        try {
+          const logged = await deps.logClientAiRequest({
+            organizationId,
+            requestedBy: user.id,
+            role,
+            scopeStatus: "needs_input",
+            status: "blocked",
+            prompt,
+            response,
+            routedTo: "hunter",
+          });
+          return {
+            status: "blocked",
+            role,
+            routedTo: "hunter",
+            scopeStatus: "needs_input",
+            requestId: logged.id,
+            createdAt: logged.createdAt,
+            answer: response,
+            nextStep: "Add a business type and a ZIP or city/state, then send again.",
+            missingInputs: ["Business type", "ZIP or city/state"],
+            error: null,
+            dailyUsage: currentUsage,
+          };
+        } catch {
+          return unloggedClientAiResponse({
+            status: "blocked",
+            role,
+            routedTo: "hunter",
+            scopeStatus: "needs_input",
+            answer: response,
+            nextStep: "Add a business type and a ZIP or city/state, then send again.",
+            missingInputs: ["Business type", "ZIP or city/state"],
+            dailyUsage: currentUsage,
+          });
+        }
+      }
+
+      const response = hunt.status === "success"
+        ? formatHunterChatAnswer(hunt)
+        : hunt.message;
+
+      if (hunt.status !== "success") {
+        try {
+          const logged = await deps.logClientAiRequest({
+            organizationId,
+            requestedBy: user.id,
+            role,
+            scopeStatus: decision.scopeStatus,
+            status: "failed",
+            prompt,
+            response,
+            routedTo: "hunter",
+          });
+          return {
+            status: "failed",
+            role,
+            routedTo: "hunter",
+            scopeStatus: decision.scopeStatus,
+            requestId: logged.id,
+            createdAt: logged.createdAt,
+            answer: response,
+            nextStep: "Open HUNTER and try the search form, or send the ask again.",
+            missingInputs: [],
+            error: response,
+            dailyUsage: currentUsage,
+          };
+        } catch {
+          return unloggedClientAiResponse({
+            status: "failed",
+            role,
+            routedTo: "hunter",
+            scopeStatus: decision.scopeStatus,
+            answer: response,
+            nextStep: "Open HUNTER and try the search form, or send the ask again.",
+            dailyUsage: currentUsage,
+            error: response,
+          });
+        }
+      }
+
+      const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+      try {
+        const logged = await deps.logClientAiRequest({
+          organizationId,
+          requestedBy: user.id,
+          role,
+          scopeStatus: decision.scopeStatus,
+          status: "succeeded",
+          prompt,
+          response,
+          routedTo: "hunter",
+        });
+        return {
+          status: "success",
+          role,
+          routedTo: "hunter",
+          scopeStatus: decision.scopeStatus,
+          requestId: logged.id,
+          createdAt: logged.createdAt,
+          answer: response,
+          nextStep: "Open HUNTER and accept finds into Prospects. Atlas will not contact them.",
+          missingInputs: [],
+          error: null,
+          dailyUsage,
+        };
+      } catch {
+        return unloggedClientAiResponse({
+          status: "success",
+          role,
+          routedTo: "hunter",
+          scopeStatus: decision.scopeStatus,
+          answer: response,
+          nextStep: "Open HUNTER and accept finds into Prospects. Atlas will not contact them.",
+          dailyUsage,
+        });
+      }
+    }
+
+    if (
+      resolvedRole === "micah" &&
+      isMicahCreatePrompt(prompt) &&
+      deps.createMicahGalleryDraft
+    ) {
+      const draft = await deps.createMicahGalleryDraft({
+        organizationId,
+        userId: user.id,
+        prompt,
+      });
+
+      if (draft.status === "success") {
+        let answer = draft.message;
+        try {
+          const spoken = await deps.generateStructuredText({
+            schemaName: "client_micah_response",
+            schema: clientAiResponseSchema,
+            maxOutputTokens: MAX_OPENAI_OUTPUT_TOKENS,
+            instructions: [
+              `You are ${roleSpec.title} inside a protected client dashboard.`,
+              `A gallery draft was already saved. Confirm it in the chat. Never claim it was posted live.`,
+              `Never send email, SMS, calls, or social posts.`,
+              `Return only the requested JSON.`,
+            ].join("\n"),
+            input: JSON.stringify({
+              userPrompt: prompt,
+              draftTitle: draft.title,
+              draftHeadline: draft.headline,
+            }),
+            parse: parseClientAiResponse,
+          });
+          answer = `${spoken.value.answer}\n\n${draft.message}`.slice(0, 1600);
+        } catch {
+          answer = draft.message;
+        }
+
+        const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+        try {
+          const logged = await deps.logClientAiRequest({
+            organizationId,
+            requestedBy: user.id,
+            role,
+            scopeStatus: decision.scopeStatus,
+            status: "succeeded",
+            prompt,
+            response: answer,
+            routedTo: "micah",
+          });
+          return {
+            status: "success",
+            role,
+            routedTo: "micah",
+            scopeStatus: decision.scopeStatus,
+            requestId: logged.id,
+            createdAt: logged.createdAt,
+            answer,
+            nextStep: "Open MICAH, download the draft, and post it yourself if you want it live.",
+            missingInputs: [],
+            error: null,
+            dailyUsage,
+          };
+        } catch {
+          return unloggedClientAiResponse({
+            status: "success",
+            role,
+            routedTo: "micah",
+            scopeStatus: decision.scopeStatus,
+            answer,
+            nextStep: "Open MICAH, download the draft, and post it yourself if you want it live.",
+            dailyUsage,
+          });
+        }
+      }
+    }
 
     if (decision.scopeStatus === "rerouted" && resolvedRole === "atlas") {
       const response =

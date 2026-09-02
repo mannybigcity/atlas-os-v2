@@ -7,19 +7,11 @@ import { isSuperAdminEmail } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
+import { executeHunterPlacesSearch } from "@/server/hunter/search";
 import {
-  IntegrationConfigurationError,
-  IntegrationRequestError,
-} from "@/server/integrations/errors";
-import { searchGooglePlacesText } from "@/server/integrations/google-places";
-import {
-  HUNTER_DAILY_SEARCH_CAP,
-  HUNTER_SEARCH_RESULT_CAP,
+  buildHunterSearchQuery,
   acceptedProspectNextAction,
   acceptedProspectResearchSummary,
-  buildHunterSearchQuery,
-  hunterDailyCapReached,
-  placesToReviewInserts,
 } from "@/server/hunter/review";
 import type { HunterSearchState } from "@/server/hunter/types";
 
@@ -55,80 +47,6 @@ async function requireHunterOperator(organizationId: string | null) {
   return { user, organizationId };
 }
 
-async function hunterSearchUsageToday(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data, error } = await supabase.rpc("get_hunter_places_search_count_today");
-  if (error) {
-    const utcDay = new Date().toISOString().slice(0, 10);
-    const [ledgerResult, usageResult] = await Promise.all([
-      supabase.from("atlas_agent_runs").select("id").limit(1),
-      supabase
-        .from("atlas_agent_runs")
-        .select("id", { count: "exact", head: true })
-        .eq("role", "hunter")
-        .eq("workflow", "google_places_preview")
-        .eq("provider", "google_places")
-        .eq("status", "succeeded")
-        .gte("occurred_at", `${utcDay}T00:00:00.000Z`),
-    ]);
-
-    if (ledgerResult.error || usageResult.error) {
-      return { setupRequired: true as const, count: 0 };
-    }
-
-    return { setupRequired: false as const, count: usageResult.count ?? 0 };
-  }
-
-  return { setupRequired: false as const, count: Number(data ?? 0) };
-}
-
-async function recordHunterSearch(input: {
-  supabase: Awaited<ReturnType<typeof createClient>>;
-  organizationId: string | null;
-  userId: string;
-  query: string;
-  resultCount: number;
-  radiusMiles: number | null;
-  status: "succeeded" | "failed" | "blocked";
-  errorCode: string | null;
-  placesContentPersisted: boolean;
-}) {
-  const { error: rpcError } = await input.supabase.rpc("record_hunter_places_search", {
-    p_organization_id: input.organizationId,
-    p_query: input.query,
-    p_result_count: input.resultCount,
-    p_radius_miles: input.radiusMiles,
-    p_status: input.status,
-    p_error_code: input.errorCode,
-    p_places_content_persisted: input.placesContentPersisted,
-  });
-
-  if (!rpcError) {
-    return null;
-  }
-
-  const { error } = await input.supabase.from("atlas_agent_runs").insert({
-    organization_id: input.organizationId,
-    role: "hunter",
-    workflow: "google_places_preview",
-    provider: "google_places",
-    status: input.status,
-    request_units: input.status === "blocked" ? 0 : 1,
-    result_count: input.resultCount,
-    initiated_by: input.userId,
-    estimated_cost_microusd: input.status === "succeeded" ? 32_000 : 0,
-    error_code: input.errorCode,
-    metadata: {
-      query: input.query,
-      max_results: HUNTER_SEARCH_RESULT_CAP,
-      radius_miles: input.radiusMiles,
-      places_content_persisted: input.placesContentPersisted,
-      list_price_exposure_after_free_cap_usd: 0.032,
-    },
-  });
-
-  return error?.message ?? null;
-}
-
 export async function searchHunterProspects(
   _previousState: HunterSearchState,
   formData: FormData,
@@ -160,140 +78,12 @@ export async function searchHunterProspects(
     };
   }
 
-  const supabase = await createClient();
-  const usage = await hunterSearchUsageToday(supabase);
-
-  if (usage.setupRequired) {
-    return {
-      status: "error",
-      message: "Apply the Atlas Agent Usage Ledger migration before using a paid data API.",
-      query: null,
-      places: [],
-      persistedCount: 0,
-    };
-  }
-
-  if (hunterDailyCapReached(usage.count)) {
-    return {
-      status: "error",
-      message: "HUNTER reached the 20-search daily safety cap. Review today's results before spending more.",
-      query: null,
-      places: [],
-      persistedCount: 0,
-    };
-  }
-
-  try {
-    const result = await searchGooglePlacesText({
-      textQuery: parsed.textQuery,
-      maxResults: HUNTER_SEARCH_RESULT_CAP,
-      languageCode: "en",
-      regionCode: "US",
-      includeWebsite: false,
-      includePureServiceAreaBusinesses: true,
-    });
-
-    let persistedCount = 0;
-    if (organizationId) {
-      const rows = placesToReviewInserts(
-        organizationId,
-        user.id,
-        parsed.textQuery,
-        result.places,
-      );
-      if (rows.length > 0) {
-        const { data: existing } = await supabase
-          .from("organization_hunter_review_items")
-          .select("place_id, status")
-          .eq("organization_id", organizationId)
-          .in("place_id", rows.map((row) => row.place_id));
-        const accepted = new Set(
-          (existing ?? [])
-            .filter((row) => row.status === "accepted")
-            .map((row) => row.place_id),
-        );
-        const pendingRows = rows.filter((row) => !accepted.has(row.place_id));
-        if (pendingRows.length > 0) {
-          const { error: persistError } = await supabase
-            .from("organization_hunter_review_items")
-            .upsert(pendingRows, { onConflict: "organization_id,place_id" });
-          if (!persistError) {
-            persistedCount = pendingRows.length;
-          }
-        }
-      }
-    }
-
-    const recordError = await recordHunterSearch({
-      supabase,
-      organizationId,
-      userId: user.id,
-      query: parsed.textQuery,
-      resultCount: result.places.length,
-      radiusMiles,
-      status: "succeeded",
-      errorCode: null,
-      placesContentPersisted: persistedCount > 0,
-    });
-
-    if (recordError) {
-      return {
-        status: "error",
-        message: "The provider returned results, but Atlas could not record API usage. Run the search again only after checking the ledger.",
-        query: parsed.textQuery,
-        places: [],
-        persistedCount: 0,
-      };
-    }
-
-    if (organizationId) {
-      revalidatePath("/client/hunter");
-      revalidatePath("/client/prospects");
-    }
-
-    const persistNote = organizationId
-      ? persistedCount
-        ? ` ${persistedCount} listing${persistedCount === 1 ? "" : "s"} saved to the REVIEW PILE. They are not Prospects until you accept them. Atlas will not email, call, or text anyone.`
-        : " Listings already accepted stay in Prospects. New finds were not added because they were already accepted."
-      : " Results stay only in this page session and are not copied into the CRM.";
-
-    return {
-      status: "success",
-      message: `${result.places.length} Google Maps result${result.places.length === 1 ? "" : "s"}.${persistNote}`,
-      query: parsed.textQuery,
-      places: result.places,
-      persistedCount,
-    };
-  } catch (error) {
-    const errorCode =
-      error instanceof IntegrationConfigurationError ||
-      error instanceof IntegrationRequestError
-        ? error.code
-        : "unknown_error";
-
-    await recordHunterSearch({
-      supabase,
-      organizationId,
-      userId: user.id,
-      query: parsed.textQuery,
-      resultCount: 0,
-      radiusMiles,
-      status: error instanceof IntegrationConfigurationError ? "blocked" : "failed",
-      errorCode,
-      placesContentPersisted: false,
-    });
-
-    return {
-      status: "error",
-      message:
-        error instanceof IntegrationConfigurationError
-          ? "GOOGLE_PLACES_API_KEY is not configured in the server deployment environment."
-          : "Google Places could not complete this search. The failed request was recorded.",
-      query: parsed.textQuery,
-      places: [],
-      persistedCount: 0,
-    };
-  }
+  return executeHunterPlacesSearch({
+    organizationId,
+    userId: user.id,
+    textQuery: parsed.textQuery,
+    radiusMiles: radiusMilesRaw ? radiusMiles : null,
+  });
 }
 
 export async function acceptHunterReviewItem(formData: FormData) {

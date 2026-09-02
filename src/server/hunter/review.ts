@@ -49,6 +49,52 @@ export function buildHunterSearchQuery(input: {
   return { ok: true as const, textQuery, location };
 }
 
+export function parseHunterChatQuery(prompt: string) {
+  const raw = prompt.trim();
+  if (!raw) {
+    return { ok: false as const, error: "Enter a business type plus a ZIP code or city/state." };
+  }
+
+  const zipCode = raw.match(/\b(\d{5})(?:-\d{4})?\b/)?.[1] ?? "";
+  const locationClause = raw.match(/\b(?:in|near|around|within)\s+(.+)$/i)?.[1] ?? "";
+  let city = "";
+  let state = "";
+
+  if (locationClause) {
+    const cityState =
+      locationClause.match(/^([^,]+),\s*([A-Za-z]{2})\b/) ??
+      locationClause.match(/^([A-Za-z][A-Za-z\s.'-]+?)\s+([A-Za-z]{2})\b/);
+    if (cityState) {
+      city = cityState[1].replace(/\b\d{5}(?:-\d{4})?\b/g, "").trim();
+      state = cityState[2].toUpperCase();
+    } else {
+      city = locationClause
+        .replace(/\b\d{5}(?:-\d{4})?\b/g, "")
+        .replace(/\bzip\s*code\b/gi, "")
+        .trim();
+    }
+  }
+
+  const service = raw
+    .replace(/\b(please|can you|could you|i need|i want)\b/gi, " ")
+    .replace(/\b(find|search|look\s*up|get|show me|show|google\s+places?)\b/gi, " ")
+    .replace(/\b(me|some|a|an|the|for)\b/gi, " ")
+    .replace(/\b(prospects?|leads?|local\s+businesses?|businesses?)\b/gi, " ")
+    .replace(/\b(in|near|around|within)\s+.+$/i, " ")
+    .replace(/\b\d{5}(?:-\d{4})?\b/g, " ")
+    .replace(/[,:]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return buildHunterSearchQuery({
+    service,
+    zipCode,
+    city,
+    state,
+    radiusMiles: null,
+  });
+}
+
 export function hunterDailyCapReached(usedToday: number) {
   return usedToday >= HUNTER_DAILY_SEARCH_CAP;
 }
@@ -84,4 +130,23 @@ export function placesToReviewInserts(
     status: "pending" as const,
     created_by: userId,
   }));
+}
+
+export function formatHunterChatAnswer(result: {
+  message: string;
+  places: Array<{ name: string; formattedAddress: string | null }>;
+}) {
+  const names = result.places
+    .slice(0, 10)
+    .map((place, index) => {
+      const address = place.formattedAddress ? ` — ${place.formattedAddress}` : "";
+      return `${index + 1}. ${place.name}${address}`;
+    })
+    .join("\n");
+
+  const listing = names
+    ? `\n\n${names}\n\nOpen HUNTER to accept or dismiss. Atlas did not call, email, or text anyone.`
+    : " Open HUNTER to review the pile. Atlas did not call, email, or text anyone.";
+
+  return `${result.message}${listing}`.slice(0, 1600);
 }

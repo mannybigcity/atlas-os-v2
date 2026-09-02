@@ -13,6 +13,9 @@ import {
   getClientAiRoleSpec,
   type ClientAiRole,
 } from "@/server/client-ai/guardrails";
+import { createMicahGalleryDraft } from "@/server/content-studio/gallery-draft";
+import { executeHunterPlacesSearch } from "@/server/hunter/search";
+import { parseHunterChatQuery } from "@/server/hunter/review";
 import {
   createSubmitClientAiRequest,
 } from "@/server/client-ai/execute-request";
@@ -106,6 +109,18 @@ const executeClientAiRequest = createSubmitClientAiRequest({
   getClientDashboardData,
   loadRoleMarkdown,
   logClientAiRequest,
+  runHunterChatSearch: async ({ organizationId, userId, prompt }) => {
+    const parsed = parseHunterChatQuery(prompt);
+    if (!parsed.ok) {
+      return { status: "needs_input" as const, message: parsed.error };
+    }
+    return executeHunterPlacesSearch({
+      organizationId,
+      userId,
+      textQuery: parsed.textQuery,
+    });
+  },
+  createMicahGalleryDraft,
 });
 
 export async function submitClientAiRequest(

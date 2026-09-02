@@ -67,6 +67,8 @@ function createHarness(options: {
   memberships?: ClientAiRequestDeps["getUserMemberships"];
   generate?: ClientAiRequestDeps["generateStructuredText"];
   generateError?: unknown;
+  runHunterChatSearch?: ClientAiRequestDeps["runHunterChatSearch"];
+  createMicahGalleryDraft?: ClientAiRequestDeps["createMicahGalleryDraft"];
 }) {
   let used = options.used ?? 0;
   let generateCalls = 0;
@@ -125,6 +127,8 @@ function createHarness(options: {
       id: `req-${generateCalls + reserveCalls + 1}`,
       createdAt: "2026-09-01T00:00:00.000Z",
     }),
+    runHunterChatSearch: options.runHunterChatSearch,
+    createMicahGalleryDraft: options.createMicahGalleryDraft,
   };
 
   return {
@@ -309,3 +313,96 @@ test("UNLIMITED never blocks a successful ask", async () => {
   assert.equal(result.dailyUsage?.used, 41);
   assert.equal(stats().used, 41);
 });
+
+test("Atlas chat box routes a flyer ask to MICAH and stores a gallery draft", async () => {
+  let drafted = 0;
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    createMicahGalleryDraft: async () => {
+      drafted += 1;
+      return {
+        status: "success",
+        draftId: "draft-1",
+        title: "MICAH draft: Labor Day flyer",
+        headline: "Labor Day flyer",
+        caption: "Draft only. Download this file and post it yourself.",
+        message:
+          "MICAH saved a downloadable draft in the gallery: Labor Day flyer. Nothing was posted to Facebook or Instagram. Open MICAH to download it and post it yourself.",
+      };
+    },
+  });
+  const result = await submit(
+    initialClientAiActionState,
+    askForm("Make a Facebook post and a flyer image for Labor Day"),
+  );
+  assert.equal(result.status, "success");
+  assert.equal(result.routedTo, "micah");
+  assert.equal(drafted, 1);
+  assert.match(String(result.answer), /did not publish|Nothing was posted/i);
+  assert.equal(stats().used, 1);
+});
+
+test("Atlas chat box routes a local-business find to HUNTER review pile, not outreach", async () => {
+  let searched = 0;
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    runHunterChatSearch: async () => {
+      searched += 1;
+      return {
+        status: "success",
+        message:
+          "2 Google Maps results. 2 listings saved to the REVIEW PILE. They are not Prospects until you accept them. Atlas will not email, call, or text anyone.",
+        query: "plumbers in Houston, TX",
+        persistedCount: 2,
+        places: [
+          {
+            placeId: "p1",
+            name: "Houston Pipe Co",
+            formattedAddress: "Houston, TX",
+            googleMapsUrl: "https://maps.google.com/?cid=1",
+            websiteUrl: null,
+            primaryType: "plumber",
+            businessStatus: "OPERATIONAL",
+          },
+          {
+            placeId: "p2",
+            name: "Bayou Plumbing",
+            formattedAddress: "Houston, TX",
+            googleMapsUrl: "https://maps.google.com/?cid=2",
+            websiteUrl: null,
+            primaryType: "plumber",
+            businessStatus: "OPERATIONAL",
+          },
+        ],
+      };
+    },
+  });
+  const result = await submit(
+    initialClientAiActionState,
+    askForm("Find plumbers in Houston, TX"),
+  );
+  assert.equal(result.status, "success");
+  assert.equal(result.routedTo, "hunter");
+  assert.equal(searched, 1);
+  assert.equal(stats().generateCalls, 0);
+  assert.match(String(result.answer), /REVIEW PILE/);
+  assert.match(String(result.answer), /Houston Pipe Co/);
+  assert.doesNotMatch(String(result.answer), /emailed|called these businesses/i);
+  assert.equal(stats().used, 1);
+});
+
+test("HUNTER chat search without a market asks for ZIP or city and does not count", async () => {
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    runHunterChatSearch: async () => ({
+      status: "needs_input",
+      message: "Enter a business type plus a ZIP code or city/state.",
+    }),
+  });
+  const result = await submit(initialClientAiActionState, askForm("Find local businesses for HUNTER"));
+  assert.equal(result.status, "blocked");
+  assert.equal(result.scopeStatus, "needs_input");
+  assert.equal(stats().used, 0);
+  assert.equal(stats().generateCalls, 0);
+});
+

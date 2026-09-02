@@ -8,6 +8,7 @@ import {
   buildHunterSearchQuery,
   hunterDailyCapReached,
   placesToReviewInserts,
+  parseHunterChatQuery,
 } from "./review.ts";
 
 test("HUNTER keeps the documented 10-result / 20-search UTC-day caps", () => {
@@ -64,4 +65,22 @@ test("review pile inserts stay capped at ten Google Places rows", () => {
   assert.equal(rows.length, 10);
   assert.equal(rows[0]?.status, "pending");
   assert.equal(rows[0]?.organization_id, "org-1");
+});
+
+test("chat prompts parse into a HUNTER search without becoming Prospects", () => {
+  const houston = parseHunterChatQuery("Find plumbers in Houston, TX");
+  assert.equal(houston.ok, true);
+  if (houston.ok) {
+    assert.match(houston.textQuery, /plumbers in Houston, TX/);
+  }
+
+  const zip = parseHunterChatQuery("find local daycares near 77065");
+  assert.equal(zip.ok, true);
+  if (zip.ok) {
+    assert.match(zip.textQuery, /daycare/);
+    assert.match(zip.textQuery, /77065/);
+  }
+
+  const missing = parseHunterChatQuery("find prospects");
+  assert.equal(missing.ok, false);
 });
