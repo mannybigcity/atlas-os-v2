@@ -53,6 +53,8 @@ const JOB_KEYWORDS = [
   "review",
   "queue",
   "workspace",
+  "satisfaction",
+  "satisfied",
 ];
 
 const TRIVIA_PATTERNS = [

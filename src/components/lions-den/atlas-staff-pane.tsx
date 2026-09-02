@@ -13,6 +13,7 @@ import {
   isAtlasAskCapped,
   type AtlasAskPlan,
 } from "@/lib/lions-den/atlas-quota";
+import { staffHandoffLine } from "@/lib/lions-den/atlas-staff-handoff";
 import { submitClientAiRequest } from "@/server/client-ai/actions";
 import { initialClientAiActionState } from "@/server/client-ai/types";
 import type { ClientAiDailyUsage, ClientAiRequest } from "@/server/client-ai/queries";
@@ -195,7 +196,7 @@ export function AtlasStaffPane({
               {item.prompt}
             </p>
             <p className="mr-4 rounded-2xl rounded-bl-sm bg-[#071b42] px-2.5 py-1.5 text-xs leading-5 text-white">
-              {item.response}
+              <ThreadAnswer routedTo={item.routedTo} text={item.response} />
             </p>
           </article>
         ))}
@@ -208,12 +209,7 @@ export function AtlasStaffPane({
             ) : null}
             {state.answer ? (
               <p className="mr-4 rounded-2xl rounded-bl-sm bg-[#071b42] px-2.5 py-1.5 text-xs leading-5 text-white">
-                {state.routedTo && state.routedTo !== "atlas" ? (
-                  <span className="mb-1 block text-[10px] font-black tracking-[0.14em] text-[#f5b932]">
-                    {state.routedTo.toUpperCase()}
-                  </span>
-                ) : null}
-                {state.answer}
+                <ThreadAnswer routedTo={state.routedTo} text={state.answer} />
               </p>
             ) : null}
           </article>
@@ -349,6 +345,27 @@ export function AtlasStaffPane({
         </form>
       )}
     </section>
+  );
+}
+
+function ThreadAnswer({
+  text,
+  routedTo,
+}: {
+  text: string;
+  routedTo: "atlas" | "hunter" | "micah" | "david" | null;
+}) {
+  const line = staffHandoffLine(routedTo);
+  const body = line && text.startsWith(line) ? text.slice(line.length).trim() : text;
+  return (
+    <>
+      {line ? (
+        <span className="mb-1 block text-[10px] font-black tracking-[0.14em] text-[#f5b932]">
+          {line}
+        </span>
+      ) : null}
+      {body}
+    </>
   );
 }
 

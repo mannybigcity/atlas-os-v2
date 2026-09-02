@@ -24,6 +24,7 @@ import {
   isMicahCreatePrompt,
   type ClientAiRole,
 } from "./guardrails.ts";
+import { withStaffHandoff } from "../../lib/lions-den/atlas-staff-handoff.ts";
 import { formatHunterChatAnswer } from "../hunter/review.ts";
 import {
   initialClientAiActionState,
@@ -437,6 +438,44 @@ function summarizeDashboard(organizationName: string, dashboard: DashboardLike) 
   };
 }
 
+function formatDavidWorkspaceAnswer(workspace: ReturnType<typeof summarizeDashboard>) {
+  const parts: string[] = [];
+  const pipeline = workspace.openPipeline;
+  if (pipeline.length > 0) {
+    parts.push(
+      pipeline
+        .slice(0, 5)
+        .map((item) => {
+          const next = item.nextAction ? ` Next: ${item.nextAction}` : "";
+          return `${item.name} (${item.stage}).${next}`;
+        })
+        .join(" "),
+    );
+  } else if (workspace.opportunities.length > 0) {
+    parts.push(
+      workspace.opportunities
+        .slice(0, 5)
+        .map((item) => `${item.name} (${item.stage})`)
+        .join(" "),
+    );
+  }
+
+  if (workspace.approvalQueue.length > 0) {
+    parts.push(
+      `Review queue: ${workspace.approvalQueue
+        .slice(0, 3)
+        .map((item) => item.title)
+        .join("; ")}.`,
+    );
+  }
+
+  if (parts.length === 0) {
+    return "DAVID sees no open pipeline, follow-up, or notes on this desk yet. Atlas did not invent contacts and did not call, email, or text anyone.";
+  }
+
+  return `${parts.join(" ")} DAVID did not call, email, or text anyone. No new contacts were invented.`;
+}
+
 function unloggedClientAiResponse(input: {
   status: "success" | "blocked" | "failed";
   role: ClientAiRole;
@@ -711,7 +750,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
       }
 
       const response = hunt.status === "success"
-        ? formatHunterChatAnswer(hunt)
+        ? withStaffHandoff("hunter", formatHunterChatAnswer(hunt))
         : hunt.message;
 
       if (hunt.status !== "success") {
@@ -803,7 +842,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
       });
 
       if (draft.status === "success") {
-        let answer = draft.message;
+        let answer = withStaffHandoff("micah", draft.message);
         try {
           const spoken = await deps.generateStructuredText({
             schemaName: "client_micah_response",
@@ -822,9 +861,12 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
             }),
             parse: parseClientAiResponse,
           });
-          answer = `${spoken.value.answer}\n\n${draft.message}`.slice(0, 1600);
+          answer = withStaffHandoff(
+            "micah",
+            `${spoken.value.answer}\n\n${draft.message}`.slice(0, 1600),
+          );
         } catch {
-          answer = draft.message;
+          answer = withStaffHandoff("micah", draft.message);
         }
 
         const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
@@ -866,49 +908,6 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
       }
     }
 
-    if (decision.scopeStatus === "rerouted" && resolvedRole === "atlas") {
-      const response =
-        decision.reason ?? "That question belongs with the coordinator.";
-      const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
-
-      try {
-        const logged = await deps.logClientAiRequest({
-          organizationId,
-          requestedBy: user.id,
-          role,
-          scopeStatus: decision.scopeStatus,
-          status: "succeeded",
-          prompt,
-          response,
-          routedTo: resolvedRole,
-        });
-
-        return {
-          status: "success",
-          role,
-          routedTo: resolvedRole,
-          scopeStatus: decision.scopeStatus,
-          requestId: logged.id,
-          createdAt: logged.createdAt,
-          answer: response,
-          nextStep: "Switch to the coordinator for a workspace-wide answer.",
-          missingInputs: [],
-          error: null,
-          dailyUsage,
-        };
-      } catch {
-        return unloggedClientAiResponse({
-          status: "success",
-          role,
-          routedTo: resolvedRole,
-          scopeStatus: decision.scopeStatus,
-          answer: response,
-          nextStep: "Switch to the coordinator for a workspace-wide answer.",
-          dailyUsage,
-        });
-      }
-    }
-
     const dashboard = await deps.getClientDashboardData(organizationId);
     const guardrails = await deps.loadRoleMarkdown(resolvedRole);
     const organizationName = membership?.organization?.name ?? "Client workspace";
@@ -925,7 +924,9 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
           `You are ${roleSpec.title} inside a protected client dashboard.`,
           `You only answer Lion's Den desk work for this client: pipeline, prospects, follow-up, notes, calendar, HUNTER pile, MICAH drafts, and their business on this desk.`,
           `Refuse trivia and anything that is not their job in this CRM. Never send email, SMS, calls, or social posts.`,
-          `Follow the guardrails below exactly.`,
+          resolvedRole === "david"
+            ? `DAVID answers from this workspace only: pipeline, follow-up, notes, history, next step to a sale, and client satisfaction. Do not invent contacts. Do not call, email, or text.`
+            : `Follow the guardrails below exactly.`,
           `Use only the supplied workspace context and do not invent facts, metrics, events, or results.`,
           `Never browse the web, scrape sources, send messages, publish content, spend money, or change credentials.`,
           `If the request is missing key inputs, say exactly which ones are needed.`,
@@ -943,6 +944,46 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
         parse: parseClientAiResponse,
       });
     } catch (error) {
+      if (resolvedRole === "david" && !(error instanceof IntegrationConfigurationError)) {
+        const answer = withStaffHandoff("david", formatDavidWorkspaceAnswer(workspaceSummary));
+        const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+        try {
+          const logged = await deps.logClientAiRequest({
+            organizationId,
+            requestedBy: user.id,
+            role,
+            scopeStatus: decision.scopeStatus,
+            status: "succeeded",
+            prompt,
+            response: answer,
+            routedTo: "david",
+          });
+          return {
+            status: "success",
+            role,
+            routedTo: "david",
+            scopeStatus: decision.scopeStatus,
+            requestId: logged.id,
+            createdAt: logged.createdAt,
+            answer,
+            nextStep: "Open Follow-up and work the next visible action. Atlas will not contact anyone.",
+            missingInputs: [],
+            error: null,
+            dailyUsage,
+          };
+        } catch {
+          return unloggedClientAiResponse({
+            status: "success",
+            role,
+            routedTo: "david",
+            scopeStatus: decision.scopeStatus,
+            answer,
+            nextStep: "Open Follow-up and work the next visible action. Atlas will not contact anyone.",
+            dailyUsage,
+          });
+        }
+      }
+
       const response = clientAiUserFacingError(error);
       const failedStatus = error instanceof IntegrationConfigurationError ? "blocked" : "failed";
 
@@ -986,8 +1027,9 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
     }
 
     const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+    const answer = withStaffHandoff(resolvedRole, result.value.answer);
     const responseText = formatRequestResponse({
-      answer: result.value.answer,
+      answer,
       nextStep: result.value.nextStep,
       missingInputs: result.value.missingInputs,
     });
@@ -1011,7 +1053,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
         scopeStatus: decision.scopeStatus,
         requestId: logged.id,
         createdAt: logged.createdAt,
-        answer: result.value.answer,
+        answer,
         nextStep: result.value.nextStep,
         missingInputs: result.value.missingInputs,
         error: null,
@@ -1023,7 +1065,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
         role,
         routedTo: resolvedRole,
         scopeStatus: decision.scopeStatus,
-        answer: result.value.answer,
+        answer,
         nextStep: result.value.nextStep,
         missingInputs: result.value.missingInputs,
         dailyUsage,

@@ -88,6 +88,12 @@ const roleKeywordSets: Record<ClientAiRole, string[]> = {
     "sale",
     "sales",
     "david",
+    "satisfaction",
+    "satisfied",
+    "unhappy",
+    "complaint",
+    "happy customer",
+    "client satisfaction",
   ],
 };
 

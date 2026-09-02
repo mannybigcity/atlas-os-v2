@@ -74,6 +74,8 @@ function createHarness(options: {
   let generateCalls = 0;
   let reserveCalls = 0;
   const tokenCaps: number[] = [];
+  const schemaNames: string[] = [];
+  const markdownRoles: string[] = [];
   const plan = options.plan ?? "basic";
 
   const generate: ClientAiRequestDeps["generateStructuredText"] =
@@ -81,6 +83,7 @@ function createHarness(options: {
     (async (request) => {
       generateCalls += 1;
       tokenCaps.push(request.maxOutputTokens ?? -1);
+      schemaNames.push(request.schemaName);
       if (options.generateError) throw options.generateError;
       return {
         value: request.parse({
@@ -122,7 +125,10 @@ function createHarness(options: {
     },
     generateStructuredText: generate,
     getClientDashboardData: async () => emptyDashboard(),
-    loadRoleMarkdown: async () => "# Atlas\n",
+    loadRoleMarkdown: async (role) => {
+      markdownRoles.push(role);
+      return `# ${role}\n`;
+    },
     logClientAiRequest: async () => ({
       id: `req-${generateCalls + reserveCalls + 1}`,
       createdAt: "2026-09-01T00:00:00.000Z",
@@ -133,7 +139,7 @@ function createHarness(options: {
 
   return {
     submit: createSubmitClientAiRequest(deps),
-    stats: () => ({ used, generateCalls, reserveCalls, tokenCaps }),
+    stats: () => ({ used, generateCalls, reserveCalls, tokenCaps, schemaNames, markdownRoles }),
   };
 }
 
@@ -185,7 +191,12 @@ test("founder DEMO desk asks: in-scope 0→1, off-topic stays 1, in-scope 1→2"
   const first = await submit(initialClientAiActionState, askForm(IN_SCOPE_FOLLOW_UP));
   assert.equal(first.status, "success");
   assert.equal(first.error, null);
+  assert.equal(first.routedTo, "david");
+  assert.match(String(first.answer), /Handed to DAVID/);
   assert.match(String(first.answer), /ABC Plumbing \(DEMO\)/);
+  assert.doesNotMatch(String(first.answer), /belongs with the coordinator/);
+  assert.deepEqual(stats().markdownRoles, ["david"]);
+  assert.deepEqual(stats().schemaNames, ["client_david_response"]);
   assert.equal(first.dailyUsage?.used, 1);
   assert.equal(first.dailyUsage?.limit, 5);
   assert.equal(stats().generateCalls, 1);
@@ -251,7 +262,7 @@ test("failed OpenAI calls do not burn a credit and surface the error", async () 
       retryable: false,
     }),
   });
-  const result = await submit(initialClientAiActionState, askForm(IN_SCOPE_FOLLOW_UP));
+  const result = await submit(initialClientAiActionState, askForm(IN_SCOPE_COMPANIES));
   assert.equal(result.status, "failed");
   assert.equal(result.error, "OpenAI request failed (provider_error).");
   assert.equal(result.answer, result.error);
@@ -265,7 +276,7 @@ test("incomplete_response does not burn a credit and asks for a shorter desk que
     isSuperAdmin: true,
     generateError: new IntegrationRequestError("openai", "incomplete_response"),
   });
-  const result = await submit(initialClientAiActionState, askForm(IN_SCOPE_FOLLOW_UP));
+  const result = await submit(initialClientAiActionState, askForm(IN_SCOPE_COMPANIES));
   assert.equal(result.status, "failed");
   assert.equal(result.error, ATLAS_INCOMPLETE_RESPONSE_MESSAGE);
   assert.equal(result.answer, ATLAS_INCOMPLETE_RESPONSE_MESSAGE);
@@ -314,6 +325,33 @@ test("UNLIMITED never blocks a successful ask", async () => {
   assert.equal(stats().used, 41);
 });
 
+test("DAVID CRM asks invoke the david role from workspace context, not a coordinator bounce", async () => {
+  const { submit, stats } = createHarness({ isSuperAdmin: true });
+  const result = await submit(
+    initialClientAiActionState,
+    askForm("How is client satisfaction and the next step to a sale on this pipeline?"),
+  );
+  assert.equal(result.status, "success");
+  assert.equal(result.routedTo, "david");
+  assert.deepEqual(stats().markdownRoles, ["david"]);
+  assert.deepEqual(stats().schemaNames, ["client_david_response"]);
+  assert.match(String(result.answer), /Handed to DAVID/);
+  assert.doesNotMatch(String(result.answer), /belongs with the coordinator|Switch to the coordinator/);
+});
+
+test("DAVID still answers from workspace context if the model call fails", async () => {
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    generateError: new IntegrationRequestError("openai", "incomplete_response"),
+  });
+  const result = await submit(initialClientAiActionState, askForm(IN_SCOPE_FOLLOW_UP));
+  assert.equal(result.status, "success");
+  assert.equal(result.routedTo, "david");
+  assert.match(String(result.answer), /Handed to DAVID/);
+  assert.match(String(result.answer), /did not invent contacts|no open pipeline/i);
+  assert.equal(stats().used, 1);
+});
+
 test("Atlas chat box routes a flyer ask to MICAH and stores a gallery draft", async () => {
   let drafted = 0;
   const { submit, stats } = createHarness({
@@ -339,6 +377,7 @@ test("Atlas chat box routes a flyer ask to MICAH and stores a gallery draft", as
   assert.equal(result.routedTo, "micah");
   assert.equal(drafted, 1);
   assert.match(String(result.answer), /did not publish|Nothing was posted/i);
+  assert.match(String(result.answer), /Handed to MICAH/);
   assert.equal(stats().used, 1);
 });
 
@@ -386,6 +425,7 @@ test("Atlas chat box routes a local-business find to HUNTER review pile, not out
   assert.equal(searched, 1);
   assert.equal(stats().generateCalls, 0);
   assert.match(String(result.answer), /REVIEW PILE/);
+  assert.match(String(result.answer), /Handed to HUNTER/);
   assert.match(String(result.answer), /Houston Pipe Co/);
   assert.doesNotMatch(String(result.answer), /emailed|called these businesses/i);
   assert.equal(stats().used, 1);

@@ -28,11 +28,19 @@ test("Talk to Atlas routes local-business finds to HUNTER", () => {
   assert.equal(isHunterFindPrompt("Who is in the HUNTER pile?"), false);
 });
 
-test("Talk to Atlas routes pipeline and follow-up to DAVID", () => {
+test("Talk to Atlas routes pipeline, follow-up, and client satisfaction to DAVID", () => {
   const prompt = "What is the next step to a sale for ABC Plumbing on this pipeline?";
   const decision = decideClientAiRoute({ role: "atlas", prompt });
   assert.equal(detectSpecialistLane(prompt), "david");
   assert.equal(decision.routedTo, "david");
+  assert.equal(
+    detectSpecialistLane("How is client satisfaction on this desk?"),
+    "david",
+  );
+  assert.equal(
+    decideClientAiRoute({ role: "atlas", prompt: "How is client satisfaction on this desk?" }).routedTo,
+    "david",
+  );
 });
 
 test("staff HUNTER / MICAH / DAVID buttons keep their lane when the ask matches", () => {
