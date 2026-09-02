@@ -30,7 +30,7 @@ export async function LionsDenBoardScreen({
       aiRequests={aiRequests && !aiRequests.setupRequired ? aiRequests.data : []}
       aiUsage={aiUsage && !aiUsage.setupRequired ? aiUsage.data : defaultClientAiDailyUsage()}
       board={board}
-      organizationId={organization?.id}
+      organizationId={organization?.id ?? ""}
       organizationName={organization?.name}
       previewMode={workspace.isClientPreview}
       previewOrgSlug={workspace.previewOrgSlug || undefined}

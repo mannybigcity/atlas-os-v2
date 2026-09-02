@@ -1,6 +1,9 @@
 import type { User } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
 import { isSuperAdminEmail } from "@/lib/env";
 import {
+  AFE_CRM_DEMO_SLUG,
+  isAfeCrmDemoOrganization,
   isGuestClientPreview,
   isSisLionsDenRequest,
   isSisOrganization,
@@ -9,7 +12,9 @@ import {
   resolveOperatorDeskOrganization,
 } from "@/lib/client-portal/identity";
 import { requireUser } from "@/server/auth/guards";
+import { getTrialProfile } from "@/server/trials/profile";
 import {
+  getAfeCrmDemoOrganization,
   getOrganizationBySlugForSuperAdmin,
   getUserMemberships,
   listOrganizationsForOperator,
@@ -56,41 +61,71 @@ export async function getClientWorkspaceContext(
   searchParams?: ClientWorkspaceSearchParams,
 ): Promise<ClientWorkspaceContext> {
   const user = await requireUser(nextPath);
+  let trialProfile = null;
+  try {
+    trialProfile = await getTrialProfile(user.id);
+  } catch (error) {
+    console.error("Atlas trial profile guard failed", error);
+  }
+  if (trialProfile) {
+    redirect("/starter");
+  }
   const isSuperAdmin = isSuperAdminEmail(user.email);
+  const personalMemberships = await getUserMemberships(user.id);
+  const membershipOrganizations = personalMemberships.data.map(
+    (membership) => membership.organization,
+  );
   const requestedPreviewOrgSlug = isSuperAdmin
     ? String(searchParams?.previewOrg ?? "").trim().toLowerCase()
     : "";
   const requestedWorkspaceSlug = isSafeOrganizationSlug(String(searchParams?.workspace ?? "").trim())
     ? String(searchParams?.workspace ?? "").trim().toLowerCase()
     : "";
-  const previewOrgSlug = isSafeOrganizationSlug(requestedPreviewOrgSlug)
+  let previewOrgSlug = isSafeOrganizationSlug(requestedPreviewOrgSlug)
     ? requestedPreviewOrgSlug
     : isSuperAdmin && isSisWorkspaceSlug(requestedWorkspaceSlug)
       ? requestedWorkspaceSlug
       : "";
-  const previewOrganization = previewOrgSlug
+  const preferAfeDemoDesk =
+    isSuperAdmin &&
+    !previewOrgSlug &&
+    !requestedWorkspaceSlug;
+  if (preferAfeDemoDesk) {
+    previewOrgSlug = AFE_CRM_DEMO_SLUG;
+  }
+  let previewOrganization = previewOrgSlug
     ? await getOrganizationBySlugForSuperAdmin(previewOrgSlug)
     : null;
-  const personalMemberships = await getUserMemberships(user.id);
-  const loadedPreviewOrganization =
+  let loadedPreviewOrganization =
     previewOrganization && !previewOrganization.setupRequired
       ? previewOrganization.data
       : null;
+  if (
+    preferAfeDemoDesk &&
+    (!loadedPreviewOrganization?.id || isSisOrganization(loadedPreviewOrganization))
+  ) {
+    const afeDemo = await getAfeCrmDemoOrganization();
+    if (afeDemo?.id) {
+      loadedPreviewOrganization = afeDemo;
+      previewOrganization = { data: afeDemo, setupRequired: false, error: null };
+    }
+  }
   const sisRequested = isSisLionsDenRequest(
     loadedPreviewOrganization?.slug || previewOrgSlug,
     requestedWorkspaceSlug,
   );
   const needsDirectory =
     isSuperAdmin &&
-    sisRequested &&
-    !isSisOrganization(loadedPreviewOrganization);
+    ((sisRequested && !isSisOrganization(loadedPreviewOrganization)) ||
+      (preferAfeDemoDesk && !isAfeCrmDemoOrganization(loadedPreviewOrganization)));
   const directory = needsDirectory ? await listOrganizationsForOperator() : [];
   const primaryOrganization = resolveOperatorDeskOrganization({
     previewOrgSlug: loadedPreviewOrganization?.slug || previewOrgSlug,
     workspaceSlug: requestedWorkspaceSlug,
     previewOrganization: loadedPreviewOrganization,
-    membershipOrganizations: personalMemberships.data.map((membership) => membership.organization),
+    membershipOrganizations,
     directory,
+    preferAfeDemoDesk,
   });
   const resolvedPreviewOrgSlug =
     primaryOrganization?.slug?.trim() ||
@@ -102,7 +137,9 @@ export async function getClientWorkspaceContext(
     : undefined;
   const shouldPinResolvedOrganization =
     Boolean(primaryOrganization) &&
-    (Boolean(loadedPreviewOrganization) || (sisRequested && isSuperAdmin));
+    (Boolean(loadedPreviewOrganization) ||
+      (sisRequested && isSuperAdmin) ||
+      (isSuperAdmin && isAfeCrmDemoOrganization(primaryOrganization)));
   const memberships: WorkspaceQueryResult<MembershipSummary[]> = shouldPinResolvedOrganization
     ? {
         data: [
@@ -140,7 +177,7 @@ export async function getClientWorkspaceContext(
       previewOrganization &&
       !previewOrganization.data &&
       primaryOrganization &&
-      isSisOrganization(primaryOrganization)
+      (isSisOrganization(primaryOrganization) || isAfeCrmDemoOrganization(primaryOrganization))
         ? { data: primaryOrganization, setupRequired: false, error: null }
         : previewOrganization,
     selectedWorkspaceSlug: primaryOrganization?.slug ?? "",

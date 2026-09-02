@@ -1,6 +1,9 @@
 import {
+  AFE_CRM_DEMO_SLUG,
   escapeIlikeExact,
   findOrganizationByPreviewSlug,
+  isAfeCrmDemoOrganization,
+  isAfeCrmDemoSlug,
   isSisOrganization,
   isSisWorkspaceSlug,
   organizationSlugsMatch,
@@ -200,6 +203,9 @@ function pickOrganizationFromDirectory(
     (isSisWorkspaceSlug(requested)
       ? organizations.find((organization) => isSisOrganization(organization))
       : undefined) ??
+    (isAfeCrmDemoSlug(requested)
+      ? organizations.find((organization) => isAfeCrmDemoOrganization(organization))
+      : undefined) ??
     null
   );
 }
@@ -207,9 +213,15 @@ function pickOrganizationFromDirectory(
 export async function listOrganizationsForOperator(): Promise<OrganizationSummary[]> {
   const viaUser = await getOrganizationsForSuperAdmin();
   if (!viaUser.setupRequired && viaUser.data.some((organization) => organization.id)) {
-    if (!viaUser.data.some((organization) => isSisOrganization(organization))) {
+    const missingProtectedDesk =
+      !viaUser.data.some((organization) => isSisOrganization(organization)) ||
+      !viaUser.data.some((organization) => isAfeCrmDemoOrganization(organization));
+    if (missingProtectedDesk) {
       const viaAdmin = await listOrganizationsWithServiceRole();
-      if (viaAdmin.some((organization) => isSisOrganization(organization))) {
+      if (
+        viaAdmin.some((organization) => isSisOrganization(organization)) ||
+        viaAdmin.some((organization) => isAfeCrmDemoOrganization(organization))
+      ) {
         return viaAdmin;
       }
     }
@@ -250,6 +262,19 @@ export async function getOrganizationBySlugForSuperAdmin(
     };
   }
 
+  try {
+    const fromAdminSlug = await lookupOrganizationBySlug(createAdminClient(), requested);
+    if (fromAdminSlug) {
+      return {
+        data: fromAdminSlug,
+        setupRequired: false,
+        error: null,
+      };
+    }
+  } catch {
+    // Service-role lookup is best-effort; fall through to directory scans.
+  }
+
   const organizations = await getOrganizationsForSuperAdmin();
   if (!organizations.setupRequired) {
     const fallback = pickOrganizationFromDirectory(requested, organizations.data);
@@ -287,6 +312,28 @@ export async function getOrganizationBySlugForSuperAdmin(
     setupRequired: false,
     error: null,
   };
+}
+
+export async function getAfeCrmDemoOrganization(): Promise<OrganizationSummary | null> {
+  const bySlug = await getOrganizationBySlugForSuperAdmin(AFE_CRM_DEMO_SLUG);
+  if (
+    bySlug.data?.id &&
+    !isSisOrganization(bySlug.data) &&
+    (isAfeCrmDemoOrganization(bySlug.data) ||
+      organizationSlugsMatch(bySlug.data.slug, AFE_CRM_DEMO_SLUG))
+  ) {
+    return bySlug.data;
+  }
+
+  const directory = await listOrganizationsForOperator();
+  return (
+    directory.find(
+      (organization) =>
+        Boolean(organization.id) &&
+        !isSisOrganization(organization) &&
+        isAfeCrmDemoOrganization(organization),
+    ) ?? null
+  );
 }
 
 export async function getClientAccessRoster(): Promise<

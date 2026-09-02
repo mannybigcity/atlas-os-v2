@@ -208,7 +208,7 @@ export default async function ClientDashboardPage({
     );
   }
 
-  if ((useLionsDen && primaryOrganization) || (wantsSisLionsDen && !organizations)) {
+  if ((useLionsDen || wantsSisLionsDen) && !organizations) {
     const prospects = pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : [];
     const reviewItems = reviewPile && !reviewPile.setupRequired ? reviewPile.data : [];
     const drafts = studio && !studio.setupRequired ? studio.data.drafts : [];
@@ -228,7 +228,7 @@ export default async function ClientDashboardPage({
             drafts={drafts}
             notes={notes && !notes.setupRequired ? notes.data : []}
             organizationId={primaryOrganization?.id}
-            organizationName={primaryOrganization?.name ?? (wantsSisLionsDen ? "SIS Custom Creations" : "")}
+            organizationName={primaryOrganization?.name ?? (wantsSisLionsDen ? "SIS Custom Creations" : "The Lion’s Den")}
             previewOrgSlug={workspace.previewOrgSlug || undefined}
             prospects={prospects}
             reviewPile={reviewItems}
