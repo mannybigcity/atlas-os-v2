@@ -36,10 +36,6 @@ const roleKeywordSets: Record<ClientAiRole, string[]> = {
     "local businesses",
     "find prospects",
     "find leads",
-    "prospect",
-    "prospects",
-    "lead",
-    "leads",
     "hunter",
     "research",
     "sponsor",
@@ -94,6 +90,10 @@ const roleKeywordSets: Record<ClientAiRole, string[]> = {
     "complaint",
     "happy customer",
     "client satisfaction",
+    "prospect",
+    "prospects",
+    "lead",
+    "leads",
   ],
 };
 
@@ -230,10 +230,24 @@ export function looksLikeHunterSearch(prompt: string) {
   );
 }
 
+export function looksLikeDeskProspectAsk(prompt: string) {
+  const normalized = prompt.trim().toLowerCase();
+  if (!normalized) return false;
+  if (!/\b(prospects?|leads?)\b/.test(normalized)) return false;
+  if (looksLikeHunterSearch(normalized)) return false;
+  if (/\b(google\s+places|local\s+businesses?)\b/.test(normalized)) return false;
+  return (
+    /\b(who|whose|which|what(?:'s| is)|show(?:\s+me)?|list|name|names|summarize)\b/.test(
+      normalized,
+    ) || /\b(this|the|our|my)\s+(desk|pipeline|board|crm)\b/.test(normalized)
+  );
+}
+
 export function detectSpecialistLane(prompt: string): ClientAiRole | null {
   const normalized = prompt.trim().toLowerCase();
   if (!normalized) return null;
   if (includesAny(normalized, roleKeywordSets.micah)) return "micah";
+  if (looksLikeDeskProspectAsk(normalized)) return "david";
   if (looksLikeHunterSearch(normalized) || includesAny(normalized, roleKeywordSets.hunter)) {
     return "hunter";
   }
@@ -275,6 +289,7 @@ export function isMicahCreatePrompt(prompt: string) {
 export function isHunterFindPrompt(prompt: string) {
   const normalized = prompt.trim().toLowerCase();
   if (!normalized) return false;
+  if (looksLikeDeskProspectAsk(normalized)) return false;
   if (/(who|what(?:'s| is)|show|summarize|list).*(pile|hunter)/.test(normalized)) {
     return false;
   }
