@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { assertCanApplyOrganizationIdentityPatch } from "@/lib/client-portal/protected-organization";
-import { isSuperAdminEmail } from "@/lib/env";
+import { canSeeSampleDesk, isAfeCrmDemoOrganization } from "@/lib/client-portal/identity";
+import { getConfiguredDemoLoginEmail, isSuperAdminEmail } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
@@ -20,6 +21,7 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 async function requireHunterOperator(organizationId: string | null) {
   const user = await requireUser(organizationId ? "/client/hunter" : "/lions-den/sales");
   const isSuperAdmin = isSuperAdminEmail(user.email);
+  const seesSampleDesk = canSeeSampleDesk(user.email, getConfiguredDemoLoginEmail());
 
   if (!organizationId) {
     if (!isSuperAdmin) {
@@ -32,19 +34,31 @@ async function requireHunterOperator(organizationId: string | null) {
     redirect("/client?access=denied");
   }
 
-  if (isSuperAdmin) {
-    return { user, organizationId };
-  }
-
   const memberships = await getUserMemberships(user.id);
   const membership = memberships.data.find(
     (item) => item.organization?.id === organizationId,
   );
-  if (!membership) {
-    redirect("/client?access=denied");
+  const memberOrg = membership?.organization ?? null;
+  const memberIsSample = isAfeCrmDemoOrganization(memberOrg);
+
+  if (membership && memberIsSample === seesSampleDesk) {
+    return { user, organizationId };
   }
 
-  return { user, organizationId };
+  if (isSuperAdmin && !seesSampleDesk) {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("organizations")
+      .select("name, slug")
+      .eq("id", organizationId)
+      .maybeSingle();
+    if (isAfeCrmDemoOrganization(data)) {
+      redirect("/client?access=denied");
+    }
+    return { user, organizationId };
+  }
+
+  redirect("/client?access=denied");
 }
 
 export async function searchHunterProspects(

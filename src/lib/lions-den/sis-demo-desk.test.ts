@@ -7,7 +7,6 @@ import {
   assertSisDemoSeedIsSafe,
   getSisDemoDeskSeed,
   seedSqlMutatesSisOrganizationIdentity,
-  sisDemoDeskWriteTables,
   upsertSisDemoDeskRecords,
 } from "./sis-demo-desk.ts";
 
@@ -217,33 +216,17 @@ test("SQL seed does not update organizations and fills every Lion's Den surface"
   assert.match(sql, /FOUNDER/);
 });
 
-test("in-repo upsert is idempotent and never writes organizations", async () => {
+test("in-repo SIS upsert refuses to write sample companies into SIS", async () => {
   const client = createSeedClient([
     { id: "org-qtime", name: "QTime Productions", slug: "qtime-productions" },
     { id: "org-sis", name: "SIS Custom Creations", slug: "SIS-DIY-big-complete-showcase" },
   ]);
 
   const first = await upsertSisDemoDeskRecords(client);
-  assert.equal(first.status, "applied");
-  if (first.status === "applied") {
-    assert.equal(first.organizationId, "org-sis");
-  }
-  assert.equal(client.writes.includes("organizations"), true);
-  assert.equal(client.writes.includes("organizations") && client.writes.filter((table) => table === "organizations").length > 0, true);
-  assert.equal(sisDemoDeskWriteTables().includes("organization_opportunities"), true);
-  assert.equal(client.store.organization_opportunities.length, 3);
-  assert.equal(client.store.organization_opportunities[0]?.contact_phone, "(555) 010-0101");
-  assert.equal(client.store.organization_hunter_review_items.length, 4);
-  assert.equal(client.store.organization_content_drafts.length, 3);
-  assert.equal(client.store.organization_sis_party_events.length, 3);
-  assert.equal(client.store.organization_notes.filter((note) => note.title === "DEMO: ABC Plumbing").length, 1);
-
-  const second = await upsertSisDemoDeskRecords(client);
-  assert.equal(second.status, "applied");
-  assert.equal(client.store.organization_notes.filter((note) => note.title === "DEMO: ABC Plumbing").length, 1);
-  assert.equal(client.store.organization_opportunities.length, 3);
-  assert.equal(client.store.organization_sis_leads.length, 3);
-  assert.equal(client.store.organization_content_drafts.length, 3);
+  assert.deepEqual(first, { status: "skipped", reason: "sis_must_not_receive_sample_desk" });
+  assert.equal(client.store.organization_opportunities.length, 0);
+  assert.equal(client.store.organization_hunter_review_items.length, 0);
+  assert.equal(client.store.organization_sis_party_events.length, 0);
 });
 
 test("upsert skips when no SIS organization exists", async () => {

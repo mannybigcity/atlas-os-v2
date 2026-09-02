@@ -134,6 +134,10 @@ export async function getUserMemberships(
   };
 }
 
+function withoutSampleDesk(organizations: OrganizationSummary[]) {
+  return organizations.filter((organization) => !isAfeCrmDemoOrganization(organization));
+}
+
 export async function getOrganizationsForSuperAdmin(): Promise<
   WorkspaceQueryResult<OrganizationSummary[]>
 > {
@@ -152,7 +156,7 @@ export async function getOrganizationsForSuperAdmin(): Promise<
   }
 
   return {
-    data: ((data ?? []) as OrganizationRow[]).map(normalizeOrganization),
+    data: withoutSampleDesk(((data ?? []) as OrganizationRow[]).map(normalizeOrganization)),
     setupRequired: false,
     error: null,
   };
@@ -213,23 +217,18 @@ function pickOrganizationFromDirectory(
 export async function listOrganizationsForOperator(): Promise<OrganizationSummary[]> {
   const viaUser = await getOrganizationsForSuperAdmin();
   if (!viaUser.setupRequired && viaUser.data.some((organization) => organization.id)) {
-    const missingProtectedDesk =
-      !viaUser.data.some((organization) => isSisOrganization(organization)) ||
-      !viaUser.data.some((organization) => isAfeCrmDemoOrganization(organization));
+    const missingProtectedDesk = !viaUser.data.some((organization) => isSisOrganization(organization));
     if (missingProtectedDesk) {
-      const viaAdmin = await listOrganizationsWithServiceRole();
-      if (
-        viaAdmin.some((organization) => isSisOrganization(organization)) ||
-        viaAdmin.some((organization) => isAfeCrmDemoOrganization(organization))
-      ) {
+      const viaAdmin = withoutSampleDesk(await listOrganizationsWithServiceRole());
+      if (viaAdmin.some((organization) => isSisOrganization(organization))) {
         return viaAdmin;
       }
     }
-    return viaUser.data;
+    return withoutSampleDesk(viaUser.data);
   }
 
-  const viaAdmin = await listOrganizationsWithServiceRole();
-  return viaAdmin.length > 0 ? viaAdmin : viaUser.data;
+  const viaAdmin = withoutSampleDesk(await listOrganizationsWithServiceRole());
+  return viaAdmin.length > 0 ? viaAdmin : withoutSampleDesk(viaUser.data);
 }
 
 async function listOrganizationsWithServiceRole(): Promise<OrganizationSummary[]> {

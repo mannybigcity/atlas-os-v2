@@ -1,20 +1,21 @@
 import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
-import { isSuperAdminEmail } from "@/lib/env";
+import { getConfiguredDemoLoginEmail, isSuperAdminEmail } from "@/lib/env";
 import {
-  AFE_CRM_DEMO_SLUG,
+  canSeeSampleDesk,
   isAfeCrmDemoOrganization,
   isGuestClientPreview,
+  isSampleDeskPreviewRequest,
   isSisLionsDenRequest,
   isSisOrganization,
   isSisWorkspaceSlug,
   organizationSlugsMatch,
+  organizationsVisibleToActor,
   resolveOperatorDeskOrganization,
 } from "@/lib/client-portal/identity";
 import { requireUser } from "@/server/auth/guards";
 import { getTrialProfile } from "@/server/trials/profile";
 import {
-  getAfeCrmDemoOrganization,
   getOrganizationBySlugForSuperAdmin,
   getUserMemberships,
   listOrganizationsForOperator,
@@ -49,11 +50,27 @@ export type ClientWorkspaceContext = {
 export function clientWorkspaceHref(path: string, previewOrgSlug?: string) {
   const slug = String(previewOrgSlug ?? "").trim();
 
-  if (!slug) {
+  if (!slug || isSampleDeskPreviewRequest(slug)) {
     return path;
   }
 
   return `${path}?previewOrg=${encodeURIComponent(slug)}`;
+}
+
+function membershipsForOrganizations(
+  memberships: MembershipSummary[],
+  organizations: OrganizationSummary[],
+): MembershipSummary[] {
+  return organizations.map((organization) => {
+    const existing = memberships.find((membership) => membership.organization?.id === organization.id);
+    return (
+      existing ?? {
+        id: `operator-${organization.id}`,
+        role: "owner",
+        organization,
+      }
+    );
+  });
 }
 
 export async function getClientWorkspaceContext(
@@ -71,9 +88,14 @@ export async function getClientWorkspaceContext(
     redirect("/starter");
   }
   const isSuperAdmin = isSuperAdminEmail(user.email);
+  const seesSampleDesk = canSeeSampleDesk(user.email, getConfiguredDemoLoginEmail());
   const personalMemberships = await getUserMemberships(user.id);
-  const membershipOrganizations = personalMemberships.data.map(
-    (membership) => membership.organization,
+  const visibleOrganizations = organizationsVisibleToActor(
+    personalMemberships.data.map((membership) => membership.organization),
+    seesSampleDesk,
+  );
+  const visibleMemberships = personalMemberships.data.filter((membership) =>
+    visibleOrganizations.some((organization) => organization.id === membership.organization?.id),
   );
   const requestedPreviewOrgSlug = isSuperAdmin
     ? String(searchParams?.previewOrg ?? "").trim().toLowerCase()
@@ -81,17 +103,16 @@ export async function getClientWorkspaceContext(
   const requestedWorkspaceSlug = isSafeOrganizationSlug(String(searchParams?.workspace ?? "").trim())
     ? String(searchParams?.workspace ?? "").trim().toLowerCase()
     : "";
-  let previewOrgSlug = isSafeOrganizationSlug(requestedPreviewOrgSlug)
-    ? requestedPreviewOrgSlug
-    : isSuperAdmin && isSisWorkspaceSlug(requestedWorkspaceSlug)
-      ? requestedWorkspaceSlug
-      : "";
-  const preferAfeDemoDesk =
-    isSuperAdmin &&
-    !previewOrgSlug &&
-    !requestedWorkspaceSlug;
-  if (preferAfeDemoDesk) {
-    previewOrgSlug = AFE_CRM_DEMO_SLUG;
+  const samplePreviewBlocked =
+    !seesSampleDesk && isSampleDeskPreviewRequest(requestedPreviewOrgSlug, requestedWorkspaceSlug);
+  let previewOrgSlug =
+    isSafeOrganizationSlug(requestedPreviewOrgSlug) && !samplePreviewBlocked
+      ? requestedPreviewOrgSlug
+      : isSuperAdmin && isSisWorkspaceSlug(requestedWorkspaceSlug)
+        ? requestedWorkspaceSlug
+        : "";
+  if (isSampleDeskPreviewRequest(previewOrgSlug) && !seesSampleDesk) {
+    previewOrgSlug = "";
   }
   let previewOrganization = previewOrgSlug
     ? await getOrganizationBySlugForSuperAdmin(previewOrgSlug)
@@ -100,15 +121,10 @@ export async function getClientWorkspaceContext(
     previewOrganization && !previewOrganization.setupRequired
       ? previewOrganization.data
       : null;
-  if (
-    preferAfeDemoDesk &&
-    (!loadedPreviewOrganization?.id || isSisOrganization(loadedPreviewOrganization))
-  ) {
-    const afeDemo = await getAfeCrmDemoOrganization();
-    if (afeDemo?.id) {
-      loadedPreviewOrganization = afeDemo;
-      previewOrganization = { data: afeDemo, setupRequired: false, error: null };
-    }
+  if (loadedPreviewOrganization && isAfeCrmDemoOrganization(loadedPreviewOrganization) && !seesSampleDesk) {
+    loadedPreviewOrganization = null;
+    previewOrganization = null;
+    previewOrgSlug = "";
   }
   const sisRequested = isSisLionsDenRequest(
     loadedPreviewOrganization?.slug || previewOrgSlug,
@@ -116,43 +132,51 @@ export async function getClientWorkspaceContext(
   );
   const needsDirectory =
     isSuperAdmin &&
-    ((sisRequested && !isSisOrganization(loadedPreviewOrganization)) ||
-      (preferAfeDemoDesk && !isAfeCrmDemoOrganization(loadedPreviewOrganization)));
-  const directory = needsDirectory ? await listOrganizationsForOperator() : [];
+    !seesSampleDesk &&
+    sisRequested &&
+    !isSisOrganization(loadedPreviewOrganization);
+  const directory = organizationsVisibleToActor(
+    needsDirectory ? await listOrganizationsForOperator() : [],
+    false,
+  );
   const primaryOrganization = resolveOperatorDeskOrganization({
     previewOrgSlug: loadedPreviewOrganization?.slug || previewOrgSlug,
     workspaceSlug: requestedWorkspaceSlug,
     previewOrganization: loadedPreviewOrganization,
-    membershipOrganizations,
+    membershipOrganizations: visibleOrganizations,
     directory,
-    preferAfeDemoDesk,
+    allowSampleDesk: seesSampleDesk,
   });
   const resolvedPreviewOrgSlug =
-    primaryOrganization?.slug?.trim() ||
-    loadedPreviewOrganization?.slug?.trim() ||
-    previewOrgSlug;
+    seesSampleDesk || isAfeCrmDemoOrganization(primaryOrganization)
+      ? ""
+      : primaryOrganization?.slug?.trim() ||
+        loadedPreviewOrganization?.slug?.trim() ||
+        previewOrgSlug;
   const isClientPreview = isGuestClientPreview(primaryOrganization);
-  const existingMembership = primaryOrganization
-    ? personalMemberships.data.find((membership) => membership.organization?.id === primaryOrganization.id)
-    : undefined;
   const shouldPinResolvedOrganization =
     Boolean(primaryOrganization) &&
-    (Boolean(loadedPreviewOrganization) ||
-      (sisRequested && isSuperAdmin) ||
-      (isSuperAdmin && isAfeCrmDemoOrganization(primaryOrganization)));
+    isSuperAdmin &&
+    !seesSampleDesk &&
+    !isAfeCrmDemoOrganization(primaryOrganization) &&
+    (Boolean(loadedPreviewOrganization) || sisRequested);
   const memberships: WorkspaceQueryResult<MembershipSummary[]> = shouldPinResolvedOrganization
     ? {
-        data: [
-          existingMembership ?? {
-            id: `operator-${primaryOrganization!.id}`,
-            role: "owner",
-            organization: primaryOrganization!,
-          },
-        ],
+        data: membershipsForOrganizations(visibleMemberships, [primaryOrganization!]),
         setupRequired: false,
         error: null,
       }
-    : personalMemberships;
+    : personalMemberships.setupRequired
+      ? {
+          data: visibleMemberships,
+          setupRequired: true,
+          error: personalMemberships.error,
+        }
+      : {
+          data: visibleMemberships,
+          setupRequired: false,
+          error: null,
+        };
   const primaryMembership = (requestedWorkspaceSlug
     ? memberships.data.find((membership) =>
         organizationSlugsMatch(membership.organization?.slug, requestedWorkspaceSlug),
@@ -166,7 +190,7 @@ export async function getClientWorkspaceContext(
   return {
     user,
     isSuperAdmin,
-    previewOrgSlug: resolvedPreviewOrgSlug,
+    previewOrgSlug: isAfeCrmDemoOrganization(primaryOrganization) ? "" : resolvedPreviewOrgSlug,
     isClientPreview,
     memberships,
     primaryMembership: primaryOrganization ? primaryMembership : undefined,
@@ -177,7 +201,7 @@ export async function getClientWorkspaceContext(
       previewOrganization &&
       !previewOrganization.data &&
       primaryOrganization &&
-      (isSisOrganization(primaryOrganization) || isAfeCrmDemoOrganization(primaryOrganization))
+      isSisOrganization(primaryOrganization)
         ? { data: primaryOrganization, setupRequired: false, error: null }
         : previewOrganization,
     selectedWorkspaceSlug: primaryOrganization?.slug ?? "",

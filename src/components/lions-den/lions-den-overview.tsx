@@ -25,8 +25,8 @@ type LionsDenOverviewProps = {
   notes: OrganizationNote[];
 };
 
-function isDemoLabel(value: string | null | undefined) {
-  return /\bdemo\b/i.test(String(value ?? ""));
+function isDemoLabel(_value: string | null | undefined) {
+  return false;
 }
 
 export function LionsDenOverview({

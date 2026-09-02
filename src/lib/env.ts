@@ -1,3 +1,5 @@
+import { resolvedSampleDeskLoginEmail } from "@/lib/client-portal/identity";
+
 export function getSupabaseEnv() {
   const requiredPublicEnv = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -43,6 +45,14 @@ export function isSuperAdminEmail(email?: string | null) {
   }
 
   return getSuperAdminEmails().includes(email.toLowerCase());
+}
+
+export function getConfiguredDemoLoginEmail() {
+  return resolvedSampleDeskLoginEmail(process.env.DEMO_LOGIN_EMAIL);
+}
+
+export function getDemoLoginPassword() {
+  return process.env.DEMO_LOGIN_PASSWORD?.trim() ?? "";
 }
 
 export function getSiteUrl(fallbackOrigin?: string | null) {

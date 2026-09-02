@@ -68,14 +68,15 @@ test("MICAH week pack is 7 navy/gold day-cards with copyable captions", () => {
       "7:Sunday",
     ],
   );
-  assert.equal(cards.some((card) => /ABC Plumbing \(DEMO\)/.test(card.title)), true);
-  assert.equal(cards.some((card) => /123 Catering \(DEMO\)/.test(card.title)), true);
-  assert.equal(cards.some((card) => /XYZ Electric \(DEMO\)/.test(card.title)), true);
+  assert.equal(cards.some((card) => /ABC Plumbing/.test(card.title)), true);
+  assert.equal(cards.some((card) => /123 Catering/.test(card.title)), true);
+  assert.equal(cards.some((card) => /XYZ Electric/.test(card.title)), true);
   for (const card of cards) {
     assert.match(card.dayLabel, /DAY \d/);
-    assert.match(card.caption, /DEMO draft/);
+    assert.match(card.caption, /Sample draft/);
     assert.match(captionForClipboard(card.caption), /\n\n/);
     assert.doesNotMatch(card.caption, /SIS Custom Creations/i);
+    assert.doesNotMatch(card.title, /\bDEMO\b/);
     assert.match(card.imageSvg, /#071b42/);
     assert.match(card.imageSvg, /#f5b932/);
     assert.match(card.imageSvg, /DAY \d/);

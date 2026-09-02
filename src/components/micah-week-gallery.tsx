@@ -104,11 +104,6 @@ function MicahDayCard({
           ) : null}
         </div>
         <h3 className="mt-2 text-lg font-bold text-slate-950">{card.title}</h3>
-        {card.demoLabeled ? (
-          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#071b42]">
-            DEMO
-          </p>
-        ) : null}
 
         <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
           {spanish

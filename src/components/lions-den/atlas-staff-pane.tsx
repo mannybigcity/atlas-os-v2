@@ -24,6 +24,7 @@ type AtlasStaffPaneProps = {
   requests: ClientAiRequest[];
   dailyUsage?: ClientAiDailyUsage | null;
   compact?: boolean;
+  sampleDesk?: boolean;
 };
 
 type SpeechRecognitionLike = {
@@ -54,6 +55,7 @@ export function AtlasStaffPane({
   organizationId,
   requests,
   dailyUsage,
+  sampleDesk = false,
 }: AtlasStaffPaneProps) {
   const language = useSiteLanguage();
   const spanish = language === "es";
@@ -186,8 +188,12 @@ export function AtlasStaffPane({
         {thread.length === 0 && state.status === "idle" ? (
           <p className="rounded-2xl bg-white px-2.5 py-1.5 text-xs leading-5 text-[#5c6578] ring-1 ring-[#ece7d8]">
             {spanish
-              ? "Pregunta por el seguimiento, los prospectos DEMO o lo que toca hoy en este escritorio."
-              : "Ask about follow-up, DEMO companies on this desk, or what is due today."}
+              ? sampleDesk
+                ? "Pregunta por el seguimiento, ABC Plumbing, 123 Catering, XYZ Electric o lo que toca hoy en este escritorio."
+                : "Pregunta por el seguimiento o lo que toca hoy en este escritorio."
+              : sampleDesk
+                ? "Ask about follow-up, ABC Plumbing, 123 Catering, XYZ Electric, or what is due today."
+                : "Ask about follow-up or what is due today."}
           </p>
         ) : null}
         {thread.map((item) => (
