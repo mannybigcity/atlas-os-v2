@@ -143,7 +143,7 @@ test("incomplete_response retries once at MAX_OPENAI_OUTPUT_TOKENS when the firs
         const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
         const body = await readRequestJson(input, init);
         tokenCaps.push(Number(body.max_output_tokens ?? -1));
-        if ((body.max_output_tokens ?? 0) < MAX_OPENAI_OUTPUT_TOKENS) {
+        if (Number(body.max_output_tokens ?? 0) < MAX_OPENAI_OUTPUT_TOKENS) {
           return jsonResponse(url, 200, incompleteResponse);
         }
         return jsonResponse(url, 200, completedResponse);
