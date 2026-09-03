@@ -227,7 +227,11 @@ export async function startTrial(formData: FormData) {
 
   if (error) {
     console.error("Atlas trial signup failed", { code: error.code, status: error.status });
-    redirect("/start-trial?error=signup_failed");
+    const isDuplicate =
+      error.code === "user_already_exists" ||
+      error.code === "email_exists" ||
+      /already registered|already exists/i.test(error.message ?? "");
+    redirect(isDuplicate ? "/start-trial?error=account_exists" : "/start-trial?error=signup_failed");
   }
 
   redirect("/start-trial?status=check_email");
