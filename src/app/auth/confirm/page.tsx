@@ -31,13 +31,13 @@ export default async function ConfirmRecoveryPage({
   const isRecovery = params?.type === "recovery" || Boolean(params?.code);
   const isValidRequest =
     Boolean(params?.code || params?.token_hash) && (isInvite || isRecovery || isTrial);
-  const nextPath = isTrial ? "/starter" : isInvite ? "/set-password" : "/reset-password";
+  const nextPath = isTrial ? "/client?status=welcome" : isInvite ? "/set-password" : "/reset-password";
   const language = await getSiteLanguage();
   const copy = language === "es"
     ? {
         invitationEyebrow: "Invitación de cliente",
         recoveryEyebrow: "Recuperación segura",
-        trialTitle: "Confirma tu correo para abrir tu espacio de trabajo inicial de Atlas.",
+        trialTitle: "Confirma tu correo para abrir The Lion's Den.",
         inviteTitle: "Te damos la bienvenida a tu espacio de trabajo de Atlas.",
         recoveryTitle: "Continúa con el restablecimiento de tu contraseña.",
         inviteDescription: "Continúa para crear tu propia contraseña y abrir tu espacio de trabajo privado de cliente. Atlas nunca envía contraseñas por correo.",
@@ -52,7 +52,7 @@ export default async function ConfirmRecoveryPage({
     : {
         invitationEyebrow: "Client invitation",
         recoveryEyebrow: "Secure recovery",
-        trialTitle: "Confirm your email to open your Atlas starter workspace.",
+        trialTitle: "Confirm your email to open The Lion's Den.",
         inviteTitle: "Welcome to your Atlas workspace.",
         recoveryTitle: "Continue your password reset.",
         inviteDescription: "Continue to create your own password and open your private client workspace. Atlas never sends passwords by email.",

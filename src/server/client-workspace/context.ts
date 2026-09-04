@@ -20,6 +20,7 @@ import {
 } from "@/lib/client-portal/identity";
 import { requireUser } from "@/server/auth/guards";
 import { getTrialProfile } from "@/server/trials/profile";
+import { ensureTrialWorkspace } from "@/server/trials/workspace";
 import { ensureAfeOperatorDeskAccess } from "@/server/organizations/afe-operator-desk";
 import { ensureSisWorkingOrgAccess } from "@/server/organizations/sis-working-org";
 import {
@@ -92,7 +93,19 @@ export async function getClientWorkspaceContext(
     console.error("Atlas trial profile guard failed", error);
   }
   if (trialProfile) {
-    redirect("/starter");
+    if (new Date(trialProfile.trial_ends_at).getTime() <= Date.now()) {
+      redirect("/pricing?trial=expired");
+    }
+
+    try {
+      await ensureTrialWorkspace({
+        userId: user.id,
+        businessName: trialProfile.business_name,
+        email: user.email ?? "",
+      });
+    } catch (error) {
+      console.error("Atlas trial workspace ensure failed", error);
+    }
   }
   const isSuperAdmin = isSuperAdminEmail(user.email);
   const seesSampleDesk = canSeeSampleDesk(user.email, getConfiguredDemoLoginEmail());
