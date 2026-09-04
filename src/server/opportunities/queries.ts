@@ -194,3 +194,75 @@ export async function getOpportunityPipeline(
     error: null,
   };
 }
+
+export async function getWonOpportunities(
+  organizationId: string,
+): Promise<WorkspaceQueryResult<OrganizationOpportunity[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organization_opportunities")
+    .select(
+      `
+        id,
+        organization_id,
+        name,
+        opportunity_type,
+        stage,
+        fit_score,
+        owner_role,
+        source_label,
+        source_url,
+        contact_name,
+        contact_email,
+        contact_phone,
+        contact_social,
+        research_summary,
+        fit_reason,
+        next_action,
+        next_action_due,
+        created_at,
+        updated_at
+      `,
+    )
+    .eq("organization_id", organizationId)
+    .eq("stage", "won")
+    .order("name", { ascending: true })
+    .limit(200);
+
+  if (error) {
+    return {
+      data: [],
+      setupRequired: true,
+      error: error.message,
+    };
+  }
+
+  const opportunities = ((data ?? []) as Omit<OpportunityRow, "organization_opportunity_events">[]).map((row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    name: row.name,
+    opportunityType: row.opportunity_type,
+    stage: row.stage,
+    fitScore: row.fit_score,
+    ownerRole: row.owner_role,
+    sourceLabel: row.source_label,
+    sourceUrl: row.source_url,
+    contactName: row.contact_name,
+    contactEmail: row.contact_email,
+    contactPhone: row.contact_phone,
+    contactSocial: row.contact_social,
+    researchSummary: row.research_summary,
+    fitReason: row.fit_reason,
+    nextAction: row.next_action,
+    nextActionDue: row.next_action_due,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    events: [],
+  }));
+
+  return {
+    data: opportunities,
+    setupRequired: false,
+    error: null,
+  };
+}

@@ -3,7 +3,9 @@ import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenClientsBoard } from "@/components/lions-den/lions-den-clients";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
+import { wonOpportunityToDeskClient, type DeskClient } from "@/lib/lions-den/desk-clients";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
+import { getWonOpportunities } from "@/server/opportunities/queries";
 import { getSisCustomers } from "@/server/sis-workspace/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
@@ -31,19 +33,29 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   if (isQTimeWorkspaceSlug(workspace.primaryOrganization?.slug)) {
     redirect("/client");
   }
-  if (!isSisOrganization(workspace.primaryOrganization)) {
-    redirect("/client");
-  }
 
-  const customers = workspace.primaryOrganization
-    ? await getSisCustomers(workspace.primaryOrganization.id)
-    : null;
+  const organization = workspace.primaryOrganization;
+  const sisDesk = isSisOrganization(organization);
+  let customers: DeskClient[] = [];
+  let setupRequired = false;
+
+  if (organization) {
+    if (sisDesk) {
+      const sisCustomers = await getSisCustomers(organization.id);
+      customers = sisCustomers.setupRequired ? [] : sisCustomers.data;
+      setupRequired = sisCustomers.setupRequired;
+    } else {
+      const won = await getWonOpportunities(organization.id);
+      customers = won.setupRequired ? [] : won.data.map(wonOpportunityToDeskClient);
+      setupRequired = won.setupRequired;
+    }
+  }
 
   return (
     <LionsDenBoardScreen board="clients" workspace={workspace}>
       <LionsDenClientsBoard
-        customers={customers && !customers.setupRequired ? customers.data : []}
-        setupRequired={Boolean(customers?.setupRequired)}
+        customers={customers}
+        setupRequired={setupRequired}
         spanish={language === "es"}
       />
     </LionsDenBoardScreen>

@@ -7,6 +7,7 @@ import type { HunterReviewItem } from "@/server/hunter/review";
 import type { ContentDraft } from "@/server/content-studio/queries";
 import type { OrganizationNote } from "@/server/notes/queries";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
+import { countWonOpportunities } from "@/lib/lions-den/desk-clients";
 import { bucketFollowUpQueues, type DeskFollowUpItem } from "@/lib/lions-den/desk-queue";
 import { LionsDenCalendarBoard } from "@/components/lions-den/lions-den-calendar";
 import { LionsDenNotesBoard } from "@/components/lions-den/lions-den-notes";
@@ -85,9 +86,13 @@ export function LionsDenOverview({
         <MetricChip href={href("/client/david")} label={spanish ? "Hoy" : "Due today"} value={dueTodayCount} />
         <MetricChip href={href("/client/notes")} label={spanish ? "Notas" : "Notes"} value={notes.length} />
         <MetricChip href={href("/client/hunter")} label={spanish ? "HUNTER" : "HUNTER"} value={reviewPile.length} />
+        <MetricChip
+          href={href("/client/clients")}
+          label={spanish ? "Clientes" : "Clients"}
+          value={sisDashboard ? sisDashboard.counts.customers : countWonOpportunities(prospects)}
+        />
         {sisDashboard ? (
           <>
-            <MetricChip href={href("/client/clients")} label={spanish ? "Clientes" : "Clients"} value={sisDashboard.counts.customers} />
             <MetricChip href={href("/client")} label={spanish ? "Leads SIS" : "SIS leads"} value={sisDashboard.counts.leads} />
             <MetricChip href={href("/client")} label={spanish ? "Cotiz." : "Quotes"} value={sisDashboard.counts.quotes} />
             <MetricChip href={href("/client")} label={spanish ? "Pedidos" : "Orders"} value={sisDashboard.counts.orders} />
