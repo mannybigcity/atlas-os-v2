@@ -37,8 +37,10 @@ export const lionsDenBoards: Array<{
 export function visibleLionsDenBoards(
   organization?: { name?: string | null; slug?: string | null } | null,
 ) {
-  if (isSisOrganization(organization)) return lionsDenBoards;
-  return lionsDenBoards.filter((board) => board.id !== "clients");
+  if (isQTimeWorkspaceSlug(organization?.slug)) {
+    return lionsDenBoards.filter((board) => board.id !== "clients");
+  }
+  return lionsDenBoards;
 }
 
 export function usesLionsDenHub(

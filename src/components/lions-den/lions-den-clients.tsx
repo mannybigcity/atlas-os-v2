@@ -1,7 +1,7 @@
-import type { SisCustomer } from "@/server/sis-workspace/queries";
+import type { DeskClient } from "@/lib/lions-den/desk-clients";
 
 type LionsDenClientsBoardProps = {
-  customers: SisCustomer[];
+  customers: DeskClient[];
   setupRequired?: boolean;
   spanish: boolean;
 };
@@ -44,7 +44,7 @@ export function LionsDenClientsBoard({
         {spanish ? "Clientes" : "Clients"}
       </p>
       <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#071b42]">
-        {spanish ? "Clientes SIS en este escritorio" : "SIS clients on this desk"}
+        {spanish ? "Clientes en este escritorio" : "Clients on this desk"}
       </h2>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-[#33415c]">
         {spanish
@@ -55,8 +55,8 @@ export function LionsDenClientsBoard({
       {setupRequired ? (
         <p className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900">
           {spanish
-            ? "No pudimos cargar los clientes SIS."
-            : "We could not load SIS clients."}
+            ? "No pudimos cargar los clientes."
+            : "We could not load clients."}
         </p>
       ) : customers.length === 0 ? (
         <p className="mt-5 rounded-2xl border border-dashed border-[#d8c27a] bg-[#fff8e6] p-5 text-sm font-semibold leading-6 text-[#071b42]">
@@ -91,6 +91,9 @@ export function LionsDenClientsBoard({
                   <tr key={customer.id}>
                     <td className="py-3 pr-3 align-top">
                       <p className="font-semibold text-[#071b42]">{customer.displayName}</p>
+                      {customer.contactName ? (
+                        <p className="mt-0.5 text-[11px] text-[#5c6578]">{customer.contactName}</p>
+                      ) : null}
                       {customer.phone ? (
                         <p className="mt-0.5 text-[11px] text-[#5c6578]">{customer.phone}</p>
                       ) : null}
