@@ -42,6 +42,7 @@ type ClientDashboardPageProps = {
     profile?: string;
     panel?: string;
     status?: string;
+    error?: string;
     workspace?: string;
     lang?: string;
   }>;
@@ -162,6 +163,13 @@ export default async function ClientDashboardPage({
           {spanish
             ? "No pudimos cargar el acceso al espacio de trabajo. Comunícate con tu equipo para que podamos restaurar la cuenta."
             : "We could not load workspace access. Contact your workspace team so we can restore the account."}
+        </StatusAlert>
+      ) : null}
+      {params?.error === "workspace_setup" ? (
+        <StatusAlert tone="rose">
+          {spanish
+            ? "Tu cuenta está activa, pero no pudimos crear tu espacio de trabajo empresarial. Vuelve a iniciar sesión o contacta al equipo de Atlas."
+            : "Your account is active, but we could not create your business workspace. Try signing in again or contact the Atlas team."}
         </StatusAlert>
       ) : null}
       {!workspace.isSuperAdmin && !memberships.setupRequired && memberships.data.length === 0 ? (

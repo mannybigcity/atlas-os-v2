@@ -5,8 +5,12 @@ import { redirect } from "next/navigation";
 import { getSiteUrl } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
-import { ensureTrialProfile, getTrialProfile } from "@/server/trials/profile";
-import { ensureTrialWorkspace } from "@/server/trials/workspace";
+import { getTrialProfile } from "@/server/trials/profile";
+import {
+  ensureTrialAccountForUser,
+  ensureTrialWorkspaceForUser,
+} from "@/server/trials/provision";
+import { isTrialConfirmationRequest, isTrialSignupMetadata } from "@/server/trials/metadata";
 import {
   ensureSampleDeskAccess,
   getSampleDeskSignInCredentials,
@@ -48,19 +52,33 @@ export async function signInWithPassword(formData: FormData) {
       console.error("Atlas trial profile guard failed", error);
     }
 
+    if (!trialProfile && isTrialSignupMetadata(data.user.user_metadata)) {
+      const provision = await ensureTrialAccountForUser(
+        data.user.id,
+        data.user.user_metadata,
+        data.user.email ?? email,
+      );
+
+      if (!provision.ok) {
+        redirect("/start-trial?error=profile_setup");
+      }
+
+      trialProfile = await getTrialProfile(data.user.id);
+    }
+
     if (trialProfile) {
       if (new Date(trialProfile.trial_ends_at).getTime() <= Date.now()) {
         redirect("/pricing?trial=expired");
       }
 
-      try {
-        await ensureTrialWorkspace({
-          userId: data.user.id,
-          businessName: trialProfile.business_name,
-          email: data.user.email ?? email,
-        });
-      } catch (provisionError) {
-        console.error("Atlas trial workspace ensure failed", provisionError);
+      const workspace = await ensureTrialWorkspaceForUser({
+        userId: data.user.id,
+        businessName: trialProfile.business_name,
+        email: data.user.email ?? email,
+      });
+
+      if (!workspace.ok) {
+        redirect("/client?error=workspace_setup");
       }
     }
   }
@@ -171,13 +189,15 @@ export async function confirmAuthLink(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (type === "email" && user) {
-    const profile = await ensureTrialProfile(user.id, {
-      ...user.user_metadata,
-      email: user.email,
-    });
+  const shouldProvisionTrial =
+    Boolean(user) &&
+    (isTrialConfirmationRequest({ type, next: String(formData.get("next") ?? "") }) ||
+      isTrialSignupMetadata(user?.user_metadata));
 
-    if (!profile.ok) {
+  if (shouldProvisionTrial && user) {
+    const provision = await ensureTrialAccountForUser(user.id, user.user_metadata, user.email);
+
+    if (!provision.ok) {
       redirect("/start-trial?error=profile_setup");
     }
   }
