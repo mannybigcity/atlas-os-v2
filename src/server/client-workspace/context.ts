@@ -25,6 +25,10 @@ import {
   ensureTrialAccountForUser,
   ensureTrialWorkspaceForUser,
 } from "@/server/trials/provision";
+import {
+  isTrialWorkspaceSetupError,
+  trialWorkspaceSetupHref,
+} from "@/server/trials/workspace-redirect";
 import { ensureAfeOperatorDeskAccess } from "@/server/organizations/afe-operator-desk";
 import { ensureSisWorkingOrgAccess } from "@/server/organizations/sis-working-org";
 import {
@@ -39,6 +43,8 @@ import {
 type ClientWorkspaceSearchParams = {
   previewOrg?: string;
   workspace?: string;
+  error?: string;
+  reason?: string;
 };
 
 function isSafeOrganizationSlug(value: string) {
@@ -110,14 +116,16 @@ export async function getClientWorkspaceContext(
       redirect("/pricing?trial=expired");
     }
 
-    const workspace = await ensureTrialWorkspaceForUser({
-      userId: user.id,
-      businessName: trialProfile.business_name,
-      email: user.email ?? "",
-    });
+    if (!isTrialWorkspaceSetupError(searchParams?.error)) {
+      const workspace = await ensureTrialWorkspaceForUser({
+        userId: user.id,
+        businessName: trialProfile.business_name,
+        email: user.email ?? "",
+      });
 
-    if (!workspace.ok) {
-      redirect("/client?error=workspace_setup");
+      if (!workspace.ok) {
+        redirect(trialWorkspaceSetupHref(workspace.error));
+      }
     }
   }
   const isSuperAdmin = isSuperAdminEmail(user.email);

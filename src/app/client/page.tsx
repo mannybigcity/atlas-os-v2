@@ -43,6 +43,7 @@ type ClientDashboardPageProps = {
     panel?: string;
     status?: string;
     error?: string;
+    reason?: string;
     workspace?: string;
     lang?: string;
   }>;
@@ -167,9 +168,25 @@ export default async function ClientDashboardPage({
       ) : null}
       {params?.error === "workspace_setup" ? (
         <StatusAlert tone="rose">
-          {spanish
-            ? "Tu cuenta está activa, pero no pudimos crear tu espacio de trabajo empresarial. Vuelve a iniciar sesión o contacta al equipo de Atlas."
-            : "Your account is active, but we could not create your business workspace. Try signing in again or contact the Atlas team."}
+          {params?.reason === "missing_identity"
+            ? spanish
+              ? "Tu cuenta está activa, pero falta el nombre de tu negocio. Vuelve a registrarte o contacta al equipo de Atlas."
+              : "Your account is active, but your business name is missing. Sign up again or contact the Atlas team."
+            : params?.reason === "lookup_failed"
+              ? spanish
+                ? "Tu cuenta está activa, pero no pudimos verificar el acceso al espacio de trabajo. Contacta al equipo de Atlas."
+                : "Your account is active, but we could not verify workspace access. Contact the Atlas team."
+              : params?.reason === "membership_failed"
+                ? spanish
+                  ? "Tu cuenta está activa, pero no pudimos vincular tu membresía al espacio de trabajo. Contacta al equipo de Atlas."
+                  : "Your account is active, but we could not link your workspace membership. Contact the Atlas team."
+                : params?.reason === "create_failed"
+                  ? spanish
+                    ? "Tu cuenta está activa, pero no pudimos crear tu espacio de trabajo empresarial. Contacta al equipo de Atlas."
+                    : "Your account is active, but we could not create your business workspace. Contact the Atlas team."
+                  : spanish
+                    ? "Tu cuenta está activa, pero no pudimos crear tu espacio de trabajo empresarial. Vuelve a iniciar sesión o contacta al equipo de Atlas."
+                    : "Your account is active, but we could not create your business workspace. Try signing in again or contact the Atlas team."}
         </StatusAlert>
       ) : null}
       {!workspace.isSuperAdmin && !memberships.setupRequired && memberships.data.length === 0 ? (

@@ -10,6 +10,7 @@ import {
   ensureTrialAccountForUser,
   ensureTrialWorkspaceForUser,
 } from "@/server/trials/provision";
+import { trialWorkspaceSetupHref } from "@/server/trials/workspace-redirect";
 import { isTrialConfirmationRequest, isTrialSignupMetadata } from "@/server/trials/metadata";
 import {
   ensureSampleDeskAccess,
@@ -78,7 +79,7 @@ export async function signInWithPassword(formData: FormData) {
       });
 
       if (!workspace.ok) {
-        redirect("/client?error=workspace_setup");
+        redirect(trialWorkspaceSetupHref(workspace.error));
       }
     }
   }

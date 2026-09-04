@@ -35,6 +35,8 @@ export async function ensureTrialWorkspaceForUser(input: {
   if (!workspace.ok) {
     console.error("Atlas trial workspace ensure failed", {
       userId: input.userId,
+      businessName: input.businessName,
+      email: input.email,
       error: workspace.error,
     });
   }
