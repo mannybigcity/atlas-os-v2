@@ -7,13 +7,20 @@ const exactAllowedRedirectPaths = new Set([
 
 const allowedRedirectRoots = ["/client", "/clients", "/lions-den"];
 
+function redirectPathBase(value: string) {
+  const queryIndex = value.indexOf("?");
+  return queryIndex >= 0 ? value.slice(0, queryIndex) : value;
+}
+
 function isAllowedRedirectPath(value: string) {
-  if (exactAllowedRedirectPaths.has(value)) {
+  const path = redirectPathBase(value);
+
+  if (exactAllowedRedirectPaths.has(path)) {
     return true;
   }
 
   return allowedRedirectRoots.some(
-    (root) => value === root || value.startsWith(`${root}/`),
+    (root) => path === root || path.startsWith(`${root}/`),
   );
 }
 

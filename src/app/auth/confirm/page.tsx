@@ -26,9 +26,14 @@ export default async function ConfirmRecoveryPage({
   searchParams,
 }: ConfirmRecoveryPageProps) {
   const params = await searchParams;
-  const isTrial = params?.type === "email";
+  const isTrial =
+    params?.type === "email" ||
+    params?.type === "signup" ||
+    params?.next === "/starter" ||
+    (typeof params?.next === "string" && params.next.split("?")[0] === "/client");
   const isInvite = params?.type === "invite" || params?.next === "/set-password";
-  const isRecovery = params?.type === "recovery" || Boolean(params?.code);
+  const isRecovery =
+    (params?.type === "recovery" || Boolean(params?.code)) && !isTrial;
   const isValidRequest =
     Boolean(params?.code || params?.token_hash) && (isInvite || isRecovery || isTrial);
   const nextPath = isTrial ? "/client?status=welcome" : isInvite ? "/set-password" : "/reset-password";
@@ -71,13 +76,25 @@ export default async function ConfirmRecoveryPage({
       <main className="min-h-[calc(100vh-73px)] bg-slate-50 px-6 py-12">
         <section className="mx-auto max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-700">
-            {isInvite ? copy.invitationEyebrow : copy.recoveryEyebrow}
+            {isTrial
+              ? language === "es"
+                ? "Confirmación de prueba"
+                : "Trial confirmation"
+              : isInvite
+                ? copy.invitationEyebrow
+                : copy.recoveryEyebrow}
           </p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
             {isTrial ? copy.trialTitle : isInvite ? copy.inviteTitle : copy.recoveryTitle}
           </h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">
-            {isInvite ? copy.inviteDescription : copy.recoveryDescription}
+            {isTrial
+              ? language === "es"
+                ? "Confirma tu correo para crear tu espacio de trabajo privado y abrir The Lion's Den."
+                : "Confirm your email to create your private workspace and open The Lion's Den."
+              : isInvite
+                ? copy.inviteDescription
+                : copy.recoveryDescription}
           </p>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

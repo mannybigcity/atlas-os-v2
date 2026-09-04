@@ -45,9 +45,11 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
               ? "Usa al menos 12 caracteres con mayúsculas, minúsculas, un número y un símbolo."
               : params?.error === "account_exists"
                 ? "account_exists"
-                : params?.error
-                  ? "No pudimos iniciar la prueba. Revisa tus datos e inténtalo otra vez."
-                  : null,
+                : params?.error === "profile_setup"
+                  ? "Tu correo está confirmado, pero Atlas no pudo terminar de configurar tu espacio de trabajo de prueba. Vuelve a iniciar sesión o contacta al equipo de Atlas."
+                  : params?.error
+                    ? "No pudimos iniciar la prueba. Revisa tus datos e inténtalo otra vez."
+                    : null,
         businessType: "Tipo de negocio",
         businessTypePlaceholder: "Elige un tipo de negocio",
         growthGoal: "Meta principal de crecimiento",
@@ -81,8 +83,10 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
             ? "Complete every field, accept the terms and privacy policy, and make sure both passwords match."
             : params?.error === "weak_password"
               ? "Use at least 12 characters with uppercase, lowercase, a number, and a symbol."
-              : params?.error === "account_exists"
-                ? "account_exists"
+            : params?.error === "account_exists"
+              ? "account_exists"
+              : params?.error === "profile_setup"
+                ? "Your email is confirmed, but Atlas could not finish setting up your trial workspace. Sign in again or contact the Atlas team."
                 : params?.error
                   ? "We could not start the trial. Check your details and try again."
                   : null,

@@ -20,7 +20,11 @@ import {
 } from "@/lib/client-portal/identity";
 import { requireUser } from "@/server/auth/guards";
 import { getTrialProfile } from "@/server/trials/profile";
-import { ensureTrialWorkspace } from "@/server/trials/workspace";
+import { isTrialSignupMetadata } from "@/server/trials/metadata";
+import {
+  ensureTrialAccountForUser,
+  ensureTrialWorkspaceForUser,
+} from "@/server/trials/provision";
 import { ensureAfeOperatorDeskAccess } from "@/server/organizations/afe-operator-desk";
 import { ensureSisWorkingOrgAccess } from "@/server/organizations/sis-working-org";
 import {
@@ -92,19 +96,28 @@ export async function getClientWorkspaceContext(
   } catch (error) {
     console.error("Atlas trial profile guard failed", error);
   }
+
+  if (!trialProfile && isTrialSignupMetadata(user.user_metadata)) {
+    const provision = await ensureTrialAccountForUser(user.id, user.user_metadata, user.email);
+    if (!provision.ok) {
+      redirect("/start-trial?error=profile_setup");
+    }
+    trialProfile = await getTrialProfile(user.id);
+  }
+
   if (trialProfile) {
     if (new Date(trialProfile.trial_ends_at).getTime() <= Date.now()) {
       redirect("/pricing?trial=expired");
     }
 
-    try {
-      await ensureTrialWorkspace({
-        userId: user.id,
-        businessName: trialProfile.business_name,
-        email: user.email ?? "",
-      });
-    } catch (error) {
-      console.error("Atlas trial workspace ensure failed", error);
+    const workspace = await ensureTrialWorkspaceForUser({
+      userId: user.id,
+      businessName: trialProfile.business_name,
+      email: user.email ?? "",
+    });
+
+    if (!workspace.ok) {
+      redirect("/client?error=workspace_setup");
     }
   }
   const isSuperAdmin = isSuperAdminEmail(user.email);
