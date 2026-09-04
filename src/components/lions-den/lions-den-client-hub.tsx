@@ -5,8 +5,8 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { AtlasStaffPane } from "@/components/lions-den/atlas-staff-pane";
 import { getClientPortalName, isAfeCrmDemoOrganization } from "@/lib/client-portal/identity";
 import {
-  lionsDenBoards,
   lionsDenHref,
+  visibleLionsDenBoards,
   type LionsDenBoard,
 } from "@/lib/lions-den/client-hub";
 import { getSiteLanguage } from "@/lib/site-language-server";
@@ -40,6 +40,10 @@ export async function LionsDenClientHub({
   const spanish = language === "es";
   const portalName = getClientPortalName(organizationName);
   const orgLabel = String(organizationName ?? "").trim();
+  const boards = visibleLionsDenBoards({
+    name: organizationName,
+    slug: workspaceSlug || previewOrgSlug,
+  });
 
   return (
     <div className="lions-den-hub bg-white text-[#071b42]">
@@ -90,7 +94,7 @@ export async function LionsDenClientHub({
             </p>
           </div>
           <nav aria-label="The Lion’s Den" className="flex gap-1 overflow-x-auto p-2 xl:block xl:space-y-0.5 xl:overflow-visible xl:p-3">
-            {lionsDenBoards.map((item) => {
+            {boards.map((item) => {
               const active = item.id === board;
               return (
                 <Link

@@ -8,6 +8,7 @@ import {
 export type LionsDenBoard =
   | "overview"
   | "prospects"
+  | "clients"
   | "follow-up"
   | "calendar"
   | "notes"
@@ -25,12 +26,20 @@ export const lionsDenBoards: Array<{
 }> = [
   { id: "overview", href: "/client", label: "Summary", labelEs: "Resumen" },
   { id: "prospects", href: "/client/prospects", label: "Prospects", labelEs: "Prospectos" },
+  { id: "clients", href: "/client/clients", label: "Clients", labelEs: "Clientes" },
   { id: "follow-up", href: "/client/david", label: "Follow-up", labelEs: "Seguimiento" },
   { id: "calendar", href: "/client/calendar", label: "Calendar", labelEs: "Calendario" },
   { id: "notes", href: "/client/notes", label: "Notes", labelEs: "Notas" },
   { id: "hunter", href: "/client/hunter", label: "HUNTER", labelEs: "HUNTER" },
   { id: "micah", href: "/client/micah", label: "MICAH", labelEs: "MICAH" },
 ];
+
+export function visibleLionsDenBoards(
+  organization?: { name?: string | null; slug?: string | null } | null,
+) {
+  if (isSisOrganization(organization)) return lionsDenBoards;
+  return lionsDenBoards.filter((board) => board.id !== "clients");
+}
 
 export function usesLionsDenHub(
   slugOrOrganization?: string | { name?: string | null; slug?: string | null } | null,
