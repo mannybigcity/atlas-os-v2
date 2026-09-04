@@ -1,5 +1,8 @@
 import { FOUNDER_MAILBOX_EMAIL } from "@/lib/client-portal/identity";
 
+const DEFAULT_NOTIFICATION_FROM = "Atlas <noreply@atlasforentrepreneurs.com>";
+const VERIFIED_NOTIFICATION_HOST = "atlasforentrepreneurs.com";
+
 type EmailDeliveryResult =
   | { sent: true; id: string | null }
   | { sent: false; reason: "not_configured" | "provider_error" };
@@ -67,6 +70,56 @@ function trialSignupRecipients() {
   return [FOUNDER_MAILBOX_EMAIL];
 }
 
+function stripWrappingQuotes(value: string) {
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'") && trimmed.length >= 2)
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+
+  return trimmed;
+}
+
+function extractNotificationEmail(from: string) {
+  const angleMatch = from.match(/<([^<>]+)>/);
+  const email = (angleMatch?.[1] ?? from).trim().toLowerCase();
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return null;
+  }
+
+  return email;
+}
+
+function notificationFromHost(from: string | undefined) {
+  if (!from?.trim()) {
+    return "missing";
+  }
+
+  return extractNotificationEmail(from) ?? "missing";
+}
+
+function isUsableVerifiedRootFrom(from: string) {
+  const email = extractNotificationEmail(from);
+  if (!email) {
+    return false;
+  }
+
+  const host = email.slice(email.lastIndexOf("@") + 1);
+  return host === VERIFIED_NOTIFICATION_HOST;
+}
+
+function resolveNotificationFrom(configured = process.env.ATLAS_NOTIFICATION_FROM) {
+  const candidate = stripWrappingQuotes(configured ?? "");
+  if (candidate && isUsableVerifiedRootFrom(candidate)) {
+    return candidate;
+  }
+
+  return DEFAULT_NOTIFICATION_FROM;
+}
+
 async function sendEmail(input: {
   subject: string;
   html: string;
@@ -76,11 +129,16 @@ async function sendEmail(input: {
   to?: string[];
 }): Promise<EmailDeliveryResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.ATLAS_NOTIFICATION_FROM?.trim();
+  const from = resolveNotificationFrom();
   const to = input.to ?? notificationRecipients();
 
   if (!apiKey || !from || to.length === 0) {
-    console.info("Atlas email notification skipped because Resend is not configured");
+    console.info("Atlas email notification skipped because Resend is not configured", {
+      hasApiKey: Boolean(apiKey),
+      hasFrom: Boolean(from),
+      toCount: to.length,
+      fromHost: notificationFromHost(from),
+    });
     return { sent: false, reason: "not_configured" };
   }
 
