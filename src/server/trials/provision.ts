@@ -4,7 +4,7 @@ import { ensureTrialProfile } from "@/server/trials/profile";
 import { ensureTrialWorkspace } from "@/server/trials/workspace";
 
 export type TrialProvisionResult =
-  | { ok: true }
+  | { ok: true; profileCreated: boolean }
   | { ok: false; error: string; stage: "profile" | "workspace" };
 
 export async function ensureTrialAccountForUser(
@@ -22,7 +22,7 @@ export async function ensureTrialAccountForUser(
     return { ok: false, error: profile.error, stage: "profile" };
   }
 
-  return { ok: true };
+  return { ok: true, profileCreated: profile.created };
 }
 
 export async function ensureTrialWorkspaceForUser(input: {

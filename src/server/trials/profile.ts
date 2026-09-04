@@ -49,7 +49,7 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
     if (!workspace.ok) {
       return { ok: false as const, error: workspace.error };
     }
-    return { ok: true as const };
+    return { ok: true as const, created: false as const };
   }
 
   const { error } = await service.from("atlas_trial_profiles").insert({
@@ -78,7 +78,7 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
     return { ok: false as const, error: workspace.error };
   }
 
-  return { ok: true as const };
+  return { ok: true as const, created: true as const };
 }
 
 export async function getTrialProfile(userId: string) {

@@ -1,6 +1,20 @@
+import { FOUNDER_MAILBOX_EMAIL } from "@/lib/client-portal/identity";
+
 type EmailDeliveryResult =
   | { sent: true; id: string | null }
   | { sent: false; reason: "not_configured" | "provider_error" };
+
+type TrialSignupNotification = {
+  businessName: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  businessType: string;
+  primaryGrowthGoal: string;
+  submittedAt: string;
+  emailConfirmed: boolean;
+  userId?: string | null;
+};
 
 type AssessmentNotification = {
   id: string;
@@ -27,8 +41,8 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
-function notificationRecipients() {
-  const recipients = (process.env.ATLAS_NOTIFICATION_EMAILS ?? "")
+function parseEmailList(value: string) {
+  const recipients = value
     .split(",")
     .map((address) => address.trim().toLowerCase())
     .filter(Boolean);
@@ -40,16 +54,30 @@ function notificationRecipients() {
   return [...new Set(recipients)];
 }
 
+function notificationRecipients() {
+  return parseEmailList(process.env.ATLAS_NOTIFICATION_EMAILS ?? "");
+}
+
+function trialSignupRecipients() {
+  const override = parseEmailList(process.env.TRIAL_SIGNUP_NOTIFY_EMAIL ?? "");
+  if (override.length > 0) {
+    return override;
+  }
+
+  return [FOUNDER_MAILBOX_EMAIL];
+}
+
 async function sendEmail(input: {
   subject: string;
   html: string;
   text: string;
   replyTo?: string;
   idempotencyKey: string;
+  to?: string[];
 }): Promise<EmailDeliveryResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.ATLAS_NOTIFICATION_FROM?.trim();
-  const to = notificationRecipients();
+  const to = input.to ?? notificationRecipients();
 
   if (!apiKey || !from || to.length === 0) {
     console.info("Atlas email notification skipped because Resend is not configured");
@@ -153,5 +181,61 @@ export async function sendAssessmentNotification(input: AssessmentNotification) 
     text,
     replyTo: input.contactEmail,
     idempotencyKey: `atlas-assessment-${input.id}`,
+  });
+}
+
+function trialSignupIdempotencyKey(input: TrialSignupNotification, stage: "signup" | "confirmed") {
+  const identity = input.userId?.trim() || input.email;
+  return `atlas-trial-${stage}-${identity}`;
+}
+
+export async function sendTrialSignupNotification(input: TrialSignupNotification) {
+  const statusNote = input.emailConfirmed
+    ? "Email confirmed. 7-day trial workspace is live."
+    : "7-day trial signup submitted. Email confirmation is still pending.";
+
+  const subject = input.emailConfirmed
+    ? `Trial confirmed — workspace live: ${input.businessName}`
+    : `New Atlas trial: ${input.businessName}`;
+
+  const text = [
+    input.emailConfirmed ? "A new Atlas trial account is live." : "A new Atlas 7-day trial signup was submitted.",
+    "",
+    `Business: ${input.businessName}`,
+    `Owner: ${input.fullName}`,
+    `Email: ${input.email}`,
+    `Phone: ${input.phone}`,
+    `Business type: ${input.businessType}`,
+    `Growth goal: ${input.primaryGrowthGoal}`,
+    `Submitted: ${input.submittedAt}`,
+    "",
+    statusNote,
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#081f49;max-width:680px;margin:auto">
+      <p style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#a57600">
+        ${input.emailConfirmed ? "Trial confirmed" : "New trial signup"}
+      </p>
+      <h1 style="font-size:24px;margin:0 0 18px">${escapeHtml(input.businessName)}</h1>
+      <table style="width:100%;border-collapse:collapse">
+        <tr><td style="padding:7px 12px 7px 0;font-weight:bold">Owner</td><td>${escapeHtml(input.fullName)}</td></tr>
+        <tr><td style="padding:7px 12px 7px 0;font-weight:bold">Email</td><td><a href="mailto:${escapeHtml(input.email)}">${escapeHtml(input.email)}</a></td></tr>
+        <tr><td style="padding:7px 12px 7px 0;font-weight:bold">Phone</td><td>${escapeHtml(input.phone)}</td></tr>
+        <tr><td style="padding:7px 12px 7px 0;font-weight:bold">Business type</td><td>${escapeHtml(input.businessType)}</td></tr>
+        <tr><td style="padding:7px 12px 7px 0;font-weight:bold">Growth goal</td><td>${escapeHtml(input.primaryGrowthGoal)}</td></tr>
+        <tr><td style="padding:7px 12px 7px 0;font-weight:bold">Submitted</td><td>${escapeHtml(input.submittedAt)}</td></tr>
+      </table>
+      <p style="margin-top:22px">${escapeHtml(statusNote)}</p>
+    </div>
+  `;
+
+  return sendEmail({
+    subject,
+    html,
+    text,
+    replyTo: input.email,
+    to: trialSignupRecipients(),
+    idempotencyKey: trialSignupIdempotencyKey(input, input.emailConfirmed ? "confirmed" : "signup"),
   });
 }
