@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { ensureTrialWorkspace } from "@/server/trials/workspace";
 
 export type TrialProfileInput = {
   fullName: string;
@@ -38,6 +39,14 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
   }
 
   if (existing) {
+    const workspace = await ensureTrialWorkspace({
+      userId,
+      businessName,
+      email,
+    });
+    if (!workspace.ok) {
+      return { ok: false as const, error: workspace.error };
+    }
     return { ok: true as const };
   }
 
@@ -56,6 +65,15 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
   if (error) {
     console.error("Atlas trial profile creation failed", { code: error.code });
     return { ok: false as const, error: "create_failed" };
+  }
+
+  const workspace = await ensureTrialWorkspace({
+    userId,
+    businessName,
+    email,
+  });
+  if (!workspace.ok) {
+    return { ok: false as const, error: workspace.error };
   }
 
   return { ok: true as const };

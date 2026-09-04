@@ -6,6 +6,7 @@ import { getSiteUrl } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
 import { ensureTrialProfile, getTrialProfile } from "@/server/trials/profile";
+import { ensureTrialWorkspace } from "@/server/trials/workspace";
 import {
   ensureSampleDeskAccess,
   getSampleDeskSignInCredentials,
@@ -39,28 +40,35 @@ export async function signInWithPassword(formData: FormData) {
     } catch (provisionError) {
       console.error("Atlas sample desk membership ensure failed", provisionError);
     }
+
+    let trialProfile = null;
+    try {
+      trialProfile = await getTrialProfile(data.user.id);
+    } catch (error) {
+      console.error("Atlas trial profile guard failed", error);
+    }
+
+    if (trialProfile) {
+      if (new Date(trialProfile.trial_ends_at).getTime() <= Date.now()) {
+        redirect("/pricing?trial=expired");
+      }
+
+      try {
+        await ensureTrialWorkspace({
+          userId: data.user.id,
+          businessName: trialProfile.business_name,
+          email: data.user.email ?? email,
+        });
+      } catch (provisionError) {
+        console.error("Atlas trial workspace ensure failed", provisionError);
+      }
+    }
   }
 
   const signedInNext =
     typeof requestedNext !== "string" || requestedNext.length === 0
       ? "/client"
       : nextPath;
-
-  let trialProfile = null;
-  try {
-    trialProfile = await getTrialProfile(data.user.id);
-  } catch (error) {
-    console.error("Atlas trial profile guard failed", error);
-  }
-  if (
-    trialProfile &&
-    (signedInNext === "/client" ||
-      signedInNext.startsWith("/client/") ||
-      signedInNext === "/lions-den" ||
-      signedInNext.startsWith("/lions-den/"))
-  ) {
-    redirect("/starter");
-  }
 
   redirect(signedInNext);
 }
@@ -211,7 +219,7 @@ export async function startTrial(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/confirm?type=email&next=/starter`,
+      emailRedirectTo: `${origin}/auth/confirm?type=email&next=/client%3Fstatus%3Dwelcome`,
       data: {
         full_name: fullName,
         business_name: businessName,
