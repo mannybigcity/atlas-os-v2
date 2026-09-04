@@ -5,13 +5,14 @@ import { redirect } from "next/navigation";
 import { getSiteUrl } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
+import { sendTrialSignupNotification } from "@/server/notifications/resend";
 import { getTrialProfile } from "@/server/trials/profile";
 import {
   ensureTrialAccountForUser,
   ensureTrialWorkspaceForUser,
 } from "@/server/trials/provision";
 import { trialWorkspaceSetupHref } from "@/server/trials/workspace-redirect";
-import { isTrialConfirmationRequest, isTrialSignupMetadata } from "@/server/trials/metadata";
+import { extractTrialMetadata, isTrialConfirmationRequest, isTrialSignupMetadata } from "@/server/trials/metadata";
 import {
   ensureSampleDeskAccess,
   getSampleDeskSignInCredentials,
@@ -201,6 +202,13 @@ export async function confirmAuthLink(formData: FormData) {
     if (!provision.ok) {
       redirect("/start-trial?error=profile_setup");
     }
+
+    if (provision.profileCreated) {
+      await notifyTrialSignupFromMetadata(user.user_metadata, {
+        emailConfirmed: true,
+        userId: user.id,
+      });
+    }
   }
 
   redirect(nextPath);
@@ -208,6 +216,59 @@ export async function confirmAuthLink(formData: FormData) {
 
 function trialValue(value: FormDataEntryValue | null, max: number) {
   return String(value ?? "").trim().slice(0, max);
+}
+
+async function notifyTrialSignup(input: {
+  businessName: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  businessType: string;
+  primaryGrowthGoal: string;
+  submittedAt: string;
+  emailConfirmed: boolean;
+  userId?: string | null;
+}) {
+  const notification = await sendTrialSignupNotification(input);
+
+  if (!notification.sent) {
+    console.error("Atlas trial signup notification was not accepted", {
+      email: input.email,
+      emailConfirmed: input.emailConfirmed,
+      reason: notification.reason,
+    });
+    return;
+  }
+
+  console.info("Atlas trial signup notification accepted", {
+    email: input.email,
+    emailConfirmed: input.emailConfirmed,
+    emailId: notification.id,
+  });
+}
+
+async function notifyTrialSignupFromMetadata(
+  metadata: Record<string, unknown>,
+  input: { emailConfirmed: boolean; userId?: string | null; submittedAt?: string },
+) {
+  if (!isTrialSignupMetadata(metadata)) {
+    return;
+  }
+
+  const trial = extractTrialMetadata(metadata);
+  if (
+    !trial.fullName || !trial.businessName || !trial.email || !trial.phone ||
+    !trial.businessType || !trial.primaryGrowthGoal
+  ) {
+    return;
+  }
+
+  await notifyTrialSignup({
+    ...trial,
+    submittedAt: input.submittedAt ?? new Date().toISOString(),
+    emailConfirmed: input.emailConfirmed,
+    userId: input.userId,
+  });
 }
 
 export async function startTrial(formData: FormData) {
@@ -236,7 +297,7 @@ export async function startTrial(formData: FormData) {
   const origin = getSiteUrl(requestHeaders.get("origin"));
   const supabase = await createClient();
   const consentAt = new Date().toISOString();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -262,6 +323,18 @@ export async function startTrial(formData: FormData) {
       /already registered|already exists/i.test(error.message ?? "");
     redirect(isDuplicate ? "/start-trial?error=account_exists" : "/start-trial?error=signup_failed");
   }
+
+  await notifyTrialSignup({
+    businessName,
+    fullName,
+    email,
+    phone,
+    businessType,
+    primaryGrowthGoal,
+    submittedAt: consentAt,
+    emailConfirmed: false,
+    userId: data.user?.id,
+  });
 
   redirect("/start-trial?status=check_email");
 }
