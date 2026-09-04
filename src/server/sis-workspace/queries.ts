@@ -1,3 +1,4 @@
+import { readSisCustomerPayPalFields } from "@/lib/lions-den/sis-customers";
 import { createClient } from "@/lib/supabase/server";
 import type { WorkspaceQueryResult } from "@/server/organizations/queries";
 
@@ -10,8 +11,23 @@ export type SisLeadSummary = {
   createdAt: string;
 };
 
+export type SisCustomer = {
+  id: string;
+  displayName: string;
+  businessName: string | null;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  sourceLabel: string | null;
+  lastDate: string | null;
+  invoiceTotal: number | null;
+  paymentTotal: number | null;
+  createdAt: string;
+};
+
 export type SisDashboardData = {
   counts: {
+    customers: number;
     leads: number;
     openLeads: number;
     quotes: number;
@@ -62,6 +78,35 @@ type CountResult = {
   error: { message: string } | null;
 };
 
+type SisCustomerRow = {
+  id: string;
+  display_name: string;
+  business_name: string | null;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  source_label: string | null;
+  metadata: unknown;
+  created_at: string;
+};
+
+function normalizeCustomer(row: SisCustomerRow): SisCustomer {
+  const paypal = readSisCustomerPayPalFields(row.metadata);
+  return {
+    id: row.id,
+    displayName: row.display_name,
+    businessName: row.business_name,
+    email: row.email,
+    phone: row.phone,
+    notes: row.notes,
+    sourceLabel: row.source_label,
+    lastDate: paypal.lastDate,
+    invoiceTotal: paypal.invoiceTotal,
+    paymentTotal: paypal.paymentTotal,
+    createdAt: row.created_at,
+  };
+}
+
 function normalizeLead(row: {
   id: string;
   offer: string;
@@ -103,8 +148,9 @@ export async function getSisDashboardData(
   organizationId: string,
 ): Promise<WorkspaceQueryResult<SisDashboardData>> {
   const supabase = await createClient();
-  const [leads, openLeads, quotes, orders, paidOrders, fulfillment, recentLeads, partyEvents, inboxTasks] =
+  const [customers, leads, openLeads, quotes, orders, paidOrders, fulfillment, recentLeads, partyEvents, inboxTasks] =
     await Promise.all([
+      countRows("organization_sis_customers", organizationId),
       countRows("organization_sis_leads", organizationId),
       countRows("organization_sis_leads", organizationId, [["status", "new"]]),
       countRows("organization_sis_quotes", organizationId),
@@ -132,14 +178,14 @@ export async function getSisDashboardData(
         .limit(12),
     ]);
 
-  const countErrors = [leads, openLeads, quotes, orders, paidOrders, fulfillment]
+  const countErrors = [customers, leads, openLeads, quotes, orders, paidOrders, fulfillment]
     .map((result) => result.error)
     .filter(Boolean);
 
   if (countErrors.length > 0 || recentLeads.error || partyEvents.error || inboxTasks.error) {
     return {
       data: {
-        counts: { leads: 0, openLeads: 0, quotes: 0, orders: 0, paidOrders: 0, fulfillment: 0 },
+        counts: { customers: 0, leads: 0, openLeads: 0, quotes: 0, orders: 0, paidOrders: 0, fulfillment: 0 },
         recentLeads: [],
         partyEvents: [],
         inboxTasks: [],
@@ -152,6 +198,7 @@ export async function getSisDashboardData(
   return {
     data: {
       counts: {
+        customers: customers.count ?? 0,
         leads: leads.count ?? 0,
         openLeads: openLeads.count ?? 0,
         quotes: quotes.count ?? 0,
@@ -186,6 +233,32 @@ export async function getSisDashboardData(
           party: party ? { hostName: party.host_name, stage: party.stage } : null };
       }),
     },
+    setupRequired: false,
+    error: null,
+  };
+}
+
+export async function getSisCustomers(
+  organizationId: string,
+): Promise<WorkspaceQueryResult<SisCustomer[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organization_sis_customers")
+    .select("id, display_name, business_name, email, phone, notes, source_label, metadata, created_at")
+    .eq("organization_id", organizationId)
+    .order("display_name", { ascending: true })
+    .limit(200);
+
+  if (error) {
+    return {
+      data: [],
+      setupRequired: true,
+      error: error.message,
+    };
+  }
+
+  return {
+    data: ((data ?? []) as SisCustomerRow[]).map(normalizeCustomer),
     setupRequired: false,
     error: null,
   };

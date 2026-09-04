@@ -87,6 +87,7 @@ export function LionsDenOverview({
         <MetricChip href={href("/client/hunter")} label={spanish ? "HUNTER" : "HUNTER"} value={reviewPile.length} />
         {sisDashboard ? (
           <>
+            <MetricChip href={href("/client/clients")} label={spanish ? "Clientes" : "Clients"} value={sisDashboard.counts.customers} />
             <MetricChip href={href("/client")} label={spanish ? "Leads SIS" : "SIS leads"} value={sisDashboard.counts.leads} />
             <MetricChip href={href("/client")} label={spanish ? "Cotiz." : "Quotes"} value={sisDashboard.counts.quotes} />
             <MetricChip href={href("/client")} label={spanish ? "Pedidos" : "Orders"} value={sisDashboard.counts.orders} />
