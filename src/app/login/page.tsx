@@ -6,6 +6,8 @@ import { withSiteLanguage } from "@/lib/site-language";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import { signInToSampleDesk, signInWithPassword } from "@/server/auth/actions";
 
+export const runtime = "nodejs";
+
 export async function generateMetadata(): Promise<Metadata> {
   const language = await getSiteLanguage();
 
@@ -62,6 +64,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         signIn: "Iniciar sesión",
         showDesk: "Mostrar el escritorio",
         sampleDeskUnavailable: "El escritorio de muestra no está configurado todavía.",
+        sampleDeskSignInFailed: "No se pudo abrir el escritorio de muestra. Inténtalo de nuevo o inicia sesión con el correo de muestra.",
         resetPassword: "Restablecer contraseña",
         createAccount: "Crea una cuenta / Comienza tu prueba gratis de 7 días",
         noCard: "No necesitas tarjeta.",
@@ -79,6 +82,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         signIn: "Sign in",
         showDesk: "Show the desk",
         sampleDeskUnavailable: "The sample desk is not configured yet.",
+        sampleDeskSignInFailed: "The sample desk could not be opened. Try again, or sign in with the sample email.",
         resetPassword: "Reset password",
         createAccount: "Create an account / Start 7-day free trial",
         noCard: "No card required.",
@@ -116,6 +120,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           {params?.error === "sample_desk_unavailable" ? (
             <Alert tone="amber">{copy.sampleDeskUnavailable}</Alert>
+          ) : null}
+          {params?.error === "sample_desk_signin_failed" ? (
+            <Alert tone="amber">{copy.sampleDeskSignInFailed}</Alert>
           ) : null}
 
           <form action={signInWithPassword} className="mt-4 space-y-4">

@@ -1,4 +1,4 @@
-import { resolvedSampleDeskLoginEmail } from "@/lib/client-portal/identity";
+import { resolvedSampleDeskLoginEmail } from "./client-portal/identity.ts";
 
 export function getSupabaseEnv() {
   const requiredPublicEnv = {
@@ -47,12 +47,52 @@ export function isSuperAdminEmail(email?: string | null) {
   return getSuperAdminEmails().includes(email.toLowerCase());
 }
 
+function readNetlifyEnv(name: string) {
+  const get = (
+    globalThis as { Netlify?: { env?: { get?: (key: string) => string | undefined } } }
+  ).Netlify?.env?.get;
+  if (typeof get !== "function") {
+    return "";
+  }
+
+  const value = get(name);
+  return typeof value === "string" ? value : "";
+}
+
+function normalizeRuntimeSecret(value: string) {
+  let next = value.replace(/^\uFEFF/, "").trim();
+  if (
+    next.length >= 2 &&
+    ((next.startsWith('"') && next.endsWith('"')) || (next.startsWith("'") && next.endsWith("'")))
+  ) {
+    next = next.slice(1, -1).trim();
+  }
+  return next;
+}
+
+export function readRuntimeEnv(name: string) {
+  // Prefer Netlify.env (runtime) then process.env[name]. Dynamic key access
+  // prevents Next from inlining an empty build-time value into server actions.
+  // env.ts is also imported by client and edge modules.
+  const fromNetlify = normalizeRuntimeSecret(readNetlifyEnv(name));
+  if (fromNetlify) {
+    return fromNetlify;
+  }
+
+  const fromProcess = typeof process !== "undefined" ? process.env[name] : undefined;
+  if (typeof fromProcess === "string" && fromProcess.length > 0) {
+    return normalizeRuntimeSecret(fromProcess);
+  }
+
+  return "";
+}
+
 export function getConfiguredDemoLoginEmail() {
-  return resolvedSampleDeskLoginEmail(process.env.DEMO_LOGIN_EMAIL);
+  return resolvedSampleDeskLoginEmail(readRuntimeEnv("DEMO_LOGIN_EMAIL"));
 }
 
 export function getDemoLoginPassword() {
-  return process.env.DEMO_LOGIN_PASSWORD?.trim() ?? "";
+  return readRuntimeEnv("DEMO_LOGIN_PASSWORD");
 }
 
 export function getSiteUrl(fallbackOrigin?: string | null) {

@@ -77,6 +77,8 @@ test("workspace context no longer auto-attaches afe-crm-demo to admin", () => {
   const login = readRepo("src/app/login/page.tsx");
   assert.match(login, /signInToSampleDesk/);
   assert.match(login, /Show the desk/);
+  assert.match(login, /export const runtime = "nodejs"/);
+  assert.match(login, /sample_desk_signin_failed/);
   assert.doesNotMatch(login, /DEMO_LOGIN_PASSWORD/);
   assert.doesNotMatch(login, /@atlasforentrepreneurs\.com/);
   assert.doesNotMatch(login, /atlasforentrepreneurs\+demo@gmail\.com/);
@@ -92,7 +94,22 @@ test("workspace context no longer auto-attaches afe-crm-demo to admin", () => {
 
   const actions = readRepo("src/server/auth/actions.ts");
   assert.match(actions, /getSampleDeskSignInCredentials/);
+  assert.match(actions, /sampleDeskSignInFailedRedirect/);
+  assert.match(actions, /!credentials\.ok/);
+  assert.match(actions, /firstAttempt/);
   assert.doesNotMatch(actions, /password:\s*["'][^"']+["']/);
+
+  const env = readRepo("src/lib/env.ts");
+  assert.match(env, /process\.env\[name\]/);
+  assert.match(env, /Netlify\?\.env\?\.get/);
+  assert.doesNotMatch(env, /process\.env\.DEMO_LOGIN_PASSWORD/);
+  assert.doesNotMatch(env, /process\.env\.DEMO_LOGIN_EMAIL/);
+
+  const sampleAuth = readRepo("src/server/auth/sample-desk.ts");
+  assert.match(sampleAuth, /reason: "missing_password"/);
+  assert.match(sampleAuth, /reason: "forbidden_email"/);
+  assert.match(sampleAuth, /sample_desk_signin_failed/);
+  assert.doesNotMatch(sampleAuth, /atlasforentrepreneurs@gmail\.com/);
 });
 
 test("HUNTER still writes the review pile and MICAH stays gallery-only", () => {
