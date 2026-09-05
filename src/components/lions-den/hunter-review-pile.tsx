@@ -1,10 +1,13 @@
 import { acceptHunterReviewItem, dismissHunterReviewItem } from "@/server/hunter/actions";
+import { HUNTER_REVIEW_PILE_MIGRATION } from "@/server/hunter/review";
 import type { HunterReviewItem } from "@/server/hunter/review";
 
 type HunterReviewPileProps = {
   organizationId: string;
   items: HunterReviewItem[];
   setupRequired?: boolean;
+  acceptedCount?: number;
+  prospectsHref?: string;
   spanish: boolean;
 };
 
@@ -12,6 +15,8 @@ export function HunterReviewPile({
   organizationId,
   items,
   setupRequired = false,
+  acceptedCount = 0,
+  prospectsHref = "/client/prospects",
   spanish,
 }: HunterReviewPileProps) {
   return (
@@ -36,19 +41,54 @@ export function HunterReviewPile({
       </div>
 
       {setupRequired ? (
-        <p className="mt-5 rounded-2xl border border-[#d8c27a] bg-[#fff8e6] p-4 text-sm leading-6 text-[#071b42]">
-          {spanish
-            ? "Aplica la migración de la pila de revisión de HUNTER para guardar hallazgos por organización."
-            : "Apply the HUNTER review pile migration to keep finds per organization."}
-        </p>
+        <div className="mt-5 rounded-2xl border border-[#d8c27a] bg-[#fff8e6] p-4 text-sm leading-6 text-[#071b42]">
+          <p className="font-semibold">
+            {spanish
+              ? "Esta mesa aún no puede guardar hallazgos."
+              : "This desk cannot save HUNTER finds yet."}
+          </p>
+          <p className="mt-2">
+            {spanish
+              ? "Falta la tabla de la pila de revisión en esta base de datos. No es un fallo tuyo — es un paso único del fundador."
+              : "The review-pile table is missing on this database. This is a one-time founder setup step, not something the salesman did wrong."}
+          </p>
+          <p className="mt-2">
+            {spanish ? "Fundador: ejecuta " : "Founder: apply "}
+            <code className="rounded bg-white px-1.5 py-0.5 text-xs">{HUNTER_REVIEW_PILE_MIGRATION}</code>
+            {spanish
+              ? " en el editor SQL de Supabase y recarga esta página."
+              : " in the Supabase SQL editor, then reload this page."}
+          </p>
+        </div>
       ) : null}
 
       {!setupRequired && items.length === 0 ? (
-        <p className="mt-5 rounded-2xl border border-dashed border-[#d5d0c4] bg-[#fbfaf4] p-5 text-sm leading-6 text-[#5c6578]">
-          {spanish
-            ? "La pila está vacía. Busca un mercado arriba. Los resultados se quedan aquí hasta que los aceptes."
-            : "The pile is empty. Search a market above. Results stay here until you accept them."}
-        </p>
+        <div className="mt-5 rounded-2xl border border-dashed border-[#d5d0c4] bg-[#fbfaf4] p-5 text-sm leading-6 text-[#5c6578]">
+          {acceptedCount > 0 ? (
+            <>
+              <p className="font-semibold text-[#071b42]">
+                {spanish ? "Nada en revisión." : "Nothing in review."}
+              </p>
+              <p className="mt-2">
+                {spanish
+                  ? "Los hallazgos de esta búsqueda ya son Prospectos. Ábrelos para que el vendedor llame. Atlas no contactó a nadie."
+                  : "These finds are already Prospects. Open Prospects so the salesman can call. Atlas did not contact anyone."}
+              </p>
+              <a
+                className="mt-4 inline-flex rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white"
+                href={prospectsHref}
+              >
+                {spanish ? "Abrir Prospectos" : "Open Prospects"}
+              </a>
+            </>
+          ) : (
+            <p>
+              {spanish
+                ? "La pila está vacía. Busca un mercado arriba. Los resultados se quedan aquí hasta que los aceptes."
+                : "The pile is empty. Search a market above. Results stay here until you accept them."}
+            </p>
+          )}
+        </div>
       ) : null}
 
       {!setupRequired && items.length > 0 ? (
@@ -70,16 +110,6 @@ export function HunterReviewPile({
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {item.googleMapsUrl ? (
-                    <a
-                      className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42]"
-                      href={item.googleMapsUrl}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      {spanish ? "Verificar" : "Verify"}
-                    </a>
-                  ) : null}
                   <form action={acceptHunterReviewItem}>
                     <input name="organizationId" type="hidden" value={organizationId} />
                     <input name="reviewItemId" type="hidden" value={item.id} />
@@ -91,9 +121,19 @@ export function HunterReviewPile({
                     <input name="organizationId" type="hidden" value={organizationId} />
                     <input name="reviewItemId" type="hidden" value={item.id} />
                     <button className="rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#5c6578]" type="submit">
-                      {spanish ? "Descartar" : "Dismiss"}
+                      {spanish ? "Omitir" : "Skip"}
                     </button>
                   </form>
+                  {item.googleMapsUrl ? (
+                    <a
+                      className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42]"
+                      href={item.googleMapsUrl}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {spanish ? "Verificar" : "Verify"}
+                    </a>
+                  ) : null}
                 </div>
               </div>
             </article>

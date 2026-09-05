@@ -8,17 +8,45 @@ import { searchGooglePlacesText } from "@/server/integrations/google-places";
 import type { GooglePlaceProspect } from "@/server/integrations/google-places";
 import {
   HUNTER_SEARCH_RESULT_CAP,
+  annotateHunterSearchPlaces,
+  buildHunterSearchPersistNote,
   hunterDailyCapReached,
+  isMissingHunterReviewTable,
   placesToReviewInserts,
+  type HunterReviewRowRef,
+  type HunterSearchFind,
 } from "@/server/hunter/review";
 
 export type HunterPlacesSearchResult = {
   status: "success" | "error";
   message: string;
   query: string;
-  places: GooglePlaceProspect[];
+  places: HunterSearchFind[];
   persistedCount: number;
+  acceptedCount: number;
+  tableMissing: boolean;
 };
+
+function unsavedPlaces(places: GooglePlaceProspect[]): HunterSearchFind[] {
+  return annotateHunterSearchPlaces(places, []);
+}
+
+function emptyHunterSearch(
+  input: Omit<HunterPlacesSearchResult, "places" | "persistedCount" | "acceptedCount" | "tableMissing"> & {
+    places?: HunterSearchFind[];
+    persistedCount?: number;
+    acceptedCount?: number;
+    tableMissing?: boolean;
+  },
+): HunterPlacesSearchResult {
+  return {
+    ...input,
+    places: input.places ?? [],
+    persistedCount: input.persistedCount ?? 0,
+    acceptedCount: input.acceptedCount ?? 0,
+    tableMissing: input.tableMissing ?? false,
+  };
+}
 
 async function hunterSearchUsageToday(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data, error } = await supabase.rpc("get_hunter_places_search_count_today");
@@ -106,23 +134,19 @@ export async function executeHunterPlacesSearch(input: {
   const usage = await hunterSearchUsageToday(supabase);
 
   if (usage.setupRequired) {
-    return {
+    return emptyHunterSearch({
       status: "error",
       message: "Apply the Atlas Agent Usage Ledger migration before using a paid data API.",
       query: input.textQuery,
-      places: [],
-      persistedCount: 0,
-    };
+    });
   }
 
   if (hunterDailyCapReached(usage.count)) {
-    return {
+    return emptyHunterSearch({
       status: "error",
       message: "HUNTER reached the 20-search daily safety cap. Review today's results before spending more.",
       query: input.textQuery,
-      places: [],
-      persistedCount: 0,
-    };
+    });
   }
 
   try {
@@ -136,6 +160,11 @@ export async function executeHunterPlacesSearch(input: {
     });
 
     let persistedCount = 0;
+    let acceptedCount = 0;
+    let tableMissing = false;
+    let persistFailed = false;
+    let annotatedPlaces = unsavedPlaces(result.places);
+
     if (organizationId) {
       const rows = placesToReviewInserts(
         organizationId,
@@ -144,24 +173,52 @@ export async function executeHunterPlacesSearch(input: {
         result.places,
       );
       if (rows.length > 0) {
-        const { data: existing } = await supabase
+        const { data: existing, error: existingError } = await supabase
           .from("organization_hunter_review_items")
-          .select("place_id, status")
+          .select("id, place_id, status, accepted_opportunity_id")
           .eq("organization_id", organizationId)
           .in("place_id", rows.map((row) => row.place_id));
-        const accepted = new Set(
-          (existing ?? [])
-            .filter((row) => row.status === "accepted")
-            .map((row) => row.place_id),
-        );
-        const pendingRows = rows.filter((row) => !accepted.has(row.place_id));
-        if (pendingRows.length > 0) {
-          const { error: persistError } = await supabase
-            .from("organization_hunter_review_items")
-            .upsert(pendingRows, { onConflict: "organization_id,place_id" });
-          if (!persistError) {
-            persistedCount = pendingRows.length;
+
+        if (existingError) {
+          persistFailed = true;
+          tableMissing = isMissingHunterReviewTable(existingError);
+        } else {
+          const existingRows = (existing ?? []) as HunterReviewRowRef[];
+          const acceptedIds = new Set(
+            existingRows
+              .filter((row) => row.status === "accepted")
+              .map((row) => row.place_id),
+          );
+          acceptedCount = acceptedIds.size;
+          const pendingRows = rows.filter((row) => !acceptedIds.has(row.place_id));
+          const persistedPlaceIds = new Set<string>();
+          if (pendingRows.length > 0) {
+            const { error: persistError } = await supabase
+              .from("organization_hunter_review_items")
+              .upsert(pendingRows, { onConflict: "organization_id,place_id" });
+            if (persistError) {
+              persistFailed = true;
+              tableMissing = isMissingHunterReviewTable(persistError);
+            } else {
+              persistedCount = pendingRows.length;
+              for (const row of pendingRows) persistedPlaceIds.add(row.place_id);
+            }
           }
+
+          let knownRows = existingRows;
+          if (!persistFailed && persistedPlaceIds.size > 0) {
+            const { data: saved } = await supabase
+              .from("organization_hunter_review_items")
+              .select("id, place_id, status, accepted_opportunity_id")
+              .eq("organization_id", organizationId)
+              .in("place_id", rows.map((row) => row.place_id));
+            if (saved) knownRows = saved as HunterReviewRowRef[];
+          }
+          annotatedPlaces = annotateHunterSearchPlaces(
+            result.places,
+            knownRows,
+            persistedPlaceIds,
+          );
         }
       }
     }
@@ -179,13 +236,11 @@ export async function executeHunterPlacesSearch(input: {
     });
 
     if (recordError) {
-      return {
+      return emptyHunterSearch({
         status: "error",
         message: "The provider returned results, but Atlas could not record API usage. Run the search again only after checking the ledger.",
         query: input.textQuery,
-        places: [],
-        persistedCount: 0,
-      };
+      });
     }
 
     if (organizationId) {
@@ -194,18 +249,22 @@ export async function executeHunterPlacesSearch(input: {
       revalidatePath("/client");
     }
 
-    const persistNote = organizationId
-      ? persistedCount
-        ? ` ${persistedCount} listing${persistedCount === 1 ? "" : "s"} saved to the REVIEW PILE. They are not Prospects until you accept them. Atlas will not email, call, or text anyone.`
-        : " Listings already accepted stay in Prospects. New finds were not added because they were already accepted."
-      : " Results stay only in this page session and are not copied into the CRM.";
+    const persistNote = buildHunterSearchPersistNote({
+      organizationId,
+      persistedCount,
+      acceptedCount,
+      tableMissing,
+      persistFailed,
+    });
 
     return {
       status: "success",
       message: `${result.places.length} Google Maps result${result.places.length === 1 ? "" : "s"}.${persistNote}`,
       query: input.textQuery,
-      places: result.places,
+      places: annotatedPlaces,
       persistedCount,
+      acceptedCount,
+      tableMissing,
     };
   } catch (error) {
     const errorCode =
@@ -226,15 +285,13 @@ export async function executeHunterPlacesSearch(input: {
       placesContentPersisted: false,
     });
 
-    return {
+    return emptyHunterSearch({
       status: "error",
       message:
         error instanceof IntegrationConfigurationError
           ? "GOOGLE_PLACES_API_KEY is not configured in the server deployment environment."
           : "Google Places could not complete this search. The failed request was recorded.",
       query: input.textQuery,
-      places: [],
-      persistedCount: 0,
-    };
+    });
   }
 }

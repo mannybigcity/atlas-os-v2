@@ -134,6 +134,100 @@ export function placesToReviewInserts(
   }));
 }
 
+export const HUNTER_REVIEW_PILE_MIGRATION = "supabase/migrations/20260828174500_hunter_review_pile.sql";
+
+export type HunterFindLane = "review" | "prospect" | "unsaved";
+
+export type HunterSearchFind = GooglePlaceProspect & {
+  reviewItemId: string | null;
+  opportunityId: string | null;
+  lane: HunterFindLane;
+};
+
+export type HunterReviewRowRef = {
+  id: string;
+  place_id: string;
+  status: HunterReviewStatus;
+  accepted_opportunity_id: string | null;
+};
+
+export function isMissingHunterReviewTable(
+  error: { code?: string | null; message?: string | null } | null | undefined,
+) {
+  if (!error) return false;
+  const code = String(error.code ?? "");
+  const message = String(error.message ?? "");
+  if (code === "42P01" || code === "PGRST205") return true;
+  return (
+    /organization_hunter_review_items/i.test(message) &&
+    /does not exist|could not find|schema cache/i.test(message)
+  );
+}
+
+export function annotateHunterSearchPlaces(
+  places: GooglePlaceProspect[],
+  existing: HunterReviewRowRef[],
+  persistedPlaceIds: Iterable<string> = [],
+): HunterSearchFind[] {
+  const persisted = new Set(persistedPlaceIds);
+  const byPlace = new Map(existing.map((row) => [row.place_id, row]));
+  return places.map((place) => {
+    const row = byPlace.get(place.placeId);
+    if (row?.status === "accepted") {
+      return {
+        ...place,
+        reviewItemId: row.id,
+        opportunityId: row.accepted_opportunity_id,
+        lane: "prospect" as const,
+      };
+    }
+    if (row?.status === "pending" || persisted.has(place.placeId)) {
+      return {
+        ...place,
+        reviewItemId: row?.id ?? null,
+        opportunityId: null,
+        lane: "review" as const,
+      };
+    }
+    return {
+      ...place,
+      reviewItemId: row?.id ?? null,
+      opportunityId: null,
+      lane: "unsaved" as const,
+    };
+  });
+}
+
+export function buildHunterSearchPersistNote(input: {
+  organizationId: string | null;
+  persistedCount: number;
+  acceptedCount: number;
+  tableMissing: boolean;
+  persistFailed: boolean;
+}) {
+  if (!input.organizationId) {
+    return " Results stay only in this page session and are not copied into the CRM.";
+  }
+  if (input.tableMissing) {
+    return ` Atlas found these businesses but could not save them. The review-pile table is missing on this database. Founder: apply ${HUNTER_REVIEW_PILE_MIGRATION} in the Supabase SQL editor, then search again.`;
+  }
+  if (input.persistFailed) {
+    return " Atlas found these businesses but could not save them to the REVIEW PILE. Try the search again. Atlas did not contact anyone.";
+  }
+  const saved = input.persistedCount
+    ? ` ${input.persistedCount} listing${input.persistedCount === 1 ? "" : "s"} saved to the REVIEW PILE. They are not Prospects until you accept them. Atlas will not email, call, or text anyone.`
+    : "";
+  const already = input.acceptedCount
+    ? ` ${input.acceptedCount} listing${input.acceptedCount === 1 ? "" : "s"} already accepted stay in Prospects.`
+    : "";
+  if (saved && already) return `${saved}${already}`;
+  if (saved) return saved;
+  if (already) {
+    return " These listings are already Prospects. Open Prospects to call. Atlas did not contact anyone.";
+  }
+  return " No new listings were added to the REVIEW PILE.";
+}
+
 export function formatHunterChatAnswer(result: {
   message: string;
   places: Array<{ name: string; formattedAddress: string | null }>;
@@ -147,8 +241,8 @@ export function formatHunterChatAnswer(result: {
     .join("\n");
 
   const listing = names
-    ? `\n\n${names}\n\nAccept finds on Prospects when you want them on the call list. Atlas did not call, email, or text anyone.`
-    : " Accept finds on Prospects when you want them on the call list. Atlas did not call, email, or text anyone.";
+    ? `\n\n${names}\n\nAccept finds in the REVIEW PILE when you want them on the call list. Atlas did not call, email, or text anyone.`
+    : " Accept finds in the REVIEW PILE when you want them on the call list. Atlas did not call, email, or text anyone.";
 
   return `${result.message}${listing}`.slice(0, 1600);
 }
