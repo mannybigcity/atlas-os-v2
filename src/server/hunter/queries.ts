@@ -42,7 +42,7 @@ function mapReviewItem(row: HunterReviewRow): HunterReviewItem {
 
 export async function getHunterReviewPile(
   organizationId: string,
-): Promise<WorkspaceQueryResult<HunterReviewItem[]> & { acceptedCount: number }> {
+): Promise<WorkspaceQueryResult<HunterReviewItem[]> & { acceptedCount: number; foundCount: number }> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("organization_hunter_review_items")
@@ -61,6 +61,7 @@ export async function getHunterReviewPile(
         setupRequired: true,
         error: error.message,
         acceptedCount: 0,
+        foundCount: 0,
       };
     }
     return {
@@ -68,6 +69,7 @@ export async function getHunterReviewPile(
       setupRequired: false,
       error: null,
       acceptedCount: 0,
+      foundCount: 0,
     };
   }
 
@@ -76,11 +78,16 @@ export async function getHunterReviewPile(
     .select("id", { count: "exact", head: true })
     .eq("organization_id", organizationId)
     .eq("status", "accepted");
+  const found = await supabase
+    .from("organization_hunter_review_items")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId);
 
   return {
     data: ((data ?? []) as HunterReviewRow[]).map(mapReviewItem),
     setupRequired: false,
     error: null,
     acceptedCount: accepted.count ?? 0,
+    foundCount: found.count ?? 0,
   };
 }

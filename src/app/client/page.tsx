@@ -276,7 +276,10 @@ export default async function ClientDashboardPage({
               primaryOrganization?.name ||
               (wantsSisLionsDen ? "SIS Custom Creations" : "The Lion’s Den")
             }
+            organizationSlug={primaryOrganization?.slug || undefined}
             previewOrgSlug={workspace.previewOrgSlug || undefined}
+            acceptedCount={reviewPile?.acceptedCount ?? 0}
+            foundCount={reviewPile?.foundCount ?? 0}
             prospects={prospects}
             reviewPile={reviewItems}
             sisDashboard={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data : null}

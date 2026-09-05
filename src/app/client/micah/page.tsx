@@ -3,6 +3,7 @@ import { ClientMicahIntake } from "@/components/client-micah-intake";
 import { ClientContentStudio } from "@/components/client-content-studio";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
+import { MicahActivationMarker } from "@/components/lions-den/lions-den-activation-checklist";
 import {
   isAfeCrmDemoOrganization,
   isQTimeWorkspaceSlug,
@@ -110,6 +111,7 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
 
   return (
     <LionsDenBoardScreen board="micah" workspace={workspace}>
+      {primaryOrganization?.id ? <MicahActivationMarker organizationId={primaryOrganization.id} /> : null}
       {board}
     </LionsDenBoardScreen>
   );
