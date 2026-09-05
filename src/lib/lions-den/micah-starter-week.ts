@@ -15,75 +15,109 @@ export const MICAH_STARTER_DAYS = [
   {
     day: 1,
     weekday: "Monday",
-    theme: "Mon Motivation",
-    themeEs: "Lunes motivación",
-    hint: "A short lift for the week.",
-    hintEs: "Un ánimo corto para la semana.",
+    theme: "Monday Motivation",
+    prompts: [
+      { key: "design", label: "What are we designing today?" },
+      { key: "message", label: "What's the message?" },
+      { key: "vibe", label: "What's the vibe?" },
+    ],
   },
   {
     day: 2,
     weekday: "Tuesday",
     theme: "Tip Tuesday",
-    themeEs: "Martes de consejo",
-    hint: "One useful tip the shop can stand behind.",
-    hintEs: "Un consejo útil que el negocio puede respaldar.",
+    prompts: [{ key: "message", label: "What's one tip your customers need this week?" }],
   },
   {
     day: 3,
     weekday: "Wednesday",
     theme: "Wisdom Wednesday",
-    themeEs: "Miércoles de oficio",
-    hint: "A plain lesson from the work.",
-    hintEs: "Una lección clara del oficio.",
+    prompts: [{ key: "message", label: "What truth or lesson should owners hear midweek?" }],
   },
   {
     day: 4,
     weekday: "Thursday",
     theme: "Throwback Thursday",
-    themeEs: "Jueves de recuerdos",
-    hint: "A job, crew, or customer moment worth keeping.",
-    hintEs: "Un trabajo, equipo o cliente que vale recordar.",
+    prompts: [{ key: "message", label: "What win, before/after, or old job should we celebrate?" }],
   },
   {
     day: 5,
     weekday: "Friday",
     theme: "Feature Friday",
-    themeEs: "Viernes de destaque",
-    hint: "The offer or service you want seen.",
-    hintEs: "La oferta o el servicio que quieres mostrar.",
+    prompts: [{ key: "message", label: "What offer, service, or proof do we spotlight?" }],
   },
   {
     day: 6,
     weekday: "Saturday",
     theme: "Community Saturday",
-    themeEs: "Sábado de comunidad",
-    hint: "Neighbors, events, or local thanks.",
-    hintEs: "Vecinos, eventos o un gracias local.",
+    prompts: [{ key: "message", label: "What local pride or neighbor shout-out fits?" }],
   },
   {
     day: 7,
     weekday: "Sunday",
-    theme: "Sunday Rest/Prep",
-    themeEs: "Domingo: descanso o prep",
-    hint: "Close the week or set Monday up.",
-    hintEs: "Cierra la semana o deja listo el lunes.",
+    theme: "Sunday Rest / Prep",
+    prompts: [
+      { key: "message", label: "What should they rest from — and prep for Monday?" },
+    ],
   },
 ] as const;
 
 export type MicahStarterDay = (typeof MICAH_STARTER_DAYS)[number];
 
 export const MICAH_BRAND_VOICES: Array<{
-  id: MicahBrandVoice;
+  id: Exclude<MicahBrandVoice, "faith">;
   label: string;
-  labelEs: string;
-  optIn?: boolean;
 }> = [
-  { id: "motivational", label: "Motivational", labelEs: "Motivacional" },
-  { id: "friendly_local", label: "Friendly/local", labelEs: "Amable/local" },
-  { id: "comical", label: "Comical", labelEs: "Cómico" },
-  { id: "straight", label: "Straight", labelEs: "Directo" },
-  { id: "faith", label: "Faith", labelEs: "Fe", optIn: true },
+  { id: "motivational", label: "Motivational" },
+  { id: "friendly_local", label: "Friendly/local" },
+  { id: "comical", label: "Comical" },
+  { id: "straight", label: "Straight" },
 ];
+
+export const MICAH_ONBOARDING_QUESTIONS = [
+  {
+    id: "name_city",
+    question: "What's your business name and city?",
+    demoSkip: false,
+  },
+  {
+    id: "audience",
+    question: "Who do you serve — and what do you want them to do after they see a post?",
+    demoSkip: false,
+  },
+  {
+    id: "voice",
+    question: "Pick a voice: Motivational, Friendly/local, Comical, or Straight?",
+    demoSkip: false,
+  },
+  {
+    id: "faith",
+    question: "Want faith/Christian language in your posts? Yes / No (default No).",
+    demoSkip: true,
+  },
+  {
+    id: "colors",
+    question: "Brand colors — navy/gold OK, or send hex / a photo of your brand?",
+    demoSkip: false,
+  },
+  {
+    id: "logo",
+    question: "Upload your logo file (paste as-is; never redraw).",
+    demoSkip: false,
+  },
+  {
+    id: "accounts",
+    question: "Which accounts should I learn from? Facebook, Instagram, LinkedIn, TikTok — links or @handles.",
+    demoSkip: false,
+  },
+  {
+    id: "offer",
+    question: "What's your main offer this week (one sentence)?",
+    demoSkip: false,
+  },
+] as const;
+
+export type MicahOnboardingQuestion = (typeof MICAH_ONBOARDING_QUESTIONS)[number];
 
 export type MicahDayBrief = {
   day: number;
@@ -94,9 +128,16 @@ export type MicahDayBrief = {
 
 export type MicahBrandKit = {
   demeanor: MicahBrandVoice | null;
+  faithLanguage: boolean;
+  businessName: string;
+  city: string;
+  audience: string;
+  weeklyOffer: string;
+  navyGoldOk: boolean;
   primaryColor: string;
   secondaryColor: string;
   logoDataUri: string | null;
+  brandPhotoDataUri: string | null;
   facebook: string;
   instagram: string;
   linkedin: string;
@@ -106,9 +147,16 @@ export type MicahBrandKit = {
 export function defaultMicahBrandKit(): MicahBrandKit {
   return {
     demeanor: null,
+    faithLanguage: false,
+    businessName: "",
+    city: "",
+    audience: "",
+    weeklyOffer: "",
+    navyGoldOk: true,
     primaryColor: MICAH_NAVY,
     secondaryColor: MICAH_GOLD,
     logoDataUri: null,
+    brandPhotoDataUri: null,
     facebook: "",
     instagram: "",
     linkedin: "",
@@ -116,10 +164,16 @@ export function defaultMicahBrandKit(): MicahBrandKit {
   };
 }
 
-export function visibleMicahVoices(demoDesk: boolean) {
-  return demoDesk
-    ? MICAH_BRAND_VOICES.filter((voice) => voice.id !== "faith")
-    : MICAH_BRAND_VOICES;
+export function visibleMicahVoices(_demoDesk?: boolean) {
+  return MICAH_BRAND_VOICES;
+}
+
+export function micahOnboardingSteps(demoDesk: boolean) {
+  return MICAH_ONBOARDING_QUESTIONS.filter((item) => !(item.demoSkip && demoDesk));
+}
+
+export function isMicahBrandComplete(kit: MicahBrandKit) {
+  return Boolean(kit.businessName.trim() && kit.demeanor);
 }
 
 export function isMicahBrandDraft(metadata?: Record<string, unknown> | null) {
@@ -143,6 +197,10 @@ export function parseSocialHandle(value: unknown) {
     .slice(0, 160);
 }
 
+export function parsePlainBrandText(value: unknown, max: number) {
+  return String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
 export function parseMicahDayBriefs(formData: FormData): MicahDayBrief[] {
   return MICAH_STARTER_DAYS.map((item) => ({
     day: item.day,
@@ -156,17 +214,25 @@ export function composeMicahWeekBuildPrompt(input: {
   demeanor: MicahBrandVoice;
   briefs?: MicahDayBrief[];
   focusDay?: number | null;
+  kit?: MicahBrandKit;
   socials?: Pick<MicahBrandKit, "facebook" | "instagram" | "linkedin" | "tiktok">;
 }) {
+  const kit = input.kit;
   const lines = [
-    "Build a 7-day MICAH week pack for the gallery. Do not post or schedule.",
+    "Build a 7-day MICAH week pack for the gallery. Copy/Download only. Never auto-post.",
     `Voice: ${input.demeanor}.`,
   ];
+  if (kit?.businessName) {
+    lines.push(`Business: ${kit.businessName}${kit.city ? ` in ${kit.city}` : ""}.`);
+  }
+  if (kit?.audience) lines.push(`Audience and action: ${kit.audience}.`);
+  if (kit?.weeklyOffer) lines.push(`Main offer this week: ${kit.weeklyOffer}.`);
+  if (kit?.faithLanguage) lines.push("Use faith/Christian language. This was an opt-in.");
   const handles = [
-    input.socials?.facebook ? `Facebook ${input.socials.facebook}` : "",
-    input.socials?.instagram ? `Instagram ${input.socials.instagram}` : "",
-    input.socials?.linkedin ? `LinkedIn ${input.socials.linkedin}` : "",
-    input.socials?.tiktok ? `TikTok ${input.socials.tiktok}` : "",
+    (kit ?? input.socials)?.facebook ? `Facebook ${(kit ?? input.socials)?.facebook}` : "",
+    (kit ?? input.socials)?.instagram ? `Instagram ${(kit ?? input.socials)?.instagram}` : "",
+    (kit ?? input.socials)?.linkedin ? `LinkedIn ${(kit ?? input.socials)?.linkedin}` : "",
+    (kit ?? input.socials)?.tiktok ? `TikTok ${(kit ?? input.socials)?.tiktok}` : "",
   ].filter(Boolean);
   if (handles.length) {
     lines.push(`Social accounts to learn from (store only, do not scrape or log in): ${handles.join("; ")}.`);
@@ -201,7 +267,7 @@ export function composeMicahTalkPrompt(input: {
     input.design ? `What we are designing: ${input.design}.` : "",
     input.message ? `Message: ${input.message}.` : "",
     input.vibe ? `Vibe: ${input.vibe}.` : "",
-    "Do not post or schedule.",
+    "Copy/Download only. Never auto-post.",
   ].filter(Boolean);
   return parts.join(" ").slice(0, 1200);
 }
@@ -212,13 +278,21 @@ export function brandKitFromMetadata(
 ): MicahBrandKit | null {
   if (!isMicahBrandDraft(metadata)) return null;
   const demeanor = metadata?.micah_demeanor;
+  const photo = String(metadata?.brand_photo ?? "");
   return {
     demeanor: MICAH_BRAND_VOICE_IDS.includes(demeanor as MicahBrandVoice)
       ? (demeanor as MicahBrandVoice)
       : null,
+    faithLanguage: metadata?.faith_language === true,
+    businessName: parsePlainBrandText(metadata?.business_name, 120),
+    city: parsePlainBrandText(metadata?.city, 80),
+    audience: parsePlainBrandText(metadata?.audience, 400),
+    weeklyOffer: parsePlainBrandText(metadata?.weekly_offer, 240),
+    navyGoldOk: metadata?.navy_gold_ok !== false,
     primaryColor: normalizeBrandColor(metadata?.primary_color, MICAH_NAVY),
     secondaryColor: normalizeBrandColor(metadata?.secondary_color, MICAH_GOLD),
     logoDataUri: logoDataUri?.startsWith("data:image/") ? logoDataUri : null,
+    brandPhotoDataUri: photo.startsWith("data:image/") ? photo : null,
     facebook: parseSocialHandle(metadata?.facebook),
     instagram: parseSocialHandle(metadata?.instagram),
     linkedin: parseSocialHandle(metadata?.linkedin),

@@ -8,6 +8,7 @@ import {
   defaultMicahBrandKit,
   normalizeBrandColor,
   parseMicahDayBriefs,
+  parsePlainBrandText,
   parseSocialHandle,
   MICAH_GOLD,
   MICAH_NAVY,
@@ -60,18 +61,26 @@ async function requireMicahOperator(organizationId: string) {
   };
 }
 
-async function logoFromForm(formData: FormData, existing: string | null) {
-  const file = formData.get("logo");
-  if (!(file instanceof File) || file.size === 0) return { logo: existing, error: null };
+async function imageFromForm(
+  formData: FormData,
+  name: string,
+  existing: string | null,
+  label: string,
+) {
+  const file = formData.get(name);
+  if (!(file instanceof File) || file.size === 0) return { image: existing, error: null };
   if (file.size > MAX_LOGO_BYTES) {
-    return { logo: existing, error: "Logo must be under 400 KB." };
+    return { image: existing, error: `${label} must be under 400 KB.` };
   }
   if (!/^image\/(png|jpeg|jpg|webp|svg\+xml)$/i.test(file.type)) {
-    return { logo: existing, error: "Upload a PNG, JPG, WEBP, or SVG. MICAH will not invent a logo." };
+    return {
+      image: existing,
+      error: `Upload a PNG, JPG, WEBP, or SVG for ${label.toLowerCase()}. MICAH will not redraw it.`,
+    };
   }
   const bytes = Buffer.from(await file.arrayBuffer());
   return {
-    logo: `data:${file.type};base64,${bytes.toString("base64")}`,
+    image: `data:${file.type};base64,${bytes.toString("base64")}`,
     error: null,
   };
 }
@@ -82,11 +91,24 @@ function kitFromForm(formData: FormData, existing: MicahBrandKit, demoDesk: bool
     stored: existing.demeanor,
     demoDesk,
   });
+  const navyGoldOk = formData.get("navyGoldOk") === "yes";
+  const faithLanguage = !demoDesk && formData.get("faithLanguage") === "yes";
   return {
-    demeanor: parsed.demeanor,
-    primaryColor: normalizeBrandColor(formData.get("primaryColor"), existing.primaryColor || MICAH_NAVY),
-    secondaryColor: normalizeBrandColor(formData.get("secondaryColor"), existing.secondaryColor || MICAH_GOLD),
+    demeanor: parsed.demeanor === "faith" && demoDesk ? null : parsed.demeanor,
+    faithLanguage,
+    businessName: parsePlainBrandText(formData.get("businessName"), 120),
+    city: parsePlainBrandText(formData.get("city"), 80),
+    audience: parsePlainBrandText(formData.get("audience"), 400),
+    weeklyOffer: parsePlainBrandText(formData.get("weeklyOffer"), 240),
+    navyGoldOk,
+    primaryColor: navyGoldOk
+      ? MICAH_NAVY
+      : normalizeBrandColor(formData.get("primaryColor"), existing.primaryColor || MICAH_NAVY),
+    secondaryColor: navyGoldOk
+      ? MICAH_GOLD
+      : normalizeBrandColor(formData.get("secondaryColor"), existing.secondaryColor || MICAH_GOLD),
     logoDataUri: existing.logoDataUri,
+    brandPhotoDataUri: existing.brandPhotoDataUri,
     facebook: parseSocialHandle(formData.get("facebook")),
     instagram: parseSocialHandle(formData.get("instagram")),
     linkedin: parseSocialHandle(formData.get("linkedin")),
@@ -109,18 +131,28 @@ async function saveDeskBrand(formData: FormData) {
   }
   const demoDesk = isAfeCrmDemoOrganization(organization);
   const existing = await readMicahBrandKit(organizationId);
-  const uploaded = await logoFromForm(formData, existing.logoDataUri);
-  if (uploaded.error) {
+  const uploaded = await imageFromForm(formData, "logo", existing.logoDataUri, "Logo");
+  const brandPhoto = await imageFromForm(
+    formData,
+    "brandPhoto",
+    existing.brandPhotoDataUri,
+    "Brand photo",
+  );
+  if (uploaded.error || brandPhoto.error) {
     return {
       status: "error" as const,
-      error: uploaded.error,
+      error: uploaded.error || brandPhoto.error,
       message: null,
       kit: existing,
       userId: user.id,
       demoDesk,
     };
   }
-  const kit = { ...kitFromForm(formData, existing, demoDesk), logoDataUri: uploaded.logo };
+  const kit = {
+    ...kitFromForm(formData, existing, demoDesk),
+    logoDataUri: uploaded.image,
+    brandPhotoDataUri: brandPhoto.image,
+  };
   const saved = await writeMicahBrandKit({
     organizationId,
     userId: user.id,
@@ -189,22 +221,23 @@ export async function buildMicahWeekFromDesk(
   }
 
   const organizationId = requiredText(formData, "organizationId");
-  const demeanor = saved.kit.demeanor;
-  if (!isMicahDemeanor(demeanor)) {
+  const picked = saved.kit.demeanor;
+  if (!isMicahDemeanor(picked) || picked === "faith") {
     return {
       status: "error",
-      error: saved.demoDesk
-        ? "Pick Motivational, Friendly/local, Comical, or Straight. Faith is not used on this desk."
-        : "Pick a voice, then build the week.",
+      error: "Pick Motivational, Friendly/local, Comical, or Straight.",
       message: null,
     };
   }
+  const demeanor =
+    saved.kit.faithLanguage && !saved.demoDesk ? "faith" : picked;
 
   const focusDay = Number(formData.get("focusDay") ?? "");
   const prompt = composeMicahWeekBuildPrompt({
     demeanor,
     briefs: parseMicahDayBriefs(formData),
     focusDay: Number.isInteger(focusDay) ? focusDay : null,
+    kit: saved.kit,
     socials: saved.kit,
   });
   const draft = await createMicahGalleryDraft({

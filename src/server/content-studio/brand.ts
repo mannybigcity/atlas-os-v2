@@ -79,10 +79,11 @@ export async function writeMicahBrandKit(input: {
 }): Promise<{ status: "success" | "error"; message: string; kit: MicahBrandKit }> {
   const demeanor = isMicahDemeanor(input.kit.demeanor) ? input.kit.demeanor : null;
   const kit: MicahBrandKit = {
+    ...input.kit,
     demeanor,
+    faithLanguage: Boolean(input.kit.faithLanguage),
     primaryColor: normalizeBrandColor(input.kit.primaryColor, MICAH_NAVY),
     secondaryColor: normalizeBrandColor(input.kit.secondaryColor, MICAH_GOLD),
-    logoDataUri: input.kit.logoDataUri,
     facebook: parseSocialHandle(input.kit.facebook),
     instagram: parseSocialHandle(input.kit.instagram),
     linkedin: parseSocialHandle(input.kit.linkedin),
@@ -95,7 +96,7 @@ export async function writeMicahBrandKit(input: {
     campaign: "Brand setup",
     title: "MICAH brand kit",
     headline: "Brand setup",
-    supporting_text: "Voice, colors, and social handles. Store only.",
+    supporting_text: "Brand setup stored only. Copy/Download. Never auto-post.",
     caption:
       "Stored brand setup for this workspace. MICAH does not post, schedule, scrape, or log in.",
     call_to_action: "Keep drafts in the gallery.",
@@ -108,8 +109,15 @@ export async function writeMicahBrandKit(input: {
     metadata: {
       brand_setup: true,
       micah_demeanor: demeanor,
+      faith_language: kit.faithLanguage,
+      business_name: kit.businessName,
+      city: kit.city,
+      audience: kit.audience,
+      weekly_offer: kit.weeklyOffer,
+      navy_gold_ok: kit.navyGoldOk,
       primary_color: kit.primaryColor,
       secondary_color: kit.secondaryColor,
+      brand_photo: kit.brandPhotoDataUri,
       facebook: kit.facebook,
       instagram: kit.instagram,
       linkedin: kit.linkedin,
@@ -142,5 +150,6 @@ export async function writeMicahBrandKit(input: {
 }
 
 export function demeanorFromBrand(kit: MicahBrandKit): MicahDemeanor | null {
+  if (kit.faithLanguage) return "faith";
   return isMicahDemeanor(kit.demeanor) ? kit.demeanor : null;
 }

@@ -148,7 +148,7 @@ test("week pack can use a client's colors without inventing a logo", () => {
     logoDataUri: null,
   });
   assert.equal(cards.length, 7);
-  assert.match(cards[0]?.dayLabel ?? "", /MON MOTIVATION/);
+  assert.match(cards[0]?.dayLabel ?? "", /MONDAY MOTIVATION/);
   assert.match(cards[1]?.dayLabel ?? "", /TIP TUESDAY/);
   assert.match(cards[0]?.imageSvg ?? "", /#123456/);
   assert.match(cards[0]?.imageSvg ?? "", /#abcdef/);
