@@ -20,8 +20,8 @@ test("Follow-up and Summary use landscape columns instead of a 3-col squeeze", (
   assert.match(css, /\.ld-followup-columns/);
   assert.match(css, /repeat\(3,\s*minmax\(16rem,\s*1fr\)\)/);
   assert.match(css, /\.ld-followup-col\s*\{[^}]*min-width:\s*16rem/);
-  assert.match(css, /\.ld-followup-columns\s*\{[^}]*overflow-x:\s*auto/s);
-  assert.match(css, /\.ld-desk-followup\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/s);
+  assert.match(css, /\.ld-followup-columns\s*\{[^}]*overflow-x:\s*auto/);
+  assert.match(css, /\.ld-desk-followup\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/);
 
   assert.match(followUp, /ld-followup-columns/);
   assert.match(followUp, /ld-followup-col/);
