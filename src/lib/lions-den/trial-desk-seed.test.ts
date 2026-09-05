@@ -146,8 +146,9 @@ test("trial seed is a small SAMPLE review pile plus 7 MICAH placeholders", () =>
     "trial-seed-week-d6",
     "trial-seed-week-d7",
   ]);
-  assert.equal(trialDeskSeedWriteTables().includes("organization_opportunities"), false);
-  assert.equal(trialDeskSeedWriteTables().includes("organization_sis_customers"), false);
+  const writeTables: readonly string[] = trialDeskSeedWriteTables();
+  assert.equal(writeTables.includes("organization_opportunities"), false);
+  assert.equal(writeTables.includes("organization_sis_customers"), false);
 });
 
 test("trial seed never invents phones, Prospects, SIS, sample desk, or Faith", () => {
