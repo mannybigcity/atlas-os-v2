@@ -31,6 +31,8 @@ import {
   isTrialWorkspaceSetupError,
   trialWorkspaceSetupHref,
 } from "@/server/trials/workspace-redirect";
+import { shouldBlockExpiredTrial } from "@/server/stripe/billing-entitlement";
+import { userHasActivePaidEntitlement } from "@/server/stripe/paid-entitlement-access";
 import { ensureAfeOperatorDeskAccess } from "@/server/organizations/afe-operator-desk";
 import { ensureSisWorkingOrgAccess } from "@/server/organizations/sis-working-org";
 import {
@@ -114,7 +116,12 @@ export async function getClientWorkspaceContext(
   }
 
   if (trialProfile) {
-    if (new Date(trialProfile.trial_ends_at).getTime() <= Date.now()) {
+    if (
+      shouldBlockExpiredTrial({
+        trialEndsAt: trialProfile.trial_ends_at,
+        hasActivePaidEntitlement: await userHasActivePaidEntitlement(user.id),
+      })
+    ) {
       redirect("/pricing?trial=expired");
     }
 

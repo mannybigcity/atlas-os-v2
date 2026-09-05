@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/server/auth/guards";
+import { shouldBlockExpiredTrial } from "@/server/stripe/billing-entitlement";
+import { userHasActivePaidEntitlement } from "@/server/stripe/paid-entitlement-access";
 import { getTrialProfile } from "@/server/trials/profile";
 
 export async function requireTrialUser(nextPath: string) {
@@ -10,7 +12,12 @@ export async function requireTrialUser(nextPath: string) {
     redirect("/client?access=denied");
   }
 
-  if (new Date(profile.trial_ends_at).getTime() <= Date.now()) {
+  if (
+    shouldBlockExpiredTrial({
+      trialEndsAt: profile.trial_ends_at,
+      hasActivePaidEntitlement: await userHasActivePaidEntitlement(user.id),
+    })
+  ) {
     redirect("/pricing?trial=expired");
   }
 

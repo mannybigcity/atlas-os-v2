@@ -12,6 +12,8 @@ import {
   ensureTrialWorkspaceForUser,
 } from "@/server/trials/provision";
 import { trialWorkspaceSetupHref } from "@/server/trials/workspace-redirect";
+import { shouldBlockExpiredTrial } from "@/server/stripe/billing-entitlement";
+import { userHasActivePaidEntitlement } from "@/server/stripe/paid-entitlement-access";
 import { extractTrialMetadata, isTrialConfirmationRequest, isTrialSignupMetadata } from "@/server/trials/metadata";
 import {
   ensureSampleDeskAccess,
@@ -70,7 +72,12 @@ export async function signInWithPassword(formData: FormData) {
     }
 
     if (trialProfile) {
-      if (new Date(trialProfile.trial_ends_at).getTime() <= Date.now()) {
+      if (
+        shouldBlockExpiredTrial({
+          trialEndsAt: trialProfile.trial_ends_at,
+          hasActivePaidEntitlement: await userHasActivePaidEntitlement(data.user.id),
+        })
+      ) {
         redirect("/pricing?trial=expired");
       }
 
