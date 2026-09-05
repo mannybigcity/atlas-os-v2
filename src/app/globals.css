@@ -60,7 +60,9 @@ button { font: inherit; }
 .atlas-hero-copy h1 span, .atlas-hero-copy h1 strong, .atlas-family-copy h2 span, .atlas-family-copy h2 strong { display: block; }
 .atlas-hero-copy h1 strong, .atlas-family-copy h2 strong { color: var(--gold); }
 .atlas-hero-lede { max-width: 33rem; margin: 1.25rem 0 1.35rem; color: #12213d; font-size: .93rem; font-weight: 640; line-height: 1.72; }
-.atlas-hero-actions { display: flex; flex-wrap: wrap; gap: .8rem; }
+.atlas-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem 1.15rem; }
+.atlas-hero-link { color: var(--navy); font-size: .7rem; font-weight: 700; letter-spacing: .02em; text-decoration: underline; text-decoration-color: rgba(6, 38, 109, .32); text-underline-offset: .18em; }
+.atlas-hero-link:hover { color: #0a2f78; text-decoration-color: currentColor; }
 .atlas-button { display: inline-flex; min-height: 2.78rem; align-items: center; justify-content: center; border-radius: .45rem; padding: 0 1.15rem; font-size: .73rem; font-weight: 900; letter-spacing: .015em; transition: transform .18s ease, box-shadow .18s ease; }
 .atlas-button:hover { transform: translateY(-2px); }
 .atlas-button.gold { background: linear-gradient(135deg, #f4c34e, #df9815); color: #191303; box-shadow: 0 11px 22px rgba(221,150,13,.21); }
