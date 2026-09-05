@@ -1,4 +1,6 @@
 import { MicahWeekGallery } from "@/components/micah-week-gallery";
+import { MicahWeekDesk } from "@/components/micah-week-desk";
+import { brandKitFromDrafts } from "@/server/content-studio/brand";
 import {
   readOfficialAtlasLogoDataUri,
   selectMicahWeekGallery,
@@ -21,9 +23,10 @@ export async function ClientContentStudio({
 }: ClientContentStudioProps) {
   const language = await getSiteLanguage();
   const spanish = language === "es";
+  const brand = brandKitFromDrafts(studio.drafts);
   const cards = selectMicahWeekGallery(studio.drafts, {
     demoDesk,
-    logoDataUri: readOfficialAtlasLogoDataUri(),
+    logoDataUri: brand.logoDataUri || readOfficialAtlasLogoDataUri(),
   });
 
   return (
@@ -37,11 +40,11 @@ export async function ClientContentStudio({
             MICAH
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#071b42]">
-            {spanish ? "7 tarjetas de la semana" : "This week's 7 day-cards"}
+            {spanish ? "Semana de 7 tarjetas" : "This week's 7 day-cards"}
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[#33415c]">
             {spanish
-              ? "Facebook es la casa: gancho, valor y un llamado, con 1 a 3 hashtags. Instagram y LinkedIn usan otros hashtags. MICAH no publica ni programa nada. El calendario de citas está en Calendario."
+              ? "Facebook es la casa: gancho, valor y un llamado, con 1 a 3 hashtags. Instagram y LinkedIn usan otros hashtags. MICAH no publica ni programa. Las citas quedan en Calendario."
               : "Facebook is home: hook, payoff, one CTA, and 1–3 hashtags. Instagram and LinkedIn use different hashtag sets. MICAH does not post or schedule. Appointments stay on Calendar."}
           </p>
         </div>
@@ -52,20 +55,24 @@ export async function ClientContentStudio({
         </div>
       </div>
 
-      {cards.length === 0 ? (
-        <p className="mt-5 rounded-2xl border border-dashed border-[#d8c27a] bg-[#fff8e6] p-5 text-sm leading-6 text-[#071b42]">
-          {spanish
-            ? "Todavía no hay una semana. Pídele a Atlas un paquete de 7 días. MICAH preguntará la voz una vez y no publicará nada."
-            : "Nothing in it yet. Ask Talk to Atlas for a 7-day week pack. MICAH will ask for a voice once and will not post anything."}
-        </p>
-      ) : (
+      <MicahWeekDesk
+        brand={brand}
+        calendarHref="/client/calendar"
+        canEdit={canReview}
+        cards={cards}
+        demoDesk={demoDesk}
+        organizationId={organizationId}
+        spanish={spanish}
+      />
+
+      {cards.length > 0 ? (
         <MicahWeekGallery
           canReview={canReview}
           cards={cards}
           organizationId={organizationId}
           spanish={spanish}
         />
-      )}
+      ) : null}
     </section>
   );
 }

@@ -88,6 +88,7 @@ test("MICAH week pack is 7 navy/gold day-cards with copyable captions", () => {
 
 test("demeanor is parsed once and Faith is never the DEMO default", () => {
   assert.equal(parseMicahDemeanor("Friendly/local"), "friendly_local");
+  assert.equal(parseMicahDemeanor("friendly_local"), "friendly_local");
   assert.equal(parseMicahDemeanor("Motivational please"), "motivational");
   assert.equal(parseMicahDemeanor("straight"), "straight");
   assert.equal(parseMicahDemeanor("comical"), "comical");
@@ -117,6 +118,41 @@ test("demeanor is parsed once and Faith is never the DEMO default", () => {
   });
   assert.equal(coerced.every((card) => !/Grateful for/i.test(card.caption)), true);
   assert.equal(gradeKingdomWeek(coerced).pass, true);
+});
+
+test("empty non-demo gallery stays empty and ignores a stored brand kit", () => {
+  const gallery = selectMicahWeekGallery(
+    [
+      {
+        id: "brand-1",
+        title: "MICAH brand kit",
+        headline: "Brand setup",
+        caption: "Stored brand setup for this workspace. MICAH does not post.",
+        supportingText: "Voice, colors, and social handles.",
+        imageSvg: null,
+        imageUrl: "data:image/png;base64,ZmFrZQ==",
+        metadata: { brand_setup: true, micah_demeanor: "straight" },
+      },
+    ],
+    { demoDesk: false, logoDataUri: null },
+  );
+  assert.equal(gallery.length, 0);
+});
+
+test("week pack can use a client's colors without inventing a logo", () => {
+  const cards = buildMicahWeekPack({
+    prompt: "Week of posts for the shop",
+    demeanor: "straight",
+    primaryColor: "#123456",
+    secondaryColor: "#abcdef",
+    logoDataUri: null,
+  });
+  assert.equal(cards.length, 7);
+  assert.match(cards[0]?.dayLabel ?? "", /MONDAY MOTIVATION/);
+  assert.match(cards[1]?.dayLabel ?? "", /TIP TUESDAY/);
+  assert.match(cards[0]?.imageSvg ?? "", /#123456/);
+  assert.match(cards[0]?.imageSvg ?? "", /#abcdef/);
+  assert.doesNotMatch(cards[0]?.imageSvg ?? "", /<image href="/);
 });
 
 test("AFE DEMO gallery shows 7 day-cards instead of the old blue placeholder boxes", () => {

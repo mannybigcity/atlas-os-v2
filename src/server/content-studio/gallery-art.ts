@@ -1,6 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  MICAH_GOLD,
+  MICAH_NAVY,
+  MICAH_STARTER_DAYS,
+  isMicahBrandDraft,
+  normalizeBrandColor,
+} from "../../lib/lions-den/micah-starter-week.ts";
+import {
   assembleKingdomCaption,
   gradeKingdomCaption,
   kingdomCaptionParts,
@@ -8,8 +15,8 @@ import {
 } from "./kingdom-social.ts";
 
 const ATLAS_LOGO_PATH = join(process.cwd(), "public/brand/atlas-logo.png");
-const NAVY = "#071b42";
-const GOLD = "#f5b932";
+const NAVY = MICAH_NAVY;
+const GOLD = MICAH_GOLD;
 
 function escapeXml(value: string) {
   return value
@@ -82,11 +89,15 @@ export function buildMicahDraftSvg(input: {
   supportingText: string;
   logoDataUri?: string | null;
   dayLabel?: string | null;
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
 }) {
+  const navy = normalizeBrandColor(input.primaryColor, NAVY);
+  const gold = normalizeBrandColor(input.secondaryColor, GOLD);
   const headline = escapeXml(clipDraftText(input.headline, 72));
   const supporting = escapeXml(clipDraftText(input.supportingText, 90));
   const dayLabel = input.dayLabel
-    ? escapeXml(clipDraftText(input.dayLabel, 28))
+    ? escapeXml(clipDraftText(input.dayLabel, 40))
     : "";
   const logo = input.logoDataUri
     ? `<image href="${input.logoDataUri}" x="390" y="${dayLabel ? "110" : "70"}" width="300" height="300" preserveAspectRatio="xMidYMid meet"/>`
@@ -96,10 +107,10 @@ export function buildMicahDraftSvg(input: {
   const headY = input.logoDataUri ? (dayLabel ? "600" : "560") : dayLabel ? "500" : "460";
   const supportY = input.logoDataUri ? (dayLabel ? "680" : "640") : dayLabel ? "580" : "540";
   const dayText = dayLabel
-    ? `<text x="540" y="${dayY}" fill="${GOLD}" font-size="26" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" letter-spacing="4">${dayLabel}</text>`
+    ? `<text x="540" y="${dayY}" fill="${gold}" font-size="26" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" letter-spacing="4">${dayLabel}</text>`
     : "";
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><rect width="1080" height="1080" fill="${NAVY}"/><rect x="48" y="48" width="984" height="984" fill="none" stroke="${GOLD}" stroke-width="10"/><rect x="72" y="72" width="936" height="936" fill="none" stroke="${GOLD}" stroke-width="2"/>${logo}${dayText}<text x="540" y="${atlasY}" fill="${GOLD}" font-size="28" font-family="Georgia,Times,serif" text-anchor="middle" letter-spacing="6">ATLAS</text><text x="540" y="${headY}" fill="#ffffff" font-size="54" font-family="Georgia,Times,serif" font-weight="700" text-anchor="middle">${headline}</text><text x="540" y="${supportY}" fill="#d8c27a" font-size="28" font-family="Arial,sans-serif" text-anchor="middle">${supporting}</text><text x="540" y="980" fill="${GOLD}" font-size="22" font-family="Arial,sans-serif" text-anchor="middle">DRAFT — download and post yourself. Not published.</text></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><rect width="1080" height="1080" fill="${navy}"/><rect x="48" y="48" width="984" height="984" fill="none" stroke="${gold}" stroke-width="10"/><rect x="72" y="72" width="936" height="936" fill="none" stroke="${gold}" stroke-width="2"/>${logo}${dayText}<text x="540" y="${atlasY}" fill="${gold}" font-size="28" font-family="Georgia,Times,serif" text-anchor="middle" letter-spacing="6">ATLAS</text><text x="540" y="${headY}" fill="#ffffff" font-size="54" font-family="Georgia,Times,serif" font-weight="700" text-anchor="middle">${headline}</text><text x="540" y="${supportY}" fill="#d8c27a" font-size="28" font-family="Arial,sans-serif" text-anchor="middle">${supporting}</text><text x="540" y="980" fill="${gold}" font-size="22" font-family="Arial,sans-serif" text-anchor="middle">DRAFT — download and post yourself. Not published.</text></svg>`;
 }
 
 export const MICAH_DEMEANORS = [
@@ -112,15 +123,11 @@ export const MICAH_DEMEANORS = [
 
 export type MicahDemeanor = (typeof MICAH_DEMEANORS)[number];
 
-export const MICAH_WEEK_DAYS = [
-  { day: 1, weekday: "Monday" },
-  { day: 2, weekday: "Tuesday" },
-  { day: 3, weekday: "Wednesday" },
-  { day: 4, weekday: "Thursday" },
-  { day: 5, weekday: "Friday" },
-  { day: 6, weekday: "Saturday" },
-  { day: 7, weekday: "Sunday" },
-] as const;
+export const MICAH_WEEK_DAYS = MICAH_STARTER_DAYS.map((item) => ({
+  day: item.day,
+  weekday: item.weekday,
+  theme: item.theme,
+}));
 
 const AFE_DEMO_COMPANIES = [
   { name: "ABC Plumbing", hook: "crew hats and shop pride" },
@@ -135,6 +142,7 @@ export function isMicahDemeanor(value: unknown): value is MicahDemeanor {
 export function parseMicahDemeanor(prompt: string): MicahDemeanor | null {
   const normalized = prompt.trim().toLowerCase();
   if (!normalized) return null;
+  if (isMicahDemeanor(normalized)) return normalized;
   if (/\bfaith\b|\bchristian\b|\bgospel\b|\bchurch\b|\bblessed\b/.test(normalized)) {
     return "faith";
   }
@@ -184,6 +192,7 @@ export function captionForClipboard(caption: string) {
 export type MicahWeekCard = {
   day: number;
   weekday: string;
+  theme: string;
   dayLabel: string;
   slot: string;
   title: string;
@@ -204,11 +213,15 @@ export function buildMicahWeekPack(input: {
   demeanor: MicahDemeanor;
   demoDesk?: boolean;
   logoDataUri?: string | null;
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
   weekKey?: string;
 }): MicahWeekCard[] {
   const theme = clipDraftText(headlineFromPrompt(input.prompt), 72) || "This week";
   const weekKey = input.weekKey || "week";
   const logoDataUri = input.logoDataUri ?? null;
+  const primaryColor = normalizeBrandColor(input.primaryColor, NAVY);
+  const secondaryColor = normalizeBrandColor(input.secondaryColor, GOLD);
   const demeanor =
     input.demoDesk && input.demeanor === "faith" ? "straight" : input.demeanor;
 
@@ -216,10 +229,10 @@ export function buildMicahWeekPack(input: {
     const company = input.demoDesk
       ? AFE_DEMO_COMPANIES[index % AFE_DEMO_COMPANIES.length]
       : { name: "", hook: theme };
-    const dayLabel = `DAY ${item.day} · ${item.weekday.toUpperCase()}`;
+    const dayLabel = `DAY ${item.day} · ${item.theme.toUpperCase()}`;
     const headline = input.demoDesk
       ? clipDraftText(`${theme} · ${company.name.replace(" (DEMO)", "")}`, 72)
-      : clipDraftText(`${theme} · ${item.weekday}`, 72);
+      : clipDraftText(`${item.theme} · ${theme}`, 72);
     const supportingText = clipDraftText(
       input.demoDesk
         ? `${company.hook}. Download and post it yourself.`
@@ -291,11 +304,14 @@ export function buildMicahWeekPack(input: {
       companyName: company.name,
       demoLabeled: Boolean(input.demoDesk),
       gradePass: grade.pass,
+      theme: item.theme,
       imageSvg: buildMicahDraftSvg({
         headline,
         supportingText,
         logoDataUri,
         dayLabel,
+        primaryColor,
+        secondaryColor,
       }),
     };
   });
@@ -314,7 +330,8 @@ export function selectMicahWeekGallery(
   }>,
   options: { demoDesk: boolean; logoDataUri?: string | null },
 ): Array<MicahWeekCard & { id: string | null }> {
-  const week = drafts
+  const visible = drafts.filter((draft) => !isMicahBrandDraft(draft.metadata));
+  const week = visible
     .filter((draft) => draft.metadata?.week_pack === true)
     .sort(
       (left, right) =>
@@ -326,8 +343,10 @@ export function selectMicahWeekGallery(
     index: number,
   ): MicahWeekCard & { id: string } => {
     const day = Number(draft.metadata.week_day ?? index + 1);
-    const weekday = MICAH_WEEK_DAYS[Math.max(0, Math.min(6, day - 1))]?.weekday ?? "Monday";
-    const dayLabel = `DAY ${day} · ${weekday.toUpperCase()}`;
+    const starter = MICAH_WEEK_DAYS[Math.max(0, Math.min(6, day - 1))];
+    const weekday = starter?.weekday ?? "Monday";
+    const theme = String(draft.metadata.week_theme ?? starter?.theme ?? weekday);
+    const dayLabel = `DAY ${day} · ${theme.toUpperCase()}`;
     const imageSvg =
       draft.imageSvg ||
       buildMicahDraftSvg({
@@ -335,11 +354,14 @@ export function selectMicahWeekGallery(
         supportingText: draft.supportingText || draft.caption,
         logoDataUri: options.logoDataUri,
         dayLabel,
+        primaryColor: String(draft.metadata.primary_color ?? ""),
+        secondaryColor: String(draft.metadata.secondary_color ?? ""),
       });
     return {
       id: draft.id,
       day,
       weekday,
+      theme,
       dayLabel,
       slot: `week-d${day}`,
       title: draft.title,
@@ -370,7 +392,7 @@ export function selectMicahWeekGallery(
     }).map((card) => ({ ...card, id: null }));
   }
 
-  return drafts.slice(0, 7).map(toCard);
+  return visible.slice(0, 7).map(toCard);
 }
 
 export function slotForMicahPrompt(prompt: string) {
