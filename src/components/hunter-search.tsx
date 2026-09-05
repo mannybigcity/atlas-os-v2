@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { HunterFunnelStrip } from "@/components/lions-den/hunter-funnel-strip";
 import { acceptHunterReviewItem, dismissHunterReviewItem, searchHunterProspects } from "@/server/hunter/actions";
+import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
 import type { HunterSearchFind } from "@/server/hunter/review";
 import { initialHunterSearchState } from "@/server/hunter/types";
 
@@ -177,6 +178,11 @@ function HunterSearchFindRow({
           {place.formattedAddress ? (
             <p className="mt-1 text-sm text-[#5c6578]">{place.formattedAddress}</p>
           ) : null}
+          {place.nationalPhoneNumber || place.internationalPhoneNumber ? (
+            <p className="mt-1 text-sm font-medium text-[#071b42]">
+              {place.nationalPhoneNumber || place.internationalPhoneNumber}
+            </p>
+          ) : null}
           <p className="mt-1 text-xs uppercase tracking-[0.1em] text-[#8a93a3]">
             {place.primaryType?.replaceAll("_", " ") ?? (spanish ? "Negocio" : "Business")}
             {place.businessStatus ? ` · ${place.businessStatus.replaceAll("_", " ")}` : ""}
@@ -218,7 +224,7 @@ function HunterSearchFindRow({
           {organizationId && place.lane === "prospect" ? (
             <a
               className="rounded-full bg-[#071b42] px-4 py-2 text-center text-sm font-semibold text-white"
-              href={prospectsHref}
+              href={place.opportunityId ? prospectDetailPath(place.opportunityId, prospectsHref) : prospectsHref}
             >
               {spanish ? "Abrir Prospectos" : "Open Prospects"}
             </a>

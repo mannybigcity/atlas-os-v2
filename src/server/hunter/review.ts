@@ -1,3 +1,4 @@
+import { googleMapsUrlFromPlaceId } from "../../lib/lions-den/prospect-places.ts";
 import type { GooglePlaceProspect } from "@/server/integrations/google-places";
 
 export const HUNTER_DAILY_SEARCH_CAP = 20;
@@ -101,12 +102,113 @@ export function hunterDailyCapReached(usedToday: number) {
   return usedToday >= HUNTER_DAILY_SEARCH_CAP;
 }
 
+export function pickStoredPlacePhone(place: {
+  nationalPhoneNumber?: string | null;
+  internationalPhoneNumber?: string | null;
+}) {
+  const national = place.nationalPhoneNumber?.trim() || null;
+  const international = place.internationalPhoneNumber?.trim() || null;
+  const chosen = national || international;
+  if (!chosen) return null;
+  const stored = chosen.slice(0, 80);
+  return stored.length >= 7 ? stored : null;
+}
+
 export function acceptedProspectResearchSummary(place: {
   name: string;
   formattedAddress: string | null;
+  phone?: string | null;
+  websiteUrl?: string | null;
 }) {
   const address = place.formattedAddress?.trim() || "Address not listed on Google Maps";
-  return `Accepted from the HUNTER review pile. ${place.name} is now a Prospect the salesman can call. Address: ${address}. Atlas has not emailed, called, or texted this business.`;
+  const phone = place.phone?.trim();
+  const website = place.websiteUrl?.trim();
+  const extras = [
+    phone ? ` Phone: ${phone}.` : "",
+    website ? ` Website: ${website}.` : "",
+  ].join("");
+  return `Accepted from the HUNTER review pile. ${place.name} is now a Prospect the salesman can call. Address: ${address}.${extras} Atlas has not emailed, called, or texted this business.`;
+}
+
+export type AcceptedHunterOpportunityInput = {
+  reviewItemId: string;
+  placeId: string;
+  name: string;
+  formattedAddress: string | null;
+  googleMapsUrl: string | null;
+  websiteUrl: string | null;
+  nationalPhoneNumber?: string | null;
+  internationalPhoneNumber?: string | null;
+  primaryType: string | null;
+  businessStatus: string | null;
+};
+
+export function acceptedHunterOpportunityFields(input: AcceptedHunterOpportunityInput) {
+  const phone = pickStoredPlacePhone(input);
+  const mapsUrl =
+    input.googleMapsUrl?.trim() || googleMapsUrlFromPlaceId(input.placeId);
+  const websiteUrl = input.websiteUrl?.trim() || null;
+  const formattedAddress = input.formattedAddress?.trim() || null;
+  const researchSummary = acceptedProspectResearchSummary({
+    name: input.name,
+    formattedAddress,
+    phone,
+    websiteUrl,
+  });
+
+  return {
+    name: input.name.slice(0, 220),
+    opportunity_type: "customer" as const,
+    stage: "ready_for_follow_up" as const,
+    fit_score: 0,
+    owner_role: "client" as const,
+    source_label: "HUNTER Google Maps",
+    source_url: mapsUrl?.slice(0, 2000) ?? null,
+    contact_phone: phone,
+    research_summary: researchSummary.slice(0, 3000),
+    next_action: acceptedProspectNextAction(),
+    metadata: {
+      hunter_review_item_id: input.reviewItemId,
+      google_place_id: input.placeId.slice(0, 256),
+      google_maps_url: mapsUrl,
+      google_maps_attribution: "Google Maps",
+      formatted_address: formattedAddress,
+      website_url: websiteUrl,
+      national_phone_number: input.nationalPhoneNumber?.trim() || null,
+      international_phone_number: input.internationalPhoneNumber?.trim() || null,
+      no_outreach_sent: true,
+      accepted_for_calling: true,
+      primary_type: input.primaryType,
+      business_status: input.businessStatus,
+    },
+  };
+}
+
+export function mergeHunterPlaceDetails(
+  item: {
+    id: string;
+    place_id: string;
+    name: string;
+    formatted_address: string | null;
+    google_maps_url: string | null;
+    website_url: string | null;
+    primary_type: string | null;
+    business_status: string | null;
+  },
+  details: GooglePlaceProspect | null,
+): AcceptedHunterOpportunityInput {
+  return {
+    reviewItemId: item.id,
+    placeId: details?.placeId || item.place_id,
+    name: details?.name || item.name,
+    formattedAddress: details?.formattedAddress ?? item.formatted_address,
+    googleMapsUrl: details?.googleMapsUrl ?? item.google_maps_url,
+    websiteUrl: details?.websiteUrl ?? item.website_url,
+    nationalPhoneNumber: details?.nationalPhoneNumber ?? null,
+    internationalPhoneNumber: details?.internationalPhoneNumber ?? null,
+    primaryType: details?.primaryType ?? item.primary_type,
+    businessStatus: details?.businessStatus ?? item.business_status,
+  };
 }
 
 export function acceptedProspectNextAction() {

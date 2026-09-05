@@ -29,3 +29,18 @@ test("HUNTER desk shows the growth funnel and Accept, not a Maps-only dead end",
   assert.match(pile, /HUNTER_REVIEW_PILE_MIGRATION/);
   assert.match(pile, /setupRequired/);
 });
+
+test("Prospect rows on Summary and Prospects open a Google Places detail view", () => {
+  const overview = readRepo("src/components/lions-den/lions-den-overview.tsx");
+  const list = readRepo("src/components/lions-den/lions-den-prospects.tsx");
+  const detail = readRepo("src/components/lions-den/lions-den-prospect-detail.tsx");
+  const accept = readRepo("src/server/hunter/actions.ts");
+
+  assert.match(overview, /prospectDetailPath/);
+  assert.match(list, /prospectDetailPath/);
+  assert.match(detail, /Open in Google Maps|Abrir en Google Maps/);
+  assert.match(detail, /phoneHref/);
+  assert.match(detail, /Atlas did not call, email, or text anyone/);
+  assert.match(accept, /getGooglePlaceDetails/);
+  assert.match(accept, /acceptedHunterOpportunityFields/);
+});

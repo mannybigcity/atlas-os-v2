@@ -155,7 +155,7 @@ export async function executeHunterPlacesSearch(input: {
       maxResults: HUNTER_SEARCH_RESULT_CAP,
       languageCode: "en",
       regionCode: "US",
-      includeWebsite: false,
+      includeWebsite: true,
       includePureServiceAreaBusinesses: true,
     });
 

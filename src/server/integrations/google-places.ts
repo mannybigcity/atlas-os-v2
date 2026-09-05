@@ -1,19 +1,34 @@
-import {
-  IntegrationRequestError,
-} from "@/server/integrations/errors";
-import { requireServerIntegrationSecret } from "@/server/integrations/server-env";
+import { IntegrationRequestError } from "./errors.ts";
+import { requireServerIntegrationSecret } from "./server-env.ts";
 
 const GOOGLE_PLACES_TEXT_SEARCH_URL =
   "https://places.googleapis.com/v1/places:searchText";
 
-const BASE_FIELD_MASK = [
+export const GOOGLE_PLACES_TEXT_SEARCH_FIELD_MASK = [
   "places.id",
   "places.displayName",
   "places.formattedAddress",
   "places.googleMapsUri",
+  "places.websiteUri",
+  "places.nationalPhoneNumber",
+  "places.internationalPhoneNumber",
   "places.primaryType",
   "places.businessStatus",
-];
+] as const;
+
+export const GOOGLE_PLACE_DETAILS_FIELD_MASK = [
+  "id",
+  "displayName",
+  "formattedAddress",
+  "googleMapsUri",
+  "websiteUri",
+  "nationalPhoneNumber",
+  "internationalPhoneNumber",
+  "primaryType",
+  "businessStatus",
+] as const;
+
+const GOOGLE_PLACE_DETAILS_URL = "https://places.googleapis.com/v1";
 
 export const MAX_GOOGLE_PLACES_RESULTS = 20;
 
@@ -37,6 +52,8 @@ export type GooglePlaceProspect = {
   formattedAddress: string | null;
   googleMapsUrl: string | null;
   websiteUrl: string | null;
+  nationalPhoneNumber: string | null;
+  internationalPhoneNumber: string | null;
   primaryType: string | null;
   businessStatus: GooglePlaceBusinessStatus | null;
 };
@@ -64,6 +81,8 @@ type GooglePlacePayload = {
   formattedAddress?: unknown;
   googleMapsUri?: unknown;
   websiteUri?: unknown;
+  nationalPhoneNumber?: unknown;
+  internationalPhoneNumber?: unknown;
   primaryType?: unknown;
   businessStatus?: unknown;
 };
@@ -161,14 +180,22 @@ function normalizePlace(value: unknown): GooglePlaceProspect | null {
   }
 
   return {
-    placeId,
+    placeId: placeId.replace(/^places\//, ""),
     name: displayName,
     formattedAddress: asOptionalString(place.formattedAddress),
     googleMapsUrl: asOptionalHttpUrl(place.googleMapsUri),
     websiteUrl: asOptionalHttpUrl(place.websiteUri),
+    nationalPhoneNumber: asOptionalString(place.nationalPhoneNumber),
+    internationalPhoneNumber: asOptionalString(place.internationalPhoneNumber),
     primaryType: asOptionalString(place.primaryType),
     businessStatus: normalizeBusinessStatus(place.businessStatus),
   };
+}
+
+export function googlePlaceResourceName(placeId: string) {
+  const trimmed = placeId.trim();
+  if (!trimmed) invalidRequest();
+  return trimmed.startsWith("places/") ? trimmed : `places/${trimmed}`;
 }
 
 export async function searchGooglePlacesText(
@@ -177,9 +204,7 @@ export async function searchGooglePlacesText(
 ): Promise<GooglePlacesSearchResult> {
   const normalized = normalizeInput(input);
   const apiKey = requireServerIntegrationSecret("GOOGLE_PLACES_API_KEY");
-  const fieldMask = normalized.includeWebsite
-    ? [...BASE_FIELD_MASK, "places.websiteUri"].join(",")
-    : BASE_FIELD_MASK.join(",");
+  const fieldMask = [...GOOGLE_PLACES_TEXT_SEARCH_FIELD_MASK].join(",");
   const requestBody = {
     textQuery: normalized.textQuery,
     pageSize: normalized.maxResults,
@@ -248,4 +273,53 @@ export async function searchGooglePlacesText(
     maxResults: normalized.maxResults,
     places,
   };
+}
+
+export async function getGooglePlaceDetails(
+  placeId: string,
+  options: GooglePlacesRequestOptions = {},
+): Promise<GooglePlaceProspect | null> {
+  const resourceName = googlePlaceResourceName(placeId);
+  const apiKey = requireServerIntegrationSecret("GOOGLE_PLACES_API_KEY");
+  let response: Response;
+
+  try {
+    response = await (options.fetchImplementation ?? fetch)(
+      `${GOOGLE_PLACE_DETAILS_URL}/${resourceName}`,
+      {
+        method: "GET",
+        headers: {
+          "X-Goog-Api-Key": apiKey,
+          "X-Goog-FieldMask": [...GOOGLE_PLACE_DETAILS_FIELD_MASK].join(","),
+        },
+        cache: "no-store",
+        signal: options.signal,
+      },
+    );
+  } catch {
+    throw new IntegrationRequestError("google_places", "network_error", {
+      status: null,
+      retryable: true,
+    });
+  }
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new IntegrationRequestError("google_places", "provider_error", {
+      status: response.status,
+      retryable: response.status === 429 || response.status >= 500,
+    });
+  }
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new IntegrationRequestError("google_places", "invalid_response");
+  }
+
+  return normalizePlace(payload);
 }

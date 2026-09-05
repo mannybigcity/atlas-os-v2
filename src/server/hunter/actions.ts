@@ -11,9 +11,10 @@ import { getUserMemberships } from "@/server/organizations/queries";
 import { executeHunterPlacesSearch } from "@/server/hunter/search";
 import {
   buildHunterSearchQuery,
-  acceptedProspectNextAction,
-  acceptedProspectResearchSummary,
+  acceptedHunterOpportunityFields,
+  mergeHunterPlaceDetails,
 } from "@/server/hunter/review";
+import { getGooglePlaceDetails } from "@/server/integrations/google-places";
 import type { HunterSearchState } from "@/server/hunter/types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -148,32 +149,22 @@ export async function acceptHunterReviewItem(formData: FormData) {
     redirect("/client/hunter?hunter=already_accepted");
   }
 
-  const researchSummary = acceptedProspectResearchSummary({
-    name: item.name,
-    formattedAddress: item.formatted_address,
-  });
+  let placeDetails = null;
+  try {
+    placeDetails = await getGooglePlaceDetails(item.place_id);
+  } catch {
+    placeDetails = null;
+  }
+
+  const opportunityFields = acceptedHunterOpportunityFields(
+    mergeHunterPlaceDetails(item, placeDetails),
+  );
+  const researchSummary = opportunityFields.research_summary;
   const { data: opportunity, error: opportunityError } = await supabase
     .from("organization_opportunities")
     .insert({
       organization_id: organizationId,
-      name: item.name.slice(0, 220),
-      opportunity_type: "customer",
-      stage: "ready_for_follow_up",
-      fit_score: 0,
-      owner_role: "client",
-      source_label: "HUNTER Google Maps",
-      source_url: item.google_maps_url,
-      research_summary: researchSummary.slice(0, 3000),
-      next_action: acceptedProspectNextAction(),
-      metadata: {
-        hunter_review_item_id: item.id,
-        google_place_id: item.place_id,
-        google_maps_attribution: "Google Maps",
-        no_outreach_sent: true,
-        accepted_for_calling: true,
-        primary_type: item.primary_type,
-        business_status: item.business_status,
-      },
+      ...opportunityFields,
     })
     .select("id")
     .single();
@@ -210,6 +201,7 @@ export async function acceptHunterReviewItem(formData: FormData) {
   revalidatePath("/client");
   revalidatePath("/client/hunter");
   revalidatePath("/client/prospects");
+  revalidatePath(`/client/prospects/${opportunity.id}`);
   redirect("/client/hunter?hunter=accepted");
 }
 
