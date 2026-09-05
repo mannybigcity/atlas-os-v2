@@ -247,8 +247,8 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
               <p className="atlas-hero-lede">{t.heroCopy}</p>
               <div className="atlas-hero-actions">
                 <Link className="atlas-button gold" href={withSiteLanguage("/start-trial", language)}>{t.trial}</Link>
-                <Link className="atlas-button outline" href={withSiteLanguage("/pricing#plans", language)}>{t.primary}</Link>
-                <Link className="atlas-button outline" href={withSiteLanguage("/assessment", language)}>{t.secondary}</Link>
+                <Link className="atlas-hero-link" href={withSiteLanguage("/pricing#plans", language)}>{t.primary}</Link>
+                <Link className="atlas-hero-link" href={withSiteLanguage("/assessment", language)}>{t.secondary}</Link>
               </div>
             </div>
             <div className="atlas-hero-art" aria-label={language === "es" ? "Atlas carga con el negocio" : "Atlas carries the business"}>
