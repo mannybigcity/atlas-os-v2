@@ -4,8 +4,11 @@ import {
   HUNTER_DAILY_SEARCH_CAP,
   HUNTER_REVIEW_PILE_MIGRATION,
   HUNTER_SEARCH_RESULT_CAP,
+  acceptedHunterOpportunityFields,
   acceptedProspectNextAction,
   acceptedProspectResearchSummary,
+  mergeHunterPlaceDetails,
+  pickStoredPlacePhone,
   annotateHunterSearchPlaces,
   buildHunterSearchPersistNote,
   buildHunterSearchQuery,
@@ -73,6 +76,8 @@ test("review pile inserts stay capped at ten Google Places rows", () => {
     formattedAddress: "Katy, TX",
     googleMapsUrl: "https://maps.google.com/?cid=1",
     websiteUrl: null,
+    nationalPhoneNumber: null,
+    internationalPhoneNumber: null,
     primaryType: "painter",
     businessStatus: "OPERATIONAL" as const,
   }));
@@ -180,6 +185,8 @@ test("search results classify Accept vs already-Prospect lanes", () => {
       formattedAddress: "Katy, TX",
       googleMapsUrl: "https://maps.google.com/?cid=1",
       websiteUrl: null,
+      nationalPhoneNumber: null,
+      internationalPhoneNumber: null,
       primaryType: "painter",
       businessStatus: "OPERATIONAL" as const,
     },
@@ -189,6 +196,8 @@ test("search results classify Accept vs already-Prospect lanes", () => {
       formattedAddress: "Katy, TX",
       googleMapsUrl: "https://maps.google.com/?cid=2",
       websiteUrl: null,
+      nationalPhoneNumber: null,
+      internationalPhoneNumber: null,
       primaryType: "painter",
       businessStatus: "OPERATIONAL" as const,
     },
@@ -208,4 +217,78 @@ test("search results classify Accept vs already-Prospect lanes", () => {
   assert.equal(annotated[0]?.lane, "review");
   assert.equal(annotated[1]?.lane, "prospect");
   assert.equal(annotated[1]?.opportunityId, "opp-1");
+});
+
+test("Accept maps Google Places fields onto the Prospect without inventing a phone", () => {
+  const withPhone = acceptedHunterOpportunityFields({
+    reviewItemId: "review-1",
+    placeId: "ChIJ-mobile-dent",
+    name: "Mobile Dent Repair",
+    formattedAddress: "Cypress, TX",
+    googleMapsUrl: "https://maps.google.com/?cid=9",
+    websiteUrl: "https://mobiledent.example",
+    nationalPhoneNumber: "(281) 555-0147",
+    internationalPhoneNumber: "+1 281-555-0147",
+    primaryType: "car_repair",
+    businessStatus: "OPERATIONAL",
+  });
+
+  assert.equal(withPhone.contact_phone, "(281) 555-0147");
+  assert.equal(withPhone.source_url, "https://maps.google.com/?cid=9");
+  assert.equal(withPhone.metadata.google_place_id, "ChIJ-mobile-dent");
+  assert.equal(withPhone.metadata.formatted_address, "Cypress, TX");
+  assert.equal(withPhone.metadata.website_url, "https://mobiledent.example");
+  assert.equal(withPhone.metadata.no_outreach_sent, true);
+  assert.match(withPhone.research_summary, /Cypress, TX/);
+  assert.match(withPhone.research_summary, /\(281\) 555-0147/);
+  assert.match(withPhone.research_summary, /has not emailed, called, or texted/);
+  assert.equal(withPhone.next_action.includes("Call this prospect"), true);
+
+  const missingPhone = acceptedHunterOpportunityFields({
+    reviewItemId: "review-2",
+    placeId: "places/ChIJ-old",
+    name: "Texas Paintless Dent",
+    formattedAddress: null,
+    googleMapsUrl: null,
+    websiteUrl: null,
+    primaryType: null,
+    businessStatus: null,
+  });
+  assert.equal(missingPhone.contact_phone, null);
+  assert.equal(
+    missingPhone.source_url,
+    "https://www.google.com/maps/search/?api=1&query_place_id=ChIJ-old",
+  );
+  assert.doesNotMatch(missingPhone.research_summary, /Phone:/);
+  assert.equal(pickStoredPlacePhone({ nationalPhoneNumber: "123" }), null);
+});
+
+test("Accept prefers Place Details phone and website over empty review-pile fields", () => {
+  const merged = mergeHunterPlaceDetails(
+    {
+      id: "review-3",
+      place_id: "ChIJ-detail",
+      name: "Mobile Dent Repair",
+      formatted_address: "Cypress, TX",
+      google_maps_url: "https://maps.google.com/?cid=3",
+      website_url: null,
+      primary_type: "car_repair",
+      business_status: "OPERATIONAL",
+    },
+    {
+      placeId: "ChIJ-detail",
+      name: "Mobile Dent Repair",
+      formattedAddress: "123 Paint St, Cypress, TX",
+      googleMapsUrl: "https://maps.google.com/?cid=3",
+      websiteUrl: "https://mobiledent.example",
+      nationalPhoneNumber: "(281) 246-8800",
+      internationalPhoneNumber: "+1 281-246-8800",
+      primaryType: "car_repair",
+      businessStatus: "OPERATIONAL",
+    },
+  );
+  const fields = acceptedHunterOpportunityFields(merged);
+  assert.equal(fields.contact_phone, "(281) 246-8800");
+  assert.equal(fields.metadata.website_url, "https://mobiledent.example");
+  assert.equal(fields.metadata.formatted_address, "123 Paint St, Cypress, TX");
 });

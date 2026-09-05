@@ -22,7 +22,9 @@ test("HUNTER Places hunts write the review pile, never Prospects", () => {
         name: "Houston Pipe Co",
         formattedAddress: "Houston, TX",
         googleMapsUrl: "https://maps.google.com/?cid=1",
-        websiteUrl: null,
+        websiteUrl: "https://houstonpipe.example",
+        nationalPhoneNumber: "(713) 555-0101",
+        internationalPhoneNumber: "+1 713-555-0101",
         primaryType: "plumber",
         businessStatus: "OPERATIONAL",
       },
@@ -31,4 +33,7 @@ test("HUNTER Places hunts write the review pile, never Prospects", () => {
   assert.equal(rows.length, 1);
   assert.equal(rows[0]?.status, "pending");
   assert.equal(rows[0]?.organization_id, "org-afe-crm-demo");
+  assert.equal(rows[0]?.website_url, "https://houstonpipe.example");
+  assert.match(source, /includeWebsite:\s*true/);
+  assert.doesNotMatch(source, /includeWebsite:\s*false/);
 });

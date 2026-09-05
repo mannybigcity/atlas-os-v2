@@ -7,6 +7,7 @@ import type { HunterReviewItem } from "@/server/hunter/review";
 import type { ContentDraft } from "@/server/content-studio/queries";
 import type { OrganizationNote } from "@/server/notes/queries";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
+import { prospectDetailPath, prospectPlacesCard } from "@/lib/lions-den/prospect-places";
 import { countWonOpportunities } from "@/lib/lions-den/desk-clients";
 import { bucketFollowUpQueues, type DeskFollowUpItem } from "@/lib/lions-den/desk-queue";
 import { LionsDenCalendarBoard } from "@/components/lions-den/lions-den-calendar";
@@ -54,7 +55,7 @@ export function LionsDenOverview({
         title: item.name,
         detail: item.nextAction,
         dueAt: item.nextActionDue!,
-        href: href("/client/prospects"),
+        href: prospectDetailPath(item.id, href("/client/prospects")),
       })),
     ...partyEvents
       .filter((item) => item.nextActionDue)
@@ -179,29 +180,38 @@ export function LionsDenOverview({
                   : "Call list empty. Accept a HUNTER find. Atlas does not call, email, or text."}
               </p>
             ) : (
-              prospects.slice(0, 10).map((prospect) => (
-                <article className="border-b border-[#ece7d8] py-1.5 last:border-b-0" key={prospect.id}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-1">
-                        <h3 className="truncate text-sm font-semibold text-[#071b42]">{prospect.name}</h3>
-                        {isDemoLabel(prospect.name) ? <DemoBadge /> : null}
+              prospects.slice(0, 10).map((prospect) => {
+                const places = prospectPlacesCard(prospect);
+                return (
+                  <Link
+                    className="block border-b border-[#ece7d8] py-1.5 last:border-b-0 hover:bg-[#fffdf6]"
+                    href={prospectDetailPath(prospect.id, href("/client/prospects"))}
+                    key={prospect.id}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1">
+                          <h3 className="truncate text-sm font-semibold text-[#071b42] underline decoration-[#d8c27a] underline-offset-2">
+                            {prospect.name}
+                          </h3>
+                          {isDemoLabel(prospect.name) ? <DemoBadge /> : null}
+                        </div>
+                        {prospect.contactName || places.phone ? (
+                          <p className="truncate text-[11px] text-[#071b42]">
+                            {[prospect.contactName, places.phone].filter(Boolean).join(" · ")}
+                          </p>
+                        ) : null}
+                        {prospect.nextAction ? (
+                          <p className="truncate text-[11px] text-[#33415c]">{prospect.nextAction}</p>
+                        ) : null}
                       </div>
-                      {prospect.contactName || prospect.contactPhone ? (
-                        <p className="truncate text-[11px] text-[#071b42]">
-                          {[prospect.contactName, prospect.contactPhone].filter(Boolean).join(" · ")}
-                        </p>
-                      ) : null}
-                      {prospect.nextAction ? (
-                        <p className="truncate text-[11px] text-[#33415c]">{prospect.nextAction}</p>
-                      ) : null}
+                      <span className="shrink-0 rounded-full bg-[#fff8e6] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#071b42]">
+                        {prospect.stage.replaceAll("_", " ")}
+                      </span>
                     </div>
-                    <span className="shrink-0 rounded-full bg-[#fff8e6] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#071b42]">
-                      {prospect.stage.replaceAll("_", " ")}
-                    </span>
-                  </div>
-                </article>
-              ))
+                  </Link>
+                );
+              })
             )}
             {sisDashboard ? (
               <div className="mt-2 border-t border-[#ece7d8] pt-2">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import type { SisInboxTask, SisPartyEventSummary } from "@/server/sis-workspace/queries";
 import { bucketFollowUpQueues, type DeskFollowUpItem } from "@/lib/lions-den/desk-queue";
+import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
 
 type LionsDenFollowUpBoardProps = {
   prospects: OrganizationOpportunity[];
@@ -29,7 +30,7 @@ export function LionsDenFollowUpBoard({
         title: item.name,
         detail: item.nextAction,
         dueAt: item.nextActionDue!,
-        href: "/client/prospects",
+        href: prospectDetailPath(item.id),
       })),
     ...partyEvents
       .filter((item) => item.nextActionDue)
