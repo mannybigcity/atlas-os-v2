@@ -23,6 +23,8 @@ supabase/migrations/20260904150000_trial_workspace_service_role_grants.sql
 1. Sign up at `/start-trial` with a new plus-address email
 2. Confirm email from inbox
 3. Land on `/client?status=welcome` with an assigned workspace
+4. As super-admin on the AFE operator desk, `/client` should show `7 Day Trial (N)`
+   and the new workspace should appear on `/client/trial-inbox` (not Prospects or HUNTER)
 
 ## 4. Failure path (staging only)
 

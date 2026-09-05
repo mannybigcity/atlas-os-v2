@@ -53,6 +53,10 @@ test("Clients board is on every Lion's Den desk, not SIS-only", () => {
   assert.equal(sample.some((board) => board.id === "clients"), true);
   assert.equal(trial.some((board) => board.id === "clients"), true);
   assert.equal(qtime.some((board) => board.id === "clients"), false);
+  assert.equal(sis.some((board) => board.id === "trial-inbox"), false);
+  assert.equal(sample.some((board) => board.id === "trial-inbox"), false);
+  assert.equal(trial.some((board) => board.id === "trial-inbox"), false);
+  assert.equal(afe.some((board) => board.id === "trial-inbox"), false);
 });
 
 test("Clients page loads SIS customers or won opportunities and never adds send actions", () => {

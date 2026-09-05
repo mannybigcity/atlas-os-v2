@@ -68,6 +68,31 @@ src/server/           Server-side queries, guards, and actions
 supabase/migrations/  Reviewed database migrations and RLS policies
 ```
 
+## 7 Day Trial inbox (AFE operator desk)
+
+Super-admin / AFE operator Lion’s Den (`/client` on Atlas For Entrepreneurs)
+shows a left-nav item `7 Day Trial (N)`. It is hidden on SIS, the sample desk,
+ordinary client desks, and while previewing another org.
+
+**Count rule.** N is the number of AFE trial workspaces whose owner has an
+`atlas_trial_profiles` row and whose `trial_started_at` is within the last 7
+days **or** whose `trial_ends_at` is still in the future. There is no processed
+flag yet; this window is the human-approval queue. Expired trials drop off.
+
+**Click.** The inbox lists company name, owner name, email, started date, and
+email confirm status. A row opens that org’s desk with the existing
+`/client?previewOrg=<slug>` pattern. Trials are never copied into Prospects or
+HUNTER. Atlas does not email, call, or text anyone.
+
+**Exclusions.** SIS Custom Creations, sample desk `afe-crm-demo`, the AFE
+operator desk, QTime, the founder mailbox, and `@atlasforentrepreneurs.com`
+identities. Rows without an organization slug are omitted because they cannot
+open `previewOrg`.
+
+**Proof shape.** A trial org like `bright-path-cleaning-2ead43` (Bright Path
+Cleaning) created on 2026-09-05 appears when it has a trial profile, an owner
+membership, and is inside the 7-day window.
+
 ## Next recommended step
 
 Apply and verify the reviewed Supabase migrations through the approved
