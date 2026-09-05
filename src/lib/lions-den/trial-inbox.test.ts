@@ -15,6 +15,7 @@ import {
   isExcludedTrialInboxOrganization,
   isInsideTrialInboxWindow,
   selectTrialInboxRows,
+  trialEndAt,
   trialInboxNavLabel,
   trialInboxPreviewHref,
   type TrialInboxCandidate,
@@ -131,7 +132,6 @@ test("Bright Path Cleaning proof case stays in the 7-day queue from org + owner 
         organizationSlug: "old-trial-co",
         organizationCreatedAt: "2026-08-20T00:00:00.000Z",
         trialStartedAt: "2026-08-20T00:00:00.000Z",
-        trialEndsAt: "2026-08-27T00:00:00.000Z",
       }),
     ],
     now,
@@ -192,6 +192,10 @@ test("window rule is last 7 days or still-active trial from org created_at", () 
     }),
     true,
   );
+});
+
+test("trial end is always started plus 7 days", () => {
+  assert.equal(trialEndAt("2026-09-05T14:12:10.000Z"), "2026-09-12T14:12:10.000Z");
 });
 
 test("status ladder is computed and never stored", () => {
@@ -281,6 +285,7 @@ test("row click uses previewOrg and never Prospects or HUNTER", () => {
   assert.match(query, /from\("organizations"\)/);
   assert.match(query, /organization_memberships/);
   assert.match(query, /auth\.admin\.getUserById/);
+  assert.match(query, /TRIAL_INBOX_PROOF_SLUG/);
   assert.match(query, /selectTrialInboxRows/);
   assert.doesNotMatch(query, /create table/i);
 });

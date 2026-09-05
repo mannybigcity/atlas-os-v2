@@ -82,7 +82,7 @@ enrichment only.
 `user_metadata.full_name` (trial profile name if Auth has none). Email = Auth
 owner email. Started = `organizations.created_at`, or trial profile start when
 the org timestamp is missing. Email confirm = Auth `email_confirmed_at`.
-Trial end / days remaining = existing `trial_ends_at` or start + 7 days.
+Trial end / days remaining = start + 7 days.
 
 **Count rule.** N is AFE trial workspaces in that window (start in the last 7
 days **or** end still in the future) that are not upgraded. There is no

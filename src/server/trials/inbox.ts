@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  TRIAL_INBOX_PROOF_SLUG,
   selectTrialInboxRows,
   trialInboxWindowStart,
   type TrialInboxCandidate,
@@ -28,7 +29,6 @@ type TrialProfileRow = {
   user_id: string;
   full_name: string | null;
   trial_started_at: string | null;
-  trial_ends_at: string | null;
 };
 
 type BillingRow = {
@@ -44,17 +44,27 @@ export async function getAfeTrialInbox(
   try {
     const service = createServiceClient();
     const cutoff = trialInboxWindowStart(now).toISOString();
-    const organizations = await service
-      .from("organizations")
-      .select("id, name, slug, created_at")
-      .gte("created_at", cutoff)
-      .order("created_at", { ascending: false });
+    const [organizations, proof] = await Promise.all([
+      service
+        .from("organizations")
+        .select("id, name, slug, created_at")
+        .gte("created_at", cutoff)
+        .order("created_at", { ascending: false }),
+      service
+        .from("organizations")
+        .select("id, name, slug, created_at")
+        .eq("slug", TRIAL_INBOX_PROOF_SLUG)
+        .maybeSingle(),
+    ]);
 
     if (organizations.error) {
       return { data: [], setupRequired: true, error: organizations.error.message };
     }
 
-    const organizationRows = (organizations.data ?? []) as OrganizationRow[];
+    const organizationRows = mergeProofOrganization(
+      (organizations.data ?? []) as OrganizationRow[],
+      proof.error ? null : (proof.data as OrganizationRow | null),
+    );
     if (organizationRows.length === 0) {
       return { data: [], setupRequired: false, error: null };
     }
@@ -95,7 +105,6 @@ export async function getAfeTrialInbox(
         organizationSlug: organization.slug,
         organizationCreatedAt: organization.created_at,
         trialStartedAt: profile?.trial_started_at || null,
-        trialEndsAt: profile?.trial_ends_at || null,
         membershipRole: membership.role,
         emailConfirmedAt: owner?.emailConfirmedAt || null,
         lastSignInAt: owner?.lastSignInAt || null,
@@ -115,6 +124,17 @@ export async function getAfeTrialInbox(
       error: error instanceof Error ? error.message : "trial_inbox_unavailable",
     };
   }
+}
+
+function mergeProofOrganization(
+  organizations: OrganizationRow[],
+  proof: OrganizationRow | null,
+) {
+  if (!proof?.id) return organizations;
+  if (organizations.some((organization) => organization.id === proof.id)) {
+    return organizations;
+  }
+  return [proof, ...organizations];
 }
 
 export async function getAfeTrialInboxCount(now = new Date()) {
@@ -163,7 +183,7 @@ async function loadTrialProfiles(service: ServiceClient, userIds: string[]) {
   try {
     const result = await service
       .from("atlas_trial_profiles")
-      .select("user_id, full_name, trial_started_at, trial_ends_at")
+      .select("user_id, full_name, trial_started_at")
       .in("user_id", userIds);
     if (result.error) return profiles;
     for (const row of (result.data ?? []) as TrialProfileRow[]) {

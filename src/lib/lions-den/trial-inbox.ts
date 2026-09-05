@@ -26,7 +26,7 @@ export const TRIAL_INBOX_RULE = {
   source:
     "Derived from organizations + owner organization_memberships + Auth. No trial_inbox table. atlas_trial_profiles is optional enrichment only.",
   include:
-    "AFE trial workspaces (not SIS, not sample, not operator) with an owner membership whose trial start is within the last 7 days or whose trial end is still in the future. Start is organizations.created_at, or atlas_trial_profiles.trial_started_at when that row exists. End is trial_ends_at when present, otherwise start + 7 days. Upgraded (linked billing) orgs are excluded from this queue.",
+    "AFE trial workspaces (not SIS, not sample, not operator) with an owner membership whose trial start is within the last 7 days or whose trial end is still in the future. Start is organizations.created_at, or existing trial metadata when the org timestamp is missing. End and days remaining are always start + 7 days. Upgraded (linked billing) orgs are excluded from this queue.",
   exclude: [
     "SIS Custom Creations / sis-diy organizations",
     "Sample desk afe-crm-demo",
@@ -91,12 +91,8 @@ export function trialStartAt(input: {
   return input.organizationCreatedAt || input.trialStartedAt || "";
 }
 
-export function trialEndAt(input: {
-  startedAt: string;
-  trialEndsAt?: string | null;
-}) {
-  if (input.trialEndsAt) return input.trialEndsAt;
-  const started = parseTimestamp(input.startedAt);
+export function trialEndAt(startedAt: string) {
+  const started = parseTimestamp(startedAt);
   if (started === null) return "";
   return new Date(started + TRIAL_INBOX_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
 }
@@ -110,11 +106,10 @@ export function trialDaysRemaining(endsAt: string, now: Date) {
 export function isInsideTrialInboxWindow(input: {
   now: Date;
   trialStartedAt?: string | null;
-  trialEndsAt?: string | null;
   organizationCreatedAt?: string | null;
 }) {
   const startedAt = trialStartAt(input);
-  const endsAt = trialEndAt({ startedAt, trialEndsAt: input.trialEndsAt });
+  const endsAt = trialEndAt(startedAt);
   const nowMs = input.now.getTime();
   const windowStart = trialInboxWindowStart(input.now).getTime();
   const started = parseTimestamp(startedAt);
@@ -232,15 +227,11 @@ export function selectTrialInboxRows(
     });
     if (!startedAt) continue;
 
-    const endsAt = trialEndAt({
-      startedAt,
-      trialEndsAt: candidate.trialEndsAt,
-    });
+    const endsAt = trialEndAt(startedAt);
     if (
       !isInsideTrialInboxWindow({
         now,
         trialStartedAt: candidate.trialStartedAt,
-        trialEndsAt: endsAt,
         organizationCreatedAt: candidate.organizationCreatedAt,
       })
     ) {
