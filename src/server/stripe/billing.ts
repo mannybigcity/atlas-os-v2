@@ -2,40 +2,30 @@ import "server-only";
 
 import type Stripe from "stripe";
 import { createServiceClient } from "@/lib/supabase/service";
+import {
+  type AtlasPaidPlanSlug,
+  planForConfiguredPriceId,
+  preservedCheckoutSessionId,
+  shouldProcessStripeBillingEvent,
+  STRIPE_BILLING_UNLOCK_EVENTS,
+} from "@/server/stripe/billing-entitlement";
 import { getAtlasStripeClient } from "@/server/stripe/client";
 import {
+  findExistingPaidWorkspaceLink,
   provisionPaidAtlasWorkspace,
   resolveCheckoutEmail,
 } from "@/server/stripe/paid-workspace";
-import { provisioningStatusForCheckoutEmail } from "@/server/stripe/paid-workspace-identity";
+import {
+  normalizeCheckoutEmail,
+  provisioningStatusForCheckoutEmail,
+} from "@/server/stripe/paid-workspace-identity";
 
-const PLAN_PRICE_ENV: Record<string, string> = {
-  basic: "STRIPE_ATLAS_BASIC_PRICE_ID",
-  grow: "STRIPE_ATLAS_GROW_PRICE_ID",
-  unlimited: "STRIPE_ATLAS_UNLIMITED_PRICE_ID",
-};
+const SUPPORTED_EVENTS = new Set<string>(STRIPE_BILLING_UNLOCK_EVENTS);
 
-const SUPPORTED_EVENTS = new Set([
-  "checkout.session.completed",
-  "customer.subscription.created",
-  "customer.subscription.updated",
-  "customer.subscription.deleted",
-  "invoice.paid",
-  "invoice.payment_failed",
-]);
-
-type PlanSlug = "basic" | "grow" | "unlimited";
-
-function configuredPriceIds() {
-  return Object.entries(PLAN_PRICE_ENV)
-    .map(([plan, envName]) => [process.env[envName]?.trim(), plan] as const)
-    .filter((entry): entry is readonly [string, string] => Boolean(entry[0]));
-}
+type PlanSlug = AtlasPaidPlanSlug;
 
 function planForPrice(priceId: string | null | undefined): PlanSlug | null {
-  if (!priceId) return null;
-  const match = configuredPriceIds().find(([configuredId]) => configuredId === priceId);
-  return match?.[1] as PlanSlug | undefined ?? null;
+  return planForConfiguredPriceId(priceId);
 }
 
 function customerId(value: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined) {
@@ -64,7 +54,7 @@ async function markEvent(event: Stripe.Event) {
     .eq("stripe_event_id", event.id)
     .maybeSingle();
   if (existing.error) throw existing.error;
-  if (existing.data?.status === "processed") return false;
+  if (!shouldProcessStripeBillingEvent(existing.data?.status)) return false;
 
   const retry = await service
     .from("atlas_billing_events")
@@ -104,9 +94,9 @@ async function upsertEntitlement(input: {
 }) {
   const service = createServiceClient();
   const lookup = input.subscriptionId
-    ? service.from("atlas_billing_entitlements").select("id,email,provisioning_status,user_id,organization_id").eq("stripe_subscription_id", input.subscriptionId).maybeSingle()
+    ? service.from("atlas_billing_entitlements").select("id,email,provisioning_status,user_id,organization_id,stripe_checkout_session_id").eq("stripe_subscription_id", input.subscriptionId).maybeSingle()
     : input.checkoutSessionId
-      ? service.from("atlas_billing_entitlements").select("id,email,provisioning_status,user_id,organization_id").eq("stripe_checkout_session_id", input.checkoutSessionId).maybeSingle()
+      ? service.from("atlas_billing_entitlements").select("id,email,provisioning_status,user_id,organization_id,stripe_checkout_session_id").eq("stripe_checkout_session_id", input.checkoutSessionId).maybeSingle()
       : Promise.resolve({ data: null, error: null });
   const existing = await lookup;
   if (existing.error) throw existing.error;
@@ -115,7 +105,10 @@ async function upsertEntitlement(input: {
     email: input.email ?? existing.data?.email ?? null,
     stripe_customer_id: input.customerId,
     stripe_subscription_id: input.subscriptionId,
-    stripe_checkout_session_id: input.checkoutSessionId,
+    stripe_checkout_session_id: preservedCheckoutSessionId(
+      input.checkoutSessionId,
+      existing.data?.stripe_checkout_session_id,
+    ),
     stripe_price_id: input.priceId,
     plan_slug: input.plan,
     status: input.status,
@@ -135,7 +128,18 @@ async function upsertEntitlement(input: {
   const result = existing.data
     ? await service.from("atlas_billing_entitlements").update(updatePayload).eq("id", existing.data.id)
     : await service.from("atlas_billing_entitlements").insert(insertPayload);
-  if (result.error) throw result.error;
+  if (!result.error) return;
+  if (result.error.code !== "23505") throw result.error;
+
+  const raced = input.subscriptionId
+    ? await service.from("atlas_billing_entitlements").select("id").eq("stripe_subscription_id", input.subscriptionId).maybeSingle()
+    : input.checkoutSessionId
+      ? await service.from("atlas_billing_entitlements").select("id").eq("stripe_checkout_session_id", input.checkoutSessionId).maybeSingle()
+      : { data: null, error: null };
+  if (raced.error) throw raced.error;
+  if (!raced.data?.id) throw result.error;
+  const retry = await service.from("atlas_billing_entitlements").update(updatePayload).eq("id", raced.data.id);
+  if (retry.error) throw retry.error;
 }
 
 async function handleCheckoutCompleted(event: Stripe.Event, session: Stripe.Checkout.Session) {
@@ -189,6 +193,22 @@ async function handleCheckoutCompleted(event: Stripe.Event, session: Stripe.Chec
   });
 }
 
+async function emailFromSubscription(subscription: Stripe.Subscription) {
+  const customer = subscription.customer;
+  if (customer && typeof customer === "object" && !("deleted" in customer && customer.deleted)) {
+    const fromCustomer = normalizeCheckoutEmail(customer.email);
+    if (fromCustomer) return fromCustomer;
+  }
+
+  const stripe = getAtlasStripeClient();
+  const id = customerId(subscription.customer);
+  if (!stripe || !id) return null;
+
+  const record = await stripe.customers.retrieve(id);
+  if ("deleted" in record && record.deleted) return null;
+  return normalizeCheckoutEmail(record.email);
+}
+
 async function handleSubscription(event: Stripe.Event, subscription: Stripe.Subscription) {
   const priceId = subscription.items.data[0]?.price?.id ?? null;
   const plan = planForPrice(priceId);
@@ -197,8 +217,14 @@ async function handleSubscription(event: Stripe.Event, subscription: Stripe.Subs
     return;
   }
 
+  const email = await emailFromSubscription(subscription);
+  const workspace =
+    event.type === "customer.subscription.deleted"
+      ? { status: "missing" as const }
+      : await findExistingPaidWorkspaceLink(email);
+
   await upsertEntitlement({
-    email: null,
+    email,
     customerId: customerId(subscription.customer),
     subscriptionId: subscription.id,
     checkoutSessionId: null,
@@ -207,7 +233,14 @@ async function handleSubscription(event: Stripe.Event, subscription: Stripe.Subs
     status: subscription.status,
     currentPeriodEnd: subscription.items.data[0]?.current_period_end ?? null,
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    provisioningStatus: event.type === "customer.subscription.deleted" ? "suspended" : undefined,
+    provisioningStatus:
+      event.type === "customer.subscription.deleted"
+        ? "suspended"
+        : workspace.status === "linked"
+          ? "linked"
+          : undefined,
+    userId: workspace.status === "linked" ? workspace.userId : undefined,
+    organizationId: workspace.status === "linked" ? workspace.organizationId : undefined,
     event,
   });
 }

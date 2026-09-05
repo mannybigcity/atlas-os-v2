@@ -5,7 +5,6 @@ import { PrivateAtlasAuthHeader } from "@/components/private-atlas-auth-header";
 import { withSiteLanguage } from "@/lib/site-language";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import { getVerifiedUser } from "@/server/auth/guards";
-import { getAtlasStripeClient } from "@/server/stripe/client";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +28,9 @@ type CheckoutSuccessPageProps = {
 export default async function CheckoutSuccessPage({
   searchParams,
 }: CheckoutSuccessPageProps) {
-  const params = await searchParams;
+  // Payment Links may append session_id. This page is confirmation only;
+  // /api/stripe/webhook is the paid-plan unlock.
+  await searchParams;
   const language = await getSiteLanguage();
   let signedIn = false;
 
@@ -42,8 +43,6 @@ export default async function CheckoutSuccessPage({
   if (signedIn) {
     redirect("/client?status=welcome");
   }
-
-  await confirmCheckoutSession(params?.session_id);
 
   const copy = language === "es"
     ? {
@@ -96,18 +95,4 @@ export default async function CheckoutSuccessPage({
       </main>
     </>
   );
-}
-
-async function confirmCheckoutSession(sessionId?: string) {
-  const id = String(sessionId ?? "").trim();
-  if (!id.startsWith("cs_")) return;
-
-  const stripe = getAtlasStripeClient();
-  if (!stripe) return;
-
-  try {
-    await stripe.checkout.sessions.retrieve(id);
-  } catch {
-    // The door still opens if Stripe is unavailable; the webhook is the source of truth.
-  }
 }

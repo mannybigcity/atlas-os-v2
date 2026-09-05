@@ -4,6 +4,7 @@ import type Stripe from "stripe";
 import { getSiteUrl } from "@/lib/env";
 import { createServiceClient } from "@/lib/supabase/service";
 import { assertNotProvisioningProtectedOrganization } from "@/lib/client-portal/protected-organization";
+import { canAttachPaidEntitlementToOrganization } from "@/server/stripe/billing-entitlement";
 import {
   isUsableCheckoutEmail,
   nextWorkspaceSlugCandidate,
@@ -85,6 +86,22 @@ export async function provisionPaidAtlasWorkspace(input: {
   return { status: "linked", userId, organizationId, invited };
 }
 
+export async function findExistingPaidWorkspaceLink(email: string | null) {
+  const normalized = normalizeCheckoutEmail(email);
+  if (!isUsableCheckoutEmail(normalized) || !normalized) {
+    return { status: "missing" as const };
+  }
+
+  const service = createServiceClient();
+  const userId = await findAuthUserIdByEmail(service, normalized);
+  if (!userId) return { status: "missing" as const };
+
+  const organizationId = await findReusablePaidWorkspaceId(service, userId);
+  if (!organizationId) return { status: "missing" as const };
+
+  return { status: "linked" as const, userId, organizationId };
+}
+
 async function findOrInvitePaidBuyer(
   service: ServiceClient,
   email: string,
@@ -146,20 +163,79 @@ async function findAuthUserIdByList(service: ServiceClient, email: string) {
   return null;
 }
 
+async function findReusablePaidWorkspaceId(service: ServiceClient, userId: string) {
+  const { data: memberships, error: membershipError } = await service
+    .from("organization_memberships")
+    .select(
+      `
+        organization_id,
+        organizations (
+          id,
+          name,
+          slug
+        )
+      `,
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+
+  if (membershipError) throw membershipError;
+
+  for (const row of memberships ?? []) {
+    const membershipOrganizationId =
+      typeof (row as { organization_id?: unknown }).organization_id === "string"
+        ? (row as { organization_id: string }).organization_id
+        : null;
+    const joined = relatedOrganization((row as { organizations?: unknown }).organizations);
+    const organization =
+      joined?.name || joined?.slug
+        ? joined
+        : membershipOrganizationId
+          ? await loadOrganizationIdentity(service, membershipOrganizationId)
+          : null;
+    const organizationId = organization?.id ?? membershipOrganizationId;
+    if (
+      organizationId &&
+      canAttachPaidEntitlementToOrganization({
+        id: organizationId,
+        name: organization?.name,
+        slug: organization?.slug,
+      })
+    ) {
+      return organizationId;
+    }
+  }
+
+  return null;
+}
+
+async function loadOrganizationIdentity(service: ServiceClient, organizationId: string) {
+  const { data, error } = await service
+    .from("organizations")
+    .select("id, name, slug")
+    .eq("id", organizationId)
+    .maybeSingle();
+  if (error) throw error;
+  return data as { id?: string; name?: string | null; slug?: string | null } | null;
+}
+
+function relatedOrganization(value: unknown): { id?: string; name?: string | null; slug?: string | null } | null {
+  if (Array.isArray(value)) {
+    const first = value[0];
+    return first && typeof first === "object" ? (first as { id?: string; name?: string | null; slug?: string | null }) : null;
+  }
+  return value && typeof value === "object"
+    ? (value as { id?: string; name?: string | null; slug?: string | null })
+    : null;
+}
+
 async function ensureOwnerWorkspace(
   service: ServiceClient,
   input: { userId: string; email: string; session: Stripe.Checkout.Session },
 ) {
-  const { data: memberships, error: membershipError } = await service
-    .from("organization_memberships")
-    .select("organization_id")
-    .eq("user_id", input.userId)
-    .order("created_at", { ascending: true })
-    .limit(1);
-
-  if (membershipError) throw membershipError;
-  if (memberships?.[0]?.organization_id) {
-    return memberships[0].organization_id as string;
+  const existingOrganizationId = await findReusablePaidWorkspaceId(service, input.userId);
+  if (existingOrganizationId) {
+    return existingOrganizationId;
   }
 
   const details = workspaceDetailsFromCheckout(input.session, input.email);
@@ -171,14 +247,8 @@ async function ensureOwnerWorkspace(
   });
 
   if (insertMembershipError) {
-    const raced = await service
-      .from("organization_memberships")
-      .select("organization_id")
-      .eq("user_id", input.userId)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (raced.data?.organization_id) return raced.data.organization_id as string;
+    const racedOrganizationId = await findReusablePaidWorkspaceId(service, input.userId);
+    if (racedOrganizationId) return racedOrganizationId;
     throw insertMembershipError;
   }
 
