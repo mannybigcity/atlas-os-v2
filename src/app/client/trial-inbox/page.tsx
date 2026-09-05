@@ -41,11 +41,7 @@ export default async function TrialInboxPage({ searchParams }: TrialInboxPagePro
   const inbox = await getAfeTrialInbox();
 
   return (
-    <LionsDenBoardScreen
-      board="trial-inbox"
-      trialInboxCount={inbox.setupRequired ? 0 : inbox.data.length}
-      workspace={workspace}
-    >
+    <LionsDenBoardScreen board="trial-inbox" trialInboxCount={inbox.setupRequired ? 0 : inbox.data.length} workspace={workspace}>
       <LionsDenTrialInboxBoard
         rows={inbox.setupRequired ? [] : inbox.data}
         setupRequired={inbox.setupRequired}
