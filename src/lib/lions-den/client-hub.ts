@@ -13,7 +13,8 @@ export type LionsDenBoard =
   | "calendar"
   | "notes"
   | "hunter"
-  | "micah";
+  | "micah"
+  | "trial-inbox";
 
 export const LIONS_DEN_NAVY = "#071b42";
 export const LIONS_DEN_GOLD = "#f5b932";
@@ -32,6 +33,15 @@ export const lionsDenBoards: Array<{
   { id: "notes", href: "/client/notes", label: "Notes", labelEs: "Notas" },
   { id: "hunter", href: "/client/hunter", label: "HUNTER", labelEs: "HUNTER" },
   { id: "micah", href: "/client/micah", label: "MICAH", labelEs: "MICAH" },
+];
+
+export const lionsDenOperatorBoards: Array<{
+  id: Extract<LionsDenBoard, "trial-inbox">;
+  href: string;
+  label: string;
+  labelEs: string;
+}> = [
+  { id: "trial-inbox", href: "/client/trial-inbox", label: "7 Day Trial", labelEs: "Prueba 7 días" },
 ];
 
 export function visibleLionsDenBoards(

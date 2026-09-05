@@ -6,9 +6,11 @@ import { AtlasStaffPane } from "@/components/lions-den/atlas-staff-pane";
 import { getClientPortalName, isAfeCrmDemoOrganization } from "@/lib/client-portal/identity";
 import {
   lionsDenHref,
+  lionsDenOperatorBoards,
   visibleLionsDenBoards,
   type LionsDenBoard,
 } from "@/lib/lions-den/client-hub";
+import { trialInboxNavLabel } from "@/lib/lions-den/trial-inbox";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import type { ClientAiRequest } from "@/server/client-ai/queries";
 import type { ClientAiDailyUsage } from "@/server/client-ai/queries";
@@ -22,6 +24,8 @@ type LionsDenClientHubProps = {
   workspaces?: Array<{ name: string; slug: string }>;
   aiRequests?: ClientAiRequest[];
   aiUsage?: ClientAiDailyUsage | null;
+  showTrialInbox?: boolean;
+  trialInboxCount?: number;
   children: ReactNode;
 };
 
@@ -34,6 +38,8 @@ export async function LionsDenClientHub({
   workspaces = [],
   aiRequests = [],
   aiUsage = null,
+  showTrialInbox = false,
+  trialInboxCount = 0,
   children,
 }: LionsDenClientHubProps) {
   const language = await getSiteLanguage();
@@ -110,6 +116,27 @@ export async function LionsDenClientHub({
                 </Link>
               );
             })}
+            {showTrialInbox
+              ? lionsDenOperatorBoards.map((item) => {
+                  const active = item.id === board;
+                  const hasNew = trialInboxCount > 0;
+                  return (
+                    <Link
+                      className={`block shrink-0 rounded-md px-2.5 py-1.5 text-sm font-semibold transition ${
+                        active
+                          ? "bg-[#f5b932] text-[#071b42]"
+                          : hasNew
+                            ? "ld-trial-nav-new text-[#f5b932] hover:bg-white/10"
+                            : "text-white/85 hover:bg-white/10 hover:text-white"
+                      }`}
+                      href={item.href}
+                      key={item.id}
+                    >
+                      {trialInboxNavLabel(trialInboxCount, spanish)}
+                    </Link>
+                  );
+                })
+              : null}
           </nav>
         </aside>
 

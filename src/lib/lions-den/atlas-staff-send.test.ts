@@ -63,6 +63,7 @@ test("every founder Lion's Den board mounts LionsDenBoardScreen and the live Atl
     "src/app/client/notes/page.tsx",
     "src/app/client/hunter/page.tsx",
     "src/app/client/micah/page.tsx",
+    "src/app/client/trial-inbox/page.tsx",
   ];
 
   for (const file of boards) {
