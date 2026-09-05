@@ -1,6 +1,9 @@
 import { MicahWeekGallery } from "@/components/micah-week-gallery";
 import { MicahWeekDesk } from "@/components/micah-week-desk";
-import { brandKitFromDrafts } from "@/server/content-studio/brand";
+import {
+  brandKitForMicahDesk,
+  readMicahWorkspacePrefill,
+} from "@/server/content-studio/brand";
 import {
   readOfficialAtlasLogoDataUri,
   selectMicahWeekGallery,
@@ -10,6 +13,7 @@ import { getSiteLanguage } from "@/lib/site-language-server";
 
 type ClientContentStudioProps = {
   organizationId: string;
+  organizationName?: string | null;
   canReview: boolean;
   demoDesk?: boolean;
   studio: ContentStudio;
@@ -17,13 +21,15 @@ type ClientContentStudioProps = {
 
 export async function ClientContentStudio({
   organizationId,
+  organizationName,
   canReview,
   demoDesk = false,
   studio,
 }: ClientContentStudioProps) {
   const language = await getSiteLanguage();
   const spanish = language === "es";
-  const brand = brandKitFromDrafts(studio.drafts);
+  const prefill = await readMicahWorkspacePrefill(organizationId, organizationName);
+  const brand = brandKitForMicahDesk(studio.drafts, prefill);
   const cards = selectMicahWeekGallery(studio.drafts, {
     demoDesk,
     logoDataUri: brand.logoDataUri || readOfficialAtlasLogoDataUri(),

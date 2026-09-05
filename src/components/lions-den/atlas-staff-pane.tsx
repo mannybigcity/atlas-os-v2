@@ -6,7 +6,7 @@ import { useActionState, useEffect, useRef, useState, type FormEvent } from "rea
 import { useRouter } from "next/navigation";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { ATLAS_LION_SRC } from "@/lib/lions-den/atlas-brand";
-import { MICAH_TALK_EVENT } from "@/lib/lions-den/micah-starter-week";
+import { MICAH_TALK_EVENT, type MicahTalkDetail } from "@/lib/lions-den/micah-starter-week";
 import { ATLAS_STAFF_PROMPT_LIMIT, composeAtlasStaffPrompt } from "@/lib/lions-den/atlas-staff-prompt";
 import { atlasStaffCanSend } from "@/lib/lions-den/atlas-staff-send";
 import { atlasDeskNextHref } from "@/lib/lions-den/atlas-desk-route";
@@ -75,9 +75,11 @@ export function AtlasStaffPane({
     dailyUsage ?? atlasAskUsageFromCounts(0, "basic"),
   );
   const fileRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const lastPromptRef = useRef("");
   const lastNavKeyRef = useRef("");
+  const pendingMicahPromptRef = useRef<string | null>(null);
   const plan = usage.plan as AtlasAskPlan;
   const capped = isAtlasAskCapped(usage.used, plan);
   const hasWorkspace = Boolean(organizationId);
@@ -109,11 +111,17 @@ export function AtlasStaffPane({
 
   useEffect(() => {
     function onMicahTalk(event: Event) {
-      const prompt = String((event as CustomEvent<{ prompt?: string }>).detail?.prompt ?? "").trim();
+      const detail = (event as CustomEvent<MicahTalkDetail>).detail;
+      const prompt = String(detail?.prompt ?? "").trim();
       if (!prompt) return;
-      setDraft(prompt.slice(0, ATLAS_STAFF_PROMPT_LIMIT));
+      const clipped = prompt.slice(0, ATLAS_STAFF_PROMPT_LIMIT);
+      pendingMicahPromptRef.current = clipped;
+      setDraft(clipped);
       window.setTimeout(() => {
         document.getElementById("atlas-staff-prompt")?.focus();
+        if (detail?.submit) {
+          formRef.current?.requestSubmit();
+        }
       }, 0);
     }
     window.addEventListener(MICAH_TALK_EVENT, onMicahTalk);
@@ -148,6 +156,7 @@ export function AtlasStaffPane({
     if (!href) return;
     lastNavKeyRef.current = navKey;
     router.push(href);
+    if (href === "/client/micah") router.refresh();
   }, [router, state.answer, state.requestId, state.routedTo, state.scopeStatus, state.status]);
 
   function toggleMic() {
@@ -182,7 +191,11 @@ export function AtlasStaffPane({
     event.preventDefault();
     const form = event.currentTarget;
     if (!canSend) return;
-    const prompt = await composeAtlasStaffPrompt(draft, attachment);
+    const prompt = await composeAtlasStaffPrompt(
+      pendingMicahPromptRef.current || draft,
+      attachment,
+    );
+    pendingMicahPromptRef.current = null;
     if (prompt.length < 2) return;
     lastPromptRef.current = prompt;
     const formData = new FormData(form);
@@ -278,7 +291,12 @@ export function AtlasStaffPane({
           </Link>
         </div>
       ) : (
-        <form className="shrink-0 border-t border-[#ece7d8] bg-white p-2" onSubmit={onSubmit}>
+        <form
+          className="shrink-0 border-t border-[#ece7d8] bg-white p-2"
+          id="atlas-staff-form"
+          onSubmit={onSubmit}
+          ref={formRef}
+        >
           <input name="organizationId" type="hidden" value={organizationId} />
           <input name="role" type="hidden" value="atlas" />
           <input name="scopeMode" type="hidden" value="business_only" />

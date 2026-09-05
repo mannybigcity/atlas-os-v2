@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import {
@@ -153,6 +153,15 @@ test("week pack can use a client's colors without inventing a logo", () => {
   assert.match(cards[0]?.imageSvg ?? "", /#123456/);
   assert.match(cards[0]?.imageSvg ?? "", /#abcdef/);
   assert.doesNotMatch(cards[0]?.imageSvg ?? "", /<image href="/);
+});
+
+test("day-board generate writes one week-pack slot from the prompt theme", () => {
+  const source = readFileSync(join(process.cwd(), "src/server/content-studio/gallery-draft.ts"), "utf8");
+  assert.match(source, /focusDayFromMicahPrompt/);
+  assert.match(source, /pack.filter\(\(card\) => card.day === focusDay\)/);
+  assert.match(source, /input.focusDay === undefined/);
+  assert.match(source, /saved \$\{first\?\.theme/);
+  assert.doesNotMatch(source, /schedule this post/i);
 });
 
 test("AFE DEMO gallery shows 7 day-cards instead of the old blue placeholder boxes", () => {

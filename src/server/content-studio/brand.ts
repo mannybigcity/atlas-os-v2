@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { getBusinessProfile } from "@/server/business-profile/queries";
 import {
   brandKitFromMetadata,
   defaultMicahBrandKit,
@@ -8,7 +9,9 @@ import {
   MICAH_NAVY,
   normalizeBrandColor,
   parseSocialHandle,
+  prefillMicahBrandKit,
   type MicahBrandKit,
+  type MicahWorkspacePrefill,
 } from "../../lib/lions-den/micah-starter-week.ts";
 import { isMicahDemeanor, type MicahDemeanor } from "./gallery-art.ts";
 
@@ -88,6 +91,7 @@ export async function writeMicahBrandKit(input: {
     instagram: parseSocialHandle(input.kit.instagram),
     linkedin: parseSocialHandle(input.kit.linkedin),
     tiktok: parseSocialHandle(input.kit.tiktok),
+    setupSaved: true,
   };
   const row = {
     organization_id: input.organizationId,
@@ -152,4 +156,44 @@ export async function writeMicahBrandKit(input: {
 export function demeanorFromBrand(kit: MicahBrandKit): MicahDemeanor | null {
   if (kit.faithLanguage) return "faith";
   return isMicahDemeanor(kit.demeanor) ? kit.demeanor : null;
+}
+
+export async function readMicahWorkspacePrefill(
+  organizationId: string,
+  organizationName?: string | null,
+): Promise<MicahWorkspacePrefill> {
+  const prefill: MicahWorkspacePrefill = {
+    organizationName: organizationName ?? "",
+  };
+  try {
+    const profile = await getBusinessProfile(organizationId);
+    if (!profile.setupRequired && profile.data) {
+      prefill.audience = profile.data.targetCustomer;
+      prefill.weeklyOffer = profile.data.offer;
+    }
+  } catch {
+    // Brand setup still works from organization name alone.
+  }
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("sales_prospects")
+      .select("city")
+      .eq("converted_organization_id", organizationId)
+      .not("city", "is", null)
+      .limit(1)
+      .maybeSingle();
+    const city = String((data as { city?: string | null } | null)?.city ?? "").trim();
+    if (city) prefill.city = city;
+  } catch {
+    // City is optional. Name still prefills from the organization.
+  }
+  return prefill;
+}
+
+export function brandKitForMicahDesk(
+  drafts: DraftLike[] | null | undefined,
+  prefill: MicahWorkspacePrefill = {},
+): MicahBrandKit {
+  return prefillMicahBrandKit(brandKitFromDrafts(drafts), prefill);
 }
