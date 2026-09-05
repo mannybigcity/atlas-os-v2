@@ -1,6 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { getConfiguredDemoLoginEmail, isSuperAdminEmail } from "@/lib/env";
+import { createClient } from "@/lib/supabase/server";
 import {
   canSeeSampleDesk,
   isAfeClientDeskOrganization,
@@ -25,6 +26,7 @@ import {
   ensureTrialAccountForUser,
   ensureTrialWorkspaceForUser,
 } from "@/server/trials/provision";
+import { ensureTrialLionsDenSeed } from "@/server/trials/desk-seed";
 import {
   isTrialWorkspaceSetupError,
   trialWorkspaceSetupHref,
@@ -126,6 +128,14 @@ export async function getClientWorkspaceContext(
       if (!workspace.ok) {
         redirect(trialWorkspaceSetupHref(workspace.error));
       }
+
+      const userClient = await createClient();
+      await ensureTrialLionsDenSeed({
+        client: userClient,
+        organizationId: workspace.organizationId,
+        userId: user.id,
+        hasTrialProfile: true,
+      });
     }
   }
   const isSuperAdmin = isSuperAdminEmail(user.email);

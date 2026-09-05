@@ -27,6 +27,10 @@ export function isAfeLiveDesk(
   return isAfeOperatorDeskOrganization(organization) || isAfeClientDeskOrganization(organization);
 }
 
+export function isSampleLabeledSeedText(value: string | null | undefined) {
+  return /\bSAMPLE\b/.test(String(value ?? ""));
+}
+
 export function stripVisibleDemoLabel(value: string | null | undefined): string {
   return String(value ?? "")
     .replace(/\s*\(\s*demo\s*\)/gi, "")
@@ -129,6 +133,14 @@ export function presentLiveDeskDraft<
   draft: T,
 ): T {
   if (!isAfeLiveDesk(organization)) return draft;
+  if (
+    isSampleLabeledSeedText(draft.campaign) ||
+    isSampleLabeledSeedText(draft.title) ||
+    isSampleLabeledSeedText(draft.headline) ||
+    isSampleLabeledSeedText(draft.caption)
+  ) {
+    return draft;
+  }
 
   return {
     ...draft,
@@ -159,6 +171,13 @@ export function presentLiveDeskReviewItem<
   item: T,
 ): T {
   if (!isAfeLiveDesk(organization)) return item;
+  if (
+    isSampleLabeledSeedText(item.name) ||
+    isSampleLabeledSeedText(item.businessStatus) ||
+    isSampleLabeledSeedText(item.searchQuery)
+  ) {
+    return item;
+  }
 
   return {
     ...item,

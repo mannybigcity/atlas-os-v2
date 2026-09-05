@@ -17,7 +17,9 @@ import {
   ATLAS_STAFF_SAMPLE_EMPTY_EN,
   ATLAS_STAFF_SAMPLE_EMPTY_ES,
   lionsDenHubChromeCopy,
+  presentLiveDeskDraft,
   presentLiveDeskOpportunity,
+  presentLiveDeskReviewItem,
   stripVisibleDemoLabel,
 } from "./live-desk.ts";
 
@@ -106,6 +108,30 @@ test("visible DEMO labels are stripped from live AFE records and left on SIS and
 
   const untouched = presentLiveDeskOpportunity(sis, row);
   assert.equal(untouched.name, "ABC Plumbing (DEMO)");
+});
+
+test("SAMPLE trial-seed labels stay visible on live AFE review pile and gallery drafts", () => {
+  const trial = { name: "Harbor HVAC", slug: "harbor-hvac-trial" };
+  const review = presentLiveDeskReviewItem(trial, {
+    name: "Harbor Lane Auto Detail · SAMPLE",
+    formattedAddress: "SAMPLE address — not a real location. Do not visit or contact.",
+    searchQuery: "SAMPLE trial review pile — no live Places search",
+    businessStatus: "SAMPLE",
+  });
+  assert.match(review.name, /\bSAMPLE\b/);
+  assert.match(String(review.formattedAddress), /\bSAMPLE\b/);
+  assert.match(review.searchQuery, /\bSAMPLE\b/);
+  assert.equal(review.businessStatus, "SAMPLE");
+
+  const draft = presentLiveDeskDraft(trial, {
+    campaign: "SAMPLE week placeholders",
+    title: "SAMPLE · Day 1 · Monday",
+    headline: "Monday Motivation · SAMPLE placeholder",
+    caption: "SAMPLE gallery placeholder. Atlas did not post this to Facebook or Instagram.",
+    supportingText: "Gallery placeholder. Download and post it yourself.",
+  });
+  assert.match(draft.title, /\bSAMPLE\b/);
+  assert.match(draft.caption, /\bSAMPLE\b/);
 });
 
 test("MICAH uses the live Lion's Den hub pane and does not restore preview staff copy", () => {

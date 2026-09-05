@@ -17,6 +17,6 @@ test("founder SIS ensure never overwrites identity or seeds DEMO fixtures", () =
   assert.doesNotMatch(source, /\.update\(/);
   assert.doesNotMatch(source, /industry/);
   assert.doesNotMatch(source, /ABC Plumbing|123 Catering|XYZ Electric/);
-  assert.doesNotMatch(source, /upsertSisDemoDeskRecords|upsertSampleDeskRecords/);
+  assert.doesNotMatch(source, /upsertSisDemoDeskRecords|upsertSampleDeskRecords|applyTrialLionsDenSeed|ensureTrialLionsDenSeed/);
   assert.doesNotMatch(source, /afe-crm-demo|AFE_CRM_DEMO/);
 });
