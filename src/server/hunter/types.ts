@@ -1,3 +1,5 @@
+import type { HunterSearchFilters } from "@/server/hunter/filters";
+import { emptyHunterSearchFilters } from "@/server/hunter/filters";
 import type { HunterSearchFind } from "@/server/hunter/review";
 
 export type HunterSearchState = {
@@ -8,6 +10,8 @@ export type HunterSearchState = {
   persistedCount: number;
   acceptedCount: number;
   tableMissing: boolean;
+  rawCount: number;
+  filters: HunterSearchFilters;
 };
 
 export const initialHunterSearchState: HunterSearchState = {
@@ -18,4 +22,6 @@ export const initialHunterSearchState: HunterSearchState = {
   persistedCount: 0,
   acceptedCount: 0,
   tableMissing: false,
+  rawCount: 0,
+  filters: emptyHunterSearchFilters,
 };

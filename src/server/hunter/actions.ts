@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
 import { executeHunterPlacesSearch } from "@/server/hunter/search";
+import { parseHunterSearchFilters } from "@/server/hunter/filters";
 import {
   buildHunterSearchQuery,
   acceptedHunterOpportunityFields,
@@ -83,6 +84,8 @@ export async function searchHunterProspects(
     radiusMiles: radiusMilesRaw ? radiusMiles : null,
   });
 
+  const filters = parseHunterSearchFilters(formData);
+
   if (!parsed.ok) {
     return {
       status: "error",
@@ -92,6 +95,8 @@ export async function searchHunterProspects(
       persistedCount: 0,
       acceptedCount: 0,
       tableMissing: false,
+      rawCount: 0,
+      filters,
     };
   }
 
@@ -100,6 +105,7 @@ export async function searchHunterProspects(
     userId: user.id,
     textQuery: parsed.textQuery,
     radiusMiles: radiusMilesRaw ? radiusMiles : null,
+    filters,
   });
 }
 

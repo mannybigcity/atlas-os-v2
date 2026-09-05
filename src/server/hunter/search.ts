@@ -7,6 +7,12 @@ import {
 import { searchGooglePlacesText } from "@/server/integrations/google-places";
 import type { GooglePlaceProspect } from "@/server/integrations/google-places";
 import {
+  applyHunterSearchFilters,
+  emptyHunterSearchFilters,
+  formatHunterSearchCountMessage,
+  type HunterSearchFilters,
+} from "@/server/hunter/filters";
+import {
   HUNTER_SEARCH_RESULT_CAP,
   annotateHunterSearchPlaces,
   buildHunterSearchPersistNote,
@@ -25,6 +31,8 @@ export type HunterPlacesSearchResult = {
   persistedCount: number;
   acceptedCount: number;
   tableMissing: boolean;
+  rawCount: number;
+  filters: HunterSearchFilters;
 };
 
 function unsavedPlaces(places: GooglePlaceProspect[]): HunterSearchFind[] {
@@ -32,11 +40,16 @@ function unsavedPlaces(places: GooglePlaceProspect[]): HunterSearchFind[] {
 }
 
 function emptyHunterSearch(
-  input: Omit<HunterPlacesSearchResult, "places" | "persistedCount" | "acceptedCount" | "tableMissing"> & {
+  input: Omit<
+    HunterPlacesSearchResult,
+    "places" | "persistedCount" | "acceptedCount" | "tableMissing" | "rawCount" | "filters"
+  > & {
     places?: HunterSearchFind[];
     persistedCount?: number;
     acceptedCount?: number;
     tableMissing?: boolean;
+    rawCount?: number;
+    filters?: HunterSearchFilters;
   },
 ): HunterPlacesSearchResult {
   return {
@@ -45,6 +58,8 @@ function emptyHunterSearch(
     persistedCount: input.persistedCount ?? 0,
     acceptedCount: input.acceptedCount ?? 0,
     tableMissing: input.tableMissing ?? false,
+    rawCount: input.rawCount ?? 0,
+    filters: input.filters ?? emptyHunterSearchFilters,
   };
 }
 
@@ -127,9 +142,11 @@ export async function executeHunterPlacesSearch(input: {
   userId: string;
   textQuery: string;
   radiusMiles?: number | null;
+  filters?: HunterSearchFilters;
 }): Promise<HunterPlacesSearchResult> {
   const organizationId = input.organizationId;
   const radiusMiles = input.radiusMiles ?? null;
+  const filters = input.filters ?? emptyHunterSearchFilters;
   const supabase = await createClient();
   const usage = await hunterSearchUsageToday(supabase);
 
@@ -138,6 +155,7 @@ export async function executeHunterPlacesSearch(input: {
       status: "error",
       message: "Apply the Atlas Agent Usage Ledger migration before using a paid data API.",
       query: input.textQuery,
+      filters,
     });
   }
 
@@ -146,6 +164,7 @@ export async function executeHunterPlacesSearch(input: {
       status: "error",
       message: "HUNTER reached the 20-search daily safety cap. Review today's results before spending more.",
       query: input.textQuery,
+      filters,
     });
   }
 
@@ -158,19 +177,20 @@ export async function executeHunterPlacesSearch(input: {
       includeWebsite: true,
       includePureServiceAreaBusinesses: true,
     });
+    const places = applyHunterSearchFilters(result.places, filters);
 
     let persistedCount = 0;
     let acceptedCount = 0;
     let tableMissing = false;
     let persistFailed = false;
-    let annotatedPlaces = unsavedPlaces(result.places);
+    let annotatedPlaces = unsavedPlaces(places);
 
     if (organizationId) {
       const rows = placesToReviewInserts(
         organizationId,
         input.userId,
         input.textQuery,
-        result.places,
+        places,
       );
       if (rows.length > 0) {
         const { data: existing, error: existingError } = await supabase
@@ -215,7 +235,7 @@ export async function executeHunterPlacesSearch(input: {
             if (saved) knownRows = saved as HunterReviewRowRef[];
           }
           annotatedPlaces = annotateHunterSearchPlaces(
-            result.places,
+            places,
             knownRows,
             persistedPlaceIds,
           );
@@ -240,6 +260,8 @@ export async function executeHunterPlacesSearch(input: {
         status: "error",
         message: "The provider returned results, but Atlas could not record API usage. Run the search again only after checking the ledger.",
         query: input.textQuery,
+        rawCount: result.places.length,
+        filters,
       });
     }
 
@@ -259,12 +281,18 @@ export async function executeHunterPlacesSearch(input: {
 
     return {
       status: "success",
-      message: `${result.places.length} Google Maps result${result.places.length === 1 ? "" : "s"}.${persistNote}`,
+      message: `${formatHunterSearchCountMessage({
+        rawCount: result.places.length,
+        keptCount: places.length,
+        filters,
+      })}${persistNote}`,
       query: input.textQuery,
       places: annotatedPlaces,
       persistedCount,
       acceptedCount,
       tableMissing,
+      rawCount: result.places.length,
+      filters,
     };
   } catch (error) {
     const errorCode =
@@ -292,6 +320,7 @@ export async function executeHunterPlacesSearch(input: {
           ? "GOOGLE_PLACES_API_KEY is not configured in the server deployment environment."
           : "Google Places could not complete this search. The failed request was recorded.",
       query: input.textQuery,
+      filters,
     });
   }
 }
