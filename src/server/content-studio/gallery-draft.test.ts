@@ -159,6 +159,7 @@ test("day-board generate writes one week-pack slot from the prompt theme", () =>
   const source = readFileSync(join(process.cwd(), "src/server/content-studio/gallery-draft.ts"), "utf8");
   assert.match(source, /focusDayFromMicahPrompt/);
   assert.match(source, /pack.filter\(\(card\) => card.day === focusDay\)/);
+  assert.match(source, /input.focusDay === undefined/);
   assert.match(source, /saved \$\{first\?\.theme/);
   assert.doesNotMatch(source, /schedule this post/i);
 });

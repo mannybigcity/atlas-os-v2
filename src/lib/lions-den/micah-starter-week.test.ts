@@ -220,6 +220,13 @@ test("day-board brief hands off a MICAH create prompt for that weekday", () => {
   assert.equal(focusDayFromMicahPrompt(prompt), 5);
   assert.equal(focusDayFromMicahPrompt("Ask MICAH to create a Monday Motivation gallery draft"), 1);
   assert.equal(focusDayFromMicahPrompt("focus day 3 please"), 3);
+  assert.equal(
+    focusDayFromMicahPrompt(
+      composeMicahWeekBuildPrompt({ demeanor: "straight" }),
+    ),
+    1,
+    "week-build copy names every theme; gallery-draft must ignore that when focusDay is explicitly null",
+  );
   assert.equal(MICAH_STARTER_DAYS[0]?.angles.length, 5);
   assert.equal(MICAH_STARTER_DAYS.every((item) => item.angles.length >= 3 && item.angles.length <= 5), true);
 });

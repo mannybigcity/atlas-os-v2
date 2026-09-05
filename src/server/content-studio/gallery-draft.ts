@@ -126,11 +126,16 @@ export async function createMicahGalleryDraft(
     weekKey: `week-${new Date().toISOString().slice(0, 10)}`,
   });
   const requestedFocus =
-    typeof input.focusDay === "number" && Number.isInteger(input.focusDay)
-      ? input.focusDay
-      : focusDayFromMicahPrompt(input.prompt);
+    input.focusDay === undefined
+      ? focusDayFromMicahPrompt(input.prompt)
+      : input.focusDay;
   const focusDay =
-    requestedFocus && requestedFocus >= 1 && requestedFocus <= 7 ? requestedFocus : null;
+    typeof requestedFocus === "number" &&
+    Number.isInteger(requestedFocus) &&
+    requestedFocus >= 1 &&
+    requestedFocus <= 7
+      ? requestedFocus
+      : null;
   const cards = focusDay ? pack.filter((card) => card.day === focusDay) : pack;
   const first = cards[0];
   const title = clipDraftText(input.title || first?.title || "MICAH week pack", 160);
