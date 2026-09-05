@@ -12,10 +12,16 @@ import { countWonOpportunities } from "@/lib/lions-den/desk-clients";
 import { bucketFollowUpQueues, type DeskFollowUpItem } from "@/lib/lions-den/desk-queue";
 import { LionsDenCalendarBoard } from "@/components/lions-den/lions-den-calendar";
 import { LionsDenNotesBoard } from "@/components/lions-den/lions-den-notes";
+import { LionsDenActivationChecklist } from "@/components/lions-den/lions-den-activation-checklist";
+import {
+  isActivationSampleWalkthrough,
+  shouldShowActivationChecklist,
+} from "@/lib/lions-den/activation-checklist";
 
 type LionsDenOverviewProps = {
   organizationId?: string;
   organizationName: string;
+  organizationSlug?: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
   spanish: boolean;
@@ -23,6 +29,8 @@ type LionsDenOverviewProps = {
   sisDashboard?: SisDashboardData | null;
   prospects: OrganizationOpportunity[];
   reviewPile: HunterReviewItem[];
+  acceptedCount?: number;
+  foundCount?: number;
   drafts: ContentDraft[];
   notes: OrganizationNote[];
 };
@@ -34,6 +42,7 @@ function isDemoLabel(_value: string | null | undefined) {
 export function LionsDenOverview({
   organizationId,
   organizationName,
+  organizationSlug,
   previewOrgSlug,
   workspaceSlug,
   spanish,
@@ -41,10 +50,22 @@ export function LionsDenOverview({
   sisDashboard,
   prospects,
   reviewPile,
+  acceptedCount = 0,
+  foundCount,
   drafts,
   notes,
 }: LionsDenOverviewProps) {
   const href = (path: string) => lionsDenHref(path, previewOrgSlug, workspaceSlug);
+  const deskOrganization = {
+    name: organizationName,
+    slug: organizationSlug || workspaceSlug || previewOrgSlug,
+  };
+  const showActivation = shouldShowActivationChecklist({
+    organization: deskOrganization,
+    organizationId,
+    sisDesk: Boolean(sisDashboard),
+  });
+  const sampleWalkthrough = isActivationSampleWalkthrough(deskOrganization);
   const partyEvents = sisDashboard?.partyEvents ?? [];
   const inboxTasks = sisDashboard?.inboxTasks ?? [];
   const followUpItems: DeskFollowUpItem[] = [
@@ -82,24 +103,40 @@ export function LionsDenOverview({
 
   return (
     <div aria-label={spanish ? `Escritorio de ${organizationName || "The Lion’s Den"}` : `${organizationName || "The Lion’s Den"} desk`} className="ld-desk">
-      <section className="ld-desk-metrics grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8">
-        <MetricChip href={href("/client/prospects")} label={spanish ? "Prospectos" : "Prospects"} value={prospects.length} />
-        <MetricChip href={href("/client/david")} label={spanish ? "Hoy" : "Due today"} value={dueTodayCount} />
-        <MetricChip href={href("/client/notes")} label={spanish ? "Notas" : "Notes"} value={notes.length} />
-        <MetricChip href={href("/client/hunter")} label={spanish ? "HUNTER" : "HUNTER"} value={reviewPile.length} />
-        <MetricChip
-          href={href("/client/clients")}
-          label={spanish ? "Clientes" : "Clients"}
-          value={sisDashboard ? sisDashboard.counts.customers : countWonOpportunities(prospects)}
-        />
-        {sisDashboard ? (
-          <>
-            <MetricChip href={href("/client")} label={spanish ? "Leads SIS" : "SIS leads"} value={sisDashboard.counts.leads} />
-            <MetricChip href={href("/client")} label={spanish ? "Cotiz." : "Quotes"} value={sisDashboard.counts.quotes} />
-            <MetricChip href={href("/client")} label={spanish ? "Pedidos" : "Orders"} value={sisDashboard.counts.orders} />
-          </>
+      <section className="ld-desk-metrics space-y-1.5">
+        {showActivation && organizationId ? (
+          <LionsDenActivationChecklist
+            acceptedCount={acceptedCount}
+            drafts={drafts}
+            foundCount={foundCount}
+            hunterHref={href("/client/hunter")}
+            micahHref={`${href("/client/micah")}#micah-week-desk`}
+            organizationId={organizationId}
+            pendingCount={reviewPile.length}
+            prospectsHref={href("/client/prospects")}
+            sampleWalkthrough={sampleWalkthrough}
+            spanish={spanish}
+          />
         ) : null}
-        <MetricChip href={href("/client/micah")} label="MICAH" value={drafts.length} />
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8">
+          <MetricChip href={href("/client/prospects")} label={spanish ? "Prospectos" : "Prospects"} value={prospects.length} />
+          <MetricChip href={href("/client/david")} label={spanish ? "Hoy" : "Due today"} value={dueTodayCount} />
+          <MetricChip href={href("/client/notes")} label={spanish ? "Notas" : "Notes"} value={notes.length} />
+          <MetricChip href={href("/client/hunter")} label={spanish ? "HUNTER" : "HUNTER"} value={reviewPile.length} />
+          <MetricChip
+            href={href("/client/clients")}
+            label={spanish ? "Clientes" : "Clients"}
+            value={sisDashboard ? sisDashboard.counts.customers : countWonOpportunities(prospects)}
+          />
+          {sisDashboard ? (
+            <>
+              <MetricChip href={href("/client")} label={spanish ? "Leads SIS" : "SIS leads"} value={sisDashboard.counts.leads} />
+              <MetricChip href={href("/client")} label={spanish ? "Cotiz." : "Quotes"} value={sisDashboard.counts.quotes} />
+              <MetricChip href={href("/client")} label={spanish ? "Pedidos" : "Orders"} value={sisDashboard.counts.orders} />
+            </>
+          ) : null}
+          <MetricChip href={href("/client/micah")} label="MICAH" value={drafts.length} />
+        </div>
       </section>
 
       <div className="ld-desk-pipeline">
