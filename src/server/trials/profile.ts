@@ -1,4 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { extractTrialMetadata } from "@/server/trials/metadata";
+import { ensureTrialWorkspace } from "@/server/trials/workspace";
 
 export type TrialProfileInput = {
   fullName: string;
@@ -14,12 +16,13 @@ function clean(value: unknown, max: number) {
 }
 
 export async function ensureTrialProfile(userId: string, metadata: Record<string, unknown>) {
-  const fullName = clean(metadata.full_name, 160);
-  const businessName = clean(metadata.business_name, 200);
-  const email = clean(metadata.email, 320).toLowerCase();
-  const phone = clean(metadata.phone, 40);
-  const businessType = clean(metadata.business_type, 100);
-  const primaryGrowthGoal = clean(metadata.primary_growth_goal, 1000);
+  const extracted = extractTrialMetadata(metadata);
+  const fullName = extracted.fullName;
+  const businessName = extracted.businessName;
+  const email = extracted.email;
+  const phone = extracted.phone;
+  const businessType = extracted.businessType;
+  const primaryGrowthGoal = extracted.primaryGrowthGoal;
 
   if (!fullName || !businessName || !email || !phone || !businessType || !primaryGrowthGoal) {
     return { ok: false as const, error: "missing_profile" };
@@ -38,7 +41,15 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
   }
 
   if (existing) {
-    return { ok: true as const };
+    const workspace = await ensureTrialWorkspace({
+      userId,
+      businessName,
+      email,
+    });
+    if (!workspace.ok) {
+      return { ok: false as const, error: workspace.error };
+    }
+    return { ok: true as const, created: false as const };
   }
 
   const { error } = await service.from("atlas_trial_profiles").insert({
@@ -58,7 +69,16 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
     return { ok: false as const, error: "create_failed" };
   }
 
-  return { ok: true as const };
+  const workspace = await ensureTrialWorkspace({
+    userId,
+    businessName,
+    email,
+  });
+  if (!workspace.ok) {
+    return { ok: false as const, error: workspace.error };
+  }
+
+  return { ok: true as const, created: true as const };
 }
 
 export async function getTrialProfile(userId: string) {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Fraunces, Manrope } from "next/font/google";
+import { Fraunces, Inter, Manrope } from "next/font/google";
 import { RouteFooter } from "@/components/route-footer";
 import { normalizeSiteLanguage, SITE_LANGUAGE_COOKIE } from "@/lib/site-language";
 import "./globals.css";
@@ -8,6 +8,11 @@ import "./globals.css";
 const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-body",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-ui",
 });
 
 const fraunces = Fraunces({
@@ -31,7 +36,7 @@ export default async function RootLayout({
   const language = normalizeSiteLanguage(cookieStore.get(SITE_LANGUAGE_COOKIE)?.value);
 
   return (
-    <html className={`${manrope.variable} ${fraunces.variable}`} lang={language}>
+    <html className={`${manrope.variable} ${fraunces.variable} ${inter.variable}`} lang={language}>
       <body>
         {children}
         <RouteFooter initialLanguage={language} />

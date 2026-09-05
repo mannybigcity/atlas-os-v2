@@ -1,21 +1,30 @@
 import {
   getClientPortalName,
   getClientPortalOrgLabel,
+  isAfeClientDeskOrganization,
   isAfeCrmDemoName,
   isAfeCrmDemoOrganization,
+  isAfeOperatorDeskOrganization,
 } from "../client-portal/identity.ts";
 
 export const AFE_LIVE_DESK_COMPANIES = ["ABC Plumbing", "123 Catering", "XYZ Electric"] as const;
 
-export const ATLAS_STAFF_EMPTY_EN =
-  "Ask about follow-up, prospects on this desk, or what is due today.";
-export const ATLAS_STAFF_EMPTY_ES =
-  "Pregunta por el seguimiento, los prospectos o lo que toca hoy en este escritorio.";
+export const ATLAS_STAFF_EMPTY_EN = "Ask about follow-up or what is due today.";
+export const ATLAS_STAFF_EMPTY_ES = "Pregunta por el seguimiento o lo que toca hoy en este escritorio.";
+
+export const ATLAS_STAFF_SAMPLE_EMPTY_EN =
+  "Ask about follow-up, ABC Plumbing, 123 Catering, XYZ Electric, or what is due today.";
+export const ATLAS_STAFF_SAMPLE_EMPTY_ES =
+  "Pregunta por el seguimiento, ABC Plumbing, 123 Catering, XYZ Electric o lo que toca hoy en este escritorio.";
 
 export function isAfeLiveDesk(
   organization?: { name?: string | null; slug?: string | null } | null,
 ) {
-  return isAfeCrmDemoOrganization(organization) || isAfeCrmDemoName(organization?.name);
+  if (!organization || isAfeCrmDemoOrganization(organization) || isAfeCrmDemoName(organization.name)) {
+    return false;
+  }
+
+  return isAfeOperatorDeskOrganization(organization) || isAfeClientDeskOrganization(organization);
 }
 
 export function stripVisibleDemoLabel(value: string | null | undefined): string {
@@ -177,9 +186,16 @@ export function lionsDenHubChromeCopy(
   organization?: { name?: string | null; slug?: string | null } | null,
   spanish = false,
 ) {
+  const sampleDesk = isAfeCrmDemoOrganization(organization) || isAfeCrmDemoName(organization?.name);
   return {
     portalName: getClientPortalName(organization?.name, organization),
     orgLabel: getClientPortalOrgLabel(organization),
-    atlasEmpty: spanish ? ATLAS_STAFF_EMPTY_ES : ATLAS_STAFF_EMPTY_EN,
+    atlasEmpty: spanish
+      ? sampleDesk
+        ? ATLAS_STAFF_SAMPLE_EMPTY_ES
+        : ATLAS_STAFF_EMPTY_ES
+      : sampleDesk
+        ? ATLAS_STAFF_SAMPLE_EMPTY_EN
+        : ATLAS_STAFF_EMPTY_EN,
   };
 }

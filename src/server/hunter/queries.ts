@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import type { WorkspaceQueryResult } from "@/server/organizations/queries";
-import type { HunterReviewItem, HunterReviewStatus } from "@/server/hunter/review";
+import {
+  isMissingHunterReviewTable,
+  type HunterReviewItem,
+  type HunterReviewStatus,
+} from "@/server/hunter/review";
 
 type HunterReviewRow = {
   id: string;
@@ -38,7 +42,7 @@ function mapReviewItem(row: HunterReviewRow): HunterReviewItem {
 
 export async function getHunterReviewPile(
   organizationId: string,
-): Promise<WorkspaceQueryResult<HunterReviewItem[]>> {
+): Promise<WorkspaceQueryResult<HunterReviewItem[]> & { acceptedCount: number }> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("organization_hunter_review_items")
@@ -51,16 +55,32 @@ export async function getHunterReviewPile(
     .limit(80);
 
   if (error) {
+    if (isMissingHunterReviewTable(error)) {
+      return {
+        data: [],
+        setupRequired: true,
+        error: error.message,
+        acceptedCount: 0,
+      };
+    }
     return {
       data: [],
-      setupRequired: true,
-      error: error.message,
+      setupRequired: false,
+      error: null,
+      acceptedCount: 0,
     };
   }
+
+  const accepted = await supabase
+    .from("organization_hunter_review_items")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .eq("status", "accepted");
 
   return {
     data: ((data ?? []) as HunterReviewRow[]).map(mapReviewItem),
     setupRequired: false,
     error: null,
+    acceptedCount: accepted.count ?? 0,
   };
 }

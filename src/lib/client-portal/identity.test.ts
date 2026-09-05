@@ -3,7 +3,13 @@ import test from "node:test";
 import {
   AFE_CRM_DEMO_SLUG,
   AFE_CRM_LIVE_NAME,
+  AFE_OPERATOR_DESK_NAME,
+  AFE_OPERATOR_DESK_SLUG,
+  FOUNDER_MAILBOX_EMAIL,
+  SAMPLE_DESK_DISPLAY_NAME,
+  SAMPLE_DESK_LOGIN_EMAIL,
   afeCrmDemoPreviewHref,
+  canSeeSampleDesk,
   defaultLionsDenDeskHref,
   escapeIlikeExact,
   findOrganizationByPreviewSlug,
@@ -13,16 +19,27 @@ import {
   isAfeCrmDemoName,
   isAfeCrmDemoOrganization,
   isAfeCrmDemoSlug,
+  isAfeOperatorDeskOrganization,
+  isForbiddenSampleDeskLoginEmail,
   isGuestClientPreview,
   isQTimeProductions,
   isQTimeWorkspaceSlug,
+  isSampleDeskLoginEmail,
+  isSampleDeskPreviewRequest,
   isSisCustomCreations,
   isSisLionsDenRequest,
   isSisOrganization,
   isSisWorkspaceSlug,
   keepPrimaryOrganizationForSisRequest,
   organizationSlugsMatch,
+  organizationsVisibleToActor,
+  pickAfeOperatorDesk,
   resolveOperatorDeskOrganization,
+  resolvedSampleDeskLoginEmail,
+  canEnsureAfeOperatorDesk,
+  canEnsureSisWorkingOrg,
+  shouldOpenAfeOperatorDesk,
+  shouldOpenSisWorkingDesk,
   shouldShowSuperAdminCrm,
   sisLionsDenPreviewHref,
   SIS_LIONS_DEN_PREVIEW_SLUG,
@@ -109,14 +126,11 @@ test("super-admin CRM is never the /client front door", () => {
   );
 });
 
-test("AFE desk is afe-crm-demo, not SIS, and is not a guest preview", () => {
-  const liveDesk = { name: AFE_CRM_LIVE_NAME, slug: AFE_CRM_DEMO_SLUG };
+test("AFE sample desk is afe-crm-demo, not SIS, and is not a guest preview", () => {
   assert.equal(isAfeCrmDemoSlug(AFE_CRM_DEMO_SLUG), true);
   assert.equal(isAfeCrmDemoSlug(SIS_LIONS_DEN_PREVIEW_SLUG), false);
-  assert.equal(isAfeCrmDemoOrganization(liveDesk), true);
-  assert.equal(isAfeCrmDemoOrganization({ name: "AFE CRM DEMO", slug: "afe-crm-demo" }), true);
-  assert.equal(isAfeCrmDemoOrganization({ name: "Atlas CRM DEMO", slug: "afe-crm-demo" }), true);
-  assert.equal(isAfeCrmDemoName("AFE CRM DEMO"), true);
+  assert.equal(isAfeCrmDemoOrganization({ name: SAMPLE_DESK_DISPLAY_NAME, slug: "afe-crm-demo" }), true);
+  assert.equal(isAfeCrmDemoName("Sample desk"), true);
   assert.equal(isAfeCrmDemoName("Atlas CRM DEMO"), true);
   assert.equal(isAfeCrmDemoName(AFE_CRM_LIVE_NAME), false);
   assert.equal(
@@ -127,7 +141,10 @@ test("AFE desk is afe-crm-demo, not SIS, and is not a guest preview", () => {
     isAfeCrmDemoOrganization({ name: "SIS Custom Creations", slug: "afe-crm-demo" }),
     false,
   );
-  assert.equal(isAfeClientDeskOrganization(liveDesk), true);
+  assert.equal(
+    isAfeClientDeskOrganization({ name: SAMPLE_DESK_DISPLAY_NAME, slug: "afe-crm-demo" }),
+    false,
+  );
   assert.equal(
     isAfeClientDeskOrganization({ name: "SIS Custom Creations", slug: SIS_LIONS_DEN_PREVIEW_SLUG }),
     false,
@@ -136,28 +153,67 @@ test("AFE desk is afe-crm-demo, not SIS, and is not a guest preview", () => {
     isAfeClientDeskOrganization({ name: "QTime Productions", slug: "qtime-productions" }),
     false,
   );
-  assert.equal(isGuestClientPreview(liveDesk), false);
-  assert.equal(defaultLionsDenDeskHref(), "/client");
-  assert.equal(afeCrmDemoPreviewHref(), "/client?previewOrg=afe-crm-demo");
   assert.equal(
-    afeCrmDemoPreviewHref([{ name: AFE_CRM_LIVE_NAME, slug: "AFE-CRM-DEMO" }]),
-    "/client?previewOrg=AFE-CRM-DEMO",
+    isAfeClientDeskOrganization({ name: AFE_OPERATOR_DESK_NAME, slug: AFE_OPERATOR_DESK_SLUG }),
+    true,
   );
+  assert.equal(
+    isAfeOperatorDeskOrganization({ name: AFE_OPERATOR_DESK_NAME, slug: AFE_OPERATOR_DESK_SLUG }),
+    true,
+  );
+  assert.equal(
+    isAfeOperatorDeskOrganization({ name: SAMPLE_DESK_DISPLAY_NAME, slug: "afe-crm-demo" }),
+    false,
+  );
+  assert.equal(
+    isAfeOperatorDeskOrganization({ name: "SIS Custom Creations", slug: SIS_LIONS_DEN_PREVIEW_SLUG }),
+    false,
+  );
+  assert.equal(
+    isGuestClientPreview({ name: SAMPLE_DESK_DISPLAY_NAME, slug: "afe-crm-demo" }),
+    false,
+  );
+  assert.equal(getClientPortalName("Sample desk"), "The Lion’s Den");
+  assert.equal(getClientPortalName(AFE_OPERATOR_DESK_NAME), "The Lion’s Den");
+  assert.equal(defaultLionsDenDeskHref(), "/client");
+  assert.equal(afeCrmDemoPreviewHref(), "/login");
+  assert.doesNotMatch(afeCrmDemoPreviewHref(), /previewOrg/i);
   assert.doesNotMatch(defaultLionsDenDeskHref(), /sis-diy/i);
-  assert.doesNotMatch(afeCrmDemoPreviewHref(), /sis-diy/i);
 });
 
-test("AFE desk chrome is The Lion's Den / Atlas and never includes DEMO", () => {
-  const liveDesk = { name: AFE_CRM_LIVE_NAME, slug: AFE_CRM_DEMO_SLUG };
-  const oldName = { name: "AFE CRM DEMO", slug: AFE_CRM_DEMO_SLUG };
+test("sample desk login is the Gmail plus-address, never the founder mailbox", () => {
+  assert.equal(SAMPLE_DESK_LOGIN_EMAIL, "atlasforentrepreneurs+demo@gmail.com");
+  assert.match(SAMPLE_DESK_LOGIN_EMAIL, /\+demo@gmail\.com$/);
+  assert.doesNotMatch(SAMPLE_DESK_LOGIN_EMAIL, /@atlasforentrepreneurs\.com$/);
+  assert.notEqual(SAMPLE_DESK_LOGIN_EMAIL, FOUNDER_MAILBOX_EMAIL);
+  assert.equal(isSampleDeskLoginEmail(SAMPLE_DESK_LOGIN_EMAIL), true);
+  assert.equal(isSampleDeskLoginEmail(FOUNDER_MAILBOX_EMAIL), false);
+  assert.equal(isForbiddenSampleDeskLoginEmail(FOUNDER_MAILBOX_EMAIL), true);
+  assert.equal(isForbiddenSampleDeskLoginEmail("info@atlasforentrepreneurs.com"), true);
+  assert.equal(resolvedSampleDeskLoginEmail(FOUNDER_MAILBOX_EMAIL), SAMPLE_DESK_LOGIN_EMAIL);
+  assert.equal(resolvedSampleDeskLoginEmail("info@atlasforentrepreneurs.com"), SAMPLE_DESK_LOGIN_EMAIL);
+  assert.equal(canSeeSampleDesk(FOUNDER_MAILBOX_EMAIL), false);
+  assert.equal(canSeeSampleDesk("info@atlasforentrepreneurs.com"), false);
+  assert.equal(canSeeSampleDesk(SAMPLE_DESK_LOGIN_EMAIL), true);
+  assert.equal(isSampleDeskLoginEmail("info@atlasforentrepreneurs.com", "info@atlasforentrepreneurs.com"), false);
+  assert.equal(isSampleDeskPreviewRequest("afe-crm-demo", ""), true);
+});
+
+test("live AFE chrome is The Lion's Den and never includes DEMO; sample chrome stays Sample desk", () => {
+  const liveDesk = { name: AFE_OPERATOR_DESK_NAME, slug: AFE_OPERATOR_DESK_SLUG };
+  const sampleDesk = { name: SAMPLE_DESK_DISPLAY_NAME, slug: AFE_CRM_DEMO_SLUG };
+  const oldSampleName = { name: "AFE CRM DEMO", slug: AFE_CRM_DEMO_SLUG };
   const chrome = lionsDenHubChromeCopy(liveDesk);
   const chromeEs = lionsDenHubChromeCopy(liveDesk, true);
-  const oldChrome = lionsDenHubChromeCopy(oldName);
+  const sampleChrome = lionsDenHubChromeCopy(sampleDesk);
+  const oldChrome = lionsDenHubChromeCopy(oldSampleName);
 
   assert.equal(getClientPortalName(liveDesk.name, liveDesk), "The Lion’s Den");
-  assert.equal(getClientPortalName(oldName.name, oldName), "The Lion’s Den");
-  assert.equal(getClientPortalOrgLabel(liveDesk), "Atlas");
-  assert.equal(getClientPortalOrgLabel(oldName), "Atlas");
+  assert.equal(getClientPortalName(sampleDesk.name, sampleDesk), "The Lion’s Den");
+  assert.equal(getClientPortalName(oldSampleName.name, oldSampleName), "The Lion’s Den");
+  assert.equal(getClientPortalOrgLabel(liveDesk), AFE_OPERATOR_DESK_NAME);
+  assert.equal(getClientPortalOrgLabel(sampleDesk), SAMPLE_DESK_DISPLAY_NAME);
+  assert.equal(getClientPortalOrgLabel(oldSampleName), SAMPLE_DESK_DISPLAY_NAME);
   assert.doesNotMatch(getClientPortalName(liveDesk.name, liveDesk), /DEMO/i);
   assert.doesNotMatch(getClientPortalOrgLabel(liveDesk), /DEMO/i);
   assert.doesNotMatch(`${chrome.portalName} ${chrome.orgLabel} ${chrome.atlasEmpty}`, /demo/i);
@@ -165,6 +221,7 @@ test("AFE desk chrome is The Lion's Den / Atlas and never includes DEMO", () => 
   assert.doesNotMatch(`${oldChrome.portalName} ${oldChrome.orgLabel}`, /demo/i);
   assert.doesNotMatch(chrome.atlasEmpty, /sample|preview desk|fake/i);
   assert.doesNotMatch(getClientPortalName(liveDesk.name, liveDesk), /DAVID/);
+  assert.doesNotMatch(sampleChrome.orgLabel, /DEMO/i);
 });
 
 test("admin Lion's Den door uses the live SIS slug or a matched organization", () => {
@@ -214,6 +271,10 @@ test("super admin opening SIS Lion's Den is an operator, not a guest preview", (
     isGuestClientPreview({ name: "QTime Productions", slug: "qtime-productions" }),
     true,
   );
+  assert.equal(
+    isGuestClientPreview({ name: AFE_OPERATOR_DESK_NAME, slug: AFE_OPERATOR_DESK_SLUG }),
+    false,
+  );
   assert.equal(isGuestClientPreview(null), false);
 });
 
@@ -262,10 +323,10 @@ test("super admin opening SIS gets the SIS workspace id even when the first memb
   assert.equal(mixedCase?.id, "org-sis");
 });
 
-test("default desk prefers an AFE membership and never auto-opens SIS", () => {
+test("default desk prefers an AFE membership and never auto-opens SIS or the sample desk", () => {
   const qtime = { id: "org-qtime", name: "QTime Productions", slug: "qtime-productions" };
   const sis = { id: "org-sis", name: "SIS Custom Creations", slug: "SIS-DIY-big-complete-showcase" };
-  const afe = { id: "org-afe", name: AFE_CRM_LIVE_NAME, slug: "afe-crm-demo" };
+  const afe = { id: "org-afe", name: SAMPLE_DESK_DISPLAY_NAME, slug: "afe-crm-demo" };
   const harbor = { id: "org-harbor", name: "Harbor Lights Studio", slug: "harbor-lights" };
 
   assert.equal(
@@ -278,46 +339,97 @@ test("default desk prefers an AFE membership and never auto-opens SIS", () => {
   assert.equal(
     resolveOperatorDeskOrganization({
       previewOrgSlug: AFE_CRM_DEMO_SLUG,
-      membershipOrganizations: [sis, qtime],
+      membershipOrganizations: [sis, qtime, harbor],
       directory: [sis, qtime, afe],
     })?.id,
-    "org-afe",
+    "org-harbor",
   );
 
   assert.equal(
     resolveOperatorDeskOrganization({
       previewOrgSlug: AFE_CRM_DEMO_SLUG,
       membershipOrganizations: [sis],
-      directory: [sis],
-    }),
-    undefined,
+      directory: [sis, afe],
+    })?.id,
+    "org-sis",
   );
 
   assert.equal(
     resolveOperatorDeskOrganization({
-      preferAfeDemoDesk: true,
-      membershipOrganizations: [sis, qtime],
+      membershipOrganizations: [sis, qtime, afe, harbor],
+    })?.id,
+    "org-harbor",
+  );
+
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      allowSampleDesk: true,
+      membershipOrganizations: [sis, qtime, afe],
       directory: [sis, qtime, afe],
     })?.id,
     "org-afe",
   );
 
+  assert.deepEqual(
+    organizationsVisibleToActor([sis, afe, harbor], false).map((row) => row.id),
+    ["org-sis", "org-harbor"],
+  );
+  assert.deepEqual(
+    organizationsVisibleToActor([sis, afe, harbor], true).map((row) => row.id),
+    ["org-afe"],
+  );
+
   const byName = findOrganizationByPreviewSlug("afe-crm-demo", [
     { name: "QTime Productions", slug: "qtime-productions" },
-    { name: "Atlas CRM DEMO", slug: "atlas-crm-demo" },
+    { name: SAMPLE_DESK_DISPLAY_NAME, slug: "atlas-crm-demo" },
     { name: "SIS Custom Creations", slug: "sis-diy-big-complete-showcase" },
   ]);
-  assert.equal(byName?.name, "Atlas CRM DEMO");
+  assert.equal(byName?.name, SAMPLE_DESK_DISPLAY_NAME);
   assert.equal(byName?.slug, "atlas-crm-demo");
-
-  const byLiveName = findOrganizationByPreviewSlug("afe-crm-demo", [
-    { name: "QTime Productions", slug: "qtime-productions" },
-    { name: AFE_CRM_LIVE_NAME, slug: AFE_CRM_DEMO_SLUG },
-    { name: "SIS Custom Creations", slug: "sis-diy-big-complete-showcase" },
-  ]);
-  assert.equal(byLiveName?.name, AFE_CRM_LIVE_NAME);
-  assert.equal(byLiveName?.slug, AFE_CRM_DEMO_SLUG);
   assert.ok(Boolean(afe.id));
+});
+
+test("admin default desk never resolves to afe-crm-demo and prefers the AFE operator org", () => {
+  const admin = { id: "org-admin", name: AFE_OPERATOR_DESK_NAME, slug: AFE_OPERATOR_DESK_SLUG };
+  const sample = { id: "org-sample", name: SAMPLE_DESK_DISPLAY_NAME, slug: "afe-crm-demo" };
+  const sis = { id: "org-sis", name: "SIS Custom Creations", slug: "sis-diy-big-complete-showcase" };
+
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      previewOrgSlug: AFE_CRM_DEMO_SLUG,
+      membershipOrganizations: [sample, sis],
+      directory: [sample, sis, admin],
+    })?.id,
+    "org-admin",
+  );
+  assert.notEqual(
+    resolveOperatorDeskOrganization({
+      membershipOrganizations: [sis, sample],
+      directory: [sis, sample, admin],
+    })?.id,
+    "org-sample",
+  );
+  assert.equal(
+    pickAfeOperatorDesk([sis, sample, admin])?.id,
+    "org-admin",
+  );
+  assert.equal(shouldOpenAfeOperatorDesk({ seesSampleDesk: true }), false);
+  assert.equal(shouldOpenAfeOperatorDesk({ sisRequested: true }), false);
+  assert.equal(shouldOpenAfeOperatorDesk({ hasPreviewOrganization: true }), false);
+  assert.equal(shouldOpenAfeOperatorDesk({ requestedWorkspaceSlug: "qtime-productions" }), false);
+  assert.equal(shouldOpenAfeOperatorDesk({}), true);
+  assert.equal(canEnsureAfeOperatorDesk(FOUNDER_MAILBOX_EMAIL), false);
+  assert.equal(canEnsureSisWorkingOrg(FOUNDER_MAILBOX_EMAIL), true);
+  assert.equal(canEnsureSisWorkingOrg(SAMPLE_DESK_LOGIN_EMAIL), false);
+  assert.equal(shouldOpenSisWorkingDesk({ isFounderMailbox: true }), true);
+  assert.equal(shouldOpenSisWorkingDesk({ isFounderMailbox: true, seesSampleDesk: true }), false);
+  assert.equal(canEnsureAfeOperatorDesk(SAMPLE_DESK_LOGIN_EMAIL), false);
+  assert.equal(canEnsureAfeOperatorDesk("owner@example.com", null, true), true);
+  assert.equal(canEnsureAfeOperatorDesk(SAMPLE_DESK_LOGIN_EMAIL, SAMPLE_DESK_LOGIN_EMAIL, true), false);
+  assert.equal(
+    findOrganizationByPreviewSlug(AFE_OPERATOR_DESK_SLUG, [sis, sample, admin])?.id,
+    "org-admin",
+  );
 });
 
 test("a SIS preview request never treats SIS as a guest and never returns QTIME", () => {
@@ -330,4 +442,36 @@ test("a SIS preview request never treats SIS as a guest and never returns QTIME"
   });
   assert.equal(resolved, undefined);
   assert.equal(isGuestClientPreview({ name: "SIS Custom Creations", slug: "sis-diy" }), false);
+});
+
+test("founder working desk resolves to SIS even with empty memberships", () => {
+  const sis = { id: "org-sis", name: "SIS Custom Creations", slug: SIS_LIONS_DEN_PREVIEW_SLUG };
+  const sample = { id: "org-sample", name: SAMPLE_DESK_DISPLAY_NAME, slug: "afe-crm-demo" };
+  const admin = { id: "org-admin", name: AFE_OPERATOR_DESK_NAME, slug: AFE_OPERATOR_DESK_SLUG };
+
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      preferSisWorkingDesk: true,
+      membershipOrganizations: [],
+      directory: [admin, sample, sis],
+    })?.id,
+    "org-sis",
+  );
+  assert.equal(
+    resolveOperatorDeskOrganization({
+      preferSisWorkingDesk: true,
+      allowSampleDesk: true,
+      membershipOrganizations: [sample, sis],
+      directory: [sample, sis],
+    })?.id,
+    "org-sample",
+  );
+  assert.notEqual(
+    resolveOperatorDeskOrganization({
+      preferSisWorkingDesk: true,
+      membershipOrganizations: [sis],
+      directory: [sis, sample],
+    })?.id,
+    "org-sample",
+  );
 });

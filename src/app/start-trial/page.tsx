@@ -43,9 +43,13 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
             ? "Completa todos los campos, acepta los términos y la política de privacidad, y confirma que ambas contraseñas coincidan."
             : params?.error === "weak_password"
               ? "Usa al menos 12 caracteres con mayúsculas, minúsculas, un número y un símbolo."
-              : params?.error
-                ? "No pudimos iniciar la prueba. Revisa tus datos e inténtalo otra vez."
-                : null,
+              : params?.error === "account_exists"
+                ? "account_exists"
+                : params?.error === "profile_setup"
+                  ? "Tu correo está confirmado, pero Atlas no pudo terminar de configurar tu espacio de trabajo de prueba. Vuelve a iniciar sesión o contacta al equipo de Atlas."
+                  : params?.error
+                    ? "No pudimos iniciar la prueba. Revisa tus datos e inténtalo otra vez."
+                    : null,
         businessType: "Tipo de negocio",
         businessTypePlaceholder: "Elige un tipo de negocio",
         growthGoal: "Meta principal de crecimiento",
@@ -79,9 +83,13 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
             ? "Complete every field, accept the terms and privacy policy, and make sure both passwords match."
             : params?.error === "weak_password"
               ? "Use at least 12 characters with uppercase, lowercase, a number, and a symbol."
-              : params?.error
-                ? "We could not start the trial. Check your details and try again."
-                : null,
+            : params?.error === "account_exists"
+              ? "account_exists"
+              : params?.error === "profile_setup"
+                ? "Your email is confirmed, but Atlas could not finish setting up your trial workspace. Sign in again or contact the Atlas team."
+                : params?.error
+                  ? "We could not start the trial. Check your details and try again."
+                  : null,
         businessType: "Business type",
         businessTypePlaceholder: "Choose a business type",
         growthGoal: "Primary growth goal",
@@ -128,7 +136,15 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
             <p className="mt-3 text-sm leading-6 text-slate-600">{copy.formDescription}</p>
           </div>
           <form action={startTrial} className="mt-7 space-y-5">
-            {copy.message ? <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">{copy.message}</div> : null}
+            {copy.message === "account_exists" ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-900">
+                {language === "es"
+                  ? <>Ya existe una cuenta con este correo. <Link className="font-semibold underline" href="/login">Inicia sesión</Link> o <Link className="font-semibold underline" href="/forgot-password">restablece tu contraseña</Link>.</>
+                  : <>Account already exists. <Link className="font-semibold underline" href="/login">Sign in</Link> or <Link className="font-semibold underline" href="/forgot-password">reset your password</Link>.</>}
+              </div>
+            ) : copy.message ? (
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">{copy.message}</div>
+            ) : null}
             <div className="grid gap-5 sm:grid-cols-2">
               {fields.map((field) => {
                 const [label, placeholder] = language === "es" ? field.es : field.en;

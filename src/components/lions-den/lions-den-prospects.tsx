@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
+import { prospectDetailPath, prospectPlacesCard } from "@/lib/lions-den/prospect-places";
 
 type LionsDenProspectsBoardProps = {
   prospects: OrganizationOpportunity[];
@@ -46,45 +47,38 @@ export function LionsDenProspectsBoard({
         </div>
       ) : (
         <div className="mt-5 divide-y divide-[#ece7d8]">
-          {prospects.map((prospect) => (
-            <article className="py-4" key={prospect.id}>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h3 className="font-semibold text-[#071b42]">{prospect.name}</h3>
-                  {prospect.contactName || prospect.contactPhone ? (
-                    <p className="mt-1 text-sm font-medium text-[#071b42]">
-                      {[prospect.contactName, prospect.contactPhone].filter(Boolean).join(" · ")}
-                    </p>
-                  ) : null}
-                  {prospect.contactEmail ? (
-                    <p className="mt-1 text-sm text-[#5c6578]">{prospect.contactEmail}</p>
-                  ) : null}
-                  <p className="mt-1 text-sm text-[#5c6578]">{prospect.researchSummary}</p>
-                </div>
-                <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
-                  {prospect.stage.replaceAll("_", " ")}
-                </span>
-              </div>
-              {prospect.nextAction ? (
-                <p className="mt-2 text-sm font-medium text-[#071b42]">{prospect.nextAction}</p>
-              ) : null}
-              {prospect.events[0] ? (
-                <p className="mt-2 text-xs uppercase tracking-[0.12em] text-[#5c6578]">
-                  {prospect.events[prospect.events.length - 1]?.summary}
-                </p>
-              ) : null}
-              {prospect.sourceUrl ? (
-                <a
-                  className="mt-2 inline-flex text-sm font-semibold text-[#071b42] underline"
-                  href={prospect.sourceUrl}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  {spanish ? "Verificar en Google Maps" : "Verify on Google Maps"}
-                </a>
-              ) : null}
-            </article>
-          ))}
+          {prospects.map((prospect) => {
+            const places = prospectPlacesCard(prospect);
+            const href = prospectDetailPath(
+              prospect.id,
+              lionsDenHref("/client/prospects", previewOrgSlug, workspaceSlug),
+            );
+            return (
+              <article className="py-4" key={prospect.id}>
+                <Link className="block rounded-2xl outline-offset-4 hover:bg-[#fffdf6]" href={href}>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h3 className="font-semibold text-[#071b42] underline decoration-[#d8c27a] underline-offset-4">
+                        {prospect.name}
+                      </h3>
+                      {prospect.contactName || places.phone ? (
+                        <p className="mt-1 text-sm font-medium text-[#071b42]">
+                          {[prospect.contactName, places.phone].filter(Boolean).join(" · ")}
+                        </p>
+                      ) : null}
+                      {places.address ? (
+                        <p className="mt-1 text-sm text-[#5c6578]">{places.address}</p>
+                      ) : null}
+                      <p className="mt-1 text-sm text-[#5c6578]">{prospect.nextAction || prospect.researchSummary}</p>
+                    </div>
+                    <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
+                      {prospect.stage.replaceAll("_", " ")}
+                    </span>
+                  </div>
+                </Link>
+              </article>
+            );
+          })}
         </div>
       )}
     </section>

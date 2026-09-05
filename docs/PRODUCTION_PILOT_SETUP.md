@@ -82,8 +82,8 @@ In **Supabase > Authentication > Emails > Confirm signup**, use:
 
 ```html
 <h2>Confirm your Atlas email</h2>
-<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next=/starter">Confirm email address</a></p>
-<p>Atlas will finish setting up your starter workspace after confirmation.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next=/client%3Fstatus%3Dwelcome">Confirm email address</a></p>
+<p>Atlas will open The Lion's Den after confirmation.</p>
 ```
 
 In **Supabase > Authentication > Emails > Reset password**, use:
@@ -100,7 +100,7 @@ the Atlas confirmation button.
 
 These links open a confirmation page first. Atlas verifies the one-time token
 only after the user presses the secure confirmation button. Signup confirmation
-opens the starter workspace; invitations open the create-password page; reset
+opens The Lion's Den at /client; invitations open the create-password page; reset
 emails open the reset-password page.
 
 ## Supabase production checks

@@ -1,3 +1,4 @@
+import { googleMapsUrlFromPlaceId } from "../../lib/lions-den/prospect-places.ts";
 import type { GooglePlaceProspect } from "@/server/integrations/google-places";
 
 export const HUNTER_DAILY_SEARCH_CAP = 20;
@@ -49,16 +50,165 @@ export function buildHunterSearchQuery(input: {
   return { ok: true as const, textQuery, location };
 }
 
+export function parseHunterChatQuery(prompt: string) {
+  const raw = prompt.trim();
+  if (!raw) {
+    return { ok: false as const, error: "Enter a business type plus a ZIP code or city/state." };
+  }
+
+  const zipCode = raw.match(/\b(\d{5})(?:-\d{4})?\b/)?.[1] ?? "";
+  const locationClause = raw.match(/\b(?:in|near|around|within)\s+(.+)$/i)?.[1] ?? "";
+  let city = "";
+  let state = "";
+
+  if (locationClause) {
+    const cityState =
+      locationClause.match(/^([^,]+),\s*([A-Za-z]{2})\b/) ??
+      locationClause.match(/^([A-Za-z][A-Za-z\s.'-]+?)\s+([A-Za-z]{2})\b/);
+    if (cityState) {
+      city = cityState[1].replace(/\b\d{5}(?:-\d{4})?\b/g, "").trim();
+      state = cityState[2].toUpperCase();
+    } else {
+      city = locationClause
+        .replace(/\b\d{5}(?:-\d{4})?\b/g, "")
+        .replace(/\bzip\s*code\b/gi, "")
+        .trim();
+    }
+  }
+
+  const service = raw
+    .replace(/\b(please|can you|could you|i need|i want)\b/gi, " ")
+    .replace(/\b(find|search|look\s*up|get|show me|show|google\s+places?)\b/gi, " ")
+    .replace(/\b(me|some|a|an|the|for)\b/gi, " ")
+    .replace(/\b(prospects?|leads?|local\s+businesses?|businesses?)\b/gi, " ")
+    .replace(/\b(in|near|around|within)\s+.+$/i, " ")
+    .replace(/\b\d{5}(?:-\d{4})?\b/g, " ")
+    .replace(/[,:]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || (/\b(leads?|prospects?|local\s+businesses?|businesses?)\b/i.test(raw)
+      ? "local businesses"
+      : "");
+
+  return buildHunterSearchQuery({
+    service,
+    zipCode,
+    city,
+    state,
+    radiusMiles: null,
+  });
+}
+
 export function hunterDailyCapReached(usedToday: number) {
   return usedToday >= HUNTER_DAILY_SEARCH_CAP;
+}
+
+export function pickStoredPlacePhone(place: {
+  nationalPhoneNumber?: string | null;
+  internationalPhoneNumber?: string | null;
+}) {
+  const national = place.nationalPhoneNumber?.trim() || null;
+  const international = place.internationalPhoneNumber?.trim() || null;
+  const chosen = national || international;
+  if (!chosen) return null;
+  const stored = chosen.slice(0, 80);
+  return stored.length >= 7 ? stored : null;
 }
 
 export function acceptedProspectResearchSummary(place: {
   name: string;
   formattedAddress: string | null;
+  phone?: string | null;
+  websiteUrl?: string | null;
 }) {
   const address = place.formattedAddress?.trim() || "Address not listed on Google Maps";
-  return `Accepted from the HUNTER review pile. ${place.name} is now a Prospect the salesman can call. Address: ${address}. Atlas has not emailed, called, or texted this business.`;
+  const phone = place.phone?.trim();
+  const website = place.websiteUrl?.trim();
+  const extras = [
+    phone ? ` Phone: ${phone}.` : "",
+    website ? ` Website: ${website}.` : "",
+  ].join("");
+  return `Accepted from the HUNTER review pile. ${place.name} is now a Prospect the salesman can call. Address: ${address}.${extras} Atlas has not emailed, called, or texted this business.`;
+}
+
+export type AcceptedHunterOpportunityInput = {
+  reviewItemId: string;
+  placeId: string;
+  name: string;
+  formattedAddress: string | null;
+  googleMapsUrl: string | null;
+  websiteUrl: string | null;
+  nationalPhoneNumber?: string | null;
+  internationalPhoneNumber?: string | null;
+  primaryType: string | null;
+  businessStatus: string | null;
+};
+
+export function acceptedHunterOpportunityFields(input: AcceptedHunterOpportunityInput) {
+  const phone = pickStoredPlacePhone(input);
+  const mapsUrl =
+    input.googleMapsUrl?.trim() || googleMapsUrlFromPlaceId(input.placeId);
+  const websiteUrl = input.websiteUrl?.trim() || null;
+  const formattedAddress = input.formattedAddress?.trim() || null;
+  const researchSummary = acceptedProspectResearchSummary({
+    name: input.name,
+    formattedAddress,
+    phone,
+    websiteUrl,
+  });
+
+  return {
+    name: input.name.slice(0, 220),
+    opportunity_type: "customer" as const,
+    stage: "ready_for_follow_up" as const,
+    fit_score: 0,
+    owner_role: "client" as const,
+    source_label: "HUNTER Google Maps",
+    source_url: mapsUrl?.slice(0, 2000) ?? null,
+    contact_phone: phone,
+    research_summary: researchSummary.slice(0, 3000),
+    next_action: acceptedProspectNextAction(),
+    metadata: {
+      hunter_review_item_id: input.reviewItemId,
+      google_place_id: input.placeId.slice(0, 256),
+      google_maps_url: mapsUrl,
+      google_maps_attribution: "Google Maps",
+      formatted_address: formattedAddress,
+      website_url: websiteUrl,
+      national_phone_number: input.nationalPhoneNumber?.trim() || null,
+      international_phone_number: input.internationalPhoneNumber?.trim() || null,
+      no_outreach_sent: true,
+      accepted_for_calling: true,
+      primary_type: input.primaryType,
+      business_status: input.businessStatus,
+    },
+  };
+}
+
+export function mergeHunterPlaceDetails(
+  item: {
+    id: string;
+    place_id: string;
+    name: string;
+    formatted_address: string | null;
+    google_maps_url: string | null;
+    website_url: string | null;
+    primary_type: string | null;
+    business_status: string | null;
+  },
+  details: GooglePlaceProspect | null,
+): AcceptedHunterOpportunityInput {
+  return {
+    reviewItemId: item.id,
+    placeId: details?.placeId || item.place_id,
+    name: details?.name || item.name,
+    formattedAddress: details?.formattedAddress ?? item.formatted_address,
+    googleMapsUrl: details?.googleMapsUrl ?? item.google_maps_url,
+    websiteUrl: details?.websiteUrl ?? item.website_url,
+    nationalPhoneNumber: details?.nationalPhoneNumber ?? null,
+    internationalPhoneNumber: details?.internationalPhoneNumber ?? null,
+    primaryType: details?.primaryType ?? item.primary_type,
+    businessStatus: details?.businessStatus ?? item.business_status,
+  };
 }
 
 export function acceptedProspectNextAction() {
@@ -84,4 +234,117 @@ export function placesToReviewInserts(
     status: "pending" as const,
     created_by: userId,
   }));
+}
+
+export const HUNTER_REVIEW_PILE_MIGRATION = "supabase/migrations/20260828174500_hunter_review_pile.sql";
+
+export type HunterFindLane = "review" | "prospect" | "unsaved";
+
+export type HunterSearchFind = GooglePlaceProspect & {
+  reviewItemId: string | null;
+  opportunityId: string | null;
+  lane: HunterFindLane;
+};
+
+export type HunterReviewRowRef = {
+  id: string;
+  place_id: string;
+  status: HunterReviewStatus;
+  accepted_opportunity_id: string | null;
+};
+
+export function isMissingHunterReviewTable(
+  error: { code?: string | null; message?: string | null } | null | undefined,
+) {
+  if (!error) return false;
+  const code = String(error.code ?? "");
+  const message = String(error.message ?? "");
+  if (code === "42P01" || code === "PGRST205") return true;
+  return (
+    /organization_hunter_review_items/i.test(message) &&
+    /does not exist|could not find|schema cache/i.test(message)
+  );
+}
+
+export function annotateHunterSearchPlaces(
+  places: GooglePlaceProspect[],
+  existing: HunterReviewRowRef[],
+  persistedPlaceIds: Iterable<string> = [],
+): HunterSearchFind[] {
+  const persisted = new Set(persistedPlaceIds);
+  const byPlace = new Map(existing.map((row) => [row.place_id, row]));
+  return places.map((place) => {
+    const row = byPlace.get(place.placeId);
+    if (row?.status === "accepted") {
+      return {
+        ...place,
+        reviewItemId: row.id,
+        opportunityId: row.accepted_opportunity_id,
+        lane: "prospect" as const,
+      };
+    }
+    if (row?.status === "pending" || persisted.has(place.placeId)) {
+      return {
+        ...place,
+        reviewItemId: row?.id ?? null,
+        opportunityId: null,
+        lane: "review" as const,
+      };
+    }
+    return {
+      ...place,
+      reviewItemId: row?.id ?? null,
+      opportunityId: null,
+      lane: "unsaved" as const,
+    };
+  });
+}
+
+export function buildHunterSearchPersistNote(input: {
+  organizationId: string | null;
+  persistedCount: number;
+  acceptedCount: number;
+  tableMissing: boolean;
+  persistFailed: boolean;
+}) {
+  if (!input.organizationId) {
+    return " Results stay only in this page session and are not copied into the CRM.";
+  }
+  if (input.tableMissing) {
+    return ` Atlas found these businesses but could not save them. The review-pile table is missing on this database. Founder: apply ${HUNTER_REVIEW_PILE_MIGRATION} in the Supabase SQL editor, then search again.`;
+  }
+  if (input.persistFailed) {
+    return " Atlas found these businesses but could not save them to the REVIEW PILE. Try the search again. Atlas did not contact anyone.";
+  }
+  const saved = input.persistedCount
+    ? ` ${input.persistedCount} listing${input.persistedCount === 1 ? "" : "s"} saved to the REVIEW PILE. They are not Prospects until you accept them. Atlas will not email, call, or text anyone.`
+    : "";
+  const already = input.acceptedCount
+    ? ` ${input.acceptedCount} listing${input.acceptedCount === 1 ? "" : "s"} already accepted stay in Prospects.`
+    : "";
+  if (saved && already) return `${saved}${already}`;
+  if (saved) return saved;
+  if (already) {
+    return " These listings are already Prospects. Open Prospects to call. Atlas did not contact anyone.";
+  }
+  return " No new listings were added to the REVIEW PILE.";
+}
+
+export function formatHunterChatAnswer(result: {
+  message: string;
+  places: Array<{ name: string; formattedAddress: string | null }>;
+}) {
+  const names = result.places
+    .slice(0, 10)
+    .map((place, index) => {
+      const address = place.formattedAddress ? ` — ${place.formattedAddress}` : "";
+      return `${index + 1}. ${place.name}${address}`;
+    })
+    .join("\n");
+
+  const listing = names
+    ? `\n\n${names}\n\nAccept finds in the REVIEW PILE when you want them on the call list. Atlas did not call, email, or text anyone.`
+    : " Accept finds in the REVIEW PILE when you want them on the call list. Atlas did not call, email, or text anyone.";
+
+  return `${result.message}${listing}`.slice(0, 1600);
 }

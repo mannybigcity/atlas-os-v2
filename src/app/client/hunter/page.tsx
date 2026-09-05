@@ -38,10 +38,10 @@ type HunterPageProps = {
 function hunterStatusCopy(code: string | undefined, spanish: boolean) {
   const messages: Record<string, { en: string; es: string; tone: "ok" | "warn" }> = {
     accepted: { en: "That listing is now a Prospect. The salesman can call. Atlas did not contact anyone.", es: "Esa ficha ahora es un prospecto. El vendedor puede llamar. Atlas no contactó a nadie.", tone: "ok" },
-    already_accepted: { en: "That listing was already accepted into Prospects.", es: "Esa ficha ya estaba aceptada en Prospectos.", tone: "ok" },
+    already_accepted: { en: "That listing was already accepted into Prospects. Open Prospects to call.", es: "Esa ficha ya estaba aceptada en Prospectos. Abre Prospectos para llamar.", tone: "ok" },
     dismissed: { en: "That listing was removed from the review pile.", es: "Esa ficha se quitó de la pila de revisión.", tone: "ok" },
-    duplicate: { en: "A Prospect with that business name already exists.", es: "Ya existe un prospecto con ese nombre.", tone: "warn" },
-    accept_failed: { en: "The listing could not be accepted. Confirm the review pile migration is applied.", es: "No se pudo aceptar la ficha. Confirma que la migración de la pila de revisión esté aplicada.", tone: "warn" },
+    duplicate: { en: "A Prospect with that business name already exists. Open Prospects to work that call.", es: "Ya existe un prospecto con ese nombre. Abre Prospectos para esa llamada.", tone: "warn" },
+    accept_failed: { en: "The listing could not be accepted. Try Accept again from the REVIEW PILE.", es: "No se pudo aceptar la ficha. Intenta Aceptar otra vez desde la PILA DE REVISIÓN.", tone: "warn" },
     dismiss_failed: { en: "The listing could not be dismissed.", es: "No se pudo descartar la ficha.", tone: "warn" },
     missing: { en: "That review item was not found.", es: "No se encontró ese hallazgo.", tone: "warn" },
     invalid: { en: "That review action was not valid.", es: "Esa acción de revisión no fue válida.", tone: "warn" },
@@ -69,23 +69,35 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
     ? await getHunterReviewPile(primaryOrganization.id)
     : null;
   const status = hunterStatusCopy(params?.hunter, spanish);
+  const prospectsHref = clientWorkspaceHref("/client/prospects", previewOrgSlug);
+  const acceptedCount = reviewPile?.acceptedCount ?? 0;
+  const showProspectsLink = params?.hunter === "accepted" || params?.hunter === "already_accepted" || params?.hunter === "duplicate";
 
   const board = (
     <div className="space-y-5">
       {status ? (
         <div className={`rounded-2xl border p-4 text-sm leading-6 ${status.tone === "ok" ? "border-[#d8c27a] bg-[#fff8e6] text-[#071b42]" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
           {spanish ? status.es : status.en}
+          {showProspectsLink ? (
+            <p className="mt-2">
+              <a className="font-semibold underline" href={prospectsHref}>
+                {spanish ? "Abrir Prospectos" : "Open Prospects"}
+              </a>
+            </p>
+          ) : null}
         </div>
       ) : null}
 
-      <HunterSearch organizationId={primaryOrganization?.id} />
+      <HunterSearch organizationId={primaryOrganization?.id} prospectsHref={prospectsHref} />
 
       {primaryOrganization ? (
         <HunterReviewPile
+          acceptedCount={acceptedCount}
           items={(reviewPile && !reviewPile.setupRequired ? reviewPile.data : []).map((item) =>
             presentLiveDeskReviewItem(primaryOrganization, item),
           )}
           organizationId={primaryOrganization.id}
+          prospectsHref={prospectsHref}
           setupRequired={Boolean(reviewPile?.setupRequired)}
           spanish={spanish}
         />

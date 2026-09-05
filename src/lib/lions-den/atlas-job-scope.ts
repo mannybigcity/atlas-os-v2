@@ -40,9 +40,20 @@ const JOB_KEYWORDS = [
   "check in",
   "content",
   "campaign",
+  "post",
+  "posts",
+  "pic",
+  "picture",
+  "social",
+  "image",
+  "instagram",
+  "facebook",
+  "google places",
   "review",
   "queue",
   "workspace",
+  "satisfaction",
+  "satisfied",
 ];
 
 const TRIVIA_PATTERNS = [
@@ -72,11 +83,21 @@ function includesAny(value: string, keywords: string[]) {
   return keywords.some((keyword) => value.includes(keyword));
 }
 
+function hasJobKeyword(value: string) {
+  return includesAny(value, JOB_KEYWORDS) || /\bweeks?\b/.test(value);
+}
+
 export function isLionDenJobPrompt(prompt: string) {
   const normalized = prompt.trim().toLowerCase();
   if (!normalized) return false;
-  if (includesAny(normalized, TRIVIA_PATTERNS) && !includesAny(normalized, JOB_KEYWORDS)) {
+  if (includesAny(normalized, TRIVIA_PATTERNS) && !hasJobKeyword(normalized)) {
     return false;
   }
-  return includesAny(normalized, JOB_KEYWORDS);
+  if (
+    (/\b\d{5}\b/.test(normalized) && /\b(find|search|near|places|business)/.test(normalized)) ||
+    /\b(find|search|look\s*up)\b.+\b(in|near|around)\s+(?!the\b|this\b|my\b|our\b)/.test(normalized)
+  ) {
+    return true;
+  }
+  return hasJobKeyword(normalized);
 }

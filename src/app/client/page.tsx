@@ -7,13 +7,13 @@ import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenOverview } from "@/components/lions-den/lions-den-overview";
 import { getClientPortalOrgLabel, isSisLionsDenRequest, isSisOrganization, shouldShowSuperAdminCrm } from "@/lib/client-portal/identity";
+import { clientOverviewRendersLionsDen, usesLionsDenHub } from "@/lib/lions-den/client-hub";
 import {
   presentLiveDeskDraft,
   presentLiveDeskNote,
   presentLiveDeskOpportunity,
   presentLiveDeskReviewItem,
 } from "@/lib/lions-den/live-desk";
-import { usesLionsDenHub } from "@/lib/lions-den/client-hub";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
 import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
@@ -48,6 +48,8 @@ type ClientDashboardPageProps = {
     profile?: string;
     panel?: string;
     status?: string;
+    error?: string;
+    reason?: string;
     workspace?: string;
     lang?: string;
   }>;
@@ -100,8 +102,10 @@ export default async function ClientDashboardPage({
     : null;
 
   const isSisWorkspace = isSisOrganization(primaryOrganization);
-  const useLionsDen = usesLionsDenHub(primaryOrganization);
-  const dashboard = primaryOrganization && !isSisWorkspace && !useLionsDen
+  const useLionsDen = clientOverviewRendersLionsDen(primaryOrganization, {
+    showSuperAdminCrm: Boolean(organizations),
+  });
+  const dashboard = primaryOrganization && !isSisWorkspace && !usesLionsDenHub(primaryOrganization)
     ? await getClientDashboardData(primaryOrganization.id)
     : null;
   const sisDashboard = primaryOrganization && isSisWorkspace
@@ -166,6 +170,29 @@ export default async function ClientDashboardPage({
           {spanish
             ? "No pudimos cargar el acceso al espacio de trabajo. Comunícate con tu equipo para que podamos restaurar la cuenta."
             : "We could not load workspace access. Contact your workspace team so we can restore the account."}
+        </StatusAlert>
+      ) : null}
+      {params?.error === "workspace_setup" ? (
+        <StatusAlert tone="rose">
+          {params?.reason === "missing_identity"
+            ? spanish
+              ? "Tu cuenta está activa, pero falta el nombre de tu negocio. Vuelve a registrarte o contacta al equipo de Atlas."
+              : "Your account is active, but your business name is missing. Sign up again or contact the Atlas team."
+            : params?.reason === "lookup_failed"
+              ? spanish
+                ? "Tu cuenta está activa, pero no pudimos verificar el acceso al espacio de trabajo. Contacta al equipo de Atlas."
+                : "Your account is active, but we could not verify workspace access. Contact the Atlas team."
+              : params?.reason === "membership_failed"
+                ? spanish
+                  ? "Tu cuenta está activa, pero no pudimos vincular tu membresía al espacio de trabajo. Contacta al equipo de Atlas."
+                  : "Your account is active, but we could not link your workspace membership. Contact the Atlas team."
+                : params?.reason === "create_failed"
+                  ? spanish
+                    ? "Tu cuenta está activa, pero no pudimos crear tu espacio de trabajo empresarial. Contacta al equipo de Atlas."
+                    : "Your account is active, but we could not create your business workspace. Contact the Atlas team."
+                  : spanish
+                    ? "Tu cuenta está activa, pero no pudimos crear tu espacio de trabajo empresarial. Vuelve a iniciar sesión o contacta al equipo de Atlas."
+                    : "Your account is active, but we could not create your business workspace. Try signing in again or contact the Atlas team."}
         </StatusAlert>
       ) : null}
       {!workspace.isSuperAdmin && !memberships.setupRequired && memberships.data.length === 0 ? (

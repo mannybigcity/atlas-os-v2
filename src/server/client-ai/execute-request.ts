@@ -20,8 +20,17 @@ import {
   decideClientAiRoute,
   getClientAiRoleSpec,
   isClientAiRole,
+  isHunterFindPrompt,
+  isMicahCreatePrompt,
   type ClientAiRole,
 } from "./guardrails.ts";
+import { isAfeCrmDemoOrganization, canSeeSampleDesk } from "../../lib/client-portal/identity.ts";
+import {
+  demeanorAskMessage,
+  resolveMicahDemeanor,
+} from "../content-studio/gallery-art.ts";
+import { withStaffHandoff } from "../../lib/lions-den/atlas-staff-handoff.ts";
+import { formatHunterChatAnswer } from "../hunter/review.ts";
 import {
   initialClientAiActionState,
   type ClientAiActionState,
@@ -46,7 +55,7 @@ export const clientAiResponseSchema = {
 } as const;
 
 type MembershipLike = {
-  organization?: { id: string; name?: string | null } | null;
+  organization?: { id: string; name?: string | null; slug?: string | null } | null;
 };
 
 type Lookup<T> = {
@@ -90,6 +99,46 @@ export type ClientAiRequestDeps = {
     response: string;
     routedTo: ClientAiRole | null;
   }) => Promise<{ id: string; createdAt: string }>;
+  runHunterChatSearch?: (input: {
+    organizationId: string;
+    userId: string;
+    prompt: string;
+  }) => Promise<
+    | { status: "needs_input"; message: string }
+    | {
+        status: "success" | "error";
+        message: string;
+        query: string;
+        places: Array<{ name: string; formattedAddress: string | null }>;
+        persistedCount: number;
+      }
+  >;
+  createMicahGalleryDraft?: (input: {
+    organizationId: string;
+    userId: string;
+    prompt: string;
+    demeanor: "motivational" | "friendly_local" | "comical" | "straight" | "faith";
+    demoDesk?: boolean;
+    headline?: string | null;
+    caption?: string | null;
+    title?: string | null;
+  }) => Promise<{
+    status: "success" | "error";
+    draftId: string | null;
+    draftIds?: string[];
+    title: string;
+    headline: string;
+    caption: string;
+    count?: number;
+    message: string;
+  }>;
+  readMicahDemeanor?: (
+    organizationId: string,
+  ) => Promise<"motivational" | "friendly_local" | "comical" | "straight" | "faith" | null>;
+  getOrganizationIdentity?: (
+    organizationId: string,
+  ) => Promise<{ name?: string | null; slug?: string | null } | null>;
+  configuredDemoLoginEmail?: string | null;
 };
 
 export function parseClientAiResponse(value: unknown): ClientAiResponse {
@@ -405,6 +454,44 @@ function summarizeDashboard(organizationName: string, dashboard: DashboardLike) 
   };
 }
 
+function formatDavidWorkspaceAnswer(workspace: ReturnType<typeof summarizeDashboard>) {
+  const parts: string[] = [];
+  const pipeline = workspace.openPipeline;
+  if (pipeline.length > 0) {
+    parts.push(
+      pipeline
+        .slice(0, 5)
+        .map((item) => {
+          const next = item.nextAction ? ` Next: ${item.nextAction}` : "";
+          return `${item.name} (${item.stage}).${next}`;
+        })
+        .join(" "),
+    );
+  } else if (workspace.opportunities.length > 0) {
+    parts.push(
+      workspace.opportunities
+        .slice(0, 5)
+        .map((item) => `${item.name} (${item.stage})`)
+        .join(" "),
+    );
+  }
+
+  if (workspace.approvalQueue.length > 0) {
+    parts.push(
+      `Review queue: ${workspace.approvalQueue
+        .slice(0, 3)
+        .map((item) => item.title)
+        .join("; ")}.`,
+    );
+  }
+
+  if (parts.length === 0) {
+    return "DAVID sees no open pipeline, follow-up, or notes on this desk yet. Atlas did not invent contacts and did not call, email, or text anyone.";
+  }
+
+  return `${parts.join(" ")} DAVID did not call, email, or text anyone. No new contacts were invented.`;
+}
+
 function unloggedClientAiResponse(input: {
   status: "success" | "blocked" | "failed";
   role: ClientAiRole;
@@ -529,8 +616,9 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
     }
 
     const isSuperAdmin = deps.isSuperAdminEmail(user.email);
+    const seesSampleDesk = canSeeSampleDesk(user.email, deps.configuredDemoLoginEmail);
     const memberships = await deps.getUserMemberships(user.id);
-    if (memberships.setupRequired && !isSuperAdmin) {
+    if (memberships.setupRequired && !isSuperAdmin && !seesSampleDesk) {
       return {
         ...initialClientAiActionState,
         status: "failed",
@@ -539,9 +627,29 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
       };
     }
 
-    const membership = memberships.data.find(
+    const visibleMemberships = memberships.data.filter((entry) => {
+      const organization = entry.organization;
+      if (!organization) return false;
+      return seesSampleDesk
+        ? isAfeCrmDemoOrganization(organization)
+        : !isAfeCrmDemoOrganization(organization);
+    });
+    const membership = visibleMemberships.find(
       (entry) => entry.organization?.id === organizationId,
     );
+    const identity =
+      membership?.organization ??
+      (await deps.getOrganizationIdentity?.(organizationId)) ??
+      null;
+
+    if (isAfeCrmDemoOrganization(identity) && !seesSampleDesk) {
+      return {
+        ...initialClientAiActionState,
+        status: "blocked",
+        role,
+        error: "That workspace is not assigned to your account.",
+      };
+    }
 
     if (!membership && !isSuperAdmin) {
       return {
@@ -627,11 +735,101 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
     const resolvedRole = decision.routedTo ?? role;
     const roleSpec = getClientAiRoleSpec(resolvedRole);
 
-    if (decision.scopeStatus === "rerouted" && resolvedRole === "atlas") {
-      const response =
-        decision.reason ?? "That question belongs with the coordinator.";
-      const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+    if (
+      resolvedRole === "hunter" &&
+      isHunterFindPrompt(prompt) &&
+      deps.runHunterChatSearch
+    ) {
+      const hunt = await deps.runHunterChatSearch({
+        organizationId,
+        userId: user.id,
+        prompt,
+      });
 
+      if (hunt.status === "needs_input") {
+        const response = hunt.message;
+        try {
+          const logged = await deps.logClientAiRequest({
+            organizationId,
+            requestedBy: user.id,
+            role,
+            scopeStatus: "needs_input",
+            status: "blocked",
+            prompt,
+            response,
+            routedTo: "hunter",
+          });
+          return {
+            status: "blocked",
+            role,
+            routedTo: "hunter",
+            scopeStatus: "needs_input",
+            requestId: logged.id,
+            createdAt: logged.createdAt,
+            answer: response,
+            nextStep: "Add a business type and a ZIP or city/state, then send again.",
+            missingInputs: ["Business type", "ZIP or city/state"],
+            error: null,
+            dailyUsage: currentUsage,
+          };
+        } catch {
+          return unloggedClientAiResponse({
+            status: "blocked",
+            role,
+            routedTo: "hunter",
+            scopeStatus: "needs_input",
+            answer: response,
+            nextStep: "Add a business type and a ZIP or city/state, then send again.",
+            missingInputs: ["Business type", "ZIP or city/state"],
+            dailyUsage: currentUsage,
+          });
+        }
+      }
+
+      const response = hunt.status === "success"
+        ? withStaffHandoff("hunter", formatHunterChatAnswer(hunt))
+        : hunt.message;
+
+      if (hunt.status !== "success") {
+        try {
+          const logged = await deps.logClientAiRequest({
+            organizationId,
+            requestedBy: user.id,
+            role,
+            scopeStatus: decision.scopeStatus,
+            status: "failed",
+            prompt,
+            response,
+            routedTo: "hunter",
+          });
+          return {
+            status: "failed",
+            role,
+            routedTo: "hunter",
+            scopeStatus: decision.scopeStatus,
+            requestId: logged.id,
+            createdAt: logged.createdAt,
+            answer: response,
+            nextStep: "Try the search again with a business type and city or ZIP. Atlas will not contact anyone.",
+            missingInputs: [],
+            error: response,
+            dailyUsage: currentUsage,
+          };
+        } catch {
+          return unloggedClientAiResponse({
+            status: "failed",
+            role,
+            routedTo: "hunter",
+            scopeStatus: decision.scopeStatus,
+            answer: response,
+            nextStep: "Try the search again with a business type and city or ZIP. Atlas will not contact anyone.",
+            dailyUsage: currentUsage,
+            error: response,
+          });
+        }
+      }
+
+      const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
       try {
         const logged = await deps.logClientAiRequest({
           organizationId,
@@ -641,18 +839,17 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
           status: "succeeded",
           prompt,
           response,
-          routedTo: resolvedRole,
+          routedTo: "hunter",
         });
-
         return {
           status: "success",
           role,
-          routedTo: resolvedRole,
+          routedTo: "hunter",
           scopeStatus: decision.scopeStatus,
           requestId: logged.id,
           createdAt: logged.createdAt,
           answer: response,
-          nextStep: "Switch to the coordinator for a workspace-wide answer.",
+          nextStep: "Accept the finds you want on HUNTER, then open Prospects to call. Atlas will not contact them.",
           missingInputs: [],
           error: null,
           dailyUsage,
@@ -661,10 +858,157 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
         return unloggedClientAiResponse({
           status: "success",
           role,
-          routedTo: resolvedRole,
+          routedTo: "hunter",
           scopeStatus: decision.scopeStatus,
           answer: response,
-          nextStep: "Switch to the coordinator for a workspace-wide answer.",
+          nextStep: "Accept the finds you want on HUNTER, then open Prospects to call. Atlas will not contact them.",
+          dailyUsage,
+        });
+      }
+    }
+
+    if (
+      resolvedRole === "micah" &&
+      isMicahCreatePrompt(prompt) &&
+      deps.createMicahGalleryDraft
+    ) {
+      const identity =
+        membership?.organization ??
+        (await deps.getOrganizationIdentity?.(organizationId)) ??
+        null;
+      const demoDesk = isAfeCrmDemoOrganization(identity);
+      const storedDemeanor = (await deps.readMicahDemeanor?.(organizationId)) ?? null;
+      const resolved = resolveMicahDemeanor({
+        prompt,
+        stored: storedDemeanor,
+        demoDesk,
+      });
+      if (!resolved.demeanor) {
+        const response = withStaffHandoff(
+          "micah",
+          demeanorAskMessage({
+            demoDesk,
+            blockedFaithOnDemo: resolved.blockedFaithOnDemo,
+          }),
+        );
+        try {
+          const logged = await deps.logClientAiRequest({
+            organizationId,
+            requestedBy: user.id,
+            role,
+            scopeStatus: "needs_input",
+            status: "blocked",
+            prompt,
+            response,
+            routedTo: "micah",
+          });
+          return {
+            status: "blocked",
+            role,
+            routedTo: "micah",
+            scopeStatus: "needs_input",
+            requestId: logged.id,
+            createdAt: logged.createdAt,
+            answer: response,
+            nextStep: "Reply with Motivational, Friendly/local, Comical, or Straight.",
+            missingInputs: ["Week voice"],
+            error: null,
+            dailyUsage: currentUsage,
+          };
+        } catch {
+          return unloggedClientAiResponse({
+            status: "blocked",
+            role,
+            routedTo: "micah",
+            scopeStatus: "needs_input",
+            answer: response,
+            nextStep: "Reply with Motivational, Friendly/local, Comical, or Straight.",
+            missingInputs: ["Week voice"],
+            dailyUsage: currentUsage,
+          });
+        }
+      }
+
+      const draft = await deps.createMicahGalleryDraft({
+        organizationId,
+        userId: user.id,
+        prompt,
+        demeanor: resolved.demeanor,
+        demoDesk,
+      });
+
+      const answer = withStaffHandoff("micah", draft.message);
+      if (draft.status !== "success") {
+        try {
+          const logged = await deps.logClientAiRequest({
+            organizationId,
+            requestedBy: user.id,
+            role,
+            scopeStatus: decision.scopeStatus,
+            status: "failed",
+            prompt,
+            response: answer,
+            routedTo: "micah",
+          });
+          return {
+            status: "failed",
+            role,
+            routedTo: "micah",
+            scopeStatus: decision.scopeStatus,
+            requestId: logged.id,
+            createdAt: logged.createdAt,
+            answer,
+            nextStep: "Ask again from Talk to Atlas. Nothing was posted.",
+            missingInputs: [],
+            error: null,
+            dailyUsage: currentUsage,
+          };
+        } catch {
+          return unloggedClientAiResponse({
+            status: "failed",
+            role,
+            routedTo: "micah",
+            scopeStatus: decision.scopeStatus,
+            answer,
+            nextStep: "Ask again from Talk to Atlas. Nothing was posted.",
+            dailyUsage: currentUsage,
+          });
+        }
+      }
+
+      const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+      try {
+        const logged = await deps.logClientAiRequest({
+          organizationId,
+          requestedBy: user.id,
+          role,
+          scopeStatus: decision.scopeStatus,
+          status: "succeeded",
+          prompt,
+          response: answer,
+          routedTo: "micah",
+        });
+        return {
+          status: "success",
+          role,
+          routedTo: "micah",
+          scopeStatus: decision.scopeStatus,
+          requestId: logged.id,
+          createdAt: logged.createdAt,
+          answer,
+          nextStep: "The gallery has the week pack. Copy a caption, download a card, and post it yourself if you want it live.",
+          missingInputs: [],
+          error: null,
+          dailyUsage,
+        };
+      } catch {
+        return unloggedClientAiResponse({
+          status: "success",
+          role,
+          routedTo: "micah",
+          scopeStatus: decision.scopeStatus,
+          answer,
+          nextStep: "The gallery has the week pack. Copy a caption, download a card, and post it yourself if you want it live.",
           dailyUsage,
         });
       }
@@ -686,7 +1030,9 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
           `You are ${roleSpec.title} inside a protected client dashboard.`,
           `You only answer Lion's Den desk work for this client: pipeline, prospects, follow-up, notes, calendar, HUNTER pile, MICAH drafts, and their business on this desk.`,
           `Refuse trivia and anything that is not their job in this CRM. Never send email, SMS, calls, or social posts.`,
-          `Follow the guardrails below exactly.`,
+          resolvedRole === "david"
+            ? `DAVID answers from this workspace only: pipeline, follow-up, notes, history, next step to a sale, and client satisfaction. Do not invent contacts. Do not call, email, or text.`
+            : `Follow the guardrails below exactly.`,
           `Use only the supplied workspace context and do not invent facts, metrics, events, or results.`,
           `Never browse the web, scrape sources, send messages, publish content, spend money, or change credentials.`,
           `If the request is missing key inputs, say exactly which ones are needed.`,
@@ -704,6 +1050,46 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
         parse: parseClientAiResponse,
       });
     } catch (error) {
+      if (resolvedRole === "david" && !(error instanceof IntegrationConfigurationError)) {
+        const answer = withStaffHandoff("david", formatDavidWorkspaceAnswer(workspaceSummary));
+        const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+        try {
+          const logged = await deps.logClientAiRequest({
+            organizationId,
+            requestedBy: user.id,
+            role,
+            scopeStatus: decision.scopeStatus,
+            status: "succeeded",
+            prompt,
+            response: answer,
+            routedTo: "david",
+          });
+          return {
+            status: "success",
+            role,
+            routedTo: "david",
+            scopeStatus: decision.scopeStatus,
+            requestId: logged.id,
+            createdAt: logged.createdAt,
+            answer,
+            nextStep: "Open Follow-up and work the next visible action. Atlas will not contact anyone.",
+            missingInputs: [],
+            error: null,
+            dailyUsage,
+          };
+        } catch {
+          return unloggedClientAiResponse({
+            status: "success",
+            role,
+            routedTo: "david",
+            scopeStatus: decision.scopeStatus,
+            answer,
+            nextStep: "Open Follow-up and work the next visible action. Atlas will not contact anyone.",
+            dailyUsage,
+          });
+        }
+      }
+
       const response = clientAiUserFacingError(error);
       const failedStatus = error instanceof IntegrationConfigurationError ? "blocked" : "failed";
 
@@ -747,8 +1133,9 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
     }
 
     const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+    const answer = withStaffHandoff(resolvedRole, result.value.answer);
     const responseText = formatRequestResponse({
-      answer: result.value.answer,
+      answer,
       nextStep: result.value.nextStep,
       missingInputs: result.value.missingInputs,
     });
@@ -772,7 +1159,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
         scopeStatus: decision.scopeStatus,
         requestId: logged.id,
         createdAt: logged.createdAt,
-        answer: result.value.answer,
+        answer,
         nextStep: result.value.nextStep,
         missingInputs: result.value.missingInputs,
         error: null,
@@ -784,7 +1171,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
         role,
         routedTo: resolvedRole,
         scopeStatus: decision.scopeStatus,
-        answer: result.value.answer,
+        answer,
         nextStep: result.value.nextStep,
         missingInputs: result.value.missingInputs,
         dailyUsage,

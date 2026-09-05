@@ -3,12 +3,14 @@ import Link from "next/link";
 import { signOut } from "@/server/auth/actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AtlasStaffPane } from "@/components/lions-den/atlas-staff-pane";
-import { getClientPortalName, getClientPortalOrgLabel } from "@/lib/client-portal/identity";
+import { getClientPortalName, getClientPortalOrgLabel, isAfeCrmDemoOrganization } from "@/lib/client-portal/identity";
 import {
-  lionsDenBoards,
   lionsDenHref,
+  lionsDenOperatorBoards,
+  visibleLionsDenBoards,
   type LionsDenBoard,
 } from "@/lib/lions-den/client-hub";
+import { trialInboxNavLabel } from "@/lib/lions-den/trial-inbox";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import type { ClientAiRequest } from "@/server/client-ai/queries";
 import type { ClientAiDailyUsage } from "@/server/client-ai/queries";
@@ -23,6 +25,8 @@ type LionsDenClientHubProps = {
   workspaces?: Array<{ name: string; slug: string }>;
   aiRequests?: ClientAiRequest[];
   aiUsage?: ClientAiDailyUsage | null;
+  showTrialInbox?: boolean;
+  trialInboxCount?: number;
   children: ReactNode;
 };
 
@@ -36,13 +40,19 @@ export async function LionsDenClientHub({
   workspaces = [],
   aiRequests = [],
   aiUsage = null,
+  showTrialInbox = false,
+  trialInboxCount = 0,
   children,
 }: LionsDenClientHubProps) {
   const language = await getSiteLanguage();
   const spanish = language === "es";
-  const organization = { name: organizationName, slug: organizationSlug };
+  const organization = { name: organizationName, slug: organizationSlug || workspaceSlug };
   const portalName = getClientPortalName(organizationName, organization);
   const orgLabel = getClientPortalOrgLabel(organization);
+  const boards = visibleLionsDenBoards({
+    name: organizationName,
+    slug: workspaceSlug || previewOrgSlug,
+  });
 
   return (
     <div className="lions-den-hub bg-white text-[#071b42]">
@@ -93,7 +103,7 @@ export async function LionsDenClientHub({
             </p>
           </div>
           <nav aria-label="The Lion’s Den" className="flex gap-1 overflow-x-auto p-2 xl:block xl:space-y-0.5 xl:overflow-visible xl:p-3">
-            {lionsDenBoards.map((item) => {
+            {boards.map((item) => {
               const active = item.id === board;
               return (
                 <Link
@@ -109,6 +119,27 @@ export async function LionsDenClientHub({
                 </Link>
               );
             })}
+            {showTrialInbox
+              ? lionsDenOperatorBoards.map((item) => {
+                  const active = item.id === board;
+                  const hasNew = trialInboxCount > 0;
+                  return (
+                    <Link
+                      className={`block shrink-0 rounded-md px-2.5 py-1.5 text-sm font-semibold transition ${
+                        active
+                          ? "bg-[#f5b932] text-[#071b42]"
+                          : hasNew
+                            ? "ld-trial-nav-new text-[#f5b932] hover:bg-white/10"
+                            : "text-white/85 hover:bg-white/10 hover:text-white"
+                      }`}
+                      href={item.href}
+                      key={item.id}
+                    >
+                      {trialInboxNavLabel(trialInboxCount, spanish)}
+                    </Link>
+                  );
+                })
+              : null}
           </nav>
         </aside>
 
@@ -123,6 +154,7 @@ export async function LionsDenClientHub({
             organizationId={organizationId ?? ""}
             organizationName={orgLabel || portalName}
             requests={aiRequests}
+            sampleDesk={isAfeCrmDemoOrganization({ name: organizationName, slug: organizationSlug || workspaceSlug })}
           />
         </aside>
       </div>

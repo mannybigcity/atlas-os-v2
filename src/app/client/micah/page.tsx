@@ -3,7 +3,10 @@ import { ClientMicahIntake } from "@/components/client-micah-intake";
 import { ClientContentStudio } from "@/components/client-content-studio";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
-import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
+import {
+  isAfeCrmDemoOrganization,
+  isQTimeWorkspaceSlug,
+} from "@/lib/client-portal/identity";
 import { presentLiveDeskDraft } from "@/lib/lions-den/live-desk";
 import {
   clientWorkspaceHref,
@@ -64,7 +67,9 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
       {studio && !studio.setupRequired && primaryOrganization ? (
         <ClientContentStudio
           canReview={canEditBusinessProfile}
+          demoDesk={isAfeCrmDemoOrganization(primaryOrganization)}
           organizationId={primaryOrganization.id}
+          organizationName={primaryOrganization.name}
           studio={{
             ...studio.data,
             drafts: studio.data.drafts.map((draft) => presentLiveDeskDraft(primaryOrganization, draft)),

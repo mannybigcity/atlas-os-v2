@@ -4,7 +4,9 @@ import type { ReactNode } from "react";
 import { PrivateAtlasAuthHeader } from "@/components/private-atlas-auth-header";
 import { withSiteLanguage } from "@/lib/site-language";
 import { getSiteLanguage } from "@/lib/site-language-server";
-import { signInWithPassword } from "@/server/auth/actions";
+import { signInToSampleDesk, signInWithPassword } from "@/server/auth/actions";
+
+export const runtime = "nodejs";
 
 export async function generateMetadata(): Promise<Metadata> {
   const language = await getSiteLanguage();
@@ -60,6 +62,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         email: "Correo electrónico",
         password: "Contraseña",
         signIn: "Iniciar sesión",
+        showDesk: "Mostrar el escritorio",
+        sampleDeskUnavailable: "El escritorio de muestra no está configurado todavía.",
+        sampleDeskSignInFailed: "No se pudo abrir el escritorio de muestra. Inténtalo de nuevo o inicia sesión con el correo de muestra.",
         resetPassword: "Restablecer contraseña",
         createAccount: "Crea una cuenta / Comienza tu prueba gratis de 7 días",
         noCard: "No necesitas tarjeta.",
@@ -75,6 +80,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         email: "Email",
         password: "Password",
         signIn: "Sign in",
+        showDesk: "Show the desk",
+        sampleDeskUnavailable: "The sample desk is not configured yet.",
+        sampleDeskSignInFailed: "The sample desk could not be opened. Try again, or sign in with the sample email.",
         resetPassword: "Reset password",
         createAccount: "Create an account / Start 7-day free trial",
         noCard: "No card required.",
@@ -110,6 +118,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <Alert tone="emerald">{copy.checkoutReady}</Alert>
           ) : null}
 
+          {params?.error === "sample_desk_unavailable" ? (
+            <Alert tone="amber">{copy.sampleDeskUnavailable}</Alert>
+          ) : null}
+          {params?.error === "sample_desk_signin_failed" ? (
+            <Alert tone="amber">{copy.sampleDeskSignInFailed}</Alert>
+          ) : null}
+
           <form action={signInWithPassword} className="mt-4 space-y-4">
             <input name="next" type="hidden" value={nextPath} />
             <label className="block space-y-2">
@@ -135,6 +150,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               type="submit"
             >
               {copy.signIn}
+            </button>
+          </form>
+
+          <form action={signInToSampleDesk} className="mt-3">
+            <button
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#d9e2ef] bg-white px-5 text-sm font-semibold text-[#06266d] transition hover:bg-[#eef4ff]"
+              type="submit"
+            >
+              {copy.showDesk}
             </button>
           </form>
 

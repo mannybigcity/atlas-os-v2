@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import type { SisInboxTask, SisPartyEventSummary } from "@/server/sis-workspace/queries";
 import { bucketFollowUpQueues, type DeskFollowUpItem } from "@/lib/lions-den/desk-queue";
+import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
 
 type LionsDenFollowUpBoardProps = {
   prospects: OrganizationOpportunity[];
@@ -29,7 +30,7 @@ export function LionsDenFollowUpBoard({
         title: item.name,
         detail: item.nextAction,
         dueAt: item.nextActionDue!,
-        href: "/client/prospects",
+        href: prospectDetailPath(item.id),
       })),
     ...partyEvents
       .filter((item) => item.nextActionDue)
@@ -62,8 +63,8 @@ export function LionsDenFollowUpBoard({
         <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#8a6a12]">
           {spanish ? "Seguimiento" : "Follow-up"}
         </p>
-        <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl tracking-[-0.04em] text-[#071b42]">
-          {spanish ? "La fortuna está en el seguimiento." : "The fortune is in the follow-up."}
+        <h2 className="mt-2 font-[family-name:var(--font-ui)] text-3xl font-extrabold uppercase tracking-[0.04em] text-[#071b42]">
+          {spanish ? "LA FORTUNA ESTÁ EN EL SEGUIMIENTO" : "THE FORTUNE IS IN THE FOLLOW-UP"}
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#33415c]">
           {spanish
@@ -82,7 +83,7 @@ export function LionsDenFollowUpBoard({
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="ld-followup-columns">
           <QueueCard
             items={[...queues.overdue, ...queues.today]}
             label={spanish ? "Hoy" : "Today"}
@@ -90,21 +91,9 @@ export function LionsDenFollowUpBoard({
             spanish={spanish}
           />
           <QueueCard items={queues.tomorrow} label={spanish ? "Mañana" : "Tomorrow"} spanish={spanish} />
+          <QueueCard items={queues.later} label={spanish ? "Más adelante" : "Later"} spanish={spanish} />
         </div>
       )}
-
-      {queues.later.length > 0 ? (
-        <article className="rounded-[1.2rem] border border-[#d5d0c4] bg-white p-5">
-          <h3 className="text-lg font-semibold text-[#071b42]">
-            {spanish ? "Más adelante" : "Later"}
-          </h3>
-          <div className="mt-4 divide-y divide-[#ece7d8]">
-            {queues.later.map((item) => (
-              <FollowUpRow item={item} key={item.id} />
-            ))}
-          </div>
-        </article>
-      ) : null}
     </section>
   );
 }
@@ -121,7 +110,7 @@ function QueueCard({
   spanish: boolean;
 }) {
   return (
-    <article className="rounded-[1.2rem] border border-[#d5d0c4] bg-white p-5">
+    <article className="ld-followup-col rounded-[1.2rem] border border-[#d5d0c4] bg-white p-5">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-lg font-semibold text-[#071b42]">{label}</h3>
         <span className="rounded-full bg-[#fbfaf4] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5c6578]">

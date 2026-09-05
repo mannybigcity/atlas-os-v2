@@ -83,8 +83,8 @@ link before the user clicks it:
 
 ```html
 <h2>Confirm your Atlas email</h2>
-<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next=/starter">Confirm email address</a></p>
-<p>Atlas will finish setting up your starter workspace after confirmation.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next=/client%3Fstatus%3Dwelcome">Confirm email address</a></p>
+<p>Atlas will open The Lion's Den after confirmation.</p>
 ```
 
 In **Authentication > Emails > Reset password**, use:

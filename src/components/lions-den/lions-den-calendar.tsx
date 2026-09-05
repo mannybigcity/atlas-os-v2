@@ -1,4 +1,5 @@
 import { ClientCalendar } from "@/components/clients-calendar";
+import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import type { SisPartyEventSummary } from "@/server/sis-workspace/queries";
 
@@ -21,7 +22,7 @@ export function LionsDenCalendarBoard({
     ...prospects.map((item) => ({
       id: item.id,
       label: item.name,
-      href: "/client/prospects",
+      href: prospectDetailPath(item.id),
     })),
     ...partyEvents.map((item) => ({
       id: item.id,
@@ -41,7 +42,7 @@ export function LionsDenCalendarBoard({
         kind: "task" as const,
         contextId: item.id,
         contextLabel: item.name,
-        contextHref: "/client/prospects",
+        contextHref: prospectDetailPath(item.id),
         source: "follow-up" as const,
       })),
     ...partyEvents

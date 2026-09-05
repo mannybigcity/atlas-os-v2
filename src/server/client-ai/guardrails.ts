@@ -26,52 +26,76 @@ const roleKeywordSets: Record<ClientAiRole, string[]> = {
     "coordinate",
     "coordination",
     "next move",
-    "next step",
-    "what's next",
-    "whats next",
     "missing input",
     "approval",
     "workflow",
   ],
   hunter: [
+    "google places",
+    "local business",
+    "local businesses",
+    "find prospects",
+    "find leads",
+    "hunter",
     "research",
-    "prospect",
-    "prospects",
-    "lead",
-    "leads",
     "sponsor",
     "sponsors",
     "partner",
     "partners",
     "venue",
     "venues",
-    "opportunity",
-    "opportunities",
   ],
   micah: [
-    "caption",
-    "captions",
-    "copy",
+    "social",
+    "pic",
+    "pics",
+    "picture",
+    "flyer",
+    "flyers",
     "post",
     "posts",
+    "image",
+    "images",
+    "caption",
+    "captions",
+    "instagram",
+    "facebook",
+    "tiktok",
+    "linkedin",
     "content",
-    "calendar",
     "creative",
     "draft",
     "drafts",
     "visual",
+    "week",
+    "weeks",
+    "micah",
   ],
   david: [
     "crm",
     "follow-up",
     "follow up",
+    "followup",
     "pipeline",
-    "report",
-    "reporting",
-    "status",
-    "review",
-    "queue",
+    "notes",
+    "history",
+    "next step",
     "next action",
+    "what's next",
+    "whats next",
+    "sale",
+    "sales",
+    "david",
+    "satisfaction",
+    "satisfied",
+    "unhappy",
+    "complaint",
+    "happy customer",
+    "client satisfaction",
+    "prospect",
+    "prospects",
+    "lead",
+    "leads",
   ],
 };
 
@@ -197,6 +221,100 @@ export function isBusinessRelevantPrompt(prompt: string) {
   return includesAny(normalized, businessKeywordSets);
 }
 
+export function looksLikeHunterSearch(prompt: string) {
+  const normalized = prompt.trim().toLowerCase();
+  if (!normalized) return false;
+  if (/\b\d{5}\b/.test(normalized) && /\b(find|search|look\s*up|places|business)/.test(normalized)) {
+    return true;
+  }
+  if (/\b(find|search|look\s*up)\b.+\b(in|near|around)\s+(?!the\b|this\b|my\b|our\b)/.test(
+    normalized,
+  )) {
+    return true;
+  }
+  return /\b(leads?|prospects?|local\s+businesses?|businesses?)\b.+\b(in|near|around)\s+(?!the\b|this\b|my\b|our\b)/.test(
+    normalized,
+  );
+}
+
+export function looksLikeDeskProspectAsk(prompt: string) {
+  const normalized = prompt.trim().toLowerCase();
+  if (!normalized) return false;
+  if (!/\b(prospects?|leads?)\b/.test(normalized)) return false;
+  if (looksLikeHunterSearch(normalized)) return false;
+  if (/\b(google\s+places|local\s+businesses?)\b/.test(normalized)) return false;
+  return (
+    /\b(who|whose|which|what(?:'s| is)|show(?:\s+me)?|list|name|names|summarize)\b/.test(
+      normalized,
+    ) || /\b(this|the|our|my)\s+(desk|pipeline|board|crm)\b/.test(normalized)
+  );
+}
+
+export function detectSpecialistLane(prompt: string): ClientAiRole | null {
+  const normalized = prompt.trim().toLowerCase();
+  if (!normalized) return null;
+  if (includesAny(normalized, roleKeywordSets.micah)) return "micah";
+  if (looksLikeDeskProspectAsk(normalized)) return "david";
+  if (looksLikeHunterSearch(normalized) || includesAny(normalized, roleKeywordSets.hunter)) {
+    return "hunter";
+  }
+  if (includesAny(normalized, roleKeywordSets.david)) return "david";
+  return null;
+}
+
+export function isMicahCreatePrompt(prompt: string) {
+  const normalized = prompt.trim().toLowerCase();
+  if (!normalized) return false;
+  if (/(summarize|list|show|how many|what(?:'s| is) in).*(draft|micah|gallery)/.test(normalized)) {
+    return false;
+  }
+  return includesAny(normalized, [
+    "social",
+    "pic",
+    "pics",
+    "picture",
+    "flyer",
+    "flyers",
+    "post",
+    "posts",
+    "image",
+    "images",
+    "caption",
+    "captions",
+    "instagram",
+    "facebook",
+    "tiktok",
+    "linkedin",
+    "create",
+    "make",
+    "design",
+    "draft",
+    "week",
+    "weeks",
+  ]);
+}
+
+export function isHunterFindPrompt(prompt: string) {
+  const normalized = prompt.trim().toLowerCase();
+  if (!normalized) return false;
+  if (looksLikeDeskProspectAsk(normalized)) return false;
+  if (/(who|what(?:'s| is)|show|summarize|list).*(pile|hunter)/.test(normalized)) {
+    return false;
+  }
+  return (
+    looksLikeHunterSearch(normalized) ||
+    includesAny(normalized, [
+      "google places",
+      "local business",
+      "local businesses",
+      "find prospects",
+      "find leads",
+    ]) ||
+    (/\b(find|search|look\s*up)\b/.test(normalized) &&
+      includesAny(normalized, ["prospect", "prospects", "lead", "leads", "business", "businesses", "hunter"]))
+  );
+}
+
 export function decideClientAiRoute(input: {
   role: ClientAiRole;
   prompt: string;
@@ -225,7 +343,18 @@ export function decideClientAiRoute(input: {
     };
   }
 
+  const lane = detectSpecialistLane(prompt);
+
   if (requestedRole === "atlas") {
+    if (lane) {
+      return {
+        role: requestedRole,
+        routedTo: lane,
+        scopeStatus: "rerouted",
+        reason: `Atlas sent this to ${lane.toUpperCase()}.`,
+        blocked: false,
+      };
+    }
     return {
       role: requestedRole,
       routedTo: null,
@@ -235,59 +364,12 @@ export function decideClientAiRoute(input: {
     };
   }
 
-  if (includesAny(prompt, roleKeywordSets.atlas)) {
+  if (lane && lane !== requestedRole) {
     return {
       role: requestedRole,
-      routedTo: "atlas",
+      routedTo: lane,
       scopeStatus: "rerouted",
-      reason:
-        "That is a coordination question, so the coordinator should handle it instead of a narrower tool.",
-      blocked: false,
-    };
-  }
-
-  const roleKeywords = roleKeywordSets[requestedRole];
-  const matchesRequestedRole = includesAny(prompt, roleKeywords);
-
-  if (matchesRequestedRole) {
-    return {
-      role: requestedRole,
-      routedTo: null,
-      scopeStatus: "in_scope",
-      reason: null,
-      blocked: false,
-    };
-  }
-
-  if (includesAny(prompt, roleKeywordSets.hunter)) {
-    return {
-      role: requestedRole,
-      routedTo: "atlas",
-      scopeStatus: "rerouted",
-      reason:
-        "That is outside this tool's scope. Ask the coordinator to handle it or switch to the right tool.",
-      blocked: false,
-    };
-  }
-
-  if (includesAny(prompt, roleKeywordSets.micah)) {
-    return {
-      role: requestedRole,
-      routedTo: "atlas",
-      scopeStatus: "rerouted",
-      reason:
-        "That is outside this tool's scope. Ask the coordinator to handle it or switch to the right tool.",
-      blocked: false,
-    };
-  }
-
-  if (includesAny(prompt, roleKeywordSets.david)) {
-    return {
-      role: requestedRole,
-      routedTo: "atlas",
-      scopeStatus: "rerouted",
-      reason:
-        "That is outside this tool's scope. Ask the coordinator to handle it or switch to the right tool.",
+      reason: `Atlas sent this to ${lane.toUpperCase()}.`,
       blocked: false,
     };
   }

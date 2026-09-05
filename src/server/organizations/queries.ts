@@ -1,12 +1,17 @@
 import {
   AFE_CRM_DEMO_SLUG,
+  AFE_OPERATOR_DESK_SLUG,
   escapeIlikeExact,
   findOrganizationByPreviewSlug,
   isAfeCrmDemoOrganization,
   isAfeCrmDemoSlug,
+  isAfeOperatorDeskOrganization,
+  isAfeOperatorDeskSlug,
   isSisOrganization,
   isSisWorkspaceSlug,
+  SIS_LIONS_DEN_PREVIEW_SLUG,
   organizationSlugsMatch,
+  pickAfeOperatorDesk,
 } from "@/lib/client-portal/identity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -134,6 +139,10 @@ export async function getUserMemberships(
   };
 }
 
+function withoutSampleDesk(organizations: OrganizationSummary[]) {
+  return organizations.filter((organization) => !isAfeCrmDemoOrganization(organization));
+}
+
 export async function getOrganizationsForSuperAdmin(): Promise<
   WorkspaceQueryResult<OrganizationSummary[]>
 > {
@@ -152,7 +161,7 @@ export async function getOrganizationsForSuperAdmin(): Promise<
   }
 
   return {
-    data: ((data ?? []) as OrganizationRow[]).map(normalizeOrganization),
+    data: withoutSampleDesk(((data ?? []) as OrganizationRow[]).map(normalizeOrganization)),
     setupRequired: false,
     error: null,
   };
@@ -206,6 +215,9 @@ function pickOrganizationFromDirectory(
     (isAfeCrmDemoSlug(requested)
       ? organizations.find((organization) => isAfeCrmDemoOrganization(organization))
       : undefined) ??
+    (isAfeOperatorDeskSlug(requested)
+      ? organizations.find((organization) => isAfeOperatorDeskOrganization(organization))
+      : undefined) ??
     null
   );
 }
@@ -213,23 +225,18 @@ function pickOrganizationFromDirectory(
 export async function listOrganizationsForOperator(): Promise<OrganizationSummary[]> {
   const viaUser = await getOrganizationsForSuperAdmin();
   if (!viaUser.setupRequired && viaUser.data.some((organization) => organization.id)) {
-    const missingProtectedDesk =
-      !viaUser.data.some((organization) => isSisOrganization(organization)) ||
-      !viaUser.data.some((organization) => isAfeCrmDemoOrganization(organization));
+    const missingProtectedDesk = !viaUser.data.some((organization) => isSisOrganization(organization));
     if (missingProtectedDesk) {
-      const viaAdmin = await listOrganizationsWithServiceRole();
-      if (
-        viaAdmin.some((organization) => isSisOrganization(organization)) ||
-        viaAdmin.some((organization) => isAfeCrmDemoOrganization(organization))
-      ) {
+      const viaAdmin = withoutSampleDesk(await listOrganizationsWithServiceRole());
+      if (viaAdmin.some((organization) => isSisOrganization(organization))) {
         return viaAdmin;
       }
     }
-    return viaUser.data;
+    return withoutSampleDesk(viaUser.data);
   }
 
-  const viaAdmin = await listOrganizationsWithServiceRole();
-  return viaAdmin.length > 0 ? viaAdmin : viaUser.data;
+  const viaAdmin = withoutSampleDesk(await listOrganizationsWithServiceRole());
+  return viaAdmin.length > 0 ? viaAdmin : withoutSampleDesk(viaUser.data);
 }
 
 async function listOrganizationsWithServiceRole(): Promise<OrganizationSummary[]> {
@@ -334,6 +341,26 @@ export async function getAfeCrmDemoOrganization(): Promise<OrganizationSummary |
         isAfeCrmDemoOrganization(organization),
     ) ?? null
   );
+}
+
+export async function getSisProtectedOrganization(): Promise<OrganizationSummary | null> {
+  const bySlug = await getOrganizationBySlugForSuperAdmin(SIS_LIONS_DEN_PREVIEW_SLUG);
+  if (bySlug.data?.id && isSisOrganization(bySlug.data)) {
+    return bySlug.data;
+  }
+
+  const directory = await listOrganizationsForOperator();
+  return directory.find((organization) => Boolean(organization.id) && isSisOrganization(organization)) ?? null;
+}
+
+export async function getAfeOperatorDeskOrganization(): Promise<OrganizationSummary | null> {
+  const bySlug = await getOrganizationBySlugForSuperAdmin(AFE_OPERATOR_DESK_SLUG);
+  if (bySlug.data?.id && isAfeOperatorDeskOrganization(bySlug.data)) {
+    return bySlug.data;
+  }
+
+  const directory = await listOrganizationsForOperator();
+  return pickAfeOperatorDesk(directory.filter((organization) => Boolean(organization.id))) ?? null;
 }
 
 export async function getClientAccessRoster(): Promise<

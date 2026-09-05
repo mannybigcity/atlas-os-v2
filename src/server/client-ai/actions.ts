@@ -5,7 +5,7 @@ import path from "node:path";
 
 import { createClient } from "@/lib/supabase/server";
 import { generateStructuredText } from "@/server/integrations/openai-responses";
-import { isSuperAdminEmail } from "@/lib/env";
+import { getConfiguredDemoLoginEmail, isSuperAdminEmail } from "@/lib/env";
 import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
@@ -13,6 +13,13 @@ import {
   getClientAiRoleSpec,
   type ClientAiRole,
 } from "@/server/client-ai/guardrails";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  createMicahGalleryDraft,
+  readMicahDemeanor,
+} from "@/server/content-studio/gallery-draft";
+import { executeHunterPlacesSearch } from "@/server/hunter/search";
+import { parseHunterChatQuery } from "@/server/hunter/review";
 import {
   createSubmitClientAiRequest,
 } from "@/server/client-ai/execute-request";
@@ -96,6 +103,35 @@ async function reserveClientAiQuestion(organizationId: string) {
   return { error: null, usage: reservationUsage(reservation), allowed: reservation.allowed };
 }
 
+async function getOrganizationIdentity(organizationId: string) {
+  const supabase = await createClient();
+  const mapRow = (row: { id?: unknown; slug?: unknown; name?: unknown }) => ({
+    id: String(row.id ?? organizationId),
+    slug: String(row.slug ?? ""),
+    name: String(row.name ?? ""),
+  });
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("id, slug, name")
+    .eq("id", organizationId)
+    .maybeSingle();
+  if (!error && data) return mapRow(data as { id?: unknown; slug?: unknown; name?: unknown });
+
+  try {
+    const admin = createAdminClient();
+    const { data: adminRow } = await admin
+      .from("organizations")
+      .select("id, slug, name")
+      .eq("id", organizationId)
+      .maybeSingle();
+    if (adminRow) return mapRow(adminRow as { id?: unknown; slug?: unknown; name?: unknown });
+  } catch {
+    // Service-role is optional when the user session can already read the org.
+  }
+
+  return null;
+}
+
 const executeClientAiRequest = createSubmitClientAiRequest({
   requireUser: () => requireUser("/client"),
   isSuperAdminEmail,
@@ -106,6 +142,21 @@ const executeClientAiRequest = createSubmitClientAiRequest({
   getClientDashboardData,
   loadRoleMarkdown,
   logClientAiRequest,
+  runHunterChatSearch: async ({ organizationId, userId, prompt }) => {
+    const parsed = parseHunterChatQuery(prompt);
+    if (!parsed.ok) {
+      return { status: "needs_input" as const, message: parsed.error };
+    }
+    return executeHunterPlacesSearch({
+      organizationId,
+      userId,
+      textQuery: parsed.textQuery,
+    });
+  },
+  createMicahGalleryDraft,
+  readMicahDemeanor,
+  getOrganizationIdentity,
+  configuredDemoLoginEmail: getConfiguredDemoLoginEmail(),
 });
 
 export async function submitClientAiRequest(

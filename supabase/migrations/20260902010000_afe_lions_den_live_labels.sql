@@ -1,6 +1,7 @@
--- Make the AFE Lion's Den desk look live on glass.
--- Scoped to slug afe-crm-demo ONLY. Does not delete rows.
--- Does not touch SIS, QTIME, or any other tenant.
+-- Strip leftover DEMO labels from the live AFE Lion's Den operator desk.
+-- Scoped to slug atlas-for-entrepreneurs ONLY. Does not delete rows.
+-- Does not rename the operator org to Atlas.
+-- Does not touch afe-crm-demo (sample / Show-the-desk), SIS, QTIME, or any other tenant.
 
 create or replace function public.strip_visible_demo_label(value text)
 returns text
@@ -39,17 +40,13 @@ begin
   select id
   into v_org_id
   from public.organizations
-  where slug ilike 'afe-crm-demo'
+  where slug ilike 'atlas-for-entrepreneurs'
+    and slug not ilike 'afe-crm-demo'
   limit 1;
 
   if v_org_id is null then
     return;
   end if;
-
-  update public.organizations
-  set name = 'Atlas'
-  where id = v_org_id
-    and name is distinct from 'Atlas';
 
   update public.organization_opportunities o
   set

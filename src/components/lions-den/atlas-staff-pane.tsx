@@ -3,16 +3,26 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { ATLAS_LION_SRC } from "@/lib/lions-den/atlas-brand";
-import { ATLAS_STAFF_EMPTY_EN, ATLAS_STAFF_EMPTY_ES } from "@/lib/lions-den/live-desk";
+import {
+  ATLAS_STAFF_EMPTY_EN,
+  ATLAS_STAFF_EMPTY_ES,
+  ATLAS_STAFF_SAMPLE_EMPTY_EN,
+  ATLAS_STAFF_SAMPLE_EMPTY_ES,
+} from "@/lib/lions-den/live-desk";
+import { MICAH_TALK_EVENT, type MicahTalkDetail } from "@/lib/lions-den/micah-starter-week";
 import { ATLAS_STAFF_PROMPT_LIMIT, composeAtlasStaffPrompt } from "@/lib/lions-den/atlas-staff-prompt";
+import { atlasStaffCanSend } from "@/lib/lions-den/atlas-staff-send";
+import { atlasDeskNextHref } from "@/lib/lions-den/atlas-desk-route";
 import {
   atlasAskUsageFromCounts,
   atlasAskUsageLabel,
   isAtlasAskCapped,
   type AtlasAskPlan,
 } from "@/lib/lions-den/atlas-quota";
+import { staffHandoffLine } from "@/lib/lions-den/atlas-staff-handoff";
 import { submitClientAiRequest } from "@/server/client-ai/actions";
 import { initialClientAiActionState } from "@/server/client-ai/types";
 import type { ClientAiDailyUsage, ClientAiRequest } from "@/server/client-ai/queries";
@@ -23,6 +33,7 @@ type AtlasStaffPaneProps = {
   requests: ClientAiRequest[];
   dailyUsage?: ClientAiDailyUsage | null;
   compact?: boolean;
+  sampleDesk?: boolean;
 };
 
 type SpeechRecognitionLike = {
@@ -53,9 +64,11 @@ export function AtlasStaffPane({
   organizationId,
   requests,
   dailyUsage,
+  sampleDesk = false,
 }: AtlasStaffPaneProps) {
   const language = useSiteLanguage();
   const spanish = language === "es";
+  const router = useRouter();
   const [state, formAction, pending] = useActionState(
     submitClientAiRequest,
     initialClientAiActionState,
@@ -68,12 +81,16 @@ export function AtlasStaffPane({
     dailyUsage ?? atlasAskUsageFromCounts(0, "basic"),
   );
   const fileRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const lastPromptRef = useRef("");
+  const lastNavKeyRef = useRef("");
+  const pendingMicahPromptRef = useRef<string | null>(null);
   const plan = usage.plan as AtlasAskPlan;
   const capped = isAtlasAskCapped(usage.used, plan);
   const hasWorkspace = Boolean(organizationId);
   const composerLocked = pending || capped;
-  const canSend = hasWorkspace && !composerLocked;
+  const canSend = atlasStaffCanSend({ organizationId, pending, capped });
   const thread = [...requests].slice(0, 8).reverse();
   const usageLabel = atlasAskUsageLabel(usage.used, plan);
 
@@ -99,6 +116,25 @@ export function AtlasStaffPane({
   }, [organizationId]);
 
   useEffect(() => {
+    function onMicahTalk(event: Event) {
+      const detail = (event as CustomEvent<MicahTalkDetail>).detail;
+      const prompt = String(detail?.prompt ?? "").trim();
+      if (!prompt) return;
+      const clipped = prompt.slice(0, ATLAS_STAFF_PROMPT_LIMIT);
+      pendingMicahPromptRef.current = clipped;
+      setDraft(clipped);
+      window.setTimeout(() => {
+        document.getElementById("atlas-staff-prompt")?.focus();
+        if (detail?.submit) {
+          formRef.current?.requestSubmit();
+        }
+      }, 0);
+    }
+    window.addEventListener(MICAH_TALK_EVENT, onMicahTalk);
+    return () => window.removeEventListener(MICAH_TALK_EVENT, onMicahTalk);
+  }, []);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     window.sessionStorage.setItem(draftStorageKey(organizationId), draft);
   }, [draft, organizationId]);
@@ -112,6 +148,22 @@ export function AtlasStaffPane({
       }
     }
   }, [state.status, state.requestId, organizationId]);
+
+  useEffect(() => {
+    if (state.status === "idle") return;
+    const navKey = `${state.requestId ?? ""}:${state.status}:${state.routedTo ?? ""}:${state.answer ?? ""}`;
+    if (lastNavKeyRef.current === navKey) return;
+    const href = atlasDeskNextHref({
+      prompt: lastPromptRef.current,
+      routedTo: state.routedTo,
+      status: state.status,
+      scopeStatus: state.scopeStatus,
+    });
+    if (!href) return;
+    lastNavKeyRef.current = navKey;
+    router.push(href);
+    if (href === "/client/micah") router.refresh();
+  }, [router, state.answer, state.requestId, state.routedTo, state.scopeStatus, state.status]);
 
   function toggleMic() {
     if (capped) return;
@@ -145,8 +197,13 @@ export function AtlasStaffPane({
     event.preventDefault();
     const form = event.currentTarget;
     if (!canSend) return;
-    const prompt = await composeAtlasStaffPrompt(draft, attachment);
+    const prompt = await composeAtlasStaffPrompt(
+      pendingMicahPromptRef.current || draft,
+      attachment,
+    );
+    pendingMicahPromptRef.current = null;
     if (prompt.length < 2) return;
+    lastPromptRef.current = prompt;
     const formData = new FormData(form);
     formData.set("prompt", prompt);
     formAction(formData);
@@ -183,7 +240,13 @@ export function AtlasStaffPane({
       <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-auto px-3">
         {thread.length === 0 && state.status === "idle" ? (
           <p className="rounded-2xl bg-white px-2.5 py-1.5 text-xs leading-5 text-[#5c6578] ring-1 ring-[#ece7d8]">
-            {spanish ? ATLAS_STAFF_EMPTY_ES : ATLAS_STAFF_EMPTY_EN}
+            {spanish
+              ? sampleDesk
+                ? ATLAS_STAFF_SAMPLE_EMPTY_ES
+                : ATLAS_STAFF_EMPTY_ES
+              : sampleDesk
+                ? ATLAS_STAFF_SAMPLE_EMPTY_EN
+                : ATLAS_STAFF_EMPTY_EN}
           </p>
         ) : null}
         {thread.map((item) => (
@@ -192,7 +255,7 @@ export function AtlasStaffPane({
               {item.prompt}
             </p>
             <p className="mr-4 rounded-2xl rounded-bl-sm bg-[#071b42] px-2.5 py-1.5 text-xs leading-5 text-white">
-              {item.response}
+              <ThreadAnswer routedTo={item.routedTo} text={item.response} />
             </p>
           </article>
         ))}
@@ -205,7 +268,7 @@ export function AtlasStaffPane({
             ) : null}
             {state.answer ? (
               <p className="mr-4 rounded-2xl rounded-bl-sm bg-[#071b42] px-2.5 py-1.5 text-xs leading-5 text-white">
-                {state.answer}
+                <ThreadAnswer routedTo={state.routedTo} text={state.answer} />
               </p>
             ) : null}
           </article>
@@ -234,7 +297,12 @@ export function AtlasStaffPane({
           </Link>
         </div>
       ) : (
-        <form className="shrink-0 border-t border-[#ece7d8] bg-white p-2" onSubmit={onSubmit}>
+        <form
+          className="shrink-0 border-t border-[#ece7d8] bg-white p-2"
+          id="atlas-staff-form"
+          onSubmit={onSubmit}
+          ref={formRef}
+        >
           <input name="organizationId" type="hidden" value={organizationId} />
           <input name="role" type="hidden" value="atlas" />
           <input name="scopeMode" type="hidden" value="business_only" />
@@ -314,6 +382,27 @@ export function AtlasStaffPane({
         </form>
       )}
     </section>
+  );
+}
+
+function ThreadAnswer({
+  text,
+  routedTo,
+}: {
+  text: string;
+  routedTo: "atlas" | "hunter" | "micah" | "david" | null;
+}) {
+  const line = staffHandoffLine(routedTo);
+  const body = line && text.startsWith(line) ? text.slice(line.length).trim() : text;
+  return (
+    <>
+      {line ? (
+        <span className="mb-1 block text-[10px] font-black tracking-[0.14em] text-[#f5b932]">
+          {line}
+        </span>
+      ) : null}
+      {body}
+    </>
   );
 }
 

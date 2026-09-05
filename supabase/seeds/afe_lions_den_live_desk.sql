@@ -1,6 +1,6 @@
--- Idempotent UPDATE-only fixture for the AFE Lion's Den desk.
--- Does not insert organizations or contacts. Does not touch SIS or QTIME.
--- Re-running this file must not re-label rows DEMO.
+-- Idempotent UPDATE-only fixture for the live AFE Lion's Den operator desk.
+-- Does not insert organizations or contacts. Does not touch SIS, QTIME, or afe-crm-demo.
+-- Re-running this file must not re-label rows DEMO and must not rename the sample org.
 
 do $$
 declare
@@ -9,17 +9,13 @@ begin
   select id
   into v_org_id
   from public.organizations
-  where slug ilike 'afe-crm-demo'
+  where slug ilike 'atlas-for-entrepreneurs'
+    and slug not ilike 'afe-crm-demo'
   limit 1;
 
   if v_org_id is null then
     return;
   end if;
-
-  update public.organizations
-  set name = 'Atlas'
-  where id = v_org_id
-    and name is distinct from 'Atlas';
 
   update public.organization_opportunities
   set
