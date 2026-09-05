@@ -6,8 +6,14 @@ import { ClientPortalShell } from "@/components/client-portal-shell";
 import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenOverview } from "@/components/lions-den/lions-den-overview";
-import { isSisLionsDenRequest, isSisOrganization, shouldShowSuperAdminCrm } from "@/lib/client-portal/identity";
+import { getClientPortalOrgLabel, isSisLionsDenRequest, isSisOrganization, shouldShowSuperAdminCrm } from "@/lib/client-portal/identity";
 import { clientOverviewRendersLionsDen, usesLionsDenHub } from "@/lib/lions-den/client-hub";
+import {
+  presentLiveDeskDraft,
+  presentLiveDeskNote,
+  presentLiveDeskOpportunity,
+  presentLiveDeskReviewItem,
+} from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getClientDashboardData } from "@/server/client-dashboard/queries";
 import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
@@ -207,6 +213,7 @@ export default async function ClientDashboardPage({
           : "A private workspace for priorities, approvals, projects, follow-up, files, reports, and approved tools—scoped to your organization."}
         eyebrow={isClientPreview ? "Atlas CRM" : spanish ? "CRM privado" : "Private CRM"}
         organizationName={primaryOrganization?.name}
+        organizationSlug={primaryOrganization?.slug}
         fullWidth
         showOverviewLink={false}
         workspaces={memberships.data.flatMap((membership) => membership.organization ? [{ name: membership.organization.name, slug: membership.organization.slug ?? "" }] : [])}
@@ -236,9 +243,18 @@ export default async function ClientDashboardPage({
   }
 
   if ((useLionsDen || wantsSisLionsDen) && !organizations) {
-    const prospects = pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : [];
-    const reviewItems = reviewPile && !reviewPile.setupRequired ? reviewPile.data : [];
-    const drafts = studio && !studio.setupRequired ? studio.data.drafts : [];
+    const prospects = (pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
+      presentLiveDeskOpportunity(primaryOrganization, item),
+    );
+    const reviewItems = (reviewPile && !reviewPile.setupRequired ? reviewPile.data : []).map((item) =>
+      presentLiveDeskReviewItem(primaryOrganization, item),
+    );
+    const drafts = (studio && !studio.setupRequired ? studio.data.drafts : []).map((item) =>
+      presentLiveDeskDraft(primaryOrganization, item),
+    );
+    const deskNotes = (notes && !notes.setupRequired ? notes.data : []).map((item) =>
+      presentLiveDeskNote(primaryOrganization, item),
+    );
 
     return (
       <LionsDenBoardScreen board="overview" workspace={workspace}>
@@ -253,9 +269,13 @@ export default async function ClientDashboardPage({
           <LionsDenOverview
             canCreateNotes={workspace.canCreateNotes}
             drafts={drafts}
-            notes={notes && !notes.setupRequired ? notes.data : []}
+            notes={deskNotes}
             organizationId={primaryOrganization?.id}
-            organizationName={primaryOrganization?.name ?? (wantsSisLionsDen ? "SIS Custom Creations" : "The Lion’s Den")}
+            organizationName={
+              getClientPortalOrgLabel(primaryOrganization) ||
+              primaryOrganization?.name ||
+              (wantsSisLionsDen ? "SIS Custom Creations" : "The Lion’s Den")
+            }
             previewOrgSlug={workspace.previewOrgSlug || undefined}
             prospects={prospects}
             reviewPile={reviewItems}
@@ -275,6 +295,7 @@ export default async function ClientDashboardPage({
         : "A private workspace for priorities, approvals, projects, follow-up, files, reports, and approved tools—scoped to your organization."}
       eyebrow={isClientPreview ? "Atlas CRM" : spanish ? "CRM privado" : "Private CRM"}
       organizationName={primaryOrganization?.name}
+      organizationSlug={primaryOrganization?.slug}
       fullWidth
       showOverviewLink={false}
       workspaces={memberships.data.flatMap((membership) => membership.organization ? [{ name: membership.organization.name, slug: membership.organization.slug ?? "" }] : [])}

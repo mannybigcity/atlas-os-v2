@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   AFE_CRM_DEMO_SLUG,
+  AFE_CRM_LIVE_NAME,
   AFE_OPERATOR_DESK_NAME,
   AFE_OPERATOR_DESK_SLUG,
   FOUNDER_MAILBOX_EMAIL,
@@ -13,6 +14,7 @@ import {
   escapeIlikeExact,
   findOrganizationByPreviewSlug,
   getClientPortalName,
+  getClientPortalOrgLabel,
   isAfeClientDeskOrganization,
   isAfeCrmDemoName,
   isAfeCrmDemoOrganization,
@@ -42,6 +44,7 @@ import {
   sisLionsDenPreviewHref,
   SIS_LIONS_DEN_PREVIEW_SLUG,
 } from "./identity.ts";
+import { lionsDenHubChromeCopy } from "../lions-den/live-desk.ts";
 
 test("SIS owner-facing chrome is The Lion's Den, not a DAVID or CRM label", () => {
   assert.equal(getClientPortalName("SIS Custom Creations"), "The Lion’s Den");
@@ -129,6 +132,7 @@ test("AFE sample desk is afe-crm-demo, not SIS, and is not a guest preview", () 
   assert.equal(isAfeCrmDemoOrganization({ name: SAMPLE_DESK_DISPLAY_NAME, slug: "afe-crm-demo" }), true);
   assert.equal(isAfeCrmDemoName("Sample desk"), true);
   assert.equal(isAfeCrmDemoName("Atlas CRM DEMO"), true);
+  assert.equal(isAfeCrmDemoName(AFE_CRM_LIVE_NAME), false);
   assert.equal(
     isAfeCrmDemoOrganization({ name: "Atlas CRM DEMO", slug: "atlas-crm-demo" }),
     true,
@@ -193,6 +197,31 @@ test("sample desk login is the Gmail plus-address, never the founder mailbox", (
   assert.equal(canSeeSampleDesk(SAMPLE_DESK_LOGIN_EMAIL), true);
   assert.equal(isSampleDeskLoginEmail("info@atlasforentrepreneurs.com", "info@atlasforentrepreneurs.com"), false);
   assert.equal(isSampleDeskPreviewRequest("afe-crm-demo", ""), true);
+});
+
+test("live AFE chrome is The Lion's Den and never includes DEMO; sample chrome stays Sample desk", () => {
+  const liveDesk = { name: AFE_OPERATOR_DESK_NAME, slug: AFE_OPERATOR_DESK_SLUG };
+  const sampleDesk = { name: SAMPLE_DESK_DISPLAY_NAME, slug: AFE_CRM_DEMO_SLUG };
+  const oldSampleName = { name: "AFE CRM DEMO", slug: AFE_CRM_DEMO_SLUG };
+  const chrome = lionsDenHubChromeCopy(liveDesk);
+  const chromeEs = lionsDenHubChromeCopy(liveDesk, true);
+  const sampleChrome = lionsDenHubChromeCopy(sampleDesk);
+  const oldChrome = lionsDenHubChromeCopy(oldSampleName);
+
+  assert.equal(getClientPortalName(liveDesk.name, liveDesk), "The Lion’s Den");
+  assert.equal(getClientPortalName(sampleDesk.name, sampleDesk), "The Lion’s Den");
+  assert.equal(getClientPortalName(oldSampleName.name, oldSampleName), "The Lion’s Den");
+  assert.equal(getClientPortalOrgLabel(liveDesk), AFE_OPERATOR_DESK_NAME);
+  assert.equal(getClientPortalOrgLabel(sampleDesk), SAMPLE_DESK_DISPLAY_NAME);
+  assert.equal(getClientPortalOrgLabel(oldSampleName), SAMPLE_DESK_DISPLAY_NAME);
+  assert.doesNotMatch(getClientPortalName(liveDesk.name, liveDesk), /DEMO/i);
+  assert.doesNotMatch(getClientPortalOrgLabel(liveDesk), /DEMO/i);
+  assert.doesNotMatch(`${chrome.portalName} ${chrome.orgLabel} ${chrome.atlasEmpty}`, /demo/i);
+  assert.doesNotMatch(`${chromeEs.portalName} ${chromeEs.orgLabel} ${chromeEs.atlasEmpty}`, /demo/i);
+  assert.doesNotMatch(`${oldChrome.portalName} ${oldChrome.orgLabel}`, /demo/i);
+  assert.doesNotMatch(chrome.atlasEmpty, /sample|preview desk|fake/i);
+  assert.doesNotMatch(getClientPortalName(liveDesk.name, liveDesk), /DAVID/);
+  assert.doesNotMatch(sampleChrome.orgLabel, /DEMO/i);
 });
 
 test("admin Lion's Den door uses the live SIS slug or a matched organization", () => {

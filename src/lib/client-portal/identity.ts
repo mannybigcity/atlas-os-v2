@@ -22,6 +22,7 @@ export const SIS_WORKING_ORG_NAME = "SIS Custom Creations";
 export const AFE_CRM_DEMO_SLUG = "afe-crm-demo";
 export const AFE_OPERATOR_DESK_SLUG = "atlas-for-entrepreneurs";
 export const AFE_OPERATOR_DESK_NAME = "Atlas For Entrepreneurs";
+export const AFE_CRM_LIVE_NAME = "Atlas";
 export const SAMPLE_DESK_DISPLAY_NAME = "Sample desk";
 export const SAMPLE_DESK_LOGIN_EMAIL = "atlasforentrepreneurs+demo@gmail.com";
 export const FOUNDER_MAILBOX_EMAIL = "atlasforentrepreneurs@gmail.com";
@@ -371,10 +372,21 @@ export function shouldShowSuperAdminCrm(_input: {
   return false;
 }
 
-export function getClientPortalName(organizationName: string | null | undefined) {
-  const name = cleanOrganizationName(String(organizationName ?? ""));
+export function getClientPortalName(
+  organizationName: string | null | undefined,
+  organization?: { name?: string | null; slug?: string | null } | null,
+) {
+  const name = cleanOrganizationName(String(organizationName ?? organization?.name ?? ""));
+  const resolved = organization ?? { name: organizationName };
 
-  if (!name || isSisCustomCreations(name) || isAfeCrmDemoName(name) || isAfeOperatorDeskName(name)) {
+  if (
+    !name ||
+    isSisCustomCreations(name) ||
+    isAfeCrmDemoName(name) ||
+    isAfeOperatorDeskName(name) ||
+    isAfeCrmDemoOrganization(resolved) ||
+    isAfeOperatorDeskOrganization(resolved)
+  ) {
     return "The Lion’s Den";
   }
 
@@ -384,4 +396,23 @@ export function getClientPortalName(organizationName: string | null | undefined)
 
   const identity = name.split(" ")[0] ?? name;
   return `${identity}’s Lion’s Den`;
+}
+
+export function getClientPortalOrgLabel(
+  organization?: { name?: string | null; slug?: string | null } | null,
+) {
+  if (isAfeCrmDemoOrganization(organization) || isAfeCrmDemoName(organization?.name)) {
+    return SAMPLE_DESK_DISPLAY_NAME;
+  }
+
+  if (isAfeOperatorDeskOrganization(organization) || isAfeOperatorDeskName(organization?.name)) {
+    return AFE_OPERATOR_DESK_NAME;
+  }
+
+  const name = String(organization?.name ?? "").trim();
+  if (isAfeClientDeskOrganization(organization) && /\bdemo\b/i.test(name)) {
+    return AFE_CRM_LIVE_NAME;
+  }
+
+  return name;
 }

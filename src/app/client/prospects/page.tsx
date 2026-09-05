@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenProspectsBoard } from "@/components/lions-den/lions-den-prospects";
 import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
+import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
@@ -39,7 +40,9 @@ export default async function ProspectsPage({ searchParams }: ProspectsPageProps
     <LionsDenBoardScreen board="prospects" workspace={workspace}>
       <LionsDenProspectsBoard
         previewOrgSlug={workspace.previewOrgSlug || undefined}
-        prospects={pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []}
+        prospects={(pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
+          presentLiveDeskOpportunity(workspace.primaryOrganization, item),
+        )}
         spanish={language === "es"}
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />

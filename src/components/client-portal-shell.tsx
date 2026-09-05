@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { signOut } from "@/server/auth/actions";
-import { getClientPortalName } from "@/lib/client-portal/identity";
+import { getClientPortalName, getClientPortalOrgLabel } from "@/lib/client-portal/identity";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
 type ClientPortalShellProps = {
   organizationName?: string | null;
+  organizationSlug?: string | null;
   eyebrow?: string;
   description: string;
   children: ReactNode;
@@ -17,6 +18,7 @@ type ClientPortalShellProps = {
 
 export async function ClientPortalShell({
   organizationName,
+  organizationSlug,
   eyebrow = "Private client workspace",
   description,
   children,
@@ -26,7 +28,7 @@ export async function ClientPortalShell({
 }: ClientPortalShellProps) {
   const language = await getSiteLanguage();
   const spanish = language === "es";
-  const portalName = getClientPortalName(organizationName);
+  const portalName = getClientPortalName(organizationName, { name: organizationName, slug: organizationSlug });
   const localizedEyebrow = spanish && eyebrow === "Private client workspace"
     ? "Espacio privado del cliente"
     : eyebrow;
@@ -49,7 +51,7 @@ export async function ClientPortalShell({
               </p>
             </div>
             <nav aria-label={spanish ? "Acciones del espacio de trabajo" : "Workspace actions"} className="flex flex-wrap items-center gap-2">
-              {workspaces.length > 1 ? workspaces.map((workspace) => <Link className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${workspace.name === organizationName ? "border-slate-950 bg-slate-950 text-white" : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"}`} href={`/client?workspace=${encodeURIComponent(workspace.slug)}`} key={workspace.slug}>{workspace.name}</Link>) : null}
+              {workspaces.length > 1 ? workspaces.map((workspace) => <Link className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${workspace.slug === organizationSlug || workspace.name === organizationName ? "border-slate-950 bg-slate-950 text-white" : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"}`} href={`/client?workspace=${encodeURIComponent(workspace.slug)}`} key={workspace.slug}>{getClientPortalOrgLabel(workspace) || workspace.name}</Link>) : null}
               {showOverviewLink ? <Link className="rounded-full border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" href="/client">{spanish ? "Resumen" : "Overview"}</Link> : null}
               <LanguageSwitcher />
               <form action={signOut}>

@@ -6,6 +6,12 @@ import { useActionState, useEffect, useRef, useState, type FormEvent } from "rea
 import { useRouter } from "next/navigation";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { ATLAS_LION_SRC } from "@/lib/lions-den/atlas-brand";
+import {
+  ATLAS_STAFF_EMPTY_EN,
+  ATLAS_STAFF_EMPTY_ES,
+  ATLAS_STAFF_SAMPLE_EMPTY_EN,
+  ATLAS_STAFF_SAMPLE_EMPTY_ES,
+} from "@/lib/lions-den/live-desk";
 import { MICAH_TALK_EVENT, type MicahTalkDetail } from "@/lib/lions-den/micah-starter-week";
 import { ATLAS_STAFF_PROMPT_LIMIT, composeAtlasStaffPrompt } from "@/lib/lions-den/atlas-staff-prompt";
 import { atlasStaffCanSend } from "@/lib/lions-den/atlas-staff-send";
@@ -236,11 +242,11 @@ export function AtlasStaffPane({
           <p className="rounded-2xl bg-white px-2.5 py-1.5 text-xs leading-5 text-[#5c6578] ring-1 ring-[#ece7d8]">
             {spanish
               ? sampleDesk
-                ? "Pregunta por el seguimiento, ABC Plumbing, 123 Catering, XYZ Electric o lo que toca hoy en este escritorio."
-                : "Pregunta por el seguimiento o lo que toca hoy en este escritorio."
+                ? ATLAS_STAFF_SAMPLE_EMPTY_ES
+                : ATLAS_STAFF_EMPTY_ES
               : sampleDesk
-                ? "Ask about follow-up, ABC Plumbing, 123 Catering, XYZ Electric, or what is due today."
-                : "Ask about follow-up or what is due today."}
+                ? ATLAS_STAFF_SAMPLE_EMPTY_EN
+                : ATLAS_STAFF_EMPTY_EN}
           </p>
         ) : null}
         {thread.map((item) => (
