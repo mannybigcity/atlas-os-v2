@@ -10,7 +10,8 @@ import {
   readOfficialAtlasLogoDataUri,
   type MicahDemeanor,
 } from "./gallery-art.ts";
-import { gradeKingdomWeek } from "./kingdom-social.ts";
+import { gradeKingdomCaption, gradeKingdomWeek } from "./kingdom-social.ts";
+import { focusDayFromMicahPrompt } from "../../lib/lions-den/micah-starter-week.ts";
 
 export type MicahGalleryDraftInput = {
   organizationId: string;
@@ -24,6 +25,7 @@ export type MicahGalleryDraftInput = {
   primaryColor?: string | null;
   secondaryColor?: string | null;
   logoDataUri?: string | null;
+  focusDay?: number | null;
 };
 
 export type MicahGalleryDraftResult = {
@@ -114,7 +116,7 @@ export async function createMicahGalleryDraft(
     input.logoDataUri ||
     brand.logoDataUri ||
     readOfficialAtlasLogoDataUri();
-  const cards = buildMicahWeekPack({
+  const pack = buildMicahWeekPack({
     prompt: input.prompt,
     demeanor: input.demeanor,
     demoDesk: input.demoDesk,
@@ -123,11 +125,32 @@ export async function createMicahGalleryDraft(
     secondaryColor: input.secondaryColor || brand.secondaryColor,
     weekKey: `week-${new Date().toISOString().slice(0, 10)}`,
   });
+  const requestedFocus =
+    typeof input.focusDay === "number" && Number.isInteger(input.focusDay)
+      ? input.focusDay
+      : focusDayFromMicahPrompt(input.prompt);
+  const focusDay =
+    requestedFocus && requestedFocus >= 1 && requestedFocus <= 7 ? requestedFocus : null;
+  const cards = focusDay ? pack.filter((card) => card.day === focusDay) : pack;
   const first = cards[0];
   const title = clipDraftText(input.title || first?.title || "MICAH week pack", 160);
   const headline = clipDraftText(input.headline || first?.headline || "This week", 120);
   const caption = clipCaptionText(input.caption || first?.caption || "", 2200);
-  const grade = gradeKingdomWeek(cards);
+  const grade =
+    cards.length === 7
+      ? gradeKingdomWeek(cards)
+      : {
+          pass:
+            cards.length > 0 &&
+            cards.every((card) =>
+              gradeKingdomCaption({
+                caption: card.caption,
+                instagramCaption: card.instagramCaption,
+                linkedinCaption: card.linkedinCaption,
+                demoLabeled: card.demoLabeled,
+              }).pass,
+            ),
+        };
   if (!grade.pass) {
     return {
       status: "error",
@@ -183,7 +206,9 @@ export async function createMicahGalleryDraft(
     const draftIds = await writeMicahWeekRows(rows, {
       organization_id: input.organizationId,
       event_type: "created",
-      note: "MICAH prepared a 7-day week pack from Talk to Atlas. It was not published.",
+      note: focusDay
+        ? `MICAH prepared ${first?.theme ?? "a day-card"} from Talk to Atlas. It was not published.`
+        : "MICAH prepared a 7-day week pack from Talk to Atlas. It was not published.",
       actor_user_id: input.userId,
       actor_label: "MICAH",
     });
@@ -211,7 +236,10 @@ export async function createMicahGalleryDraft(
       headline,
       caption,
       count: draftIds.length,
-      message: `MICAH saved a 7-day week pack in the gallery (${draftIds.length} downloadable cards). Nothing was posted to Facebook or Instagram. Copy captions and download the files from the gallery.`,
+      message:
+        draftIds.length === 1
+          ? `MICAH saved ${first?.theme ?? "this day-card"} in the gallery (1 downloadable card). Nothing was posted to Facebook or Instagram. Copy the caption and download the file from the gallery.`
+          : `MICAH saved a 7-day week pack in the gallery (${draftIds.length} downloadable cards). Nothing was posted to Facebook or Instagram. Copy captions and download the files from the gallery.`,
     };
   } catch {
     return {

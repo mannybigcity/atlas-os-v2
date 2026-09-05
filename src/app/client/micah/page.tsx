@@ -68,6 +68,7 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
           canReview={canEditBusinessProfile}
           demoDesk={isAfeCrmDemoOrganization(primaryOrganization)}
           organizationId={primaryOrganization.id}
+          organizationName={primaryOrganization.name}
           studio={studio.data}
         />
       ) : null}

@@ -113,6 +113,7 @@ function kitFromForm(formData: FormData, existing: MicahBrandKit, demoDesk: bool
     instagram: parseSocialHandle(formData.get("instagram")),
     linkedin: parseSocialHandle(formData.get("linkedin")),
     tiktok: parseSocialHandle(formData.get("tiktok")),
+    setupSaved: existing.setupSaved,
   };
 }
 
@@ -148,8 +149,11 @@ async function saveDeskBrand(formData: FormData) {
       demoDesk,
     };
   }
+  const parsed = kitFromForm(formData, existing, demoDesk);
   const kit = {
-    ...kitFromForm(formData, existing, demoDesk),
+    ...parsed,
+    businessName: parsed.businessName || existing.businessName || organization?.name || "",
+    city: parsed.city || existing.city,
     logoDataUri: uploaded.image,
     brandPhotoDataUri: brandPhoto.image,
   };
@@ -233,10 +237,11 @@ export async function buildMicahWeekFromDesk(
     saved.kit.faithLanguage && !saved.demoDesk ? "faith" : picked;
 
   const focusDay = Number(formData.get("focusDay") ?? "");
+  const resolvedFocus = Number.isInteger(focusDay) && focusDay >= 1 && focusDay <= 7 ? focusDay : null;
   const prompt = composeMicahWeekBuildPrompt({
     demeanor,
     briefs: parseMicahDayBriefs(formData),
-    focusDay: Number.isInteger(focusDay) ? focusDay : null,
+    focusDay: resolvedFocus,
     kit: saved.kit,
     socials: saved.kit,
   });
@@ -249,6 +254,7 @@ export async function buildMicahWeekFromDesk(
     primaryColor: saved.kit.primaryColor,
     secondaryColor: saved.kit.secondaryColor,
     logoDataUri: saved.kit.logoDataUri,
+    focusDay: resolvedFocus,
   });
 
   if (draft.status !== "success") {
