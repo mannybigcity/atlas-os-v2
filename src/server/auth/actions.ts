@@ -18,6 +18,7 @@ import {
   getSampleDeskSignInCredentials,
   provisionSampleDeskLoginUser,
   sampleDeskLoginUnavailableRedirect,
+  sampleDeskSignInFailedRedirect,
 } from "@/server/auth/sample-desk";
 
 export async function signInWithPassword(formData: FormData) {
@@ -95,25 +96,50 @@ export async function signInWithPassword(formData: FormData) {
 
 export async function signInToSampleDesk() {
   const credentials = getSampleDeskSignInCredentials();
-  if (!credentials) {
-    redirect(sampleDeskLoginUnavailableRedirect());
-  }
-
-  try {
-    await provisionSampleDeskLoginUser();
-  } catch (error) {
-    console.error("Atlas sample desk provision failed", error);
+  if (!credentials.ok) {
+    console.error("Atlas sample desk unavailable", { reason: credentials.reason });
     redirect(sampleDeskLoginUnavailableRedirect());
   }
 
   const supabase = await createClient();
+  const firstAttempt = await supabase.auth.signInWithPassword({
+    email: credentials.email,
+    password: credentials.password,
+  });
+
+  if (!firstAttempt.error && firstAttempt.data.user) {
+    try {
+      await ensureSampleDeskAccess(
+        firstAttempt.data.user.id,
+        firstAttempt.data.user.email ?? credentials.email,
+      );
+    } catch (provisionError) {
+      console.error("Atlas sample desk membership ensure failed", provisionError);
+    }
+    redirect("/client");
+  }
+
+  try {
+    const provisioned = await provisionSampleDeskLoginUser();
+    if (!provisioned.ok) {
+      console.error("Atlas sample desk provision skipped", { reason: provisioned.reason });
+      redirect(sampleDeskLoginUnavailableRedirect());
+    }
+  } catch (error) {
+    console.error("Atlas sample desk provision failed", error);
+  }
+
   const { error } = await supabase.auth.signInWithPassword({
     email: credentials.email,
     password: credentials.password,
   });
 
   if (error) {
-    redirect(sampleDeskLoginUnavailableRedirect());
+    console.error("Atlas sample desk sign-in failed", {
+      code: error.code,
+      status: error.status,
+    });
+    redirect(sampleDeskSignInFailedRedirect());
   }
 
   redirect("/client");

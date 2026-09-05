@@ -17,13 +17,27 @@ export function sampleDeskLoginUnavailableRedirect() {
   return "/login?error=sample_desk_unavailable";
 }
 
-export function getSampleDeskSignInCredentials() {
+export function sampleDeskSignInFailedRedirect() {
+  return "/login?error=sample_desk_signin_failed";
+}
+
+export type SampleDeskSignInCredentials =
+  | { ok: true; email: string; password: string }
+  | { ok: false; reason: "missing_email" | "forbidden_email" | "missing_password" };
+
+export function getSampleDeskSignInCredentials(): SampleDeskSignInCredentials {
   const email = getConfiguredDemoLoginEmail();
   const password = getDemoLoginPassword();
-  if (!email || isForbiddenSampleDeskLoginEmail(email) || !password) {
-    return null;
+  if (!email) {
+    return { ok: false, reason: "missing_email" };
   }
-  return { email, password };
+  if (isForbiddenSampleDeskLoginEmail(email)) {
+    return { ok: false, reason: "forbidden_email" };
+  }
+  if (!password) {
+    return { ok: false, reason: "missing_password" };
+  }
+  return { ok: true, email, password };
 }
 
 async function findAuthUserIdByEmail(service: ServiceClient, email: string) {
@@ -144,8 +158,8 @@ export async function ensureSampleDeskAccess(userId: string, email: string) {
 
 export async function provisionSampleDeskLoginUser() {
   const credentials = getSampleDeskSignInCredentials();
-  if (!credentials) {
-    return { ok: false as const, reason: "missing_credentials" };
+  if (!credentials.ok) {
+    return { ok: false as const, reason: credentials.reason };
   }
 
   const service = createServiceClient();
