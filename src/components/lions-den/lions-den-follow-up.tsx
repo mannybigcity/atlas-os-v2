@@ -83,7 +83,7 @@ export function LionsDenFollowUpBoard({
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="ld-followup-columns">
           <QueueCard
             items={[...queues.overdue, ...queues.today]}
             label={spanish ? "Hoy" : "Today"}
@@ -91,21 +91,9 @@ export function LionsDenFollowUpBoard({
             spanish={spanish}
           />
           <QueueCard items={queues.tomorrow} label={spanish ? "Mañana" : "Tomorrow"} spanish={spanish} />
+          <QueueCard items={queues.later} label={spanish ? "Más adelante" : "Later"} spanish={spanish} />
         </div>
       )}
-
-      {queues.later.length > 0 ? (
-        <article className="rounded-[1.2rem] border border-[#d5d0c4] bg-white p-5">
-          <h3 className="text-lg font-semibold text-[#071b42]">
-            {spanish ? "Más adelante" : "Later"}
-          </h3>
-          <div className="mt-4 divide-y divide-[#ece7d8]">
-            {queues.later.map((item) => (
-              <FollowUpRow item={item} key={item.id} />
-            ))}
-          </div>
-        </article>
-      ) : null}
     </section>
   );
 }
@@ -122,7 +110,7 @@ function QueueCard({
   spanish: boolean;
 }) {
   return (
-    <article className="rounded-[1.2rem] border border-[#d5d0c4] bg-white p-5">
+    <article className="ld-followup-col rounded-[1.2rem] border border-[#d5d0c4] bg-white p-5">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-lg font-semibold text-[#071b42]">{label}</h3>
         <span className="rounded-full bg-[#fbfaf4] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5c6578]">

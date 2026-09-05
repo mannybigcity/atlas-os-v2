@@ -283,7 +283,7 @@ export function LionsDenOverview({
               {spanish ? "Abrir" : "Open"}
             </Link>
           </div>
-          <div className="ld-panel-body grid min-h-0 grid-cols-1 gap-2 md:grid-cols-3">
+          <div className="ld-panel-body ld-followup-columns">
             <QueueColumn
               emptyText={spanish ? "Cola despejada." : "Queue clear."}
               items={dueTodayItems}
@@ -305,25 +305,25 @@ export function LionsDenOverview({
             />
           </div>
         </section>
-        {organizationId ? (
-          <LionsDenCalendarBoard
-            compact
-            organizationId={organizationId}
-            partyEvents={partyEvents}
-            prospects={prospects}
-            spanish={spanish}
-          />
-        ) : (
-          <div className="ld-panel">
-            <div className="ld-panel-head">
-              <p>{spanish ? "Calendario" : "Calendar"}</p>
-            </div>
-            <div className="ld-panel-body">
-              <p className="ld-empty">{spanish ? "Asigna un espacio de trabajo para ver fechas." : "Assign a workspace to see dates."}</p>
-            </div>
-          </div>
-        )}
       </section>
+      {organizationId ? (
+        <LionsDenCalendarBoard
+          compact
+          organizationId={organizationId}
+          partyEvents={partyEvents}
+          prospects={prospects}
+          spanish={spanish}
+        />
+      ) : (
+        <div className="ld-calendar ld-panel">
+          <div className="ld-panel-head">
+            <p>{spanish ? "Calendario" : "Calendar"}</p>
+          </div>
+          <div className="ld-panel-body">
+            <p className="ld-empty">{spanish ? "Asigna un espacio de trabajo para ver fechas." : "Assign a workspace to see dates."}</p>
+          </div>
+        </div>
+      )}
 
       <section className="ld-desk-work">
         {organizationId ? (
@@ -390,9 +390,9 @@ function QueueColumn({
   spanish: boolean;
 }) {
   return (
-    <div className="min-h-0 overflow-auto rounded-md border border-[#ece7d8] bg-[#fbfaf4] p-2">
+    <div className="ld-followup-col min-h-0 overflow-auto rounded-md border border-[#ece7d8] bg-[#fbfaf4] p-2">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-sm font-semibold text-[#071b42]">{label}</h4>
+        <h4 className="text-base font-semibold text-[#071b42]">{label}</h4>
         <span className="text-[10px] font-semibold text-[#5c6578]">{items.length}</span>
       </div>
       {items.length === 0 ? (
@@ -418,7 +418,7 @@ function QueueRow({
   const inner = (
     <>
       <div className="flex flex-wrap items-center gap-1">
-        <p className="truncate text-xs font-semibold text-[#071b42]">{item.title}</p>
+        <p className="text-sm font-semibold leading-5 text-[#071b42]">{item.title}</p>
         {isDemoLabel(item.title) ? <DemoBadge /> : null}
         {overdue ? (
           <span className="rounded-full bg-[#fff1f1] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8a1f1f]">
@@ -426,7 +426,7 @@ function QueueRow({
           </span>
         ) : null}
       </div>
-      {item.detail ? <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-[#33415c]">{item.detail}</p> : null}
+      {item.detail ? <p className="mt-0.5 text-xs leading-5 text-[#33415c]">{item.detail}</p> : null}
     </>
   );
 
