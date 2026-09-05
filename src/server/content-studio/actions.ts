@@ -1,11 +1,139 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { isAfeCrmDemoOrganization } from "@/lib/client-portal/identity";
+import {
+  composeMicahWeekBuildPrompt,
+  defaultMicahBrandKit,
+  normalizeBrandColor,
+  parseMicahDayBriefs,
+  parseSocialHandle,
+  MICAH_GOLD,
+  MICAH_NAVY,
+  type MicahBrandKit,
+} from "@/lib/lions-den/micah-starter-week";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
+import { readMicahBrandKit, writeMicahBrandKit } from "./brand.ts";
+import { isMicahDemeanor, resolveMicahDemeanor } from "./gallery-art.ts";
+import { createMicahGalleryDraft } from "./gallery-draft.ts";
 
 function requiredText(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
+}
+
+export type MicahDeskActionState = {
+  status: "idle" | "success" | "error";
+  error: string | null;
+  message: string | null;
+};
+
+export const initialMicahDeskActionState: MicahDeskActionState = {
+  status: "idle",
+  error: null,
+  message: null,
+};
+
+const MAX_LOGO_BYTES = 400_000;
+
+async function requireMicahOperator(organizationId: string) {
+  const user = await requireUser("/client/micah");
+  if (!organizationId) {
+    return { user, organization: null as { id: string; name: string; slug: string } | null };
+  }
+  const supabase = await createClient();
+  const { data: organization } = await supabase
+    .from("organizations")
+    .select("id, name, slug")
+    .eq("id", organizationId)
+    .maybeSingle();
+  return {
+    user,
+    organization: organization
+      ? {
+          id: String(organization.id),
+          name: String(organization.name ?? ""),
+          slug: String(organization.slug ?? ""),
+        }
+      : null,
+  };
+}
+
+async function logoFromForm(formData: FormData, existing: string | null) {
+  const file = formData.get("logo");
+  if (!(file instanceof File) || file.size === 0) return { logo: existing, error: null };
+  if (file.size > MAX_LOGO_BYTES) {
+    return { logo: existing, error: "Logo must be under 400 KB." };
+  }
+  if (!/^image\/(png|jpeg|jpg|webp|svg\+xml)$/i.test(file.type)) {
+    return { logo: existing, error: "Upload a PNG, JPG, WEBP, or SVG. MICAH will not invent a logo." };
+  }
+  const bytes = Buffer.from(await file.arrayBuffer());
+  return {
+    logo: `data:${file.type};base64,${bytes.toString("base64")}`,
+    error: null,
+  };
+}
+
+function kitFromForm(formData: FormData, existing: MicahBrandKit, demoDesk: boolean): MicahBrandKit {
+  const parsed = resolveMicahDemeanor({
+    prompt: requiredText(formData, "demeanor"),
+    stored: existing.demeanor,
+    demoDesk,
+  });
+  return {
+    demeanor: parsed.demeanor,
+    primaryColor: normalizeBrandColor(formData.get("primaryColor"), existing.primaryColor || MICAH_NAVY),
+    secondaryColor: normalizeBrandColor(formData.get("secondaryColor"), existing.secondaryColor || MICAH_GOLD),
+    logoDataUri: existing.logoDataUri,
+    facebook: parseSocialHandle(formData.get("facebook")),
+    instagram: parseSocialHandle(formData.get("instagram")),
+    linkedin: parseSocialHandle(formData.get("linkedin")),
+    tiktok: parseSocialHandle(formData.get("tiktok")),
+  };
+}
+
+async function saveDeskBrand(formData: FormData) {
+  const organizationId = requiredText(formData, "organizationId");
+  const { user, organization } = await requireMicahOperator(organizationId);
+  if (!organizationId || !user) {
+    return {
+      status: "error" as const,
+      error: "Select a workspace before saving brand setup.",
+      message: null,
+      kit: defaultMicahBrandKit(),
+      userId: user?.id ?? "",
+      demoDesk: false,
+    };
+  }
+  const demoDesk = isAfeCrmDemoOrganization(organization);
+  const existing = await readMicahBrandKit(organizationId);
+  const uploaded = await logoFromForm(formData, existing.logoDataUri);
+  if (uploaded.error) {
+    return {
+      status: "error" as const,
+      error: uploaded.error,
+      message: null,
+      kit: existing,
+      userId: user.id,
+      demoDesk,
+    };
+  }
+  const kit = { ...kitFromForm(formData, existing, demoDesk), logoDataUri: uploaded.logo };
+  const saved = await writeMicahBrandKit({
+    organizationId,
+    userId: user.id,
+    kit,
+  });
+  return {
+    status: saved.status,
+    error: saved.status === "error" ? saved.message : null,
+    message: saved.status === "success" ? saved.message : null,
+    kit: saved.kit,
+    userId: user.id,
+    demoDesk,
+  };
 }
 
 export async function reviewContentDraft(formData: FormData) {
@@ -34,4 +162,71 @@ export async function reviewContentDraft(formData: FormData) {
   redirect(
     `/client/micah?content=${error ? "review_error" : "review_saved"}#content-studio`,
   );
+}
+
+export async function saveMicahBrandSetup(
+  _previousState: MicahDeskActionState,
+  formData: FormData,
+): Promise<MicahDeskActionState> {
+  const saved = await saveDeskBrand(formData);
+  if (saved.status === "success") {
+    revalidatePath("/client/micah");
+  }
+  return {
+    status: saved.status,
+    error: saved.error,
+    message: saved.message,
+  };
+}
+
+export async function buildMicahWeekFromDesk(
+  _previousState: MicahDeskActionState,
+  formData: FormData,
+): Promise<MicahDeskActionState> {
+  const saved = await saveDeskBrand(formData);
+  if (saved.status === "error") {
+    return { status: "error", error: saved.error, message: null };
+  }
+
+  const organizationId = requiredText(formData, "organizationId");
+  const demeanor = saved.kit.demeanor;
+  if (!isMicahDemeanor(demeanor)) {
+    return {
+      status: "error",
+      error: saved.demoDesk
+        ? "Pick Motivational, Friendly/local, Comical, or Straight. Faith is not used on this desk."
+        : "Pick a voice, then build the week.",
+      message: null,
+    };
+  }
+
+  const focusDay = Number(formData.get("focusDay") ?? "");
+  const prompt = composeMicahWeekBuildPrompt({
+    demeanor,
+    briefs: parseMicahDayBriefs(formData),
+    focusDay: Number.isInteger(focusDay) ? focusDay : null,
+    socials: saved.kit,
+  });
+  const draft = await createMicahGalleryDraft({
+    organizationId,
+    userId: saved.userId,
+    prompt,
+    demeanor,
+    demoDesk: saved.demoDesk,
+    primaryColor: saved.kit.primaryColor,
+    secondaryColor: saved.kit.secondaryColor,
+    logoDataUri: saved.kit.logoDataUri,
+  });
+
+  if (draft.status !== "success") {
+    return { status: "error", error: draft.message, message: null };
+  }
+
+  revalidatePath("/client/micah");
+  revalidatePath("/client");
+  return {
+    status: "success",
+    error: null,
+    message: draft.message,
+  };
 }

@@ -7,6 +7,7 @@ export type MicahWeekGalleryCard = {
   id: string | null;
   day: number;
   weekday: string;
+  theme?: string;
   dayLabel: string;
   title: string;
   headline: string;

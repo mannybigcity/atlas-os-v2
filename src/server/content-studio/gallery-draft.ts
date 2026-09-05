@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { demeanorFromBrand, readMicahBrandKit } from "./brand.ts";
 import {
   buildMicahWeekPack,
   clipCaptionText,
@@ -20,6 +21,9 @@ export type MicahGalleryDraftInput = {
   headline?: string | null;
   caption?: string | null;
   title?: string | null;
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+  logoDataUri?: string | null;
 };
 
 export type MicahGalleryDraftResult = {
@@ -68,6 +72,9 @@ async function writeMicahWeekRows(
 export async function readMicahDemeanor(
   organizationId: string,
 ): Promise<MicahDemeanor | null> {
+  const fromBrand = demeanorFromBrand(await readMicahBrandKit(organizationId));
+  if (fromBrand) return fromBrand;
+
   const readers: Array<
     Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>
   > = [await createClient()];
@@ -102,11 +109,18 @@ export async function readMicahDemeanor(
 export async function createMicahGalleryDraft(
   input: MicahGalleryDraftInput,
 ): Promise<MicahGalleryDraftResult> {
+  const brand = await readMicahBrandKit(input.organizationId);
+  const logoDataUri =
+    input.logoDataUri ||
+    brand.logoDataUri ||
+    readOfficialAtlasLogoDataUri();
   const cards = buildMicahWeekPack({
     prompt: input.prompt,
     demeanor: input.demeanor,
     demoDesk: input.demoDesk,
-    logoDataUri: readOfficialAtlasLogoDataUri(),
+    logoDataUri,
+    primaryColor: input.primaryColor || brand.primaryColor,
+    secondaryColor: input.secondaryColor || brand.secondaryColor,
     weekKey: `week-${new Date().toISOString().slice(0, 10)}`,
   });
   const first = cards[0];
@@ -149,6 +163,9 @@ export async function createMicahGalleryDraft(
       week_pack: true,
       week_day: card.day,
       weekday: card.weekday,
+      week_theme: card.theme,
+      primary_color: input.primaryColor || brand.primaryColor,
+      secondary_color: input.secondaryColor || brand.secondaryColor,
       micah_demeanor: input.demeanor,
       company_name: card.companyName,
       demo_labeled: card.demoLabeled,

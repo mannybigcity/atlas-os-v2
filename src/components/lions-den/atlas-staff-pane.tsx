@@ -6,6 +6,7 @@ import { useActionState, useEffect, useRef, useState, type FormEvent } from "rea
 import { useRouter } from "next/navigation";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { ATLAS_LION_SRC } from "@/lib/lions-den/atlas-brand";
+import { MICAH_TALK_EVENT } from "@/lib/lions-den/micah-starter-week";
 import { ATLAS_STAFF_PROMPT_LIMIT, composeAtlasStaffPrompt } from "@/lib/lions-den/atlas-staff-prompt";
 import { atlasStaffCanSend } from "@/lib/lions-den/atlas-staff-send";
 import { atlasDeskNextHref } from "@/lib/lions-den/atlas-desk-route";
@@ -105,6 +106,19 @@ export function AtlasStaffPane({
     const stored = window.sessionStorage.getItem(draftStorageKey(organizationId));
     if (stored) setDraft(stored.slice(0, ATLAS_STAFF_PROMPT_LIMIT));
   }, [organizationId]);
+
+  useEffect(() => {
+    function onMicahTalk(event: Event) {
+      const prompt = String((event as CustomEvent<{ prompt?: string }>).detail?.prompt ?? "").trim();
+      if (!prompt) return;
+      setDraft(prompt.slice(0, ATLAS_STAFF_PROMPT_LIMIT));
+      window.setTimeout(() => {
+        document.getElementById("atlas-staff-prompt")?.focus();
+      }, 0);
+    }
+    window.addEventListener(MICAH_TALK_EVENT, onMicahTalk);
+    return () => window.removeEventListener(MICAH_TALK_EVENT, onMicahTalk);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
