@@ -134,8 +134,7 @@ export function MicahWeekDesk({
           </button>
         </div>
 
-        {brandOpen ? (
-          <div className="mt-4 space-y-4">
+        <div className={brandOpen ? "mt-4 space-y-4" : "hidden"}>
             <fieldset className="space-y-2">
               <legend className="text-xs font-semibold uppercase tracking-[0.12em] text-[#071b42]">
                 {spanish ? "Voz" : "Voice"}
@@ -147,7 +146,10 @@ export function MicahWeekDesk({
                     key={voice.id}
                   >
                     <input
-                      defaultChecked={brand.demeanor === voice.id}
+                      defaultChecked={
+                        brand.demeanor === voice.id ||
+                        (!brand.demeanor && voice.id === "friendly_local")
+                      }
                       disabled={!canEdit || pending}
                       name="demeanor"
                       required={empty}
@@ -251,12 +253,7 @@ export function MicahWeekDesk({
                 spanish={spanish}
               />
             </div>
-          </div>
-        ) : (
-          <div className="sr-only">
-            <BrandHiddenFields brand={brand} />
-          </div>
-        )}
+        </div>
       </section>
 
       {empty ? (
@@ -392,20 +389,6 @@ export function MicahWeekDesk({
 
       <input name="organizationId" type="hidden" value={organizationId} />
     </form>
-  );
-}
-
-function BrandHiddenFields({ brand }: { brand: MicahBrandKit }) {
-  return (
-    <>
-      {brand.demeanor ? <input name="demeanor" type="hidden" value={brand.demeanor} /> : null}
-      <input name="primaryColor" type="hidden" value={brand.primaryColor} />
-      <input name="secondaryColor" type="hidden" value={brand.secondaryColor} />
-      <input name="facebook" type="hidden" value={brand.facebook} />
-      <input name="instagram" type="hidden" value={brand.instagram} />
-      <input name="linkedin" type="hidden" value={brand.linkedin} />
-      <input name="tiktok" type="hidden" value={brand.tiktok} />
-    </>
   );
 }
 
