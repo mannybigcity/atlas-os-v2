@@ -6,6 +6,7 @@ import {
   nextWorkspaceSlugCandidate,
   workspaceSlugFromIdentity,
 } from "@/server/stripe/paid-workspace-identity";
+import { ensureTrialLionsDenSeed } from "@/server/trials/desk-seed";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
@@ -88,6 +89,12 @@ export async function ensureTrialWorkspace(input: TrialWorkspaceInput): Promise<
   const service = createServiceClient();
   const existingOrganizationId = await findExistingMembershipOrganizationId(service, input.userId);
   if (existingOrganizationId) {
+    await ensureTrialLionsDenSeed({
+      client: service,
+      organizationId: existingOrganizationId,
+      userId: input.userId,
+      hasTrialProfile: true,
+    });
     return { ok: true, organizationId: existingOrganizationId };
   }
 
@@ -108,6 +115,12 @@ export async function ensureTrialWorkspace(input: TrialWorkspaceInput): Promise<
     if (insertMembershipError) {
       const racedOrganizationId = await findExistingMembershipOrganizationId(service, input.userId);
       if (racedOrganizationId) {
+        await ensureTrialLionsDenSeed({
+          client: service,
+          organizationId: racedOrganizationId,
+          userId: input.userId,
+          hasTrialProfile: true,
+        });
         return { ok: true, organizationId: racedOrganizationId };
       }
 
@@ -115,10 +128,22 @@ export async function ensureTrialWorkspace(input: TrialWorkspaceInput): Promise<
       return { ok: false, error: "membership_failed" };
     }
 
+    await ensureTrialLionsDenSeed({
+      client: service,
+      organizationId,
+      userId: input.userId,
+      hasTrialProfile: true,
+    });
     return { ok: true, organizationId };
   } catch (error) {
     const racedOrganizationId = await findExistingMembershipOrganizationId(service, input.userId);
     if (racedOrganizationId) {
+      await ensureTrialLionsDenSeed({
+        client: service,
+        organizationId: racedOrganizationId,
+        userId: input.userId,
+        hasTrialProfile: true,
+      });
       return { ok: true, organizationId: racedOrganizationId };
     }
 

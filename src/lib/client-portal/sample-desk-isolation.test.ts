@@ -143,7 +143,7 @@ test("admin /client renders the Lion's Den CRM desk, not the empty PRIVATE CRM s
   assert.match(operator, /canEnsureAfeOperatorDesk/);
   assert.doesNotMatch(operator, /afe-crm-demo/);
   assert.doesNotMatch(operator, /ABC Plumbing|123 Catering|XYZ Electric/);
-  assert.doesNotMatch(operator, /upsertSampleDeskRecords|upsertSisDemoDeskRecords/);
+  assert.doesNotMatch(operator, /upsertSampleDeskRecords|upsertSisDemoDeskRecords|applyTrialLionsDenSeed|ensureTrialLionsDenSeed/);
 });
 
 test("demo user still only sees the sample org and admin never opens it", () => {

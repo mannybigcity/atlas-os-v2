@@ -23,8 +23,14 @@ supabase/migrations/20260904150000_trial_workspace_service_role_grants.sql
 1. Sign up at `/start-trial` with a new plus-address email
 2. Confirm email from inbox
 3. Land on `/client?status=welcome` with an assigned workspace
-4. As super-admin on the AFE operator desk, `/client` should show `7 Day Trial (N)`
+4. Lion's Den should show a small HUNTER **SAMPLE** review pile (not Prospects) and
+   seven MICAH Mon–Sun gallery placeholders. Refresh must not duplicate them.
+   Accept one SAMPLE find only if you want it on Prospects. Nothing auto-posts.
+5. As super-admin on the AFE operator desk, `/client` should show `7 Day Trial (N)`
    and the new workspace should appear on `/client/trial-inbox` (not Prospects or HUNTER)
+
+Apply `supabase/migrations/20260905223000_trial_desk_seed_service_role_grants.sql`
+if first login still lands empty (service role cannot write the review pile / gallery).
 
 ## 4. Failure path (staging only)
 
