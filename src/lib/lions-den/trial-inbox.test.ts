@@ -10,6 +10,7 @@ import {
 import {
   TRIAL_INBOX_PROOF_SLUG,
   canSeeTrialInboxNav,
+  computeTrialInboxStatus,
   isExcludedTrialInboxEmail,
   isExcludedTrialInboxOrganization,
   isInsideTrialInboxWindow,
@@ -27,15 +28,13 @@ function candidate(overrides: Partial<TrialInboxCandidate> = {}): TrialInboxCand
     userId: "user-bright-path",
     ownerName: "Jordan Hale",
     email: "jordan@brightpath.example",
-    businessName: "Bright Path Cleaning",
-    trialStartedAt: "2026-09-05T14:12:00.000Z",
-    trialEndsAt: "2026-09-12T14:12:00.000Z",
     organizationId: "org-bright-path",
     organizationName: "Bright Path Cleaning",
     organizationSlug: TRIAL_INBOX_PROOF_SLUG,
     organizationCreatedAt: "2026-09-05T14:12:10.000Z",
     membershipRole: "owner",
     emailConfirmedAt: "2026-09-05T14:20:00.000Z",
+    lastSignInAt: "2026-09-05T15:01:00.000Z",
     ...overrides,
   };
 }
@@ -96,40 +95,43 @@ test("count label stays owner-friendly", () => {
   assert.equal(trialInboxNavLabel(0, true), "Prueba 7 días (0)");
 });
 
-test("Bright Path Cleaning proof case stays in the 7-day queue", () => {
+test("Bright Path Cleaning proof case stays in the 7-day queue from org + owner + Auth", () => {
   const rows = selectTrialInboxRows(
     [
       candidate(),
       candidate({
         userId: "user-sis",
         email: "sis@example.com",
-        businessName: "SIS Custom Creations",
         organizationName: "SIS Custom Creations",
         organizationSlug: "sis-diy-big-complete-showcase",
       }),
       candidate({
         userId: "user-sample",
         email: SAMPLE_DESK_LOGIN_EMAIL,
-        businessName: "Sample desk",
         organizationName: "Sample desk",
         organizationSlug: "afe-crm-demo",
       }),
       candidate({
         userId: "user-founder",
         email: FOUNDER_MAILBOX_EMAIL,
-        businessName: "Founder mailbox trial",
         organizationName: "Founder mailbox trial",
         organizationSlug: "founder-mailbox-trial",
       }),
       candidate({
+        userId: "user-paid",
+        email: "paid@example.com",
+        organizationName: "Paid Desk Co",
+        organizationSlug: "paid-desk-co",
+        upgraded: true,
+      }),
+      candidate({
         userId: "user-old",
         email: "old@example.com",
-        businessName: "Old Trial Co",
-        trialStartedAt: "2026-08-20T00:00:00.000Z",
-        trialEndsAt: "2026-08-27T00:00:00.000Z",
         organizationName: "Old Trial Co",
         organizationSlug: "old-trial-co",
         organizationCreatedAt: "2026-08-20T00:00:00.000Z",
+        trialStartedAt: "2026-08-20T00:00:00.000Z",
+        trialEndsAt: "2026-08-27T00:00:00.000Z",
       }),
     ],
     now,
@@ -141,7 +143,9 @@ test("Bright Path Cleaning proof case stays in the 7-day queue", () => {
   assert.equal(rows[0]?.ownerName, "Jordan Hale");
   assert.equal(rows[0]?.email, "jordan@brightpath.example");
   assert.equal(rows[0]?.previewHref, `/client?previewOrg=${TRIAL_INBOX_PROOF_SLUG}`);
+  assert.equal(rows[0]?.status, "first_login");
   assert.ok(rows[0]?.emailConfirmedAt);
+  assert.ok(rows[0]?.daysRemaining >= 6);
 });
 
 test("exclusions never mix SIS, sample desk, or founder mailbox", () => {
@@ -166,30 +170,88 @@ test("exclusions never mix SIS, sample desk, or founder mailbox", () => {
   assert.equal(isExcludedTrialInboxEmail("jordan@brightpath.example"), false);
 });
 
-test("window rule is last 7 days or still-active trial", () => {
+test("window rule is last 7 days or still-active trial from org created_at", () => {
   assert.equal(
     isInsideTrialInboxWindow({
       now,
-      trialStartedAt: "2026-09-05T14:12:00.000Z",
-      trialEndsAt: "2026-09-12T14:12:00.000Z",
+      organizationCreatedAt: "2026-09-05T14:12:00.000Z",
     }),
     true,
   );
   assert.equal(
     isInsideTrialInboxWindow({
       now,
-      trialStartedAt: "2026-08-20T00:00:00.000Z",
-      trialEndsAt: "2026-08-27T00:00:00.000Z",
+      organizationCreatedAt: "2026-08-20T00:00:00.000Z",
     }),
     false,
   );
   assert.equal(
     isInsideTrialInboxWindow({
       now,
-      trialStartedAt: "2026-08-28T00:00:00.000Z",
-      trialEndsAt: "2026-09-06T00:00:00.000Z",
+      organizationCreatedAt: "2026-08-30T00:00:00.000Z",
     }),
     true,
+  );
+});
+
+test("status ladder is computed and never stored", () => {
+  assert.equal(
+    computeTrialInboxStatus({
+      now,
+      startedAt: "2026-09-05T14:12:00.000Z",
+      upgraded: true,
+    }),
+    "upgraded",
+  );
+  assert.equal(
+    computeTrialInboxStatus({
+      now,
+      startedAt: "2026-08-20T00:00:00.000Z",
+      emailConfirmedAt: null,
+      lastSignInAt: null,
+    }),
+    "abandoned",
+  );
+  assert.equal(
+    computeTrialInboxStatus({
+      now,
+      startedAt: "2026-08-20T00:00:00.000Z",
+      emailConfirmedAt: "2026-08-20T01:00:00.000Z",
+    }),
+    "expired",
+  );
+  assert.equal(
+    computeTrialInboxStatus({
+      now,
+      startedAt: "2026-09-05T14:12:00.000Z",
+      emailConfirmedAt: "2026-09-05T14:20:00.000Z",
+      lastSignInAt: "2026-09-05T15:01:00.000Z",
+    }),
+    "first_login",
+  );
+  assert.equal(
+    computeTrialInboxStatus({
+      now,
+      startedAt: "2026-08-30T00:00:00.000Z",
+      emailConfirmedAt: "2026-08-30T01:00:00.000Z",
+      lastSignInAt: "2026-09-02T12:00:00.000Z",
+    }),
+    "in_den",
+  );
+  assert.equal(
+    computeTrialInboxStatus({
+      now,
+      startedAt: "2026-09-05T14:12:00.000Z",
+      emailConfirmedAt: "2026-09-05T14:20:00.000Z",
+    }),
+    "confirmed",
+  );
+  assert.equal(
+    computeTrialInboxStatus({
+      now,
+      startedAt: "2026-09-05T14:12:00.000Z",
+    }),
+    "signed_up",
   );
 });
 
@@ -216,7 +278,9 @@ test("row click uses previewOrg and never Prospects or HUNTER", () => {
   assert.doesNotMatch(board, /\/client\/prospects/);
   assert.match(hub, /trialInboxNavLabel/);
   assert.match(hub, /ld-trial-nav-new/);
-  assert.match(query, /atlas_trial_profiles/);
+  assert.match(query, /from\("organizations"\)/);
+  assert.match(query, /organization_memberships/);
+  assert.match(query, /auth\.admin\.getUserById/);
   assert.match(query, /selectTrialInboxRows/);
-  assert.match(query, /email_confirmed_at|emailConfirmedAt/);
+  assert.doesNotMatch(query, /create table/i);
 });

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { TrialInboxRow } from "@/lib/lions-den/trial-inbox";
+import { trialInboxStatusLabel, type TrialInboxRow } from "@/lib/lions-den/trial-inbox";
 
 type LionsDenTrialInboxBoardProps = {
   rows: TrialInboxRow[];
@@ -65,11 +65,25 @@ export function LionsDenTrialInboxBoard({
                     <p className="mt-1 text-sm text-[#5c6578]">{row.email || (spanish ? "Sin correo" : "No email")}</p>
                     <p className="mt-1 text-xs uppercase tracking-[0.1em] text-[#8a93a3]">
                       {spanish ? "Inicio" : "Started"} · {formatStarted(row.startedAt, spanish)}
+                      {row.daysRemaining > 0
+                        ? ` · ${row.daysRemaining} ${spanish ? "días" : "days"}`
+                        : ""}
                     </p>
                   </div>
-                  <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
-                    {emailConfirmLabel(row.emailConfirmedAt, spanish)}
-                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
+                      {trialInboxStatusLabel(row.status, spanish)}
+                    </span>
+                    <span className="w-fit rounded-full bg-[#f7f5ee] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
+                      {row.emailConfirmedAt
+                        ? spanish
+                          ? "Correo confirmado"
+                          : "Email confirmed"
+                        : spanish
+                          ? "Correo sin confirmar"
+                          : "Email not confirmed"}
+                    </span>
+                  </div>
                 </div>
               </Link>
             </article>
@@ -88,9 +102,4 @@ function formatStarted(value: string, spanish: boolean) {
     day: "numeric",
     year: "numeric",
   }).format(date);
-}
-
-function emailConfirmLabel(value: string | null, spanish: boolean) {
-  if (value) return spanish ? "Correo confirmado" : "Email confirmed";
-  return spanish ? "Correo sin confirmar" : "Email not confirmed";
 }

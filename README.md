@@ -74,24 +74,37 @@ Super-admin / AFE operator Lion’s Den (`/client` on Atlas For Entrepreneurs)
 shows a left-nav item `7 Day Trial (N)`. It is hidden on SIS, the sample desk,
 ordinary client desks, and while previewing another org.
 
-**Count rule.** N is the number of AFE trial workspaces whose owner has an
-`atlas_trial_profiles` row and whose `trial_started_at` is within the last 7
-days **or** whose `trial_ends_at` is still in the future. There is no processed
-flag yet; this window is the human-approval queue. Expired trials drop off.
+**Source.** Derived from `organizations` + owner `organization_memberships` +
+Auth. There is no `trial_inbox` table. `atlas_trial_profiles` is optional
+enrichment only.
 
-**Click.** The inbox lists company name, owner name, email, started date, and
-email confirm status. A row opens that org’s desk with the existing
-`/client?previewOrg=<slug>` pattern. Trials are never copied into Prospects or
-HUNTER. Atlas does not email, call, or text anyone.
+**Field map.** Company = `organizations.name`. Owner name = Auth
+`user_metadata.full_name` (trial profile name if Auth has none). Email = Auth
+owner email. Started = `organizations.created_at`, or trial profile start when
+the org timestamp is missing. Email confirm = Auth `email_confirmed_at`.
+Trial end / days remaining = existing `trial_ends_at` or start + 7 days.
+
+**Count rule.** N is AFE trial workspaces in that window (start in the last 7
+days **or** end still in the future) that are not upgraded. There is no
+processed flag; this window is the human-approval queue.
+
+**Status (computed, never stored).** First match: `upgraded` (linked billing),
+`abandoned` (past end, never confirmed, never signed in), `expired` (past end),
+`first_login` (signed in within 24 hours of start), `in_den` (signed in later),
+`confirmed` (email confirmed, no sign-in), `signed_up` (not confirmed yet).
+Upgraded orgs are excluded from the queue.
+
+**Click.** A row opens that org’s desk with `/client?previewOrg=<slug>`.
+Trials are never copied into Prospects or HUNTER. Atlas does not email, call,
+or text anyone.
 
 **Exclusions.** SIS Custom Creations, sample desk `afe-crm-demo`, the AFE
-operator desk, QTime, the founder mailbox, and `@atlasforentrepreneurs.com`
-identities. Rows without an organization slug are omitted because they cannot
-open `previewOrg`.
+operator desk, QTime, the founder mailbox, `@atlasforentrepreneurs.com`
+identities, and linked paid workspaces. Rows without a slug are omitted.
 
-**Proof shape.** A trial org like `bright-path-cleaning-2ead43` (Bright Path
-Cleaning) created on 2026-09-05 appears when it has a trial profile, an owner
-membership, and is inside the 7-day window.
+**Proof shape.** `bright-path-cleaning-2ead43` (Bright Path Cleaning) created
+on 2026-09-05 appears when it is an AFE org with an owner membership and sits
+inside the 7-day window.
 
 ## Next recommended step
 
