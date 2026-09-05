@@ -4,6 +4,11 @@ import { useActionState } from "react";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { HunterFunnelStrip } from "@/components/lions-den/hunter-funnel-strip";
 import { acceptHunterReviewItem, dismissHunterReviewItem, searchHunterProspects } from "@/server/hunter/actions";
+import {
+  formatHunterGapLabel,
+  hunterFiltersActive,
+  hunterGapLabels,
+} from "@/server/hunter/filters";
 import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
 import type { HunterSearchFind } from "@/server/hunter/review";
 import { initialHunterSearchState } from "@/server/hunter/types";
@@ -102,6 +107,26 @@ export function HunterSearch({ organizationId, prospectsHref = "/client/prospect
         >
           {pending ? spanish ? "Buscando…" : "Searching…" : spanish ? "Buscar 10" : "Search 10"}
         </button>
+        <div className="sm:col-span-2 xl:col-span-full rounded-2xl border border-[#ece7d8] bg-[#fbfaf4] px-4 py-3">
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#071b42]">
+            {spanish ? "Filtros opcionales" : "Optional filters"}
+          </p>
+          <p className="mt-1 text-sm leading-6 text-[#33415c]">
+            {spanish
+              ? "Déjalos apagados para ver todos los resultados de Google Maps. Atlas solo ve el sitio que Maps lista — no recibe Facebook ni Instagram, y no inventa teléfono ni web."
+              : "Leave these off to see every Google Maps result. Atlas only sees the website Maps lists — it does not get Facebook or Instagram fields, and it does not invent a phone or website."}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-4">
+            <label className="inline-flex items-center gap-2 text-sm font-semibold text-[#071b42]">
+              <input className="h-4 w-4 accent-[#071b42]" name="missingWebsite" type="checkbox" value="yes" />
+              {spanish ? "Sin sitio web" : "No website"}
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm font-semibold text-[#071b42]">
+              <input className="h-4 w-4 accent-[#071b42]" name="weakSocial" type="checkbox" value="yes" />
+              {spanish ? "Redes débiles" : "Weak social"}
+            </label>
+          </div>
+        </div>
       </form>
 
       {state.message ? (
@@ -117,6 +142,19 @@ export function HunterSearch({ organizationId, prospectsHref = "/client/prospect
               {spanish ? " — siguiente paso: llamar. Atlas no contactó a nadie." : " — next step: call. Atlas did not contact anyone."}
             </p>
           ) : null}
+        </div>
+      ) : null}
+
+      {state.status === "success" && !state.places.length && hunterFiltersActive(state.filters) && state.rawCount > 0 ? (
+        <div className="mt-5 rounded-2xl border border-dashed border-[#d8c27a] bg-[#fff8e6] p-5 text-sm leading-6 text-[#071b42]">
+          <p className="font-semibold">
+            {spanish ? "Ningún hueco en esta búsqueda." : "No gap leads in this search."}
+          </p>
+          <p className="mt-2 text-[#33415c]">
+            {spanish
+              ? "Google Maps sí devolvió negocios. Ninguno coincidió con Sin sitio web o Redes débiles. Quita los filtros para ver la lista completa. Atlas no inventó un sitio ni un teléfono."
+              : "Google Maps did return businesses. None matched No website or Weak social. Turn the filters off to see the full list. Atlas did not invent a website or phone."}
+          </p>
         </div>
       ) : null}
 
@@ -187,6 +225,18 @@ function HunterSearchFindRow({
             {place.primaryType?.replaceAll("_", " ") ?? (spanish ? "Negocio" : "Business")}
             {place.businessStatus ? ` · ${place.businessStatus.replaceAll("_", " ")}` : ""}
           </p>
+          {hunterGapLabels(place).length ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {hunterGapLabels(place).map((label) => (
+                <span
+                  className="rounded-full bg-[#fff8e6] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#071b42]"
+                  key={label}
+                >
+                  {formatHunterGapLabel(label, spanish)}
+                </span>
+              ))}
+            </div>
+          ) : null}
           {organizationId ? (
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.1em] text-[#071b42]">
               {place.lane === "prospect"
@@ -277,6 +327,17 @@ function searchResultsCaption(input: {
 function localizeHunterMessage(message: string, language: "en" | "es") {
   if (language !== "es") return message;
 
+  const filteredEmptyMatch = message.match(
+    /^Google Maps returned (\d+) listings?\. None matched (.+)\. Atlas can only see the website Google lists/,
+  );
+  if (filteredEmptyMatch) {
+    const labels = filteredEmptyMatch[2]
+      ?.replace("no website", "sin sitio web")
+      .replace("weak social", "redes débiles");
+    const listingWord = filteredEmptyMatch[1] === "1" ? "ficha" : "fichas";
+    return `Google Maps devolvió ${filteredEmptyMatch[1]} ${listingWord}. Ninguna coincidió con ${labels}. Atlas solo ve el sitio que Google lista — no recibe campos de Facebook ni Instagram, y no inventa un sitio ni un teléfono. Quita los filtros para ver la lista completa.`;
+  }
+
   const persistedMatch = message.match(/^(\d+) Google Maps result/);
   if (persistedMatch) {
     return message
@@ -294,7 +355,10 @@ function localizeHunterMessage(message: string, language: "en" | "es") {
       .replace("The review-pile table is missing on this database.", "Falta la tabla de la pila de revisión en esta base de datos.")
       .replace("then search again.", "luego busca otra vez.")
       .replace("No new listings were added to the REVIEW PILE.", "No se agregaron fichas nuevas a la PILA DE REVISIÓN.")
-      .replace("Results stay only in this page session and are not copied into the CRM.", "Los resultados permanecen solo en esta sesión y no se copian al CRM.");
+      .replace("Results stay only in this page session and are not copied into the CRM.", "Los resultados permanecen solo en esta sesión y no se copian al CRM.")
+      .replace("narrowed from", "reducidos de")
+      .replace("no website", "sin sitio web")
+      .replace("weak social", "redes débiles");
   }
 
   const transientMatch = message.match(/^(\d+) transient Google Maps results\./);

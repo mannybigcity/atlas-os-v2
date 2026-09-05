@@ -1,4 +1,5 @@
 import { acceptHunterReviewItem, dismissHunterReviewItem } from "@/server/hunter/actions";
+import { formatHunterGapLabel, hunterGapLabels } from "@/server/hunter/filters";
 import { HUNTER_REVIEW_PILE_MIGRATION } from "@/server/hunter/review";
 import type { HunterReviewItem } from "@/server/hunter/review";
 
@@ -105,6 +106,18 @@ export function HunterReviewPile({
                     {(item.primaryType ?? (spanish ? "Negocio" : "Business")).replaceAll("_", " ")}
                     {item.businessStatus ? ` · ${item.businessStatus.replaceAll("_", " ")}` : ""}
                   </p>
+                  {hunterGapLabels(item).length ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {hunterGapLabels(item).map((label) => (
+                        <span
+                          className="rounded-full bg-[#fff8e6] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#071b42]"
+                          key={label}
+                        >
+                          {formatHunterGapLabel(label, spanish)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                   <p className="mt-2 text-xs text-[#8a93a3]" translate="no">
                     Google Maps · {item.searchQuery}
                   </p>
