@@ -7,7 +7,9 @@ import { placesToReviewInserts } from "./review.ts";
 test("HUNTER Places hunts write the review pile, never Prospects", () => {
   const source = readFileSync(join(process.cwd(), "src/server/hunter/search.ts"), "utf8");
   assert.match(source, /organization_hunter_review_items/);
-  assert.match(source, /REVIEW PILE/);
+  assert.match(source, /buildHunterSearchPersistNote/);
+  assert.match(source, /existingError/);
+  assert.doesNotMatch(source, /were not added because they were already accepted/);
   assert.doesNotMatch(source, /\.from\(\s*["']organization_opportunities["']\s*\)/);
 
   const rows = placesToReviewInserts(

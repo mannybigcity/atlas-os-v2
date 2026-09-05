@@ -89,6 +89,8 @@ export async function searchHunterProspects(
       query: null,
       places: [],
       persistedCount: 0,
+      acceptedCount: 0,
+      tableMissing: false,
     };
   }
 

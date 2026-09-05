@@ -849,7 +849,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
           requestId: logged.id,
           createdAt: logged.createdAt,
           answer: response,
-          nextStep: "Review the finds on Prospects and accept the ones you want. Atlas will not contact them.",
+          nextStep: "Accept the finds you want on HUNTER, then open Prospects to call. Atlas will not contact them.",
           missingInputs: [],
           error: null,
           dailyUsage,
@@ -861,7 +861,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
           routedTo: "hunter",
           scopeStatus: decision.scopeStatus,
           answer: response,
-          nextStep: "Review the finds on Prospects and accept the ones you want. Atlas will not contact them.",
+          nextStep: "Accept the finds you want on HUNTER, then open Prospects to call. Atlas will not contact them.",
           dailyUsage,
         });
       }
