@@ -85,6 +85,14 @@ export function presentLiveDeskOpportunity<
   opportunity: T,
 ): T {
   if (!isAfeLiveDesk(organization)) return opportunity;
+  if (
+    isSampleLabeledSeedText(opportunity.name) ||
+    isSampleLabeledSeedText(opportunity.sourceLabel) ||
+    isSampleLabeledSeedText(opportunity.researchSummary) ||
+    isSampleLabeledSeedText(opportunity.nextAction)
+  ) {
+    return opportunity;
+  }
 
   return {
     ...opportunity,

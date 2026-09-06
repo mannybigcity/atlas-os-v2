@@ -12,6 +12,11 @@ export function extractTrialMetadata(metadata: Record<string, unknown>) {
     metadata.primary_growth_goal ?? metadata.primaryGrowthGoal,
     1000,
   );
+  const city = cleanTrialMetadataValue(metadata.city, 80);
+  const postalCode = cleanTrialMetadataValue(
+    metadata.postal_code ?? metadata.postalCode ?? metadata.zip_code ?? metadata.zipCode,
+    16,
+  );
 
   return {
     fullName,
@@ -20,6 +25,8 @@ export function extractTrialMetadata(metadata: Record<string, unknown>) {
     phone,
     businessType,
     primaryGrowthGoal,
+    city,
+    postalCode,
   };
 }
 

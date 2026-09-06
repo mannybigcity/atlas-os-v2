@@ -52,6 +52,10 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
                     : null,
         businessType: "Tipo de negocio",
         businessTypePlaceholder: "Elige un tipo de negocio",
+        city: "Ciudad (opcional)",
+        cityPlaceholder: "Ciudad de tu negocio",
+        postalCode: "Código postal (opcional)",
+        postalCodePlaceholder: "Código postal",
         growthGoal: "Meta principal de crecimiento",
         growthPlaceholder: "¿Qué te gustaría mejorar más en los próximos 90 días?",
         createPassword: "Crea una contraseña",
@@ -92,6 +96,10 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
                   : null,
         businessType: "Business type",
         businessTypePlaceholder: "Choose a business type",
+        city: "City (optional)",
+        cityPlaceholder: "Your business city",
+        postalCode: "ZIP code (optional)",
+        postalCodePlaceholder: "ZIP code",
         growthGoal: "Primary growth goal",
         growthPlaceholder: "What would you most like to improve in the next 90 days?",
         createPassword: "Create a password",
@@ -164,6 +172,16 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
                 {copy.options.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className="block space-y-2">
+                <span className="text-sm font-semibold text-slate-700">{copy.city}</span>
+                <input aria-label={copy.city} className="assessment-field" name="city" placeholder={copy.cityPlaceholder} type="text" />
+              </label>
+              <label className="block space-y-2">
+                <span className="text-sm font-semibold text-slate-700">{copy.postalCode}</span>
+                <input aria-label={copy.postalCode} className="assessment-field" name="postalCode" placeholder={copy.postalCodePlaceholder} type="text" />
+              </label>
+            </div>
             <label className="block space-y-2">
               <span className="text-sm font-semibold text-slate-700">{copy.growthGoal}</span>
               <textarea aria-label={copy.growthGoal} className="assessment-field assessment-textarea" name="primaryGrowthGoal" placeholder={copy.growthPlaceholder} required />

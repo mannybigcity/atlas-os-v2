@@ -1,3 +1,4 @@
+import { inferTrialCityFromName } from "@/lib/lions-den/trial-desk-market";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessProfile } from "@/server/business-profile/queries";
@@ -176,17 +177,29 @@ export async function readMicahWorkspacePrefill(
   }
   try {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("sales_prospects")
-      .select("city")
-      .eq("converted_organization_id", organizationId)
-      .not("city", "is", null)
-      .limit(1)
-      .maybeSingle();
-    const city = String((data as { city?: string | null } | null)?.city ?? "").trim();
-    if (city) prefill.city = city;
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const metaCity = String(auth.user?.user_metadata?.city ?? "").trim();
+      if (metaCity) prefill.city = metaCity;
+    } catch {
+      // Signup city is optional.
+    }
+    if (!prefill.city) {
+      const { data } = await supabase
+        .from("sales_prospects")
+        .select("city")
+        .eq("converted_organization_id", organizationId)
+        .not("city", "is", null)
+        .limit(1)
+        .maybeSingle();
+      const city = String((data as { city?: string | null } | null)?.city ?? "").trim();
+      if (city) prefill.city = city;
+    }
   } catch {
     // City is optional. Name still prefills from the organization.
+  }
+  if (!prefill.city) {
+    prefill.city = inferTrialCityFromName(organizationName ?? "");
   }
   return prefill;
 }

@@ -4,6 +4,7 @@ import {
   applyTrialLionsDenSeed,
   type TrialDeskSeedClient,
 } from "@/lib/lions-den/trial-desk-seed";
+import type { TrialDeskMarketInput } from "@/lib/lions-den/trial-desk-market";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export async function ensureTrialLionsDenSeed(input: {
@@ -11,6 +12,7 @@ export async function ensureTrialLionsDenSeed(input: {
   userId: string;
   client?: TrialDeskSeedClient;
   hasTrialProfile?: boolean;
+  market?: TrialDeskMarketInput | null;
 }) {
   try {
     const client = input.client ?? createServiceClient();
@@ -18,6 +20,7 @@ export async function ensureTrialLionsDenSeed(input: {
       organizationId: input.organizationId,
       userId: input.userId,
       hasTrialProfile: input.hasTrialProfile ?? true,
+      market: input.market,
     });
   } catch (error) {
     console.error("Atlas trial Lion's Den seed failed", {

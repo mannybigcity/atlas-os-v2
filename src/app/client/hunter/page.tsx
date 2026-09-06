@@ -15,6 +15,10 @@ import { defaultClientAiDailyUsage, getClientAiDailyUsage, getClientAiRequests }
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
 import { getHunterReviewPile } from "@/server/hunter/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
+import {
+  hunterSearchDefaultsFromMarket,
+  inferTrialDeskMarket,
+} from "@/lib/lions-den/trial-desk-market";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +74,12 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
     : null;
   const status = hunterStatusCopy(params?.hunter, spanish);
   const prospectsHref = clientWorkspaceHref("/client/prospects", previewOrgSlug);
+  const hunterDefaults = hunterSearchDefaultsFromMarket(
+    inferTrialDeskMarket({
+      businessName: primaryOrganization?.name,
+      metadata: workspace.user.user_metadata,
+    }),
+  );
   const acceptedCount = reviewPile?.acceptedCount ?? 0;
   const showProspectsLink = params?.hunter === "accepted" || params?.hunter === "already_accepted" || params?.hunter === "duplicate";
 
@@ -88,7 +98,11 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
         </div>
       ) : null}
 
-      <HunterSearch organizationId={primaryOrganization?.id} prospectsHref={prospectsHref} />
+      <HunterSearch
+        defaults={hunterDefaults}
+        organizationId={primaryOrganization?.id}
+        prospectsHref={prospectsHref}
+      />
 
       {primaryOrganization ? (
         <HunterReviewPile

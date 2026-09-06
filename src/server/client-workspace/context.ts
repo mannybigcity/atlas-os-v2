@@ -130,6 +130,9 @@ export async function getClientWorkspaceContext(
         userId: user.id,
         businessName: trialProfile.business_name,
         email: user.email ?? "",
+        businessType: trialProfile.business_type,
+        city: String(user.user_metadata?.city ?? "").trim(),
+        postalCode: String(user.user_metadata?.postal_code ?? user.user_metadata?.postalCode ?? "").trim(),
       });
 
       if (!workspace.ok) {
@@ -142,6 +145,11 @@ export async function getClientWorkspaceContext(
         organizationId: workspace.organizationId,
         userId: user.id,
         hasTrialProfile: true,
+        market: {
+          businessName: trialProfile.business_name,
+          businessType: trialProfile.business_type,
+          metadata: user.user_metadata,
+        },
       });
     }
   }

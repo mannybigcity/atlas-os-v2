@@ -45,6 +45,9 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
       userId,
       businessName,
       email,
+      businessType,
+      city: extracted.city,
+      postalCode: extracted.postalCode,
     });
     if (!workspace.ok) {
       return { ok: false as const, error: workspace.error };
@@ -73,6 +76,9 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
     userId,
     businessName,
     email,
+    businessType,
+    city: extracted.city,
+    postalCode: extracted.postalCode,
   });
   if (!workspace.ok) {
     return { ok: false as const, error: workspace.error };
@@ -81,11 +87,19 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
   return { ok: true as const, created: true as const };
 }
 
-export async function getTrialProfile(userId: string) {
+export type TrialProfileRow = {
+  full_name: string;
+  business_name: string;
+  business_type: string;
+  trial_started_at: string;
+  trial_ends_at: string;
+};
+
+export async function getTrialProfile(userId: string): Promise<TrialProfileRow | null> {
   const service = createServiceClient();
   const { data, error } = await service
     .from("atlas_trial_profiles")
-    .select("full_name,business_name,trial_started_at,trial_ends_at")
+    .select("full_name,business_name,business_type,trial_started_at,trial_ends_at")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -94,5 +108,6 @@ export async function getTrialProfile(userId: string) {
     return null;
   }
 
-  return data;
+  const row = data as TrialProfileRow | null;
+  return row?.business_name ? row : null;
 }

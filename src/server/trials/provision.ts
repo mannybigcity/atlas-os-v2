@@ -29,6 +29,9 @@ export async function ensureTrialWorkspaceForUser(input: {
   userId: string;
   businessName: string;
   email: string;
+  businessType?: string;
+  city?: string;
+  postalCode?: string;
 }) {
   const workspace = await ensureTrialWorkspace(input);
 
