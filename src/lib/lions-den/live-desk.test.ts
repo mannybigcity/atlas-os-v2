@@ -110,6 +110,21 @@ test("visible DEMO labels are stripped from live AFE records and left on SIS and
   assert.equal(untouched.name, "ABC Plumbing (DEMO)");
 });
 
+test("SAMPLE trial-seed labels stay visible on live AFE prospects and follow-up drafts", () => {
+  const trial = { name: "Cypress Pest Pros", slug: "cypress-pest-pros-trial" };
+  const prospect = presentLiveDeskOpportunity(trial, {
+    name: "Rivergate Pest Co · SAMPLE",
+    sourceLabel: "SAMPLE trial seed — no outreach",
+    researchSummary: "SAMPLE prospect only. Do not visit or contact.",
+    nextAction: "SAMPLE draft follow-up — review, then you send. Atlas has not contacted anyone.",
+    contactName: "Casey Nguyen",
+  });
+  assert.match(prospect.name, /\bSAMPLE\b/);
+  assert.match(String(prospect.sourceLabel), /\bSAMPLE\b/);
+  assert.match(prospect.researchSummary, /\bSAMPLE\b/);
+  assert.match(String(prospect.nextAction), /\bSAMPLE\b/);
+});
+
 test("SAMPLE trial-seed labels stay visible on live AFE review pile and gallery drafts", () => {
   const trial = { name: "Harbor HVAC", slug: "harbor-hvac-trial" };
   const review = presentLiveDeskReviewItem(trial, {

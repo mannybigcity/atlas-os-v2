@@ -45,6 +45,9 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
       userId,
       businessName,
       email,
+      businessType,
+      city: extracted.city,
+      postalCode: extracted.postalCode,
     });
     if (!workspace.ok) {
       return { ok: false as const, error: workspace.error };
@@ -73,6 +76,9 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
     userId,
     businessName,
     email,
+    businessType,
+    city: extracted.city,
+    postalCode: extracted.postalCode,
   });
   if (!workspace.ok) {
     return { ok: false as const, error: workspace.error };
@@ -85,7 +91,7 @@ export async function getTrialProfile(userId: string) {
   const service = createServiceClient();
   const { data, error } = await service
     .from("atlas_trial_profiles")
-    .select("full_name,business_name,trial_started_at,trial_ends_at")
+    .select("full_name,business_name,business_type,trial_started_at,trial_ends_at")
     .eq("user_id", userId)
     .maybeSingle();
 

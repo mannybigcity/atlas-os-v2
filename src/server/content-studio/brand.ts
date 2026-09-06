@@ -1,3 +1,4 @@
+import { inferTrialCityFromName } from "@/lib/lions-den/trial-desk-market";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessProfile } from "@/server/business-profile/queries";
@@ -187,6 +188,9 @@ export async function readMicahWorkspacePrefill(
     if (city) prefill.city = city;
   } catch {
     // City is optional. Name still prefills from the organization.
+  }
+  if (!prefill.city) {
+    prefill.city = inferTrialCityFromName(organizationName ?? "");
   }
   return prefill;
 }

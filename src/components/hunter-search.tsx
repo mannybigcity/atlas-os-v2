@@ -16,9 +16,19 @@ import { initialHunterSearchState } from "@/server/hunter/types";
 type HunterSearchProps = {
   organizationId?: string;
   prospectsHref?: string;
+  defaults?: {
+    service?: string;
+    zipCode?: string;
+    city?: string;
+    state?: string;
+  };
 };
 
-export function HunterSearch({ organizationId, prospectsHref = "/client/prospects" }: HunterSearchProps) {
+export function HunterSearch({
+  organizationId,
+  prospectsHref = "/client/prospects",
+  defaults,
+}: HunterSearchProps) {
   const language = useSiteLanguage();
   const spanish = language === "es";
   const [state, action, pending] = useActionState(
@@ -61,8 +71,9 @@ export function HunterSearch({ organizationId, prospectsHref = "/client/prospect
           <span className="text-sm font-medium text-[#071b42]">{spanish ? "Tipo de negocio" : "Business type"}</span>
           <input
             className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
+            defaultValue={defaults?.service ?? ""}
             name="service"
-            placeholder={spanish ? "Taller mecánico o guardería" : "Auto repair shop or daycare"}
+            placeholder={spanish ? "Tipo de negocio local" : "Local business type"}
             required
           />
         </label>
@@ -70,24 +81,27 @@ export function HunterSearch({ organizationId, prospectsHref = "/client/prospect
           <span className="text-sm font-medium text-[#071b42]">{spanish ? "Código postal" : "ZIP code"}</span>
           <input
             className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
+            defaultValue={defaults?.zipCode ?? ""}
             name="zipCode"
-            placeholder="77065"
+            placeholder={spanish ? "Código postal" : "ZIP"}
           />
         </label>
         <label>
           <span className="text-sm font-medium text-[#071b42]">{spanish ? "Ciudad" : "City"}</span>
           <input
             className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
+            defaultValue={defaults?.city ?? ""}
             name="city"
-            placeholder="Katy"
+            placeholder={spanish ? "Ciudad" : "City"}
           />
         </label>
         <label>
           <span className="text-sm font-medium text-[#071b42]">{spanish ? "Estado" : "State"}</span>
           <input
             className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
+            defaultValue={defaults?.state ?? ""}
             name="state"
-            placeholder="TX"
+            placeholder={spanish ? "Estado" : "State"}
           />
         </label>
         <label>

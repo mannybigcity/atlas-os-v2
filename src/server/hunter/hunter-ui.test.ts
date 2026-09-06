@@ -27,11 +27,21 @@ test("HUNTER desk shows the growth funnel and Accept, not a Maps-only dead end",
   assert.doesNotMatch(search, /name="missingWebsite"[^>]*defaultChecked/);
   assert.doesNotMatch(search, /name="weakSocial"[^>]*defaultChecked/);
   assert.match(search, /No gap leads in this search/);
+  assert.match(search, /defaults\?\.service/);
+  assert.match(search, /Local business type/);
+  assert.doesNotMatch(search, /Auto repair shop or daycare/);
+  assert.doesNotMatch(search, /placeholder="77065"/);
+  assert.doesNotMatch(search, /placeholder="Katy"/);
 
   const strip = readRepo("src/components/lions-den/hunter-funnel-strip.tsx");
   assert.match(strip, /"Find", "Review", "Accept", "Prospect", "Follow-up"/);
   assert.match(strip, /steps\.join\(" → "\)/);
   assert.match(strip, /HUNTER starts growth\. You accept\. Atlas drafts follow-up\. You approve send\./);
+
+  const hunterPage = readRepo("src/app/client/hunter/page.tsx");
+  assert.match(hunterPage, /hunterSearchDefaultsFromMarket/);
+  assert.match(hunterPage, /inferTrialDeskMarket/);
+  assert.match(hunterPage, /defaults=\{hunterDefaults\}/);
 
   const pile = readRepo("src/components/lions-den/hunter-review-pile.tsx");
   assert.match(pile, /Accept into Prospects/);

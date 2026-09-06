@@ -85,6 +85,11 @@ export async function signInWithPassword(formData: FormData) {
         userId: data.user.id,
         businessName: trialProfile.business_name,
         email: data.user.email ?? email,
+        businessType: trialProfile.business_type,
+        city: String(data.user.user_metadata?.city ?? "").trim(),
+        postalCode: String(
+          data.user.user_metadata?.postal_code ?? data.user.user_metadata?.postalCode ?? "",
+        ).trim(),
       });
 
       if (!workspace.ok) {
@@ -311,6 +316,8 @@ export async function startTrial(formData: FormData) {
   const phone = trialValue(formData.get("phone"), 40);
   const businessType = trialValue(formData.get("businessType"), 100);
   const primaryGrowthGoal = trialValue(formData.get("primaryGrowthGoal"), 1000);
+  const city = trialValue(formData.get("city"), 80);
+  const postalCode = trialValue(formData.get("postalCode") ?? formData.get("zipCode"), 16);
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
   const consent = formData.get("consent") === "on";
@@ -342,6 +349,8 @@ export async function startTrial(formData: FormData) {
         phone,
         business_type: businessType,
         primary_growth_goal: primaryGrowthGoal,
+        city,
+        postal_code: postalCode,
         terms_accepted_at: consentAt,
         privacy_accepted_at: consentAt,
       },
