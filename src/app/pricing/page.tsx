@@ -318,6 +318,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
                       ? "border-[#f0c24a] bg-[#fffdf5] lg:scale-[1.02]"
                       : "border-[#dce5f1] bg-white"
                   }`}
+                  id={plan.slug}
                   key={plan.slug}
                 >
                   {plan.featured ? (
