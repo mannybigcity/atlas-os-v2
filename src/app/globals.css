@@ -337,6 +337,12 @@ body:has(.lions-den-hub) footer {
     gap: 0.6rem;
   }
   .ld-desk-metrics { grid-column: 1 / -1; }
+  .ld-desk-metrics-row {
+    flex-wrap: nowrap;
+  }
+  .ld-desk-metrics-row > a {
+    flex: 1 1 0;
+  }
   .ld-desk-pipeline {
     display: grid;
     grid-column: 1;

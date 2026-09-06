@@ -94,6 +94,8 @@ test("Lion's Den hub narrows the desk menu and stretches Summary metrics across 
   assert.match(css, /\.ld-desk-metrics\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/);
   assert.match(css, /\.ld-desk-metrics-row\s*\{[^}]*display:\s*flex/);
   assert.match(css, /\.ld-desk-metrics-row\s*>\s*a\s*\{[^}]*flex:\s*1\s+1\s+7\.25rem/);
+  assert.match(css, /\.ld-desk-metrics-row\s*\{[^}]*flex-wrap:\s*nowrap/);
+  assert.match(css, /\.ld-desk-metrics-row\s*>\s*a\s*\{[^}]*flex:\s*1\s+1\s+0/);
 
   assert.match(overview, /ld-desk-metrics-row/);
   assert.doesNotMatch(overview, /xl:grid-cols-8/);
