@@ -93,6 +93,16 @@ test("score stays in a useful band and rises with urgency and team signal", () =
       areas: [],
     }),
   );
+  const localOwner = scoreAssessment(
+    signals({
+      timing: "immediately",
+      followUpSpeed: "when_remembered",
+      leadVolume: "10_25",
+      businessSize: "2_5",
+      budget: "500_1500",
+      areas: ["sales", "marketing"],
+    }),
+  );
   const urgent = scoreAssessment(
     signals({
       timing: "immediately",
@@ -104,9 +114,10 @@ test("score stays in a useful band and rises with urgency and team signal", () =
     }),
   );
 
-  assert.ok(exploring >= 42 && exploring <= 94);
-  assert.ok(urgent >= exploring);
-  assert.ok(urgent <= 94);
+  assert.ok(exploring >= 42 && exploring < 60);
+  assert.ok(localOwner >= 70 && localOwner <= 82);
+  assert.ok(urgent > localOwner);
+  assert.ok(urgent <= 92);
 });
 
 test("recommendation includes a score, priced plan, next step, and trial-ready preview", () => {

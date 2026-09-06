@@ -231,39 +231,39 @@ export function pickAssessmentPlan(signals: AssessmentSignals): AssessmentRecomm
 }
 
 export function scoreAssessment(signals: AssessmentSignals) {
-  const timingScore = { immediately: 16, "30_days": 11, "90_days": 6, exploring: 2 }[signals.timing];
+  const timingScore = { immediately: 12, "30_days": 8, "90_days": 4, exploring: 0 }[signals.timing];
   const followUpScore = {
-    when_remembered: 12,
-    not_tracking: 12,
-    "3_7_days": 8,
-    "1_2_days": 5,
-    same_day: 3,
+    when_remembered: 8,
+    not_tracking: 8,
+    "3_7_days": 6,
+    "1_2_days": 4,
+    same_day: 2,
   }[signals.followUpSpeed];
   const volumeScore = {
-    "76_plus": 10,
-    "26_75": 8,
-    "10_25": 6,
-    under_10: 4,
-    not_sure: 3,
+    "76_plus": 8,
+    "26_75": 6,
+    "10_25": 4,
+    under_10: 3,
+    not_sure: 2,
   }[signals.leadVolume];
   const sizeScore = {
-    "50_plus": 6,
-    "16_50": 8,
-    "6_15": 8,
-    "2_5": 6,
-    just_me: 4,
+    "50_plus": 5,
+    "16_50": 6,
+    "6_15": 6,
+    "2_5": 4,
+    just_me: 3,
   }[signals.businessSize];
   const budgetScore = {
-    "3000_plus": 10,
-    "1500_3000": 8,
-    "500_1500": 6,
-    need_recommendation: 4,
-    under_500: 2,
+    "3000_plus": 8,
+    "1500_3000": 6,
+    "500_1500": 4,
+    need_recommendation: 3,
+    under_500: 1,
   }[signals.budget];
-  const areaScore = Math.min(8, signals.areas.length * 2);
-  const raw = 52 + timingScore + followUpScore + volumeScore + sizeScore + budgetScore + areaScore;
+  const areaScore = Math.min(6, signals.areas.length * 2);
+  const raw = 40 + timingScore + followUpScore + volumeScore + sizeScore + budgetScore + areaScore;
 
-  return Math.min(94, Math.max(42, raw));
+  return Math.min(92, Math.max(42, raw));
 }
 
 const priorityCopy: Record<
