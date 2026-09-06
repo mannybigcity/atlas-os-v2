@@ -136,6 +136,8 @@ test("Summary mounts the dismissible checklist from real hunter/MICAH state", ()
   assert.match(overview, /isActivationSampleWalkthrough/);
   assert.match(overview, /acceptedCount/);
   assert.match(overview, /foundCount/);
+  assert.match(overview, /THE FORTUNE IS IN THE FOLLOW-UP/);
+  assert.match(overview, /followUpBandTitle = showActivation/);
   assert.doesNotMatch(overview, /sisDashboard \? <LionsDenActivationChecklist/);
 
   assert.match(page, /acceptedCount=\{reviewPile\?\.acceptedCount/);

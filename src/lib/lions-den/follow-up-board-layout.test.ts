@@ -30,6 +30,9 @@ test("Follow-up and Summary use landscape columns instead of a 3-col squeeze", (
   assert.match(followUp, /Later/);
 
   assert.match(overview, /ld-followup-columns/);
+  assert.match(overview, /THE FORTUNE IS IN THE FOLLOW-UP/);
+  assert.match(overview, /LA FORTUNA ESTÁ EN EL SEGUIMIENTO/);
+  assert.match(overview, /followUpBandTitle = showActivation/);
   assert.doesNotMatch(overview, /md:grid-cols-3/);
   assert.doesNotMatch(overview, /truncate text-xs font-semibold text-\[#071b42\]/);
 
