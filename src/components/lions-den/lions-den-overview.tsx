@@ -125,7 +125,7 @@ export function LionsDenOverview({
             spanish={spanish}
           />
         ) : null}
-        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8">
+        <div className="ld-desk-metrics-row">
           <MetricChip href={href("/client/prospects")} label={spanish ? "Prospectos" : "Prospects"} value={prospects.length} />
           <MetricChip href={href("/client/david")} label={spanish ? "Hoy" : "Due today"} value={dueTodayCount} />
           <MetricChip href={href("/client/notes")} label={spanish ? "Notas" : "Notes"} value={notes.length} />
@@ -413,9 +413,9 @@ function MetricChip({
   value: number;
 }) {
   return (
-    <Link className="flex items-center justify-between gap-2 rounded-md border border-[#d5d0c4] bg-white px-2.5 py-1.5" href={href}>
-      <span className="truncate text-[10px] font-black uppercase tracking-[0.12em] text-[#5c6578]">{label}</span>
-      <span className="font-[family-name:var(--font-display)] text-lg leading-none text-[#071b42]">{value}</span>
+    <Link className="flex min-w-0 items-center justify-between gap-2 rounded-md border border-[#d5d0c4] bg-white px-2.5 py-1.5" href={href}>
+      <span className="min-w-0 text-[10px] font-black uppercase leading-tight tracking-[0.08em] text-[#5c6578]">{label}</span>
+      <span className="shrink-0 font-[family-name:var(--font-display)] text-lg leading-none text-[#071b42]">{value}</span>
     </Link>
   );
 }

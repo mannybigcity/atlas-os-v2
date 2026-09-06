@@ -97,12 +97,12 @@ export async function LionsDenClientHub({
 
       <div className="lions-den-hub-body">
         <aside className="lions-den-hub-nav border-b border-[#0a2a5c] bg-[#071b42] text-white xl:border-b-0 xl:border-r">
-          <div className="hidden px-3 pt-3 xl:block">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f5b932]">
+          <div className="hidden px-2 pt-3 xl:block">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#f5b932]">
               {spanish ? "Menú del escritorio" : "Desk menu"}
             </p>
           </div>
-          <nav aria-label="The Lion’s Den" className="flex gap-1 overflow-x-auto p-2 xl:block xl:space-y-0.5 xl:overflow-visible xl:p-3">
+          <nav aria-label="The Lion’s Den" className="flex gap-1 overflow-x-auto p-2 xl:block xl:space-y-0.5 xl:overflow-visible xl:px-2 xl:py-2.5">
             {boards.map((item) => {
               const active = item.id === board;
               return (
