@@ -35,6 +35,30 @@ test("today and tomorrow queues use real due dates only", () => {
   assert.deepEqual(queues.later.map((item) => item.id), ["later"]);
 });
 
+test("draft control metadata stays on the queued item", () => {
+  const now = new Date(2026, 7, 29, 9, 0);
+  const queues = bucketFollowUpQueues(
+    [
+      {
+        id: "prospect-1",
+        title: "Rivergate Pest Co · SAMPLE",
+        detail: "SAMPLE draft follow-up — review, then you send.",
+        dueAt: "2026-08-29",
+        draftControls: {
+          opportunityId: "11111111-1111-4111-8111-111111111111",
+          organizationId: "22222222-2222-4222-8222-222222222222",
+          contactEmail: "desk+trial-rivergate-pest@example.invalid",
+          contactName: "Casey Nguyen",
+          draftBody: "SAMPLE draft follow-up — review, then you send.",
+        },
+      },
+    ],
+    now,
+  );
+
+  assert.equal(queues.today[0]?.draftControls?.contactEmail, "desk+trial-rivergate-pest@example.invalid");
+});
+
 test("an empty workspace produces empty queues, not fake contacts", () => {
   const queues = bucketFollowUpQueues([]);
   assert.equal(queues.overdue.length + queues.today.length + queues.tomorrow.length + queues.later.length, 0);
