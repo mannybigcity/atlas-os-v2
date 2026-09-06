@@ -245,6 +245,16 @@ body:has(.lions-den-hub) footer {
 .ld-desk-pile {
   min-height: 15rem;
 }
+.ld-desk-metrics-row {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 0.375rem;
+}
+.ld-desk-metrics-row > a {
+  flex: 1 1 7.25rem;
+  min-width: 0;
+}
 .ld-desk-pile .ld-panel-body {
   padding: 0.45rem 0.65rem;
 }
@@ -290,7 +300,8 @@ body:has(.lions-den-hub) footer {
     display: grid;
     flex: 1 1 auto;
     min-height: 0;
-    grid-template-columns: 12rem minmax(0, 1fr) 17rem;
+    /* Tighter desk menu; leftover width goes to main, up to Talk to Atlas. */
+    grid-template-columns: 9rem minmax(0, 1fr) 17rem;
   }
   .lions-den-hub-nav {
     min-height: 0;

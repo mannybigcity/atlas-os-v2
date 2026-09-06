@@ -81,3 +81,25 @@ test("Summary desk scrolls and keeps HUNTER/Prospects readable instead of a view
   assert.match(calendar, /ld-calendar-agenda/);
   assert.doesNotMatch(calendar, /flex h-6 min-h-0 w-full flex-col items-center justify-center rounded-sm text-\[11px\]/);
 });
+
+test("Lion's Den hub narrows the desk menu and stretches Summary metrics across main", () => {
+  const css = readRepo("src/app/globals.css");
+  const overview = readRepo("src/components/lions-den/lions-den-overview.tsx");
+  const hub = readRepo("src/components/lions-den/lions-den-client-hub.tsx");
+
+  const hubBody = css.match(/\.lions-den-hub-body\s*\{[^}]+\}/)?.[0] ?? "";
+  assert.match(hubBody, /grid-template-columns:\s*9rem\s+minmax\(0,\s*1fr\)\s+17rem/);
+  assert.doesNotMatch(hubBody, /12rem/);
+
+  assert.match(css, /\.ld-desk-metrics\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/);
+  assert.match(css, /\.ld-desk-metrics-row\s*\{[^}]*display:\s*flex/);
+  assert.match(css, /\.ld-desk-metrics-row\s*>\s*a\s*\{[^}]*flex:\s*1\s+1\s+7\.25rem/);
+
+  assert.match(overview, /ld-desk-metrics-row/);
+  assert.doesNotMatch(overview, /xl:grid-cols-8/);
+  assert.doesNotMatch(overview, /truncate text-\[10px\] font-black uppercase tracking-\[0\.12em\]/);
+
+  assert.match(hub, /lions-den-hub-nav/);
+  assert.match(hub, /lions-den-hub-staff/);
+  assert.match(hub, /xl:px-2 xl:py-2\.5/);
+});
