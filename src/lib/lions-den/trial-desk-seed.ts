@@ -37,6 +37,19 @@ export type TrialProspectSeed = {
   primaryType: string;
 };
 
+export type TrialClientSeed = {
+  seedKey: string;
+  name: string;
+  contactName: string;
+  contactEmail: string;
+  nextAction: string;
+  researchSummary: string;
+  fitReason: string;
+  note: string;
+  hunterPlaceId: string;
+  primaryType: string;
+};
+
 export type TrialMicahSeedSlot = {
   day: number;
   weekday: string;
@@ -64,6 +77,7 @@ export type TrialLionsDenSeed = {
   hunterFinds: TrialHunterSeedFind[];
   prospects: TrialProspectSeed[];
   followUps: TrialProspectSeed[];
+  clients: TrialClientSeed[];
   micahSlots: TrialMicahSeedSlot[];
   market: TrialDeskMarket;
 };
@@ -207,6 +221,18 @@ const PROSPECT_CATALOG: Record<TrialDeskVertical, CatalogRow[]> = {
   ],
 };
 
+const CLIENT_CATALOG: Record<TrialDeskVertical, CatalogRow> = {
+  pest: { seedKey: "maple-grove-hoa", name: "Maple Grove HOA", primaryType: "pest_control_service", contactName: "Dana Whitfield" },
+  maintenance: { seedKey: "harbor-view-estates", name: "Harbor View Estates", primaryType: "general_contractor", contactName: "Ellis Grant" },
+  hvac: { seedKey: "west-oak-clinic", name: "West Oak Clinic", primaryType: "hvac_contractor", contactName: "Priya Shah" },
+  cleaning: { seedKey: "north-mill-offices", name: "North Mill Offices", primaryType: "cleaning_service", contactName: "Chris Alvarez" },
+  lawn: { seedKey: "fair-harbor-apartments", name: "Fair Harbor Apartments", primaryType: "lawn_care_service", contactName: "Morgan Lee" },
+  contractor: { seedKey: "cedar-ridge-hoa", name: "Cedar Ridge HOA", primaryType: "general_contractor", contactName: "Dana Whitfield" },
+  professional: { seedKey: "mill-street-clinic", name: "Mill Street Clinic", primaryType: "accounting", contactName: "Ellis Grant" },
+  retail: { seedKey: "pine-harbor-market", name: "Pine Harbor Market", primaryType: "store", contactName: "Priya Shah" },
+  other: { seedKey: "maple-grove-hoa", name: "Maple Grove HOA", primaryType: "general_contractor", contactName: "Dana Whitfield" },
+};
+
 function sampleBusinessName(name: string) {
   return `${name} · SAMPLE`;
 }
@@ -262,6 +288,32 @@ export function getTrialProspectSeeds(marketInput: TrialDeskMarketInput = {}): T
   });
 }
 
+export function getTrialClientSeeds(marketInput: TrialDeskMarketInput = {}): TrialClientSeed[] {
+  const market = inferTrialDeskMarket(marketInput);
+  const area = trialMarketAreaLabel(market);
+  const row = CLIENT_CATALOG[market.vertical];
+  const name = sampleBusinessName(row.name);
+  const contactName = row.contactName ?? "Dana Whitfield";
+  return [
+    {
+      seedKey: row.seedKey,
+      name,
+      contactName,
+      contactEmail: `desk+trial-${row.seedKey}@example.invalid`,
+      nextAction: `SAMPLE closed win — no further outreach. ${contactName} at ${row.name} is a practice result only. Do not contact.`,
+      researchSummary: [
+        `SAMPLE closed client only. ${row.name} booked ${market.serviceQuery} in ${area} after an owner-approved follow-up.`,
+        "Not a real business. Do not visit or contact.",
+        "Atlas did not close this automatically. The owner marks real wins. This practice row keeps Clients from looking empty.",
+      ].join(" "),
+      fitReason: `SAMPLE closed-result fixture so Clients shows a won ${market.serviceQuery} account. Do not contact.`,
+      note: `SAMPLE note — owner marked ${row.name} won after they booked. Atlas did not call, email, or text anyone.`,
+      hunterPlaceId: `trial-seed-won-${row.seedKey}`,
+      primaryType: row.primaryType,
+    },
+  ];
+}
+
 export function trialHunterSeedPlaceIds(marketInput: TrialDeskMarketInput = {}) {
   return getTrialHunterSeedFinds(marketInput).map((find) => find.placeId);
 }
@@ -304,6 +356,7 @@ export function getTrialLionsDenSeed(marketInput: TrialDeskMarketInput = {}): Tr
     hunterFinds: getTrialHunterSeedFinds(market),
     prospects,
     followUps: prospects.filter((row) => row.daysUntilDue != null),
+    clients: getTrialClientSeeds(market),
     micahSlots: getTrialMicahSeedSlots(),
     market,
   };
@@ -342,6 +395,9 @@ export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
   }
   if (seed.followUps.length < 1 || seed.followUps.length > 2) {
     throw new Error("Trial seed should include 1–2 SAMPLE follow-up drafts.");
+  }
+  if (seed.clients.length !== 1) {
+    throw new Error("Trial seed should include exactly one SAMPLE closed client win.");
   }
   if (seed.micahSlots.length !== 7) {
     throw new Error("Trial seed must include one MICAH placeholder for each weekday.");
@@ -391,6 +447,27 @@ export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
     }
     if (followUp.daysUntilDue == null) {
       throw new Error(`Follow-up trial draft needs a queue date: ${followUp.name}`);
+    }
+  }
+
+  for (const client of seed.clients) {
+    if (!/\bSAMPLE\b/.test(client.name) || !/\bSAMPLE\b/.test(client.nextAction) || !/\bSAMPLE\b/.test(client.note)) {
+      throw new Error(`Closed-client trial row must be labeled SAMPLE: ${client.name}`);
+    }
+    if (!/@example\.invalid$/.test(client.contactEmail)) {
+      throw new Error(`Closed-client trial email must be clearly fake: ${client.contactEmail}`);
+    }
+    if (!/do not (visit or )?contact|has not (called|emailed|contacted)/i.test(`${client.researchSummary} ${client.note}`)) {
+      throw new Error(`Closed-client trial row must stay do-not-contact: ${client.name}`);
+    }
+    if (!/closed win|practice (result|row|account)|did not close this automatically/i.test(client.researchSummary)) {
+      throw new Error(`Closed-client trial row must stay a practice win: ${client.name}`);
+    }
+    if (!client.hunterPlaceId.startsWith("trial-seed-won-")) {
+      throw new Error(`Won trial hunter place_id must be namespaced: ${client.hunterPlaceId}`);
+    }
+    if (/auto-?send|already sent|was sent/i.test(`${client.nextAction} ${client.note}`)) {
+      throw new Error(`Closed-client trial row must not auto-send: ${client.name}`);
     }
   }
 
@@ -492,7 +569,7 @@ export async function applyTrialLionsDenSeed(
 
   const opportunityRead = await client
     .from("organization_opportunities")
-    .select("id, name, metadata")
+    .select("id, name, stage, metadata")
     .eq("organization_id", organization!.id);
   if (opportunityRead.error) {
     throw new Error(opportunityRead.error.message);
@@ -500,6 +577,7 @@ export async function applyTrialLionsDenSeed(
   const existingOpportunities = (opportunityRead.data ?? []) as Array<{
     id?: string;
     name?: string;
+    stage?: string;
     metadata?: Record<string, unknown> | null;
   }>;
   const hasAnyProspects = existingOpportunities.length > 0;
@@ -528,14 +606,25 @@ export async function applyTrialLionsDenSeed(
   const alreadyHasDeskData = hasAnyHunter || hasAnyProspects || hasOwnWeek || existingSlots.size > 0;
   const missingHunter = alreadyHasDeskData ? [] : seed.hunterFinds;
   const missingProspects = alreadyHasDeskData ? [] : seed.prospects;
+  const missingClients = alreadyHasDeskData ? [] : seed.clients;
   const missingMicah = alreadyHasDeskData ? [] : seed.micahSlots.filter((item) => !existingSlots.has(item.slot));
 
-  if (missingHunter.length === 0 && missingProspects.length === 0 && missingMicah.length === 0) {
+  if (
+    missingHunter.length === 0 &&
+    missingProspects.length === 0 &&
+    missingClients.length === 0 &&
+    missingMicah.length === 0
+  ) {
     return {
       status: "already_seeded" as const,
       organizationId: organization!.id,
       hunterCount: existingHunter.filter((row) => String(row.place_id ?? "").startsWith("trial-seed-")).length,
-      prospectCount: existingOpportunities.filter((row) => row.metadata?.trial_seed === true).length,
+      prospectCount: existingOpportunities.filter(
+        (row) => row.metadata?.trial_seed === true && row.stage !== "won",
+      ).length,
+      clientCount: existingOpportunities.filter(
+        (row) => row.metadata?.trial_seed === true && row.stage === "won",
+      ).length,
       followUpCount: seed.followUps.length,
       micahCount: existingSlots.size,
     };
@@ -564,38 +653,72 @@ export async function applyTrialLionsDenSeed(
     }
   }
 
-  if (missingProspects.length > 0) {
-    const opportunityRows = missingProspects.map((prospect) => ({
-      organization_id: organization!.id,
-      name: prospect.name,
-      opportunity_type: "customer",
-      stage: prospect.daysUntilDue == null ? "ready_for_follow_up" : "follow_up_queued",
-      fit_score: 0,
-      owner_role: "client",
-      source_label: "SAMPLE trial seed — no outreach",
-      source_url: `https://example.invalid/trial/${prospect.seedKey}`,
-      contact_name: prospect.contactName,
-      contact_email: prospect.contactEmail,
-      contact_phone: null,
-      contact_social: null,
-      research_summary: prospect.researchSummary,
-      fit_reason: prospect.fitReason,
-      next_action: prospect.nextAction,
-      next_action_due: prospect.daysUntilDue == null ? null : isoDateFromToday(prospect.daysUntilDue),
-      metadata: {
-        source: TRIAL_DESK_SEED_KIND,
-        trial_seed: true,
-        seed_key: prospect.seedKey,
-        demo_labeled: true,
-        no_outreach_sent: true,
-        accepted_for_calling: true,
-        owner_approval_required: true,
-        no_auto_send: true,
-        formatted_address: sampleAddress(seed.market),
-        primary_type: prospect.primaryType,
-        business_status: "SAMPLE",
-      },
-    }));
+  if (missingProspects.length > 0 || missingClients.length > 0) {
+    const opportunityRows = [
+      ...missingProspects.map((prospect) => ({
+        organization_id: organization!.id,
+        name: prospect.name,
+        opportunity_type: "customer",
+        stage: prospect.daysUntilDue == null ? "ready_for_follow_up" : "follow_up_queued",
+        fit_score: 0,
+        owner_role: "client",
+        source_label: "SAMPLE trial seed — no outreach",
+        source_url: `https://example.invalid/trial/${prospect.seedKey}`,
+        contact_name: prospect.contactName,
+        contact_email: prospect.contactEmail,
+        contact_phone: null,
+        contact_social: null,
+        research_summary: prospect.researchSummary,
+        fit_reason: prospect.fitReason,
+        next_action: prospect.nextAction,
+        next_action_due: prospect.daysUntilDue == null ? null : isoDateFromToday(prospect.daysUntilDue),
+        metadata: {
+          source: TRIAL_DESK_SEED_KIND,
+          trial_seed: true,
+          seed_key: prospect.seedKey,
+          demo_labeled: true,
+          no_outreach_sent: true,
+          accepted_for_calling: true,
+          owner_approval_required: true,
+          no_auto_send: true,
+          formatted_address: sampleAddress(seed.market),
+          primary_type: prospect.primaryType,
+          business_status: "SAMPLE",
+        },
+      })),
+      ...missingClients.map((wonClient) => ({
+        organization_id: organization!.id,
+        name: wonClient.name,
+        opportunity_type: "customer",
+        stage: "won",
+        fit_score: 0,
+        owner_role: "client",
+        source_label: "SAMPLE closed win — no outreach",
+        source_url: `https://example.invalid/trial/${wonClient.seedKey}`,
+        contact_name: wonClient.contactName,
+        contact_email: wonClient.contactEmail,
+        contact_phone: null,
+        contact_social: null,
+        research_summary: wonClient.researchSummary,
+        fit_reason: wonClient.fitReason,
+        next_action: wonClient.nextAction,
+        next_action_due: null,
+        metadata: {
+          source: TRIAL_DESK_SEED_KIND,
+          trial_seed: true,
+          seed_key: wonClient.seedKey,
+          demo_labeled: true,
+          no_outreach_sent: true,
+          accepted_for_calling: true,
+          owner_approval_required: true,
+          no_auto_send: true,
+          closed_win: true,
+          formatted_address: sampleAddress(seed.market),
+          primary_type: wonClient.primaryType,
+          business_status: "SAMPLE",
+        },
+      })),
+    ];
     const opportunityWrite = await client
       .from("organization_opportunities")
       .upsert(opportunityRows, { onConflict: "organization_id,name,opportunity_type" });
@@ -614,20 +737,20 @@ export async function applyTrialLionsDenSeed(
       ((opportunities.data ?? []) as Array<{ id: string; name: string }>).map((row) => [row.name, row.id]),
     );
 
-    const acceptedHunterRows = missingProspects.flatMap((prospect) => {
-      const opportunityId = opportunityIdByName.get(prospect.name);
+    const acceptedHunterRows = [...missingProspects, ...missingClients].flatMap((row) => {
+      const opportunityId = opportunityIdByName.get(row.name);
       if (!opportunityId) return [];
       return [
         {
           organization_id: organization!.id,
-          place_id: prospect.hunterPlaceId,
-          name: prospect.name,
+          place_id: row.hunterPlaceId,
+          name: row.name,
           formatted_address: sampleAddress(seed.market),
           google_maps_url: null,
           website_url: null,
-          primary_type: prospect.primaryType,
+          primary_type: row.primaryType,
           business_status: "SAMPLE",
-          search_query: `SAMPLE accepted find — ${prospect.name} — no live Places search`,
+          search_query: `SAMPLE accepted find — ${row.name} — no live Places search`,
           status: "accepted",
           accepted_opportunity_id: opportunityId,
           created_by: input.userId || null,
@@ -685,6 +808,68 @@ export async function applyTrialLionsDenSeed(
           });
           if (followUp.error) throw new Error(followUp.error.message);
         }
+      }
+    }
+
+    for (const wonClient of missingClients) {
+      const opportunityId = opportunityIdByName.get(wonClient.name);
+      if (!opportunityId) continue;
+      const existingCreated = await client
+        .from("organization_opportunity_events")
+        .select("id")
+        .eq("opportunity_id", opportunityId)
+        .eq("event_type", "created");
+      if (existingCreated.error) {
+        throw new Error(existingCreated.error.message);
+      }
+      if (((existingCreated.data ?? []) as unknown[]).length === 0) {
+        const created = await client.from("organization_opportunity_events").insert({
+          opportunity_id: opportunityId,
+          organization_id: organization!.id,
+          event_type: "created",
+          actor_role: "hunter",
+          summary: "SAMPLE seed: accepted into Prospects. Atlas has not contacted anyone.",
+          body: wonClient.researchSummary,
+        });
+        if (created.error) throw new Error(created.error.message);
+      }
+      const existingWon = await client
+        .from("organization_opportunity_events")
+        .select("id")
+        .eq("opportunity_id", opportunityId)
+        .eq("event_type", "won");
+      if (existingWon.error) {
+        throw new Error(existingWon.error.message);
+      }
+      if (((existingWon.data ?? []) as unknown[]).length === 0) {
+        const won = await client.from("organization_opportunity_events").insert({
+          opportunity_id: opportunityId,
+          organization_id: organization!.id,
+          event_type: "won",
+          actor_role: "client",
+          summary: "SAMPLE closed win. Practice result only. Do not contact.",
+          body: wonClient.researchSummary,
+        });
+        if (won.error) throw new Error(won.error.message);
+      }
+      const existingNote = await client
+        .from("organization_opportunity_events")
+        .select("id")
+        .eq("opportunity_id", opportunityId)
+        .eq("event_type", "note_added");
+      if (existingNote.error) {
+        throw new Error(existingNote.error.message);
+      }
+      if (((existingNote.data ?? []) as unknown[]).length === 0) {
+        const note = await client.from("organization_opportunity_events").insert({
+          opportunity_id: opportunityId,
+          organization_id: organization!.id,
+          event_type: "note_added",
+          actor_role: "client",
+          summary: wonClient.note,
+          body: "SAMPLE activity note. Owner records the win. Atlas did not contact anyone.",
+        });
+        if (note.error) throw new Error(note.error.message);
       }
     }
   }
@@ -758,8 +943,10 @@ export async function applyTrialLionsDenSeed(
     organizationId: organization!.id,
     hunterCount: placeIds.length,
     prospectCount: seed.prospects.length,
+    clientCount: seed.clients.length,
     followUpCount: seed.followUps.length,
     micahCount: slots.length,
     wroteProspects: missingProspects.length > 0,
+    wroteClients: missingClients.length > 0,
   };
 }
