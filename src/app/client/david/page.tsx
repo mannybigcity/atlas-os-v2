@@ -4,6 +4,7 @@ import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenFollowUpBoard } from "@/components/lions-den/lions-den-follow-up";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
+import { canShowFollowUpDraftControls } from "@/lib/lions-den/follow-up-drafts";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import {
   clientWorkspaceHref,
@@ -30,6 +31,7 @@ type FollowUpPageProps = {
     lang?: string;
     previewOrg?: string;
     workspace?: string;
+    followup?: string;
   }>;
 };
 
@@ -59,11 +61,14 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
     return (
       <LionsDenBoardScreen board="follow-up" workspace={workspace}>
         <LionsDenFollowUpBoard
+          allowDraftControls={canShowFollowUpDraftControls(primaryOrganization)}
           inboxTasks={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.inboxTasks : []}
           partyEvents={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.partyEvents : []}
           prospects={(pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
             presentLiveDeskOpportunity(primaryOrganization, item),
           )}
+          returnTo={clientWorkspaceHref("/client/david", previewOrgSlug)}
+          followupStatus={params?.followup}
           spanish={spanish}
         />
       </LionsDenBoardScreen>

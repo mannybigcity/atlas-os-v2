@@ -1,9 +1,18 @@
+export type DeskFollowUpDraftControls = {
+  opportunityId: string;
+  organizationId: string;
+  contactEmail: string | null;
+  contactName: string | null;
+  draftBody: string;
+};
+
 export type DeskFollowUpItem = {
   id: string;
   title: string;
   detail: string | null;
   dueAt: string;
   href?: string;
+  draftControls?: DeskFollowUpDraftControls;
 };
 
 export type DeskFollowUpQueues = {
