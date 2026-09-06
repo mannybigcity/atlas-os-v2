@@ -2,6 +2,10 @@
 
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
+import {
+  assessmentReceivedPath,
+  resolveAssessmentSignals,
+} from "@/lib/assessment-recommendation";
 import { createClient } from "@/lib/supabase/server";
 import { sendAssessmentNotification } from "@/server/notifications/resend";
 
@@ -183,5 +187,17 @@ export async function submitBusinessAssessment(formData: FormData) {
     });
   }
 
-  redirect("/assessment?status=received");
+  redirect(
+    assessmentReceivedPath(
+      resolveAssessmentSignals({
+        c: biggestChallenge,
+        v: monthlyLeadVolume,
+        f: followUpSpeed,
+        s: businessSize,
+        b: pilotBudget,
+        t: improvementTiming,
+        a: evaluationAreas.join(","),
+      }),
+    ),
+  );
 }
