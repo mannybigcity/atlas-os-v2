@@ -336,7 +336,7 @@ export function ClientsCalendar({
       : ["S", "M", "T", "W", "T", "F", "S"];
 
     return (
-      <section className="ld-calendar ld-panel">
+      <section className="ld-calendar ld-calendar-compact ld-panel">
         <div className="ld-panel-head">
           <div className="flex min-w-0 items-center gap-2">
             <p>{spanish ? "Calendario" : "Calendar"}</p>
@@ -375,7 +375,7 @@ export function ClientsCalendar({
               const outside = date.getMonth() !== selectedDate.getMonth();
               return (
                 <button
-                  className={`flex h-6 min-h-0 w-full flex-col items-center justify-center rounded-sm text-[11px] leading-none ${
+                  className={`flex h-5 min-h-0 w-full flex-col items-center justify-center rounded-sm text-[10px] leading-none ${
                     active
                       ? "bg-[#071b42] font-semibold text-[#f5b932]"
                       : outside
@@ -387,12 +387,12 @@ export function ClientsCalendar({
                   type="button"
                 >
                   {date.getDate()}
-                  <span className={`mt-0.5 h-1 w-1 rounded-full ${items.length ? "bg-[#f5b932]" : "bg-transparent"}`} />
+                  <span className={`mt-px h-1 w-1 rounded-full ${items.length ? "bg-[#f5b932]" : "bg-transparent"}`} />
                 </button>
               );
             })}
           </div>
-          <div className="min-h-0 flex-1 overflow-auto border-t border-[#ece7d8] pt-2">
+          <div className="ld-calendar-agenda min-h-0 overflow-auto border-t border-[#ece7d8] pt-2">
             {selectedItems.length === 0 ? (
               <p className="ld-empty">
                 {spanish ? "Nada en esta fecha." : "Nothing on this date."}

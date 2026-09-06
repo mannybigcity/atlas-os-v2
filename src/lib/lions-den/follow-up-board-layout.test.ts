@@ -39,3 +39,45 @@ test("Follow-up and Summary use landscape columns instead of a 3-col squeeze", (
   assert.doesNotMatch(prospects, /ld-followup-columns/);
   assert.doesNotMatch(hunter, /ld-followup-columns/);
 });
+
+test("Summary desk scrolls and keeps HUNTER/Prospects readable instead of a viewport squeeze", () => {
+  const css = readRepo("src/app/globals.css");
+  const overview = readRepo("src/components/lions-den/lions-den-overview.tsx");
+  const calendar = readRepo("src/components/clients-calendar.tsx");
+
+  const overviewMain = css.match(/\.lions-den-hub-main\[data-board="overview"\]\s*\{[^}]+\}/)?.[0] ?? "";
+  assert.match(overviewMain, /overflow-y:\s*auto/);
+  assert.doesNotMatch(overviewMain, /overflow:\s*hidden/);
+
+  const desk = css.match(/\.ld-desk\s*\{[^}]+\}/g)?.find((block) => /grid-template-columns/.test(block)) ?? "";
+  assert.match(desk, /height:\s*auto/);
+  assert.match(desk, /grid-template-rows:\s*auto\s+auto\s+auto\s+auto/);
+  assert.doesNotMatch(desk, /height:\s*100%/);
+  assert.doesNotMatch(desk, /minmax\(0,\s*1fr\)/);
+  assert.doesNotMatch(desk, /minmax\(16rem,\s*1\.25fr\)/);
+  assert.doesNotMatch(css, /minmax\(16\.25rem,\s*21\.25rem\)\s+minmax\(0,\s*1fr\)/);
+
+  const pipeline = css.match(/\.ld-desk-pipeline\s*\{[^}]+\}/g)?.find((block) => /grid-template-rows/.test(block)) ?? "";
+  assert.match(pipeline, /minmax\(15rem,\s*auto\)/);
+  assert.doesNotMatch(pipeline, /minmax\(0,\s*1fr\)/);
+
+  const pile = css.match(/\.ld-desk-pile\s*\{[^}]+\}/)?.[0] ?? "";
+  assert.match(pile, /min-height:\s*15rem/);
+
+  const deskCalendar = css.match(/\.ld-desk\s+\.ld-calendar\s*\{[^}]+\}/)?.[0] ?? "";
+  assert.match(deskCalendar, /max-height:\s*20\.5rem/);
+  assert.match(deskCalendar, /align-self:\s*start/);
+  assert.doesNotMatch(deskCalendar, /height:\s*100%/);
+
+  assert.match(css, /\.ld-desk-followup\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/);
+  assert.match(overview, /ld-desk-pile/);
+  assert.match(overview, /ld-desk-followup/);
+  assert.match(overview, /THE FORTUNE IS IN THE FOLLOW-UP/);
+  assert.match(overview, /followUpBandTitle = showActivation/);
+  assert.doesNotMatch(overview, /md:grid-cols-3/);
+  assert.doesNotMatch(overview, /xl:grid-cols-3/);
+
+  assert.match(calendar, /ld-calendar-compact/);
+  assert.match(calendar, /ld-calendar-agenda/);
+  assert.doesNotMatch(calendar, /flex h-6 min-h-0 w-full flex-col items-center justify-center rounded-sm text-\[11px\]/);
+});

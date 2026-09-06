@@ -147,7 +147,7 @@ export function LionsDenOverview({
       </section>
 
       <div className="ld-desk-pipeline">
-        <section className="ld-panel">
+        <section className="ld-panel ld-desk-pile">
           <div className="ld-panel-head">
             <p>HUNTER</p>
             <div className="flex items-center gap-2">
@@ -204,7 +204,7 @@ export function LionsDenOverview({
           </div>
         </section>
 
-        <section className="ld-panel">
+        <section className="ld-panel ld-desk-pile">
           <div className="ld-panel-head">
             <p>{spanish ? "Prospectos" : "Prospects"}</p>
             <div className="flex items-center gap-2">
@@ -359,7 +359,7 @@ export function LionsDenOverview({
           spanish={spanish}
         />
       ) : (
-        <div className="ld-calendar ld-panel">
+        <div className="ld-calendar ld-calendar-compact ld-panel">
           <div className="ld-panel-head">
             <p>{spanish ? "Calendario" : "Calendar"}</p>
           </div>
