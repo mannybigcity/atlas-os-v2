@@ -159,6 +159,7 @@ test("MICAH desk chrome uses the locked onboarding and day-block copy", () => {
   assert.match(readRepo("src/app/client/micah/page.tsx"), /organizationName=\{primaryOrganization.name\}/);
   assert.match(readRepo("src/server/content-studio/brand.ts"), /readMicahWorkspacePrefill/);
   assert.match(readRepo("src/server/content-studio/brand.ts"), /inferTrialCityFromName/);
+  assert.match(readRepo("src/server/content-studio/brand.ts"), /user_metadata\?\.city/);
   assert.doesNotMatch(studio, /Nothing in it yet/);
   assert.doesNotMatch(desk, /schedule this post/i);
   assert.match(pane, /detail\?\.submit/);

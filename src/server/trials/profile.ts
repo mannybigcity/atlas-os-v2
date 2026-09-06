@@ -87,7 +87,15 @@ export async function ensureTrialProfile(userId: string, metadata: Record<string
   return { ok: true as const, created: true as const };
 }
 
-export async function getTrialProfile(userId: string) {
+export type TrialProfileRow = {
+  full_name: string;
+  business_name: string;
+  business_type: string;
+  trial_started_at: string;
+  trial_ends_at: string;
+};
+
+export async function getTrialProfile(userId: string): Promise<TrialProfileRow | null> {
   const service = createServiceClient();
   const { data, error } = await service
     .from("atlas_trial_profiles")
@@ -100,5 +108,6 @@ export async function getTrialProfile(userId: string) {
     return null;
   }
 
-  return data;
+  const row = data as TrialProfileRow | null;
+  return row?.business_name ? row : null;
 }
