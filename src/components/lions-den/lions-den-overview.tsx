@@ -100,6 +100,13 @@ export function LionsDenOverview({
   const queues = bucketFollowUpQueues(followUpItems);
   const dueTodayCount = queues.overdue.length + queues.today.length;
   const dueTodayItems = [...queues.overdue, ...queues.today];
+  const followUpBandTitle = showActivation
+    ? spanish
+      ? "LA FORTUNA ESTÁ EN EL SEGUIMIENTO"
+      : "THE FORTUNE IS IN THE FOLLOW-UP"
+    : spanish
+      ? "Seguimiento"
+      : "Follow-up";
 
   return (
     <div aria-label={spanish ? `Escritorio de ${organizationName || "The Lion’s Den"}` : `${organizationName || "The Lion’s Den"} desk`} className="ld-desk">
@@ -315,7 +322,7 @@ export function LionsDenOverview({
       <section className="ld-desk-followup">
         <section className="ld-panel">
           <div className="ld-panel-head">
-            <p>{spanish ? "Seguimiento" : "Follow-up"}</p>
+            <p>{followUpBandTitle}</p>
             <Link className="text-[11px] font-semibold text-[#071b42] underline" href={href("/client/david")}>
               {spanish ? "Abrir" : "Open"}
             </Link>
