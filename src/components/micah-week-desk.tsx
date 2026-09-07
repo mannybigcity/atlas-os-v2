@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   askMicahTalk,
   composeMicahDayBoardPrompt,
@@ -14,10 +15,9 @@ import {
   type MicahBrandKit,
 } from "@/lib/lions-den/micah-starter-week";
 import {
-  buildMicahWeekFromDesk,
   initialMicahDeskActionState,
-  saveMicahBrandSetup,
-} from "@/server/content-studio/actions";
+  type MicahDeskActionState,
+} from "@/server/content-studio/desk-save";
 
 export type MicahWeekStripCard = {
   day: number;
@@ -36,8 +36,44 @@ type MicahWeekDeskProps = {
   calendarHref: string;
 };
 
+type MicahDeskIntent = "save" | "build";
+
 function fieldClass() {
   return "mt-1 w-full rounded-xl border border-[#d8c27a] bg-white px-3 py-2 text-sm text-[#071b42] outline-none placeholder:text-[#8a93a3] focus:border-[#071b42] focus:ring-2 focus:ring-[#f5b932]/40 disabled:opacity-60";
+}
+
+function appendMicahDeskFields(root: HTMLElement, formData: FormData) {
+  const fields = root.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+    "input[name], textarea[name], select[name]",
+  );
+  for (const field of fields) {
+    const name = field.getAttribute("name");
+    if (!name || name === "intent" || name === "focusDay") continue;
+    if (field instanceof HTMLInputElement) {
+      if (field.type === "button" || field.type === "submit" || field.type === "reset") continue;
+      if (field.type === "checkbox" || field.type === "radio") {
+        if (field.checked) formData.append(name, field.value);
+        continue;
+      }
+      if (field.type === "file") {
+        const files = field.files;
+        if (!files?.length) continue;
+        for (const file of files) formData.append(name, file);
+        continue;
+      }
+    }
+    formData.append(name, field.value);
+  }
+}
+
+function blockDeskEnterSubmit(event: KeyboardEvent<HTMLDivElement>) {
+  if (event.key !== "Enter") return;
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  if (target.tagName === "TEXTAREA") return;
+  if (target instanceof HTMLButtonElement) return;
+  event.preventDefault();
+  event.stopPropagation();
 }
 
 export function MicahWeekDesk({
@@ -49,34 +85,66 @@ export function MicahWeekDesk({
   cards,
   calendarHref,
 }: MicahWeekDeskProps) {
+  const router = useRouter();
+  const deskRef = useRef<HTMLDivElement>(null);
   const empty = cards.length === 0;
   const steps = useMemo(() => micahOnboardingSteps(demoDesk), [demoDesk]);
   const [step, setStep] = useState(() => firstIncompleteMicahOnboardingIndex(brand, demoDesk));
   const [openDay, setOpenDay] = useState<number | null>(null);
   const [selectedAngle, setSelectedAngle] = useState("");
   const [dayAsk, setDayAsk] = useState("");
-  const [buildState, buildAction, building] = useActionState(
-    buildMicahWeekFromDesk,
-    initialMicahDeskActionState,
-  );
-  const [saveState, saveAction, saving] = useActionState(
-    saveMicahBrandSetup,
-    initialMicahDeskActionState,
-  );
-  const pending = building || saving;
+  const [state, setState] = useState<MicahDeskActionState>(initialMicahDeskActionState);
+  const [pending, setPending] = useState(false);
   const voices = visibleMicahVoices(demoDesk);
-  const state = buildState.status !== "idle" ? buildState : saveState;
   const filledDays = new Set(cards.map((card) => card.day));
   const onboardingDone = step >= steps.length;
   const selected = MICAH_STARTER_DAYS.find((item) => item.day === openDay) ?? null;
   const dayBrief = [selectedAngle, dayAsk].filter(Boolean).join(" — ");
 
+  async function postDesk(intent: MicahDeskIntent, extra?: { focusDay?: string }) {
+    if (!canEdit || pending) return;
+    setPending(true);
+    try {
+      const formData = new FormData();
+      if (deskRef.current) appendMicahDeskFields(deskRef.current, formData);
+      formData.set("organizationId", organizationId);
+      formData.set("intent", intent);
+      if (extra?.focusDay) formData.set("focusDay", extra.focusDay);
+      const response = await fetch("/api/client/micah/desk", {
+        method: "POST",
+        headers: { accept: "application/json" },
+        credentials: "same-origin",
+        body: formData,
+      });
+      const payload = (await response.json().catch(() => null)) as MicahDeskActionState | null;
+      if (payload?.status === "success" || payload?.status === "error") {
+        setState(payload);
+        if (payload.status === "success") router.refresh();
+        return;
+      }
+      setState({
+        status: "error",
+        error: "Desk was not saved. Stay on this page and try again. Nothing was posted.",
+        message: null,
+      });
+    } catch {
+      setState({
+        status: "error",
+        error: "Desk was not saved. Stay on this page and try again. Nothing was posted.",
+        message: null,
+      });
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
-    <form
-      action={buildAction}
+    <div
       className="mt-5 space-y-5"
-      encType="multipart/form-data"
+      data-micah-desk-path="json-button"
       id="micah-week-desk"
+      onKeyDownCapture={blockDeskEnterSubmit}
+      ref={deskRef}
     >
       <div className="overflow-x-auto">
         <ol className="flex min-w-max gap-2">
@@ -195,8 +263,8 @@ export function MicahWeekDesk({
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              data-micah-desk-control="generate"
               disabled={!canEdit || pending}
-              name="focusDay"
               onClick={() => {
                 askMicahTalk(
                   composeMicahDayBoardPrompt({
@@ -207,9 +275,11 @@ export function MicahWeekDesk({
                   }),
                   { submit: true },
                 );
+                if (brand.demeanor) {
+                  void postDesk("build", { focusDay: String(selected.day) });
+                }
               }}
-              type={brand.demeanor ? "submit" : "button"}
-              value={selected.day}
+              type="button"
             >
               Generate this day-card
             </button>
@@ -295,16 +365,19 @@ export function MicahWeekDesk({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <button
             className="rounded-full bg-[#071b42] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            data-micah-desk-control="build"
             disabled={!canEdit || pending}
-            type="submit"
+            onClick={() => void postDesk("build")}
+            type="button"
           >
             {pending ? "Working…" : empty ? "Build my 7-day week" : "Rebuild this week's cards"}
           </button>
           <button
             className="rounded-full border border-[#071b42] bg-white px-5 py-3 text-sm font-semibold text-[#071b42] disabled:opacity-50"
+            data-micah-desk-control="save"
             disabled={!canEdit || pending}
-            formAction={saveAction}
-            type="submit"
+            onClick={() => void postDesk("save")}
+            type="button"
           >
             Save brand
           </button>
@@ -318,6 +391,7 @@ export function MicahWeekDesk({
               ? "bg-[#fff1f1] text-[#8a1f1f]"
               : "bg-[#edf8ef] text-[#14532d]"
           }`}
+          data-micah-desk={state.status}
           role={state.status === "error" ? "alert" : "status"}
         >
           {state.error || state.message}
@@ -325,7 +399,7 @@ export function MicahWeekDesk({
       ) : null}
 
       <input name="organizationId" type="hidden" value={organizationId} />
-    </form>
+    </div>
   );
 }
 
