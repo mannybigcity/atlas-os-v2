@@ -146,6 +146,7 @@ export async function writeMicahGalleryCaptionRow(
     status: string;
     metadata: Record<string, unknown>;
   },
+  options?: { rethrowControlFlow?: boolean },
 ) {
   for (const write of writers) {
     try {
@@ -158,7 +159,9 @@ export async function writeMicahGalleryCaptionRow(
         return true;
       }
     } catch (error) {
-      rethrowNextControlFlow(error);
+      if (options?.rethrowControlFlow !== false) {
+        rethrowNextControlFlow(error);
+      }
     }
   }
   return false;
