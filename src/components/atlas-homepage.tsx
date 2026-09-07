@@ -161,7 +161,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       },
     ],
     denStillAlt:
-      "Lion’s Den Summary for Massive Action Maintenance with Desk menu — Summary, Prospects, Clients, Follow-up, Calendar, Notes, HUNTER, MICAH — and a packed HUNTER review pile",
+      "Lion’s Den Summary for Massive Action Maintenance with Desk menu — Summary, Prospects, Clients, Follow-up, Calendar, Notes, HUNTER, MICAH — plus packed Prospects, HUNTER, Follow-up, and MICAH counts",
   },
   es: {
     eyebrow: "ATLAS PARA EMPRENDEDORES",
@@ -254,7 +254,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       },
     ],
     denStillAlt:
-      "Resumen del Lion’s Den para Massive Action Maintenance con el menú del escritorio — Summary, Prospects, Clients, Follow-up, Calendar, Notes, HUNTER, MICAH — y una pila de revisión HUNTER llena",
+      "Resumen del Lion’s Den para Massive Action Maintenance con el menú del escritorio — Summary, Prospects, Clients, Follow-up, Calendar, Notes, HUNTER, MICAH — y conteos llenos de Prospects, HUNTER, Follow-up y MICAH",
   },
 };
 

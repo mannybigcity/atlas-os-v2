@@ -76,7 +76,7 @@ test("AFE homepage #den shows a real Lion’s Den Summary still, not the empty w
   assert.match(homepage, /Desk menu/);
   assert.match(homepage, /Summary, Prospects, Clients, Follow-up, Calendar, Notes, HUNTER, MICAH/);
   assert.match(homepage, /Massive Action Maintenance/);
-  assert.match(homepage, /packed HUNTER review pile/);
+  assert.match(homepage, /packed Prospects, HUNTER, Follow-up, and MICAH counts/);
   assert.doesNotMatch(homepage, /Your workspace|Tu espacio de trabajo/);
   assert.doesNotMatch(homepage, /No recent activity|No hay actividad reciente/);
   assert.doesNotMatch(homepage, /"Dashboard"|"Leads"|"Conversations"|"Opportunities"/);
