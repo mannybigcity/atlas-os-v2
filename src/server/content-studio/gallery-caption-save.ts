@@ -96,6 +96,36 @@ export function planMicahGalleryCaptionSave(input: {
   return { ok: true, patch };
 }
 
+export function micahGalleryCaptionActionResult(
+  reason:
+    | "edited"
+    | "sis_blocked"
+    | "edit_invalid"
+    | "edit_missing"
+    | "edit_failed"
+    | "signed_out",
+) {
+  if (reason === "edited") {
+    return {
+      status: "success" as const,
+      error: null,
+      message: "Caption saved in this gallery. Copy/Download only. Nothing was posted.",
+    };
+  }
+  const errors = {
+    sis_blocked: "This gallery cannot be edited on that workspace.",
+    edit_invalid: "That caption could not be saved. Keep hook, payoff, and one CTA.",
+    edit_missing: "MICAH could not find that day-card.",
+    edit_failed: "MICAH could not save that caption. Try again from this page.",
+    signed_out: "Sign in to save a caption in this gallery.",
+  };
+  return {
+    status: "error" as const,
+    error: errors[reason],
+    message: null,
+  };
+}
+
 export async function writeMicahGalleryCaptionRow(
   writers: MicahGalleryCaptionWriter[],
   input: {

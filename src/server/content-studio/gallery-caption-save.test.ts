@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import {
+  micahGalleryCaptionActionResult,
   micahGalleryCaptionReturnPath,
   micahGalleryCaptionReturnTo,
   planMicahGalleryCaptionSave,
@@ -141,18 +142,35 @@ test("save return path keeps the trial workspace and never uses a hash", () => {
   assert.doesNotMatch(micahGalleryCaptionReturnPath(form({}), "edited"), /#/);
 });
 
-test("save action writes through admin fallback and does not redirect with a hash", () => {
+test("save action never redirects — a thrown redirect is the live crash", () => {
   const actions = readFileSync(join(process.cwd(), "src/server/content-studio/actions.ts"), "utf8");
-  const helper = readFileSync(join(process.cwd(), "src/server/content-studio/gallery-caption-save.ts"), "utf8");
-  const gallery = readFileSync(join(process.cwd(), "src/components/micah-week-gallery.tsx"), "utf8");
-  const page = readFileSync(join(process.cwd(), "src/app/client/micah/page.tsx"), "utf8");
+  const start = actions.indexOf("async function saveMicahGalleryCaption");
+  assert.ok(start >= 0);
+  const savePath = actions.slice(start);
+  assert.match(savePath, /export async function updateMicahGalleryCaption/);
+  assert.match(savePath, /_previousState: MicahDeskActionState/);
+  assert.match(savePath, /micahGalleryCaptionActionResult\("edit_failed"\)/);
+  assert.doesNotMatch(savePath, /redirect\(/);
+  assert.doesNotMatch(savePath, /#draft-/);
   assert.match(actions, /createAdminClient/);
-  assert.match(actions, /writeMicahGalleryCaptionRow/);
-  assert.match(actions, /micahGalleryCaptionReturnPath/);
+  assert.match(actions, /getVerifiedUser/);
   assert.match(actions, /sis_blocked/);
-  assert.doesNotMatch(actions, /#draft-/);
-  assert.doesNotMatch(helper, /#/);
   assert.doesNotMatch(actions, /status: "published"/);
-  assert.match(gallery, /name="returnTo"/);
-  assert.match(page, /micahGalleryCaptionReturnTo/);
+
+  const gallery = readFileSync(join(process.cwd(), "src/components/micah-week-gallery.tsx"), "utf8");
+  assert.match(gallery, /useActionState/);
+  assert.match(gallery, /data-micah-save="success"/);
+  assert.match(gallery, /data-micah-save="error"/);
+  assert.doesNotMatch(gallery, /action=\{updateMicahGalleryCaption\}/);
+});
+
+test("same-page save results never send the owner to a blank error URL", () => {
+  assert.deepEqual(micahGalleryCaptionActionResult("edited"), {
+    status: "success",
+    error: null,
+    message: "Caption saved in this gallery. Copy/Download only. Nothing was posted.",
+  });
+  assert.equal(micahGalleryCaptionActionResult("sis_blocked").status, "error");
+  assert.equal(micahGalleryCaptionActionResult("edit_failed").status, "error");
+  assert.match(String(micahGalleryCaptionActionResult("edit_failed").error), /Try again from this page/);
 });

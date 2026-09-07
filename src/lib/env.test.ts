@@ -64,6 +64,11 @@ test("demo login secrets are read at runtime, not via static process.env.NAME", 
   assert.doesNotMatch(envSource, /process\.env\.DEMO_LOGIN_EMAIL/);
 });
 
+test("service role key is read at runtime so Netlify server actions can write", () => {
+  assert.match(envSource, /readRuntimeEnv\("SUPABASE_SERVICE_ROLE_KEY"\)/);
+  assert.doesNotMatch(envSource, /process\.env\.SUPABASE_SERVICE_ROLE_KEY/);
+});
+
 test("readRuntimeEnv keeps # and & and strips wrapped quotes", () => {
   withEnv("DEMO_LOGIN_PASSWORD", undefined, () => {
     withEnv("DEMO_LOGIN_PASSWORD", "  'plain#secret&ok'  ", () => {

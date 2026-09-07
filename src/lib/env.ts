@@ -30,7 +30,7 @@ export function getSuperAdminEmails() {
 }
 
 export function getSupabaseServiceRoleKey() {
-  const value = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const value = readRuntimeEnv("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!value) {
     throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY on the server.");

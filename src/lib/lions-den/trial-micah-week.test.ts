@@ -117,6 +117,7 @@ test("MICAH gallery Edit saves captions and never live-posts", () => {
   assert.match(gallery, /data-micah-control="cancel"/);
   assert.match(gallery, /data-micah-caption="preview"/);
   assert.match(gallery, /updateMicahGalleryCaption/);
+  assert.match(gallery, /useActionState/);
   assert.match(gallery, /Copy caption/);
   assert.match(gallery, /Download file/);
   assert.doesNotMatch(gallery, /schedule this post|blotato|Phone AI is live/i);
@@ -128,6 +129,10 @@ test("MICAH gallery Edit saves captions and never live-posts", () => {
   assert.match(actions, /isSisOrganization/);
   assert.match(actions, /sis_blocked/);
   assert.doesNotMatch(actions, /#draft-/);
+  assert.doesNotMatch(
+    actions.slice(actions.indexOf("async function saveMicahGalleryCaption")),
+    /redirect\(/,
+  );
   assert.doesNotMatch(actions, /status: "published"/);
   assert.doesNotMatch(actions, /blotato|schedule this post|Phone AI is live/i);
   assert.match(art, /galleryLogoForMicahDesk/);
