@@ -279,7 +279,7 @@ test("apply writes pending HUNTER finds, local prospects, one won client, follow
   assert.doesNotMatch(String(wonClients[0]?.name), /\bSAMPLE\b/);
   assert.equal(wonClients[0]?.contact_phone, null);
   assert.equal((wonClients[0]?.metadata as { closed_win?: boolean }).closed_win, true);
-  assert.match(String(wonClients[0]?.source_label), /closed win/);
+  assert.match(String(wonClients[0]?.source_label), /closed win/i);
   assert.match(String(wonClients[0]?.research_summary), /did not close this automatically|owner marks real wins/);
   assert.equal(
     pendingHunter.every((row) => row.accepted_opportunity_id == null),

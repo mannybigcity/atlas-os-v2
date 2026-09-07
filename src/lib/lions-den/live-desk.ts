@@ -48,7 +48,7 @@ function tidyPresentedText(value: string) {
     .replace(/\s+\./g, ".")
     .replace(/\.\s*\./g, ".")
     .replace(/^[\s,:.\-—·]+/, "")
-    .replace(/[\s,:.\-—·]+$/, "")
+    .replace(/[\s,:\-—·]+$/, "")
     .trim();
 }
 
