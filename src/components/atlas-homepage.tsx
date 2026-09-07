@@ -39,6 +39,11 @@ type LandingCopy = {
   mostPopular: string;
   perMonth: string;
   honestDesk: string;
+  stillsLabel: string;
+  stillsTitle: string;
+  stillsCopy: string;
+  stills: Array<{ src: string; name: string; label: string; caption: string; alt: string }>;
+  denStillAlt: string;
 };
 
 function IndustryGlyph({ index }: { index: number }) {
@@ -73,11 +78,11 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     nav: {
       how: "How ATLAS Works",
       who: "Who It's For",
-      dashboard: "Panel de clientes",
+      dashboard: "CLIENT PANEL",
       pricing: "Pricing",
       resources: "Resources",
       login: "Acceso del cliente",
-      action: "Panel de clientes",
+      action: "CLIENT PANEL",
     },
     principles: [
       "Built for small business",
@@ -106,7 +111,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       { title: "Close", body: "Keep pipeline context visible while you make the customer decisions.", mark: "04" },
       { title: "Grow", body: "Draft focused marketing content with human review before anything goes live.", mark: "05" },
     ],
-    denTitle: "PANEL DE CLIENTES",
+    denTitle: "CLIENT PANEL",
     denCopy: "Your command center. See what ATLAS is doing, what needs your attention, and what is coming next.",
     denPoints: [
       "Owner-approved work and next actions",
@@ -115,7 +120,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       "Tasks and reminders",
       "Notes, activity, and account usage",
     ],
-    denCta: "ENTER THE CLIENT DASHBOARD",
+    denCta: "ENTER THE CLIENT PANEL",
     closingTitle: ["RUN THE BUSINESS.", "MAKE IT TO THE MOMENTS THAT MATTER."],
     closingCopy:
       "ATLAS organizes the work that gets scattered: prospects, follow-up, pipeline, tasks, and approved drafts, so you can focus on your customers and your family.",
@@ -129,6 +134,34 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     mostPopular: "Most popular",
     perMonth: "per month",
     honestDesk: "Phone AI / Front Desk is later and not live.",
+    stillsLabel: "THE DESK",
+    stillsTitle: "See the desk before the trial.",
+    stillsCopy: "Teasers only. The working sample stays behind the 7-day trial.",
+    stills: [
+      {
+        src: "/marketing/desk-stills/hunter-review-pile.webp",
+        name: "HUNTER",
+        label: "leads to review",
+        caption: "Review pile",
+        alt: "HUNTER review pile on the Atlas desk",
+      },
+      {
+        src: "/marketing/desk-stills/follow-up-drafts.webp",
+        name: "Follow-up",
+        label: "you approve then send",
+        caption: "Follow-up drafts you approve",
+        alt: "Follow-up drafts with Edit and Send on the Atlas desk",
+      },
+      {
+        src: "/marketing/desk-stills/micah-gallery.webp",
+        name: "MICAH",
+        label: "gallery drafts only",
+        caption: "gallery Copy/Download",
+        alt: "MICAH gallery drafts on the Atlas desk",
+      },
+    ],
+    denStillAlt:
+      "Lion’s Den Summary for Massive Action Maintenance with Desk menu — Summary, Prospects, Clients, Follow-up, Calendar, Notes, HUNTER, MICAH — and a packed HUNTER review pile",
   },
   es: {
     eyebrow: "ATLAS PARA EMPRENDEDORES",
@@ -141,11 +174,11 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     nav: {
       how: "Cómo funciona ATLAS",
       who: "Para quién es",
-      dashboard: "Client Dashboard",
+      dashboard: "CLIENT PANEL",
       pricing: "Precios",
       resources: "Recursos",
       login: "Client Login",
-      action: "Client Dashboard",
+      action: "CLIENT PANEL",
     },
     principles: [
       "Hecho para pequeñas empresas",
@@ -171,7 +204,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       { title: "Avanza", body: "Mantén visible el contexto del pipeline mientras tomas las decisiones con clientes.", mark: "04" },
       { title: "Crece", body: "Crea borradores de marketing enfocados con revisión humana antes de publicar.", mark: "05" },
     ],
-    denTitle: "CLIENT DASHBOARD",
+    denTitle: "CLIENT PANEL",
     denCopy: "Tu centro de mando. Mira lo que ATLAS está haciendo, lo que necesita tu atención y lo que sigue.",
     denPoints: [
       "Trabajo aprobado por el propietario y próximos pasos",
@@ -180,7 +213,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       "Tareas y recordatorios",
       "Notas, actividad y uso de la cuenta",
     ],
-    denCta: "ENTRAR AL PANEL DE CLIENTES",
+    denCta: "ENTRAR AL CLIENT PANEL",
     closingTitle: ["MANEJA EL NEGOCIO.", "LLEGA A LOS MOMENTOS QUE IMPORTAN."],
     closingCopy:
       "ATLAS organiza el trabajo que se dispersa: prospectos, seguimientos, oportunidades, tareas y borradores aprobados, para que puedas enfocarte en tus clientes y tu familia.",
@@ -194,49 +227,50 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     mostPopular: "Más popular",
     perMonth: "al mes",
     honestDesk: "La IA telefónica / Front Desk llega después y no está activa.",
+    stillsLabel: "EL ESCRITORIO",
+    stillsTitle: "Mira el escritorio antes de la prueba.",
+    stillsCopy: "Solo adelantos. La muestra real queda detrás de la prueba de 7 días.",
+    stills: [
+      {
+        src: "/marketing/desk-stills/hunter-review-pile.webp",
+        name: "HUNTER",
+        label: "prospectos a revisar",
+        caption: "Pila de revisión",
+        alt: "Pila de revisión de HUNTER en el escritorio de Atlas",
+      },
+      {
+        src: "/marketing/desk-stills/follow-up-drafts.webp",
+        name: "Follow-up",
+        label: "tú apruebas y envías",
+        caption: "Borradores de seguimiento que tú apruebas",
+        alt: "Borradores de seguimiento con Editar y Enviar en el escritorio de Atlas",
+      },
+      {
+        src: "/marketing/desk-stills/micah-gallery.webp",
+        name: "MICAH",
+        label: "solo borradores de galería",
+        caption: "galería Copiar/Descargar",
+        alt: "Borradores de la galería MICAH en el escritorio de Atlas",
+      },
+    ],
+    denStillAlt:
+      "Resumen del Lion’s Den para Massive Action Maintenance con el menú del escritorio — Summary, Prospects, Clients, Follow-up, Calendar, Notes, HUNTER, MICAH — y una pila de revisión HUNTER llena",
   },
 };
 
-function DashboardPreview({ language }: { language: SiteLanguage }) {
-  const spanish = language === "es";
-
+function DeskSummaryStill({ alt }: { alt: string }) {
   return (
-    <div className="atlas-dashboard" aria-label={spanish ? "Panel de clientes" : "Client Dashboard"}>
-      <aside className="atlas-dashboard-sidebar">
-        <div className="atlas-dashboard-wordmark"><span>A</span> ATLAS</div>
-        <div className="atlas-dashboard-nav">
-          <span className="selected">{spanish ? "Panel" : "Dashboard"}</span>
-          <span>{spanish ? "Prospectos" : "Leads"}</span>
-          <span>{spanish ? "Conversaciones" : "Conversations"}</span>
-          <span>{spanish ? "Oportunidades" : "Opportunities"}</span>
-          <span>{spanish ? "Calendario" : "Calendar"}</span>
-          <span>{spanish ? "Tareas" : "Tasks"}</span>
-          <span>{spanish ? "Clientes" : "Customers"}</span>
-          <span>{spanish ? "Reportes" : "Reports"}</span>
-        </div>
-      </aside>
-      <div className="atlas-dashboard-main">
-        <div className="atlas-dashboard-greeting">
-          <div><strong>{spanish ? "Tu espacio de trabajo" : "Your workspace"}</strong><small>{spanish ? "Aquí verás tus próximos pasos." : "Your next actions will appear here."}</small></div>
-        </div>
-        <div className="atlas-dashboard-metrics">
-          <article><strong>—</strong><span>{spanish ? "Prospectos a revisar (HUNTER)" : "Leads to review (HUNTER)"}</span></article>
-          <article><strong>—</strong><span>{spanish ? "Seguimientos que tú apruebas" : "Follow-ups you approve"}</span></article>
-          <article><strong>—</strong><span>{spanish ? "Clientes" : "Clients"}</span></article>
-          <article><strong>—</strong><span>{spanish ? "Borradores sociales (galería MICAH)" : "Social drafts (MICAH gallery)"}</span></article>
-        </div>
-        <div className="atlas-dashboard-lower">
-          <article className="atlas-activity-card">
-            <h3>{spanish ? "Actividad reciente" : "Recent activity"}</h3>
-            <p className="atlas-dashboard-empty">{spanish ? "No hay actividad reciente." : "No recent activity."}</p>
-          </article>
-          <article className="atlas-pipeline-card">
-            <h3>{spanish ? "Resumen del pipeline" : "Pipeline overview"}</h3>
-            <p className="atlas-dashboard-empty">{spanish ? "Tu pipeline está listo para tu primera oportunidad." : "Your pipeline is ready for your first opportunity."}</p>
-          </article>
-        </div>
+    <figure className="atlas-den-still">
+      <div className="atlas-den-still-frame">
+        <Image
+          alt={alt}
+          className="atlas-den-still-image"
+          fill
+          sizes="(max-width: 820px) 100vw, 58vw"
+          src="/marketing/desk-stills/lions-den-summary.webp"
+        />
       </div>
-    </div>
+    </figure>
   );
 }
 
@@ -331,7 +365,38 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
             <ul>{t.denPoints.map((point) => <li key={point}>{point}</li>)}</ul>
             <Link className="atlas-button gold compact" href={withSiteLanguage("/login", language)}>{t.denCta}</Link>
           </div>
-          <DashboardPreview language={language} />
+          <DeskSummaryStill alt={t.denStillAlt} />
+        </section>
+
+        <section className="atlas-stills-section" id="desk-stills" aria-labelledby="stills-title">
+          <div className="atlas-wrap">
+            <div className="atlas-stills-head">
+              <div>
+                <p className="atlas-section-label">{t.stillsLabel}</p>
+                <h2 id="stills-title">{t.stillsTitle}</h2>
+              </div>
+              <p className="atlas-stills-lede">{t.stillsCopy}</p>
+            </div>
+            <div className="atlas-stills-grid">
+              {t.stills.map((still) => (
+                <figure className="atlas-still-card" key={still.src}>
+                  <div className="atlas-still-frame">
+                    <Image
+                      alt={still.alt}
+                      className="atlas-still-image"
+                      fill
+                      sizes="(max-width: 820px) 100vw, 33vw"
+                      src={still.src}
+                    />
+                  </div>
+                  <figcaption>
+                    <strong>{still.name} — {still.label}</strong>
+                    <span>{still.caption}</span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="atlas-family-section" id="family" aria-labelledby="family-title">
