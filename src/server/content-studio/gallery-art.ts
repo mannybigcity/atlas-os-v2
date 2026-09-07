@@ -18,6 +18,14 @@ import {
 const ATLAS_LOGO_PATH = join(process.cwd(), "public/brand/atlas-logo.png");
 const NAVY = MICAH_NAVY;
 const GOLD = MICAH_GOLD;
+const CARD_TEXT_WIDTH = 840;
+const SVG_CHROME_TEXT = /^(ATLAS|DRAFT\b|Download and post yourself|DAY \d)/i;
+
+const AFE_DEMO_COMPANIES = [
+  { name: "ABC Plumbing", hook: "crew hats and shop pride" },
+  { name: "123 Catering", hook: "tasting night and Friday fish fry" },
+  { name: "XYZ Electric", hook: "same-week installs done right" },
+] as const;
 
 function escapeXml(value: string) {
   return value
@@ -62,15 +70,216 @@ export function galleryLogoForMicahDesk(input: {
   return null;
 }
 
-function headlineFromPrompt(source: string) {
+export function isConcatenatedDemoCompanyCopy(value: string) {
+  const hits = AFE_DEMO_COMPANIES.filter((company) => value.includes(company.name)).length;
+  return hits >= 2;
+}
+
+function isGenericWeekTheme(value: string) {
+  return /^(?:(?:make|create|design|draft|write)\s+(?:a|an|the)\s+)?(?:week|7[- ]day(?:s)?)\s+of\s+posts$/i.test(
+    value.replace(/\s+/g, " ").trim(),
+  );
+}
+
+function promptOccasion(source: string) {
   const cleaned = source.replace(/^answer:\s*/i, "").replace(/\s+/g, " ").trim();
   const occasion = cleaned.match(/\b(?:for|about)\s+(.+)$/i)?.[1]?.trim();
-  if (occasion && occasion.length >= 2 && occasion.length <= 72) return occasion;
-  return (
+  if (
+    occasion &&
+    occasion.length >= 2 &&
+    occasion.length <= 72 &&
+    !isConcatenatedDemoCompanyCopy(occasion) &&
+    !isGenericWeekTheme(occasion)
+  ) {
+    return occasion;
+  }
+  const stripped =
     cleaned
       .replace(/^(make|create|design|draft|write)\s+(a|an|the)\s+/i, "")
-      .trim() || cleaned
+      .trim() || cleaned;
+  if (isConcatenatedDemoCompanyCopy(stripped) || isGenericWeekTheme(stripped)) {
+    return "";
+  }
+  return stripped;
+}
+
+function headlineFromPrompt(source: string) {
+  return promptOccasion(source);
+}
+
+export function wrapMicahCardLines(text: string, maxChars: number, maxLines: number) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized || maxChars < 1 || maxLines < 1) return [];
+  const pair = normalized.split(" · ");
+  if (
+    pair.length === 2 &&
+    maxLines >= 2 &&
+    pair[0] &&
+    pair[1] &&
+    pair[0].length <= maxChars &&
+    pair[1].length <= maxChars
+  ) {
+    return [pair[0], pair[1]];
+  }
+  const lines: string[] = [];
+  let current = "";
+
+  const flushLongToken = (word: string) => {
+    let rest = word;
+    while (rest.length > maxChars) {
+      lines.push(rest.slice(0, maxChars));
+      rest = rest.slice(maxChars);
+    }
+    current = rest;
+  };
+
+  for (const word of normalized.split(" ")) {
+    if (word.length > maxChars) {
+      if (current) {
+        lines.push(current);
+        current = "";
+      }
+      flushLongToken(word);
+      continue;
+    }
+    const next = current ? `${current} ${word}` : word;
+    if (next.length <= maxChars) {
+      current = next;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+    }
+  }
+  if (current) lines.push(current);
+  if (lines.length <= maxLines) return lines;
+
+  const kept = lines.slice(0, maxLines);
+  const overflow = lines.slice(maxLines).join(" ");
+  kept[maxLines - 1] = clipDraftText(`${kept[maxLines - 1]} ${overflow}`.trim(), maxChars);
+  return kept;
+}
+
+function maxCharsForFont(fontSize: number, emWidth: number) {
+  return Math.max(10, Math.floor(CARD_TEXT_WIDTH / (fontSize * emWidth)));
+}
+
+export function fitMicahCardHeadline(text: string) {
+  const clipped = clipDraftText(text, 72);
+  const options = [
+    { fontSize: 54, em: 0.64, maxLines: 2 },
+    { fontSize: 46, em: 0.64, maxLines: 2 },
+    { fontSize: 40, em: 0.62, maxLines: 3 },
+    { fontSize: 36, em: 0.62, maxLines: 3 },
+  ] as const;
+  for (const option of options) {
+    const maxChars = maxCharsForFont(option.fontSize, option.em);
+    const needed = wrapMicahCardLines(clipped, maxChars, 99);
+    if (needed.length <= option.maxLines || option === options[options.length - 1]) {
+      return {
+        lines: wrapMicahCardLines(clipped, maxChars, option.maxLines),
+        fontSize: option.fontSize,
+        lineHeight: Math.round(option.fontSize * 1.16),
+      };
+    }
+  }
+  return { lines: wrapMicahCardLines(clipped, 22, 3), fontSize: 36, lineHeight: 42 };
+}
+
+export function fitMicahCardSupporting(text: string) {
+  const clipped = clipDraftText(text, 90);
+  const options = [
+    { fontSize: 28, em: 0.74, maxLines: 2 },
+    { fontSize: 24, em: 0.7, maxLines: 3 },
+  ] as const;
+  for (const option of options) {
+    const maxChars = maxCharsForFont(option.fontSize, option.em);
+    const needed = wrapMicahCardLines(clipped, maxChars, 99);
+    if (needed.length <= option.maxLines || option === options[options.length - 1]) {
+      return {
+        lines: wrapMicahCardLines(clipped, maxChars, option.maxLines),
+        fontSize: option.fontSize,
+        lineHeight: Math.round(option.fontSize * 1.25),
+      };
+    }
+  }
+  return { lines: wrapMicahCardLines(clipped, 36, 3), fontSize: 24, lineHeight: 30 };
+}
+
+function svgWrappedText(input: {
+  x: number;
+  y: number;
+  fill: string;
+  fontSize: number;
+  fontFamily: string;
+  fontWeight?: string;
+  lines: string[];
+  lineHeight: number;
+}) {
+  const lines = input.lines.length ? input.lines : [""];
+  const tspans = lines
+    .map((line, index) => {
+      const dy = index === 0 ? 0 : input.lineHeight;
+      return `<tspan x="${input.x}" dy="${dy}">${escapeXml(line)}</tspan>`;
+    })
+    .join("");
+  const weight = input.fontWeight ? ` font-weight="${input.fontWeight}"` : "";
+  return `<text x="${input.x}" y="${input.y}" fill="${input.fill}" font-size="${input.fontSize}" font-family="${input.fontFamily}"${weight} text-anchor="middle">${tspans}</text>`;
+}
+
+export function hireableMicahCardHeadline(input: {
+  headline: string;
+  demoDesk?: boolean;
+  companyName?: string;
+  theme?: string;
+}) {
+  const headline = input.headline.replace(/\s+/g, " ").trim();
+  if (!input.demoDesk || !isConcatenatedDemoCompanyCopy(headline)) {
+    return clipDraftText(headline, 72);
+  }
+  const company = String(input.companyName ?? "")
+    .replace(" (DEMO)", "")
+    .trim();
+  const theme = String(input.theme ?? "").trim();
+  if (theme && company) return clipDraftText(`${theme} · ${company}`, 72);
+  if (company) return clipDraftText(company, 72);
+  return clipDraftText(theme || "This week", 72);
+}
+
+export function micahSvgTextRuns(svg: string) {
+  const runs: string[] = [];
+  for (const block of svg.matchAll(/<text\b[^>]*>([\s\S]*?)<\/text>/g)) {
+    const inner = block[1];
+    const tspans = [...inner.matchAll(/<tspan\b[^>]*>([^<]*)<\/tspan>/g)];
+    if (tspans.length > 0) {
+      for (const span of tspans) {
+        runs.push(
+          span[1]
+            .replaceAll("&quot;", '"')
+            .replaceAll("&gt;", ">")
+            .replaceAll("&lt;", "<")
+            .replaceAll("&amp;", "&"),
+        );
+      }
+    } else {
+      runs.push(
+        inner
+          .replaceAll("&quot;", '"')
+          .replaceAll("&gt;", ">")
+          .replaceAll("&lt;", "<")
+          .replaceAll("&amp;", "&"),
+      );
+    }
+  }
+  return runs.map((run) => run.replace(/\s+/g, " ").trim()).filter(Boolean);
+}
+
+export function micahSvgNeedsRefit(svg: string) {
+  if (!svg.includes("<svg")) return true;
+  const long = micahSvgTextRuns(svg).filter(
+    (run) => run.length > 26 && !SVG_CHROME_TEXT.test(run),
   );
+  if (long.length === 0) return false;
+  return !svg.includes("<tspan") || long.some((run) => run.length > 42);
 }
 
 export function buildMicahDraftCopy(prompt: string, answer?: string | null) {
@@ -104,8 +313,8 @@ export function buildMicahDraftSvg(input: {
 }) {
   const navy = normalizeBrandColor(input.primaryColor, NAVY);
   const gold = normalizeBrandColor(input.secondaryColor, GOLD);
-  const headline = escapeXml(clipDraftText(input.headline, 72));
-  const supporting = escapeXml(clipDraftText(input.supportingText, 90));
+  const headlineFit = fitMicahCardHeadline(input.headline);
+  const supportingFit = fitMicahCardSupporting(input.supportingText);
   const dayLabel = input.dayLabel
     ? escapeXml(clipDraftText(input.dayLabel, 40))
     : "";
@@ -115,12 +324,34 @@ export function buildMicahDraftSvg(input: {
   const dayY = "150";
   const atlasY = input.logoDataUri ? (dayLabel ? "500" : "460") : dayLabel ? "400" : "360";
   const headY = input.logoDataUri ? (dayLabel ? "600" : "560") : dayLabel ? "500" : "460";
-  const supportY = input.logoDataUri ? (dayLabel ? "680" : "640") : dayLabel ? "580" : "540";
+  const supportY = Math.min(
+    900,
+    Number(headY) + Math.max(0, headlineFit.lines.length - 1) * headlineFit.lineHeight + 72,
+  );
   const dayText = dayLabel
     ? `<text x="540" y="${dayY}" fill="${gold}" font-size="26" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" letter-spacing="4">${dayLabel}</text>`
     : "";
+  const headlineText = svgWrappedText({
+    x: 540,
+    y: Number(headY),
+    fill: "#ffffff",
+    fontSize: headlineFit.fontSize,
+    fontFamily: "Georgia,Times,serif",
+    fontWeight: "700",
+    lines: headlineFit.lines,
+    lineHeight: headlineFit.lineHeight,
+  });
+  const supportingText = svgWrappedText({
+    x: 540,
+    y: supportY,
+    fill: "#d8c27a",
+    fontSize: supportingFit.fontSize,
+    fontFamily: "Arial,sans-serif",
+    lines: supportingFit.lines,
+    lineHeight: supportingFit.lineHeight,
+  });
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><rect width="1080" height="1080" fill="${navy}"/><rect x="48" y="48" width="984" height="984" fill="none" stroke="${gold}" stroke-width="10"/><rect x="72" y="72" width="936" height="936" fill="none" stroke="${gold}" stroke-width="2"/>${logo}${dayText}<text x="540" y="${atlasY}" fill="${gold}" font-size="28" font-family="Georgia,Times,serif" text-anchor="middle" letter-spacing="6">ATLAS</text><text x="540" y="${headY}" fill="#ffffff" font-size="54" font-family="Georgia,Times,serif" font-weight="700" text-anchor="middle">${headline}</text><text x="540" y="${supportY}" fill="#d8c27a" font-size="28" font-family="Arial,sans-serif" text-anchor="middle">${supporting}</text><text x="540" y="980" fill="${gold}" font-size="22" font-family="Arial,sans-serif" text-anchor="middle">DRAFT — download and post yourself. Not published.</text></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080" overflow="hidden"><rect width="1080" height="1080" fill="${navy}"/><rect x="48" y="48" width="984" height="984" fill="none" stroke="${gold}" stroke-width="10"/><rect x="72" y="72" width="936" height="936" fill="none" stroke="${gold}" stroke-width="2"/>${logo}${dayText}<text x="540" y="${atlasY}" fill="${gold}" font-size="28" font-family="Georgia,Times,serif" text-anchor="middle" letter-spacing="6">ATLAS</text>${headlineText}${supportingText}<text x="540" y="980" fill="${gold}" font-size="22" font-family="Arial,sans-serif" text-anchor="middle">DRAFT — download and post yourself. Not published.</text></svg>`;
 }
 
 export const MICAH_DEMEANORS = [
@@ -138,12 +369,6 @@ export const MICAH_WEEK_DAYS = MICAH_STARTER_DAYS.map((item) => ({
   weekday: item.weekday,
   theme: item.theme,
 }));
-
-const AFE_DEMO_COMPANIES = [
-  { name: "ABC Plumbing", hook: "crew hats and shop pride" },
-  { name: "123 Catering", hook: "tasting night and Friday fish fry" },
-  { name: "XYZ Electric", hook: "same-week installs done right" },
-] as const;
 
 export function isMicahDemeanor(value: unknown): value is MicahDemeanor {
   return MICAH_DEMEANORS.includes(value as MicahDemeanor);
@@ -269,7 +494,8 @@ export function buildMicahWeekPack(input: {
   secondaryColor?: string | null;
   weekKey?: string;
 }): MicahWeekCard[] {
-  const theme = clipDraftText(headlineFromPrompt(input.prompt), 72) || "This week";
+  const occasion = promptOccasion(input.prompt);
+  const theme = clipDraftText(occasion, 72) || "This week";
   const weekKey = input.weekKey || "week";
   const logoDataUri = input.logoDataUri ?? null;
   const primaryColor = normalizeBrandColor(input.primaryColor, NAVY);
@@ -282,8 +508,12 @@ export function buildMicahWeekPack(input: {
       ? AFE_DEMO_COMPANIES[index % AFE_DEMO_COMPANIES.length]
       : { name: "", hook: theme };
     const dayLabel = `DAY ${item.day} · ${item.theme.toUpperCase()}`;
+    const companyName = company.name.replace(" (DEMO)", "");
     const headline = input.demoDesk
-      ? clipDraftText(`${theme} · ${company.name.replace(" (DEMO)", "")}`, 72)
+      ? clipDraftText(
+          occasion ? `${occasion} · ${companyName}` : `${item.theme} · ${companyName}`,
+          72,
+        )
       : clipDraftText(`${item.theme} · ${theme}`, 72);
     const supportingText = clipDraftText(
       input.demoDesk
@@ -399,16 +629,25 @@ export function selectMicahWeekGallery(
     const weekday = starter?.weekday ?? "Monday";
     const theme = String(draft.metadata.week_theme ?? starter?.theme ?? weekday);
     const dayLabel = `DAY ${day} · ${theme.toUpperCase()}`;
-    const imageSvg =
-      draft.imageSvg ||
-      buildMicahDraftSvg({
-        headline: draft.headline,
-        supportingText: draft.supportingText || draft.caption,
-        logoDataUri: options.logoDataUri,
-        dayLabel,
-        primaryColor: String(draft.metadata.primary_color ?? ""),
-        secondaryColor: String(draft.metadata.secondary_color ?? ""),
-      });
+    const headline = hireableMicahCardHeadline({
+      headline: draft.headline,
+      demoDesk: options.demoDesk,
+      companyName: String(draft.metadata.company_name ?? ""),
+      theme,
+    });
+    const supportingText =
+      draft.supportingText || "Download this draft and post it yourself.";
+    const shouldRefit = !draft.imageSvg || options.demoDesk;
+    const imageSvg = shouldRefit
+      ? buildMicahDraftSvg({
+          headline,
+          supportingText,
+          logoDataUri: options.logoDataUri,
+          dayLabel,
+          primaryColor: String(draft.metadata.primary_color ?? ""),
+          secondaryColor: String(draft.metadata.secondary_color ?? ""),
+        })
+      : draft.imageSvg;
     return {
       id: draft.id,
       day,
@@ -417,8 +656,8 @@ export function selectMicahWeekGallery(
       dayLabel,
       slot: `week-d${day}`,
       title: draft.title,
-      headline: draft.headline,
-      supportingText: draft.supportingText || "Download this draft and post it yourself.",
+      headline,
+      supportingText,
       caption: draft.caption,
       instagramCaption: String(draft.metadata.instagram_caption ?? ""),
       linkedinCaption: String(draft.metadata.linkedin_caption ?? ""),
@@ -436,7 +675,7 @@ export function selectMicahWeekGallery(
 
   if (options.demoDesk) {
     return buildMicahWeekPack({
-      prompt: "Week of posts for ABC Plumbing, 123 Catering, and XYZ Electric",
+      prompt: "Make a week of posts",
       demeanor: "straight",
       demoDesk: true,
       logoDataUri: options.logoDataUri,

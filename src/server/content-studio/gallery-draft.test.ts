@@ -9,12 +9,18 @@ import {
   buildMicahWeekPack,
   canShowMicahGalleryEdit,
   captionForClipboard,
+  fitMicahCardHeadline,
   galleryLogoForMicahDesk,
+  hireableMicahCardHeadline,
+  isConcatenatedDemoCompanyCopy,
+  micahSvgNeedsRefit,
+  micahSvgTextRuns,
   parseMicahDemeanor,
   parseMicahGalleryCaptionEdit,
   readOfficialAtlasLogoDataUri,
   resolveMicahDemeanor,
   selectMicahWeekGallery,
+  wrapMicahCardLines,
 } from "./gallery-art.ts";
 import { gradeKingdomWeek } from "./kingdom-social.ts";
 
@@ -276,6 +282,143 @@ test("day-board generate writes one week-pack slot from the prompt theme", () =>
   assert.match(source, /input.focusDay === undefined/);
   assert.match(source, /saved \$\{first\?\.theme/);
   assert.doesNotMatch(source, /schedule this post/i);
+});
+
+test("day-card SVG wraps and clamps headline so text stays inside the card", () => {
+  const wrapped = wrapMicahCardLines(
+    "ABC Plumbing, 123 Catering, and XYZ Electric plus more overflow bait for the navy card",
+    22,
+    3,
+  );
+  assert.equal(wrapped.length, 3);
+  assert.equal(wrapped.every((line) => line.length <= 22), true);
+  assert.match(wrapped[2] ?? "", /…$/);
+
+  const fit = fitMicahCardHeadline(
+    "ABC Plumbing, 123 Catering, and XYZ Electric · ABC Plumbing",
+  );
+  assert.ok(fit.lines.length >= 2);
+  assert.equal(fit.lines.every((line) => line.length <= 36), true);
+  assert.ok(fit.fontSize <= 54);
+
+  const svg = buildMicahDraftSvg({
+    headline: "ABC Plumbing, 123 Catering, and XYZ Electric · ABC Plumbing",
+    supportingText: "Navy and gold Atlas draft. Download the file and post it yourself.",
+    logoDataUri: "data:image/png;base64,ZmFrZQ==",
+    dayLabel: "DAY 1 · MONDAY MOTIVATION",
+  });
+  assert.match(svg, /overflow="hidden"/);
+  assert.match(svg, /<tspan x="540"/);
+  assert.doesNotMatch(svg, /<text[^>]*fill="#ffffff"[^>]*>[^<]{28,}</);
+  const runs = micahSvgTextRuns(svg);
+  const body = runs.filter((run) => !/^(ATLAS|DRAFT\b|DAY \d)/i.test(run));
+  assert.ok(body.length >= 2);
+  assert.equal(body.every((run) => run.length <= 42), true);
+  assert.equal(micahSvgNeedsRefit(svg), false);
+});
+
+test("sample desk week pack uses one hireable company per card, not a concatenated dump", () => {
+  const cards = buildMicahWeekPack({
+    prompt: "Week of posts for ABC Plumbing, 123 Catering, and XYZ Electric",
+    demeanor: "straight",
+    demoDesk: true,
+  });
+  assert.equal(cards.length, 7);
+  const names = ["ABC Plumbing", "123 Catering", "XYZ Electric"] as const;
+  for (const card of cards) {
+    const hits = names.filter((name) => card.headline.includes(name));
+    assert.equal(hits.length, 1, card.headline);
+    assert.doesNotMatch(card.headline, /ABC Plumbing, 123 Catering/);
+    assert.match(card.headline, /Monday Motivation|Tip Tuesday|Wisdom Wednesday|Throwback Thursday|Feature Friday|Community Saturday|Sunday Rest/);
+    assert.match(card.imageSvg, /<tspan/);
+    assert.match(card.imageSvg, /overflow="hidden"/);
+    assert.match(card.caption, /Sample draft for /);
+    assert.doesNotMatch(card.caption, /auto-post|Blotato|schedule this post/i);
+  }
+  assert.equal(cards.some((card) => card.headline.includes("ABC Plumbing")), true);
+  assert.equal(cards.some((card) => card.headline.includes("123 Catering")), true);
+  assert.equal(cards.some((card) => card.headline.includes("XYZ Electric")), true);
+  assert.equal(
+    hireableMicahCardHeadline({
+      headline: "ABC Plumbing, 123 Catering, and XYZ Electric · ABC Plumbing",
+      demoDesk: true,
+      companyName: "ABC Plumbing",
+      theme: "Monday Motivation",
+    }),
+    "Monday Motivation · ABC Plumbing",
+  );
+  assert.equal(isConcatenatedDemoCompanyCopy("Labor Day · ABC Plumbing"), false);
+});
+
+test("live desk week pack still uses the prompt theme and does not rewrite stored SVGs", () => {
+  const cards = buildMicahWeekPack({
+    prompt: "Make a week of posts for Labor Day",
+    demeanor: "straight",
+  });
+  assert.match(cards[0]?.headline ?? "", /Monday Motivation · Labor Day/);
+  assert.doesNotMatch(cards[0]?.headline ?? "", /ABC Plumbing/);
+  assert.match(cards[0]?.imageSvg ?? "", /<tspan/);
+
+  const stored = '<svg xmlns="http://www.w3.org/2000/svg"><text>Monday Motivation</text></svg>';
+  const gallery = selectMicahWeekGallery(
+    [
+      {
+        id: "live-1",
+        title: "Day 1 · Monday · pest check",
+        headline: "Monday Motivation",
+        caption: "Monday in Cypress is won before 9am.",
+        supportingText: "One tip.",
+        imageSvg: stored,
+        imageUrl: null,
+        metadata: { week_pack: true, week_day: 1, week_theme: "Monday Motivation" },
+      },
+    ],
+    { demoDesk: false, logoDataUri: null },
+  );
+  assert.equal(gallery[0]?.headline, "Monday Motivation");
+  assert.equal(gallery[0]?.imageSvg, stored);
+});
+
+test("sample gallery refits overflowing concatenated day-card graphics", () => {
+  const storedHeadline = "ABC Plumbing, 123 Catering, and XYZ Electric · ABC Plumbing";
+  const gallery = selectMicahWeekGallery(
+    [
+      {
+        id: "demo-1",
+        title: "Day 1 · Monday · ABC Plumbing",
+        headline: storedHeadline,
+        caption:
+          "Sample draft for ABC Plumbing. Download and post it yourself.\n\nMonday is here.\n\nCall or stop in to book it.\n\n#CrewHats #ABCPlumbing",
+        supportingText: "crew hats and shop pride. Download and post it yourself.",
+        imageSvg: `<svg xmlns="http://www.w3.org/2000/svg"><text fill="#ffffff" font-size="54">${storedHeadline}</text></svg>`,
+        imageUrl: null,
+        metadata: {
+          week_pack: true,
+          week_day: 1,
+          week_theme: "Monday Motivation",
+          company_name: "ABC Plumbing",
+          demo_labeled: true,
+        },
+      },
+    ],
+    { demoDesk: true, logoDataUri: "data:image/png;base64,ZmFrZQ==" },
+  );
+  assert.equal(gallery[0]?.headline, "Monday Motivation · ABC Plumbing");
+  assert.doesNotMatch(gallery[0]?.headline ?? "", /ABC Plumbing, 123 Catering/);
+  assert.match(gallery[0]?.imageSvg ?? "", /<tspan/);
+  assert.match(gallery[0]?.imageSvg ?? "", /overflow="hidden"/);
+  assert.match(gallery[0]?.imageSvg ?? "", /Monday Motivation/);
+  assert.doesNotMatch(
+    gallery[0]?.imageSvg ?? "",
+    /ABC Plumbing, 123 Catering, and XYZ Electric/,
+  );
+});
+
+test("gallery card image clips to the navy square on mobile", () => {
+  const gallery = readFileSync(join(process.cwd(), "src/components/micah-week-gallery.tsx"), "utf8");
+  assert.match(gallery, /overflow-hidden bg-\[#071b42\]/);
+  assert.match(gallery, /object-contain/);
+  assert.doesNotMatch(gallery, /object-cover/);
 });
 
 test("AFE DEMO gallery shows 7 day-cards instead of the old blue placeholder boxes", () => {
