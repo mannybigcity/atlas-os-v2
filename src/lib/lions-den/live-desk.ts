@@ -42,6 +42,34 @@ export function stripVisibleDemoLabel(value: string | null | undefined): string 
     .trim();
 }
 
+function tidyPresentedText(value: string) {
+  return value
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+\./g, ".")
+    .replace(/\.\s*\./g, ".")
+    .replace(/^[\s,:.\-—·]+/, "")
+    .replace(/[\s,:\-—·]+$/, "")
+    .trim();
+}
+
+export function stripVisibleSampleChrome(value: string | null | undefined): string {
+  return tidyPresentedText(
+    String(value ?? "")
+      .replace(/\bSAMPLE\s+DRAFT\b/gi, "")
+      .replace(/\bSAMPLE\s+placeholder\b/gi, "")
+      .replace(/SAMPLE address — ([^.]+)\.\s*Not a real location\.\s*Do not visit or contact\./gi, "$1")
+      .replace(/SAMPLE trial review pile — ([^—]+) — no live Places search/gi, "$1")
+      .replace(/SAMPLE accepted find — ([^—]+) — no live Places search/gi, "$1")
+      .replace(/^SAMPLE\s*[·:.—-]+\s*/gim, "")
+      .replace(/\s*[·]\s*SAMPLE\b/gi, "")
+      .replace(/\bSAMPLE\b/gi, "")
+      .replace(/\s*Not a real location\.?/gi, " ")
+      .replace(/\s*Not a real business\.?/gi, " ")
+      .replace(/\s*Do not visit or contact\.?/gi, " ")
+      .replace(/\bgallery placeholder\.?/gi, " "),
+  );
+}
+
 export function presentLiveDeskText(
   organization: { name?: string | null; slug?: string | null } | null | undefined,
   value: string | null | undefined,
@@ -51,13 +79,12 @@ export function presentLiveDeskText(
     return raw;
   }
 
-  return stripVisibleDemoLabel(raw)
-    .replace(/\bfake\b/gi, "")
-    .replace(/\bsample\b/gi, "")
-    .replace(/\bpreview desk\b/gi, "")
-    .replace(/\s{2,}/g, " ")
-    .replace(/^[\s,:.\-—]+/, "")
-    .trim();
+  return tidyPresentedText(
+    stripVisibleSampleChrome(stripVisibleDemoLabel(raw))
+      .replace(/\bfake\b/gi, "")
+      .replace(/\bsample\b/gi, "")
+      .replace(/\bpreview desk\b/gi, ""),
+  );
 }
 
 function presentOptionalText(
@@ -85,14 +112,6 @@ export function presentLiveDeskOpportunity<
   opportunity: T,
 ): T {
   if (!isAfeLiveDesk(organization)) return opportunity;
-  if (
-    isSampleLabeledSeedText(opportunity.name) ||
-    isSampleLabeledSeedText(opportunity.sourceLabel) ||
-    isSampleLabeledSeedText(opportunity.researchSummary) ||
-    isSampleLabeledSeedText(opportunity.nextAction)
-  ) {
-    return opportunity;
-  }
 
   return {
     ...opportunity,
@@ -141,14 +160,6 @@ export function presentLiveDeskDraft<
   draft: T,
 ): T {
   if (!isAfeLiveDesk(organization)) return draft;
-  if (
-    isSampleLabeledSeedText(draft.campaign) ||
-    isSampleLabeledSeedText(draft.title) ||
-    isSampleLabeledSeedText(draft.headline) ||
-    isSampleLabeledSeedText(draft.caption)
-  ) {
-    return draft;
-  }
 
   return {
     ...draft,
@@ -179,13 +190,6 @@ export function presentLiveDeskReviewItem<
   item: T,
 ): T {
   if (!isAfeLiveDesk(organization)) return item;
-  if (
-    isSampleLabeledSeedText(item.name) ||
-    isSampleLabeledSeedText(item.businessStatus) ||
-    isSampleLabeledSeedText(item.searchQuery)
-  ) {
-    return item;
-  }
 
   return {
     ...item,

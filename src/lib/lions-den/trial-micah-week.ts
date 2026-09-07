@@ -216,7 +216,7 @@ function trialMicahCardSvg(input: {
   const headline = escapeXml(clip(input.headline, 72));
   const supporting = escapeXml(clip(input.supportingText, 90));
   const shopLine = escapeXml(clip(input.shopLine, 48));
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><rect width="1080" height="1080" fill="#071b42"/><rect x="48" y="48" width="984" height="984" fill="none" stroke="#f5b932" stroke-width="10"/><rect x="72" y="72" width="936" height="936" fill="none" stroke="#f5b932" stroke-width="2"/><text x="540" y="160" fill="#f5b932" font-size="26" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" letter-spacing="4">${dayLabel}</text><text x="540" y="250" fill="#fff8e6" font-size="22" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" letter-spacing="3">SAMPLE DRAFT</text><text x="540" y="430" fill="#d8c27a" font-size="28" font-family="Arial,sans-serif" text-anchor="middle">${shopLine}</text><text x="540" y="560" fill="#ffffff" font-size="48" font-family="Georgia,Times,serif" font-weight="700" text-anchor="middle">${headline}</text><text x="540" y="660" fill="#d8c27a" font-size="28" font-family="Arial,sans-serif" text-anchor="middle">${supporting}</text><text x="540" y="980" fill="#f5b932" font-size="22" font-family="Arial,sans-serif" text-anchor="middle">DRAFT — download and post yourself. Not published.</text></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><rect width="1080" height="1080" fill="#071b42"/><rect x="48" y="48" width="984" height="984" fill="none" stroke="#f5b932" stroke-width="10"/><rect x="72" y="72" width="936" height="936" fill="none" stroke="#f5b932" stroke-width="2"/><text x="540" y="160" fill="#f5b932" font-size="26" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" letter-spacing="4">${dayLabel}</text><text x="540" y="430" fill="#d8c27a" font-size="28" font-family="Arial,sans-serif" text-anchor="middle">${shopLine}</text><text x="540" y="560" fill="#ffffff" font-size="48" font-family="Georgia,Times,serif" font-weight="700" text-anchor="middle">${headline}</text><text x="540" y="660" fill="#d8c27a" font-size="28" font-family="Arial,sans-serif" text-anchor="middle">${supporting}</text><text x="540" y="980" fill="#f5b932" font-size="22" font-family="Arial,sans-serif" text-anchor="middle">Download and post yourself. Not published.</text></svg>`;
 }
 
 function captionBlocks(input: {
@@ -238,7 +238,7 @@ export function getTrialMicahSeedSlots(marketInput: TrialDeskMarketInput = {}): 
   const who = market.businessName.trim() || "this shop";
   const city = market.city.trim() || "town";
   const shopLine = clip(who, 48);
-  const sampleLine = `SAMPLE draft for ${who} in ${area}. Atlas did not post this. Download and post it yourself.`;
+  const sampleLine = `Draft for ${who} in ${area}. Atlas did not post this. Download and post it yourself.`;
   const cityTag = cityHashtag(market.city);
   const facebook = [...voice.facebook.slice(0, 2), cityTag === voice.facebook[0] ? "#ThisWeek" : cityTag].slice(0, 3);
   const instagram = voice.instagram;
@@ -300,7 +300,7 @@ export function getTrialMicahSeedSlots(marketInput: TrialDeskMarketInput = {}): 
     const copy = days[index]!;
     const slot = `${TRIAL_MICAH_WEEK_KEY}-d${item.day}`;
     const dayLabel = `DAY ${item.day} · ${item.theme.toUpperCase()}`;
-    const title = clip(`SAMPLE · Day ${item.day} · ${item.weekday} · ${copy.headline}`, 160);
+    const title = clip(`Day ${item.day} · ${item.weekday} · ${copy.headline}`, 160);
     const caption = captionBlocks({
       sampleLine,
       hook: copy.hook,

@@ -110,33 +110,44 @@ test("visible DEMO labels are stripped from live AFE records and left on SIS and
   assert.equal(untouched.name, "ABC Plumbing (DEMO)");
 });
 
-test("SAMPLE trial-seed labels stay visible on live AFE prospects and follow-up drafts", () => {
+test("sell-desk fixtures drop SAMPLE chrome and keep honesty on live AFE walks", () => {
   const trial = { name: "Cypress Pest Pros", slug: "cypress-pest-pros-trial" };
   const prospect = presentLiveDeskOpportunity(trial, {
     name: "Rivergate Pest Co · SAMPLE",
     sourceLabel: "SAMPLE trial seed — no outreach",
-    researchSummary: "SAMPLE prospect only. Do not visit or contact.",
+    researchSummary: "SAMPLE prospect only. Do not visit or contact. Atlas has not contacted anyone.",
     nextAction: "SAMPLE draft follow-up — review, then you send. Atlas has not contacted anyone.",
     contactName: "Casey Nguyen",
   });
-  assert.match(prospect.name, /\bSAMPLE\b/);
-  assert.match(String(prospect.sourceLabel), /\bSAMPLE\b/);
-  assert.match(prospect.researchSummary, /\bSAMPLE\b/);
-  assert.match(String(prospect.nextAction), /\bSAMPLE\b/);
+  assert.equal(prospect.name, "Rivergate Pest Co");
+  assert.doesNotMatch(
+    `${prospect.name} ${prospect.sourceLabel} ${prospect.researchSummary} ${prospect.nextAction}`,
+    /\bSAMPLE\b/,
+  );
+  assert.match(String(prospect.nextAction), /Atlas has not contacted anyone/);
+
+  const sample = { name: SAMPLE_DESK_DISPLAY_NAME, slug: AFE_CRM_DEMO_SLUG };
+  const sampleRow = presentLiveDeskOpportunity(sample, {
+    name: "Rivergate Pest Co · SAMPLE",
+    sourceLabel: "SAMPLE trial seed — no outreach",
+    researchSummary: "SAMPLE prospect only.",
+    nextAction: "SAMPLE draft follow-up",
+  });
+  assert.match(sampleRow.name, /\bSAMPLE\b/);
 });
 
-test("SAMPLE trial-seed labels stay visible on live AFE review pile and gallery drafts", () => {
+test("sell-desk review pile and gallery drop SAMPLE DRAFT and fake-location copy", () => {
   const trial = { name: "Harbor HVAC", slug: "harbor-hvac-trial" };
   const review = presentLiveDeskReviewItem(trial, {
     name: "Harbor Lane Auto Detail · SAMPLE",
-    formattedAddress: "SAMPLE address — not a real location. Do not visit or contact.",
-    searchQuery: "SAMPLE trial review pile — no live Places search",
+    formattedAddress: "SAMPLE address — Cypress, TX. Not a real location. Do not visit or contact.",
+    searchQuery: "SAMPLE trial review pile — pest control in Cypress, TX — no live Places search",
     businessStatus: "SAMPLE",
   });
-  assert.match(review.name, /\bSAMPLE\b/);
-  assert.match(String(review.formattedAddress), /\bSAMPLE\b/);
-  assert.match(review.searchQuery, /\bSAMPLE\b/);
-  assert.equal(review.businessStatus, "SAMPLE");
+  assert.equal(review.name, "Harbor Lane Auto Detail");
+  assert.equal(review.formattedAddress, "Cypress, TX");
+  assert.equal(review.searchQuery, "pest control in Cypress, TX");
+  assert.equal(review.businessStatus, null);
 
   const draft = presentLiveDeskDraft(trial, {
     campaign: "SAMPLE week placeholders",
@@ -144,9 +155,11 @@ test("SAMPLE trial-seed labels stay visible on live AFE review pile and gallery 
     headline: "Monday Motivation · SAMPLE placeholder",
     caption: "SAMPLE gallery placeholder. Atlas did not post this to Facebook or Instagram.",
     supportingText: "Gallery placeholder. Download and post it yourself.",
+    imageSvg: "<text>SAMPLE DRAFT</text><text>Download and post yourself. Not published.</text>",
   });
-  assert.match(draft.title, /\bSAMPLE\b/);
-  assert.match(draft.caption, /\bSAMPLE\b/);
+  assert.doesNotMatch(`${draft.title} ${draft.headline} ${draft.caption} ${draft.imageSvg}`, /\bSAMPLE\b/);
+  assert.match(String(draft.caption), /Atlas did not post this/);
+  assert.match(String(draft.imageSvg), /Download and post yourself/);
 });
 
 test("MICAH uses the live Lion's Den hub pane and does not restore preview staff copy", () => {

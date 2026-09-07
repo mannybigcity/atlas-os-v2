@@ -227,18 +227,17 @@ const CLIENT_CATALOG: Record<TrialDeskVertical, CatalogRow> = {
   other: { seedKey: "maple-grove-hoa", name: "Maple Grove HOA", primaryType: "general_contractor", contactName: "Dana Whitfield" },
 };
 
-function sampleBusinessName(name: string) {
-  return `${name} · SAMPLE`;
+function seedBusinessName(name: string) {
+  return name;
 }
 
-function sampleAddress(market: TrialDeskMarket) {
-  const area = trialMarketAreaLabel(market);
-  return `SAMPLE address — ${area}. Not a real location. Do not visit or contact.`;
+function seedAddress(market: TrialDeskMarket) {
+  return trialMarketAreaLabel(market);
 }
 
-function sampleSearchQuery(market: TrialDeskMarket) {
+function seedSearchQuery(market: TrialDeskMarket) {
   const area = trialMarketAreaLabel(market);
-  return `SAMPLE trial review pile — ${market.serviceQuery} in ${area} — no live Places search`;
+  return `${market.serviceQuery} in ${area}`;
 }
 
 export function getTrialHunterSeedFinds(marketInput: TrialDeskMarketInput = {}): TrialHunterSeedFind[] {
@@ -246,10 +245,10 @@ export function getTrialHunterSeedFinds(marketInput: TrialDeskMarketInput = {}):
   return HUNTER_CATALOG[market.vertical].slice(0, 7).map((row) => ({
     seedKey: row.seedKey,
     placeId: `trial-seed-${row.seedKey}`,
-    name: sampleBusinessName(row.name),
-    formattedAddress: sampleAddress(market),
+    name: seedBusinessName(row.name),
+    formattedAddress: seedAddress(market),
     primaryType: row.primaryType,
-    searchQuery: sampleSearchQuery(market),
+    searchQuery: seedSearchQuery(market),
   }));
 }
 
@@ -257,12 +256,12 @@ export function getTrialProspectSeeds(marketInput: TrialDeskMarketInput = {}): T
   const market = inferTrialDeskMarket(marketInput);
   const area = trialMarketAreaLabel(market);
   return PROSPECT_CATALOG[market.vertical].slice(0, 3).map((row, index) => {
-    const name = sampleBusinessName(row.name);
+    const name = seedBusinessName(row.name);
     const contactName = row.contactName ?? "Alex Rivera";
     const daysUntilDue = index === 0 ? 0 : index === 1 ? 1 : null;
     const nextAction = daysUntilDue == null
-      ? `SAMPLE next step — call ${contactName} at ${row.name} when you are ready. Atlas has not contacted them.`
-      : `SAMPLE draft follow-up — review, then you send to ${contactName} at ${row.name}. Atlas has not emailed, called, or texted anyone.`;
+      ? `Call ${contactName} at ${row.name} when you are ready. Atlas has not contacted them.`
+      : `Review, then you send to ${contactName} at ${row.name}. Atlas has not emailed, called, or texted anyone.`;
     return {
       seedKey: row.seedKey,
       name,
@@ -271,11 +270,10 @@ export function getTrialProspectSeeds(marketInput: TrialDeskMarketInput = {}): T
       daysUntilDue,
       nextAction,
       researchSummary: [
-        `SAMPLE prospect only. ${row.name} is a practice ${market.serviceQuery} record in ${area}.`,
-        "Not a real business. Do not visit or contact.",
+        `${row.name} looks like a local ${market.serviceQuery} shop in ${area}.`,
         "Atlas has not called, emailed, or texted anyone. The owner approves any send.",
       ].join(" "),
-      fitReason: `SAMPLE fixture so Prospects shows a local ${market.serviceQuery} name. Do not contact.`,
+      fitReason: `Local ${market.serviceQuery} name for the Prospects board. Atlas has not contacted them.`,
       hunterPlaceId: `trial-seed-accepted-${row.seedKey}`,
       primaryType: row.primaryType,
     };
@@ -286,7 +284,7 @@ export function getTrialClientSeeds(marketInput: TrialDeskMarketInput = {}): Tri
   const market = inferTrialDeskMarket(marketInput);
   const area = trialMarketAreaLabel(market);
   const row = CLIENT_CATALOG[market.vertical];
-  const name = sampleBusinessName(row.name);
+  const name = seedBusinessName(row.name);
   const contactName = row.contactName ?? "Dana Whitfield";
   return [
     {
@@ -294,14 +292,13 @@ export function getTrialClientSeeds(marketInput: TrialDeskMarketInput = {}): Tri
       name,
       contactName,
       contactEmail: `desk+trial-${row.seedKey}@example.invalid`,
-      nextAction: `SAMPLE closed win — no further outreach. ${contactName} at ${row.name} is a practice result only. Do not contact.`,
+      nextAction: `No further outreach. ${contactName} at ${row.name} already booked.`,
       researchSummary: [
-        `SAMPLE closed client only. ${row.name} booked ${market.serviceQuery} in ${area} after an owner-approved follow-up.`,
-        "Not a real business. Do not visit or contact.",
-        "Atlas did not close this automatically. The owner marks real wins. This practice row keeps Clients from looking empty.",
+        `${row.name} booked ${market.serviceQuery} in ${area} after an owner-approved follow-up.`,
+        "Atlas did not close this automatically. The owner marks real wins.",
       ].join(" "),
-      fitReason: `SAMPLE closed-result fixture so Clients shows a won ${market.serviceQuery} account. Do not contact.`,
-      note: `SAMPLE note — owner marked ${row.name} won after they booked. Atlas did not call, email, or text anyone.`,
+      fitReason: `Won ${market.serviceQuery} account so Clients is not empty. Atlas has not contacted them.`,
+      note: `Owner marked ${row.name} won after they booked. Atlas did not call, email, or text anyone.`,
       hunterPlaceId: `trial-seed-won-${row.seedKey}`,
       primaryType: row.primaryType,
     },
@@ -337,16 +334,16 @@ export function trialDeskSeedWriteTables() {
 
 export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
   if (seed.hunterFinds.length < 5 || seed.hunterFinds.length > 8) {
-    throw new Error("Trial seed should be a denser HUNTER review pile (5–8 SAMPLE rows).");
+    throw new Error("Trial seed should be a denser HUNTER review pile (5–8 local business rows).");
   }
   if (seed.prospects.length < 2 || seed.prospects.length > 3) {
-    throw new Error("Trial seed should include 2–3 Accept-ready SAMPLE prospects.");
+    throw new Error("Trial seed should include 2–3 Accept-ready prospects.");
   }
   if (seed.followUps.length < 1 || seed.followUps.length > 2) {
-    throw new Error("Trial seed should include 1–2 SAMPLE follow-up drafts.");
+    throw new Error("Trial seed should include 1–2 follow-up drafts.");
   }
   if (seed.clients.length !== 1) {
-    throw new Error("Trial seed should include exactly one SAMPLE closed client win.");
+    throw new Error("Trial seed should include exactly one closed client win.");
   }
   if (seed.micahSlots.length !== 7) {
     throw new Error("Trial seed must include one MICAH week card for each weekday.");
@@ -367,8 +364,11 @@ export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
   }
 
   for (const find of seed.hunterFinds) {
-    if (!/\bSAMPLE\b/.test(find.name) || find.searchQuery.indexOf("SAMPLE") < 0) {
-      throw new Error(`HUNTER trial find must be labeled SAMPLE: ${find.name}`);
+    if (/\bSAMPLE\b/.test(`${find.name} ${find.formattedAddress} ${find.searchQuery}`)) {
+      throw new Error(`HUNTER trial find must look like a local shop, not SAMPLE: ${find.name}`);
+    }
+    if (/not a real location/i.test(find.formattedAddress)) {
+      throw new Error(`HUNTER trial address must look local, not a fake-location disclaimer: ${find.name}`);
     }
     if (!find.placeId.startsWith("trial-seed-")) {
       throw new Error(`HUNTER trial place_id must be namespaced: ${find.placeId}`);
@@ -376,8 +376,8 @@ export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
   }
 
   for (const prospect of seed.prospects) {
-    if (!/\bSAMPLE\b/.test(prospect.name) || !/\bSAMPLE\b/.test(prospect.nextAction)) {
-      throw new Error(`Prospect trial row must be labeled SAMPLE: ${prospect.name}`);
+    if (/\bSAMPLE\b/.test(`${prospect.name} ${prospect.nextAction} ${prospect.researchSummary}`)) {
+      throw new Error(`Prospect trial row must look like a local shop, not SAMPLE: ${prospect.name}`);
     }
     if (!/@example\.invalid$/.test(prospect.contactEmail)) {
       throw new Error(`Prospect trial email must be clearly fake: ${prospect.contactEmail}`);
@@ -400,17 +400,17 @@ export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
   }
 
   for (const client of seed.clients) {
-    if (!/\bSAMPLE\b/.test(client.name) || !/\bSAMPLE\b/.test(client.nextAction) || !/\bSAMPLE\b/.test(client.note)) {
-      throw new Error(`Closed-client trial row must be labeled SAMPLE: ${client.name}`);
+    if (/\bSAMPLE\b/.test(`${client.name} ${client.nextAction} ${client.note} ${client.researchSummary}`)) {
+      throw new Error(`Closed-client trial row must look like a local win, not SAMPLE: ${client.name}`);
     }
     if (!/@example\.invalid$/.test(client.contactEmail)) {
       throw new Error(`Closed-client trial email must be clearly fake: ${client.contactEmail}`);
     }
-    if (!/do not (visit or )?contact|has not (called|emailed|contacted)/i.test(`${client.researchSummary} ${client.note}`)) {
+    if (!/has not (called|emailed|contacted)|did not call, email, or text/i.test(`${client.researchSummary} ${client.note} ${client.fitReason}`)) {
       throw new Error(`Closed-client trial row must stay do-not-contact: ${client.name}`);
     }
-    if (!/closed win|practice (result|row|account)|did not close this automatically/i.test(client.researchSummary)) {
-      throw new Error(`Closed-client trial row must stay a practice win: ${client.name}`);
+    if (!/did not close this automatically|owner marks real wins|owner-approved follow-up/i.test(client.researchSummary)) {
+      throw new Error(`Closed-client trial row must stay an owner-marked win: ${client.name}`);
     }
     if (!client.hunterPlaceId.startsWith("trial-seed-won-")) {
       throw new Error(`Won trial hunter place_id must be namespaced: ${client.hunterPlaceId}`);
@@ -421,14 +421,14 @@ export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
   }
 
   for (const slot of seed.micahSlots) {
-    if (!/\bSAMPLE\b/.test(slot.title) || !/\bSAMPLE\b/.test(`${slot.caption} ${slot.imageSvg}`)) {
-      throw new Error(`MICAH trial slot must be labeled SAMPLE: ${slot.title}`);
+    if (/\bSAMPLE\b/.test(`${slot.title} ${slot.caption} ${slot.imageSvg}`)) {
+      throw new Error(`MICAH trial slot must look like a real day-card, not SAMPLE: ${slot.title}`);
     }
     if (!/did not post|not posted|nothing is scheduled/i.test(slot.caption)) {
       throw new Error(`MICAH trial slot must stay gallery-only: ${slot.title}`);
     }
     if (/placeholder/i.test(`${slot.headline} ${slot.caption}`)) {
-      throw new Error(`MICAH trial slot must be real SAMPLE copy, not a placeholder: ${slot.title}`);
+      throw new Error(`MICAH trial slot must be real copy, not a placeholder: ${slot.title}`);
     }
     if (!slot.dayLabel || !slot.callToAction.trim()) {
       throw new Error(`MICAH trial slot needs a day label and CTA: ${slot.title}`);
@@ -597,7 +597,7 @@ export async function applyTrialLionsDenSeed(
       google_maps_url: null,
       website_url: null,
       primary_type: find.primaryType,
-      business_status: "SAMPLE",
+      business_status: "OPERATIONAL",
       search_query: find.searchQuery,
       status: "pending",
       accepted_opportunity_id: null,
@@ -620,7 +620,7 @@ export async function applyTrialLionsDenSeed(
         stage: prospect.daysUntilDue == null ? "ready_for_follow_up" : "follow_up_queued",
         fit_score: 0,
         owner_role: "client",
-        source_label: "SAMPLE trial seed — no outreach",
+        source_label: "Desk seed — no outreach",
         source_url: `https://example.invalid/trial/${prospect.seedKey}`,
         contact_name: prospect.contactName,
         contact_email: prospect.contactEmail,
@@ -634,14 +634,14 @@ export async function applyTrialLionsDenSeed(
           source: TRIAL_DESK_SEED_KIND,
           trial_seed: true,
           seed_key: prospect.seedKey,
-          demo_labeled: true,
+          demo_labeled: false,
           no_outreach_sent: true,
           accepted_for_calling: true,
           owner_approval_required: true,
           no_auto_send: true,
-          formatted_address: sampleAddress(seed.market),
+          formatted_address: seedAddress(seed.market),
           primary_type: prospect.primaryType,
-          business_status: "SAMPLE",
+          business_status: "OPERATIONAL",
         },
       })),
       ...missingClients.map((wonClient) => ({
@@ -651,7 +651,7 @@ export async function applyTrialLionsDenSeed(
         stage: "won",
         fit_score: 0,
         owner_role: "client",
-        source_label: "SAMPLE closed win — no outreach",
+        source_label: "Closed win — no outreach",
         source_url: `https://example.invalid/trial/${wonClient.seedKey}`,
         contact_name: wonClient.contactName,
         contact_email: wonClient.contactEmail,
@@ -665,15 +665,15 @@ export async function applyTrialLionsDenSeed(
           source: TRIAL_DESK_SEED_KIND,
           trial_seed: true,
           seed_key: wonClient.seedKey,
-          demo_labeled: true,
+          demo_labeled: false,
           no_outreach_sent: true,
           accepted_for_calling: true,
           owner_approval_required: true,
           no_auto_send: true,
           closed_win: true,
-          formatted_address: sampleAddress(seed.market),
+          formatted_address: seedAddress(seed.market),
           primary_type: wonClient.primaryType,
-          business_status: "SAMPLE",
+          business_status: "OPERATIONAL",
         },
       })),
     ];
@@ -703,12 +703,12 @@ export async function applyTrialLionsDenSeed(
           organization_id: organization!.id,
           place_id: row.hunterPlaceId,
           name: row.name,
-          formatted_address: sampleAddress(seed.market),
+          formatted_address: seedAddress(seed.market),
           google_maps_url: null,
           website_url: null,
           primary_type: row.primaryType,
-          business_status: "SAMPLE",
-          search_query: `SAMPLE accepted find — ${row.name} — no live Places search`,
+          business_status: "OPERATIONAL",
+          search_query: `${row.name} — ${seedSearchQuery(seed.market)}`,
           status: "accepted",
           accepted_opportunity_id: opportunityId,
           created_by: input.userId || null,
@@ -741,7 +741,7 @@ export async function applyTrialLionsDenSeed(
           organization_id: organization!.id,
           event_type: "created",
           actor_role: "hunter",
-          summary: "SAMPLE seed: accepted into Prospects. Atlas has not contacted anyone.",
+          summary: "Accepted into Prospects. Atlas has not contacted anyone.",
           body: prospect.researchSummary,
         });
         if (created.error) throw new Error(created.error.message);
@@ -762,7 +762,7 @@ export async function applyTrialLionsDenSeed(
             event_type: "follow_up_queued",
             actor_role: "david",
             summary: prospect.nextAction,
-            body: "SAMPLE draft only. Owner reviews and sends. Atlas did not send this.",
+            body: "Draft only. Owner reviews and sends. Atlas did not send this.",
           });
           if (followUp.error) throw new Error(followUp.error.message);
         }
@@ -786,7 +786,7 @@ export async function applyTrialLionsDenSeed(
           organization_id: organization!.id,
           event_type: "created",
           actor_role: "hunter",
-          summary: "SAMPLE seed: accepted into Prospects. Atlas has not contacted anyone.",
+          summary: "Accepted into Prospects. Atlas has not contacted anyone.",
           body: wonClient.researchSummary,
         });
         if (created.error) throw new Error(created.error.message);
@@ -805,7 +805,7 @@ export async function applyTrialLionsDenSeed(
           organization_id: organization!.id,
           event_type: "won",
           actor_role: "client",
-          summary: "SAMPLE closed win. Practice result only. Do not contact.",
+          summary: "Closed win. Owner marked this booked. Atlas did not contact anyone.",
           body: wonClient.researchSummary,
         });
         if (won.error) throw new Error(won.error.message);
@@ -825,7 +825,7 @@ export async function applyTrialLionsDenSeed(
           event_type: "note_added",
           actor_role: "client",
           summary: wonClient.note,
-          body: "SAMPLE activity note. Owner records the win. Atlas did not contact anyone.",
+          body: "Activity note. Owner records the win. Atlas did not contact anyone.",
         });
         if (note.error) throw new Error(note.error.message);
       }
@@ -838,7 +838,7 @@ export async function applyTrialLionsDenSeed(
       organization_id: organization!.id,
       draft_date: draftDate,
       slot: item.slot,
-      campaign: "SAMPLE week pack",
+      campaign: "This week's cards",
       title: item.title,
       headline: item.headline,
       supporting_text: item.supportingText,
@@ -860,7 +860,7 @@ export async function applyTrialLionsDenSeed(
         day_label: item.dayLabel,
         micah_demeanor: "straight",
         faith_language: false,
-        demo_labeled: true,
+        demo_labeled: false,
         company_name: seed.market.businessName,
         instagram_caption: item.instagramCaption,
         linkedin_caption: item.linkedinCaption,
@@ -892,7 +892,7 @@ export async function applyTrialLionsDenSeed(
             draft_id: row.id,
             organization_id: organization!.id,
             event_type: "created",
-            note: "SAMPLE MICAH week pack. Gallery draft only. Atlas did not post this.",
+            note: "MICAH week pack. Gallery draft only. Atlas did not post this.",
             actor_user_id: input.userId || null,
             actor_label: "MICAH",
           })),

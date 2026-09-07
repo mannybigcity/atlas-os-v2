@@ -152,6 +152,9 @@ test("MICAH desk chrome uses the locked onboarding and day-block copy", () => {
   assert.match(desk, /Generate this day-card/);
   assert.match(desk, /composeMicahDayBoardPrompt/);
   assert.match(desk, /submit: true/);
+  assert.match(desk, /disabled=\{!canEdit \|\| pending\}/);
+  assert.doesNotMatch(desk, /disabled=\{!canEdit \|\| pending \|\| !onboardingDone/);
+  assert.doesNotMatch(desk, /disabled=\{!isMicahBrandComplete/);
   assert.match(desk, /firstIncompleteMicahOnboardingIndex/);
   assert.match(desk, /data-micah-desk-path="json-button"/);
   assert.match(desk, /\/api\/client\/micah\/desk/);
@@ -180,9 +183,14 @@ test("MICAH desk chrome uses the locked onboarding and day-block copy", () => {
   assert.doesNotMatch(gallery, /schedule this post|blotato|auto-post this/i);
   assert.match(readRepo("src/app/client/micah/page.tsx"), /organizationName=\{primaryOrganization.name\}/);
   assert.match(readRepo("src/app/client/micah/page.tsx"), /allowCaptionEdit=\{canShowMicahGalleryEdit\(primaryOrganization\)\}/);
+  assert.match(readRepo("src/app/client/micah/page.tsx"), /canReview=\{canShowMicahGalleryEdit\(primaryOrganization\)\}/);
   assert.doesNotMatch(
     readRepo("src/app/client/micah/page.tsx"),
     /allowCaptionEdit=\{canEditBusinessProfile/,
+  );
+  assert.doesNotMatch(
+    readRepo("src/app/client/micah/page.tsx"),
+    /canReview=\{canEditBusinessProfile/,
   );
   assert.match(readRepo("src/server/content-studio/brand.ts"), /readMicahWorkspacePrefill/);
   assert.match(readRepo("src/server/content-studio/brand.ts"), /inferTrialCityFromName/);

@@ -131,7 +131,7 @@ function createSeedClient(organizations: Array<{ id: string; name: string; slug:
   };
 }
 
-test("trial seed is a denser SAMPLE review pile, 2–3 prospects, 1 closed win, follow-up drafts, and 7 MICAH week cards", () => {
+test("trial seed is a denser local review pile, 2–3 prospects, 1 closed win, follow-up drafts, and 7 MICAH week cards", () => {
   const seed = getTrialLionsDenSeed({
     businessName: "Cypress Pest Pros",
     businessType: "Contractor or home service",
@@ -167,15 +167,14 @@ test("trial seed is a denser SAMPLE review pile, 2–3 prospects, 1 closed win, 
     assert.match(find.searchQuery, /pest control/);
   }
   for (const prospect of seed.prospects) {
-    assert.match(prospect.name, /\bSAMPLE\b/);
-    assert.match(prospect.researchSummary, /Do not visit or contact/);
+    assert.doesNotMatch(prospect.name, /\bSAMPLE\b/);
+    assert.match(prospect.researchSummary, /has not called, emailed, or texted/);
   }
   const wonClient = seed.clients[0];
-  assert.match(wonClient.name, /\bSAMPLE\b/);
+  assert.doesNotMatch(wonClient.name, /\bSAMPLE\b/);
   assert.match(wonClient.name, /pest|termite|mosquito|hoa/i);
-  assert.match(wonClient.researchSummary, /Do not visit or contact/);
-  assert.match(wonClient.researchSummary, /closed client|practice row|did not close this automatically/i);
-  assert.match(wonClient.note, /\bSAMPLE\b/);
+  assert.match(wonClient.researchSummary, /did not close this automatically|owner marks real wins/i);
+  assert.doesNotMatch(wonClient.note, /\bSAMPLE\b/);
   assert.match(wonClient.note, /did not call, email, or text/i);
   assert.match(wonClient.contactEmail, /@example\.invalid$/);
   assert.match(wonClient.hunterPlaceId, /^trial-seed-won-/);
@@ -201,18 +200,18 @@ test("trial seed never invents phones, SIS, sample desk, Faith, or auto-send", (
   assert.doesNotMatch(blob, /auto-?send|already sent|was sent/i);
   assert.equal(seed.market.vertical, "maintenance");
   for (const find of seed.hunterFinds) {
-    assert.match(find.name, /\bSAMPLE\b/);
-    assert.match(find.searchQuery, /SAMPLE/);
-    assert.match(find.searchQuery, /no live Places search/);
+    assert.doesNotMatch(find.name, /\bSAMPLE\b/);
+    assert.doesNotMatch(find.searchQuery, /SAMPLE|not a real location/i);
+    assert.match(find.searchQuery, /maintenance|handyman|repair|upkeep/i);
   }
   for (const slot of seed.micahSlots) {
-    assert.match(slot.caption, /SAMPLE/);
+    assert.doesNotMatch(slot.caption, /\bSAMPLE\b/);
     assert.match(slot.caption, /did not post/);
     assert.match(slot.callToAction, /book|call|stop in|save this/i);
     assert.doesNotMatch(slot.headline, /placeholder/i);
     assert.match(slot.dayLabel, /DAY \d/);
-    assert.match(slot.imageSvg, /SAMPLE DRAFT/);
-    assert.doesNotMatch(slot.imageSvg, /atlas-logo|atlas-lion/i);
+    assert.match(slot.imageSvg, /Download and post yourself/);
+    assert.doesNotMatch(slot.imageSvg, /\bSAMPLE\b|atlas-logo|atlas-lion/i);
   }
 });
 
@@ -243,7 +242,7 @@ test("eligibility is new trial orgs only — never SIS, sample, or operator", ()
   );
 });
 
-test("apply writes pending HUNTER finds, SAMPLE prospects, one SAMPLE won client, follow-up drafts, and MICAH drafts once", async () => {
+test("apply writes pending HUNTER finds, local prospects, one won client, follow-up drafts, and MICAH drafts once", async () => {
   const client = createSeedClient([
     { id: "org-trial", name: "Cypress Pest Pros", slug: "cypress-pest-pros-trial" },
     { id: "org-sample", name: SAMPLE_DESK_DISPLAY_NAME, slug: "afe-crm-demo" },
@@ -277,11 +276,11 @@ test("apply writes pending HUNTER finds, SAMPLE prospects, one SAMPLE won client
     client.store.organization_opportunities.filter((row) => row.next_action_due).length,
     2,
   );
-  assert.match(String(wonClients[0]?.name), /\bSAMPLE\b/);
+  assert.doesNotMatch(String(wonClients[0]?.name), /\bSAMPLE\b/);
   assert.equal(wonClients[0]?.contact_phone, null);
   assert.equal((wonClients[0]?.metadata as { closed_win?: boolean }).closed_win, true);
-  assert.match(String(wonClients[0]?.source_label), /closed win/);
-  assert.match(String(wonClients[0]?.research_summary), /Do not visit or contact/);
+  assert.match(String(wonClients[0]?.source_label), /closed win/i);
+  assert.match(String(wonClients[0]?.research_summary), /did not close this automatically|owner marks real wins/);
   assert.equal(
     pendingHunter.every((row) => row.accepted_opportunity_id == null),
     true,
@@ -295,7 +294,7 @@ test("apply writes pending HUNTER finds, SAMPLE prospects, one SAMPLE won client
     true,
   );
   assert.equal(
-    client.store.organization_opportunities.every((row) => String(row.name).includes("SAMPLE")),
+    client.store.organization_opportunities.every((row) => !String(row.name).includes("SAMPLE")),
     true,
   );
   assert.equal(
@@ -322,7 +321,7 @@ test("apply writes pending HUNTER finds, SAMPLE prospects, one SAMPLE won client
   );
   assert.equal(
     client.store.organization_opportunity_events.some(
-      (row) => row.event_type === "note_added" && String(row.summary).includes("SAMPLE"),
+      (row) => row.event_type === "note_added" && /won after they booked/.test(String(row.summary)),
     ),
     true,
   );
@@ -344,7 +343,7 @@ test("apply writes pending HUNTER finds, SAMPLE prospects, one SAMPLE won client
   assert.equal(client.store.organization_content_drafts.length, 7);
 });
 
-test("apply does not add SAMPLE finds on top of a real HUNTER pile, Prospects, or week pack", async () => {
+test("apply does not add seed finds on top of a real HUNTER pile, Prospects, or week pack", async () => {
   const client = createSeedClient([{ id: "org-trial", name: "Harbor HVAC", slug: "harbor-hvac-trial" }]);
   client.store.organization_hunter_review_items.push({
     id: "hunter-real",
@@ -378,23 +377,31 @@ test("apply does not add SAMPLE finds on top of a real HUNTER pile, Prospects, o
   assert.equal(client.store.organization_content_drafts.length, 1);
 });
 
-test("SAMPLE closed-win label is required and apply stays new-empty-trial only", async () => {
+test("closed-win honesty is required, SAMPLE chrome is banned, and apply stays new-empty-trial only", async () => {
   const seed = getTrialLionsDenSeed({
     businessName: "Massive Action Maintenance",
     businessType: "Contractor or home service",
   });
   const labeled = seed.clients[0];
-  assert.match(labeled.name, /\bSAMPLE\b/);
-  assert.match(labeled.note, /\bSAMPLE\b/);
-  assert.match(labeled.nextAction, /Do not contact/);
+  assert.doesNotMatch(labeled.name, /\bSAMPLE\b/);
+  assert.doesNotMatch(labeled.note, /\bSAMPLE\b/);
+  assert.match(labeled.note, /did not call, email, or text/);
   assert.doesNotMatch(JSON.stringify(labeled), /phone|\(\s*555\s*\)/i);
   assert.throws(
     () =>
       assertTrialDeskSeedIsSafe({
         ...seed,
-        clients: [{ ...labeled, name: "Maple Grove HOA", note: "Owner marked this won." }],
+        clients: [{ ...labeled, name: "Maple Grove HOA · SAMPLE" }],
       }),
-    /labeled SAMPLE/,
+    /not SAMPLE/,
+  );
+  assert.throws(
+    () =>
+      assertTrialDeskSeedIsSafe({
+        ...seed,
+        clients: [{ ...labeled, note: "Owner marked this won.", researchSummary: "They booked.", fitReason: "Won." }],
+      }),
+    /do-not-contact|owner-marked win/,
   );
 
   const oldClient = createSeedClient([{ id: "org-old", name: "Bright Path Cleaning", slug: "bright-path-cleaning-2ead43" }]);
