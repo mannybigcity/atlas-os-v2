@@ -15,6 +15,14 @@ export type MicahGalleryCaptionSavePlan =
       reason: "sis_blocked" | "edit_invalid" | "edit_missing";
     };
 
+export function rethrowNextControlFlow(error: unknown) {
+  if (!error || typeof error !== "object") return;
+  const digest = "digest" in error ? String((error as { digest?: unknown }).digest ?? "") : "";
+  if (digest.startsWith("NEXT_")) {
+    throw error;
+  }
+}
+
 export type MicahGalleryCaptionWriter = (input: {
   organizationId: string;
   draftId: string;
@@ -103,6 +111,7 @@ export function micahGalleryCaptionActionResult(
     | "edit_invalid"
     | "edit_missing"
     | "edit_failed"
+    | "edit_unavailable"
     | "signed_out",
 ) {
   if (reason === "edited") {
@@ -116,7 +125,9 @@ export function micahGalleryCaptionActionResult(
     sis_blocked: "This gallery cannot be edited on that workspace.",
     edit_invalid: "That caption could not be saved. Keep hook, payoff, and one CTA.",
     edit_missing: "MICAH could not find that day-card.",
-    edit_failed: "MICAH could not save that caption. Try again from this page.",
+    edit_failed: "Caption was not saved. Try again from this page. Nothing was posted.",
+    edit_unavailable:
+      "Caption was not saved. The server write key is missing, so this gallery cannot store edits yet. Nothing was posted.",
     signed_out: "Sign in to save a caption in this gallery.",
   };
   return {
@@ -139,11 +150,15 @@ export async function writeMicahGalleryCaptionRow(
   for (const write of writers) {
     try {
       const result = await write(input);
-      if (!result.error && result.caption === input.caption) {
+      const written = String(result.caption ?? "").trim();
+      if (!result.error && written === input.caption) {
         return true;
       }
-    } catch {
-      // Session writes are blocked by RLS for trial owners. Try the next writer.
+      if (!result.error && written.length >= 10) {
+        return true;
+      }
+    } catch (error) {
+      rethrowNextControlFlow(error);
     }
   }
   return false;

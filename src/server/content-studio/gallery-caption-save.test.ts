@@ -7,6 +7,7 @@ import {
   micahGalleryCaptionReturnPath,
   micahGalleryCaptionReturnTo,
   planMicahGalleryCaptionSave,
+  rethrowNextControlFlow,
   writeMicahGalleryCaptionRow,
 } from "./gallery-caption-save.ts";
 import { selectMicahWeekGallery } from "./gallery-art.ts";
@@ -98,6 +99,25 @@ test("SIS and auto-post captions cannot be saved", () => {
   );
 });
 
+test("RPC write counts as saved even when the returned caption is normalized", async () => {
+  const saved = await writeMicahGalleryCaptionRow(
+    [
+      async () => ({
+        error: null,
+        caption: "Monday in Cypress is won before 9am.\n\nCall to book this week's pest check.",
+      }),
+    ],
+    {
+      organizationId: "org-1",
+      draftId: "draft-1",
+      caption: "Monday in Cypress is won before 9am.\n\nCall to book this week's pest check. ",
+      status: "ready_for_review",
+      metadata: { no_live_post: true },
+    },
+  );
+  assert.equal(saved, true);
+});
+
 test("user-session RLS miss still saves through the admin writer", async () => {
   const caption = "Monday in Cypress is won before 9am.\n\nCall to book this week's pest check.";
   let adminWrote: string | null = null;
@@ -142,19 +162,55 @@ test("save return path keeps the trial workspace and never uses a hash", () => {
   assert.doesNotMatch(micahGalleryCaptionReturnPath(form({}), "edited"), /#/);
 });
 
-test("save action never redirects — a thrown redirect is the live crash", () => {
+test("swallowed Next digest errors are the live blank-page crash", async () => {
+  const digestError = Object.assign(new Error("NEXT_REDIRECT"), {
+    digest: "NEXT_REDIRECT;replace;/login",
+  });
+  let thrown: unknown = null;
+  try {
+    rethrowNextControlFlow(digestError);
+  } catch (error) {
+    thrown = error;
+  }
+  assert.equal(thrown, digestError);
+  rethrowNextControlFlow(new Error("regular write failure"));
+
+  await assert.rejects(
+    () =>
+      writeMicahGalleryCaptionRow(
+        [
+          async () => {
+            throw digestError;
+          },
+        ],
+        {
+          organizationId: "org-1",
+          draftId: "draft-1",
+          caption: "Monday in Cypress is won before 9am.\n\nCall to book this week's pest check.",
+          status: "ready_for_review",
+          metadata: { no_live_post: true },
+        },
+      ),
+    (error) => error === digestError,
+  );
+});
+
+test("save action never redirects and never swallows Next control-flow errors", () => {
   const actions = readFileSync(join(process.cwd(), "src/server/content-studio/actions.ts"), "utf8");
   const start = actions.indexOf("async function saveMicahGalleryCaption");
   assert.ok(start >= 0);
   const savePath = actions.slice(start);
   assert.match(savePath, /export async function updateMicahGalleryCaption/);
   assert.match(savePath, /_previousState: MicahDeskActionState/);
-  assert.match(savePath, /micahGalleryCaptionActionResult\("edit_failed"\)/);
+  assert.match(actions, /update_micah_gallery_caption/);
+  assert.match(savePath, /rethrowNextControlFlow/);
+  assert.match(savePath, /unstable_rethrow/);
   assert.doesNotMatch(savePath, /redirect\(/);
   assert.doesNotMatch(savePath, /#draft-/);
-  assert.match(actions, /createAdminClient/);
-  assert.match(actions, /getVerifiedUser/);
+  assert.doesNotMatch(savePath, /try \{\s*clients\.push\(await createClient/);
+  assert.doesNotMatch(savePath, /revalidatePath\("\/client"\)/);
   assert.match(actions, /sis_blocked/);
+  assert.match(actions, /edit_unavailable/);
   assert.doesNotMatch(actions, /status: "published"/);
 
   const gallery = readFileSync(join(process.cwd(), "src/components/micah-week-gallery.tsx"), "utf8");
@@ -162,6 +218,19 @@ test("save action never redirects — a thrown redirect is the live crash", () =
   assert.match(gallery, /data-micah-save="success"/);
   assert.match(gallery, /data-micah-save="error"/);
   assert.doesNotMatch(gallery, /action=\{updateMicahGalleryCaption\}/);
+
+  const migration = readFileSync(
+    join(process.cwd(), "supabase/migrations/20260907161500_update_micah_gallery_caption.sql"),
+    "utf8",
+  );
+  assert.match(migration, /create or replace function public.update_micah_gallery_caption/);
+  assert.match(migration, /security definer/);
+  assert.match(migration, /sis-diy/);
+  assert.match(migration, /ready_for_review/);
+  assert.match(migration, /if v_status = 'published' then\s+v_status := 'ready_for_review'/);
+  assert.doesNotMatch(migration, /v_status := 'published'/);
+  assert.match(migration, /auth\.role\(\)/);
+  assert.match(migration, /grant execute[\s\S]*authenticated/);
 });
 
 test("same-page save results never send the owner to a blank error URL", () => {
@@ -173,4 +242,8 @@ test("same-page save results never send the owner to a blank error URL", () => {
   assert.equal(micahGalleryCaptionActionResult("sis_blocked").status, "error");
   assert.equal(micahGalleryCaptionActionResult("edit_failed").status, "error");
   assert.match(String(micahGalleryCaptionActionResult("edit_failed").error), /Try again from this page/);
+  assert.match(
+    String(micahGalleryCaptionActionResult("edit_unavailable").error),
+    /server write key is missing/,
+  );
 });
