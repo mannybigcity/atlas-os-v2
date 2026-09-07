@@ -102,10 +102,7 @@ test("Brand Setup prefills audience and offer only when city exists", () => {
   assert.equal(noCity.city, "");
   assert.equal(noCity.audience, "");
   assert.equal(noCity.weeklyOffer, "");
-  const stuck = prefillMicahBrandKit(defaultMicahBrandKit(), {
-    organizationName: "Massive Action Maintenance",
-    ...noCity,
-  });
+  const stuck = prefillMicahBrandKit(defaultMicahBrandKit(), noCity);
   assert.equal(firstIncompleteMicahOnboardingIndex(stuck, false), 0);
 });
 
