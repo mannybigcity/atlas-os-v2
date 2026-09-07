@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -62,6 +62,39 @@ test("AFE homepage states Phone AI / Front Desk is later and not live", () => {
 test("AFE homepage keeps PANEL DE CLIENTES and does not sell SIS chrome", () => {
   assert.match(homepage, /denTitle:\s*"PANEL DE CLIENTES"/);
   assert.doesNotMatch(homepage, /sis-homepage|SisHeader|sis-real|SIS Custom Creations/);
+});
+
+test("AFE homepage shows three desk proof stills near #den without selling live send", () => {
+  const stills = homepage.slice(homepage.indexOf("atlas-stills-section"), homepage.indexOf("atlas-family-section"));
+  const stillFiles = [
+    "public/marketing/desk-stills/hunter-review-pile.webp",
+    "public/marketing/desk-stills/follow-up-drafts.webp",
+    "public/marketing/desk-stills/micah-gallery.webp",
+  ];
+
+  assert.match(homepage, /id="desk-stills"/);
+  assert.match(homepage, /See the desk before the trial/);
+  assert.match(homepage, /Teasers only\. The working sample stays behind the 7-day trial/);
+  assert.match(stills, /\{still\.name\} — \{still\.label\}/);
+  assert.match(homepage, /HUNTER[\s\S]*leads to review/);
+  assert.match(homepage, /you approve then send/);
+  assert.match(homepage, /gallery drafts only/);
+  assert.match(homepage, /Review pile/);
+  assert.match(homepage, /Follow-up drafts you approve/);
+  assert.match(homepage, /gallery Copy\/Download/);
+  assert.match(homepage, /hunter-review-pile\.webp/);
+  assert.match(homepage, /follow-up-drafts\.webp/);
+  assert.match(homepage, /micah-gallery\.webp/);
+  assert.doesNotMatch(stills, /auto-send|auto-call|live Front Desk|live social/i);
+  assert.doesNotMatch(stills, /SAMPLE|#SampleDraft|sis-real|SIS Custom Creations|Floor/);
+  assert.doesNotMatch(stills, /HUNTER 7|7 leads|ten finds/i);
+  assert.doesNotMatch(stills, /atlas-button gold/);
+
+  for (const file of stillFiles) {
+    const path = join(root, file);
+    assert.equal(existsSync(path), true, `${file} is missing`);
+    assert.ok(statSync(path).size > 8_000, `${file} should be an optimized still, not an empty placeholder`);
+  }
 });
 
 test("AFE header keeps the official pasted logo and trial as the gold nav CTA", () => {

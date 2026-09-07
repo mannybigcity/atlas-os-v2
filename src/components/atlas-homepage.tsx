@@ -39,6 +39,10 @@ type LandingCopy = {
   mostPopular: string;
   perMonth: string;
   honestDesk: string;
+  stillsLabel: string;
+  stillsTitle: string;
+  stillsCopy: string;
+  stills: Array<{ src: string; name: string; label: string; caption: string; alt: string }>;
 };
 
 function IndustryGlyph({ index }: { index: number }) {
@@ -129,6 +133,32 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     mostPopular: "Most popular",
     perMonth: "per month",
     honestDesk: "Phone AI / Front Desk is later and not live.",
+    stillsLabel: "THE DESK",
+    stillsTitle: "See the desk before the trial.",
+    stillsCopy: "Teasers only. The working sample stays behind the 7-day trial.",
+    stills: [
+      {
+        src: "/marketing/desk-stills/hunter-review-pile.webp",
+        name: "HUNTER",
+        label: "leads to review",
+        caption: "Review pile",
+        alt: "HUNTER review pile on the Atlas desk",
+      },
+      {
+        src: "/marketing/desk-stills/follow-up-drafts.webp",
+        name: "Follow-up",
+        label: "you approve then send",
+        caption: "Follow-up drafts you approve",
+        alt: "Follow-up drafts with Edit and Send on the Atlas desk",
+      },
+      {
+        src: "/marketing/desk-stills/micah-gallery.webp",
+        name: "MICAH",
+        label: "gallery drafts only",
+        caption: "gallery Copy/Download",
+        alt: "MICAH gallery drafts on the Atlas desk",
+      },
+    ],
   },
   es: {
     eyebrow: "ATLAS PARA EMPRENDEDORES",
@@ -194,6 +224,32 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     mostPopular: "Más popular",
     perMonth: "al mes",
     honestDesk: "La IA telefónica / Front Desk llega después y no está activa.",
+    stillsLabel: "EL ESCRITORIO",
+    stillsTitle: "Mira el escritorio antes de la prueba.",
+    stillsCopy: "Solo adelantos. La muestra real queda detrás de la prueba de 7 días.",
+    stills: [
+      {
+        src: "/marketing/desk-stills/hunter-review-pile.webp",
+        name: "HUNTER",
+        label: "prospectos a revisar",
+        caption: "Pila de revisión",
+        alt: "Pila de revisión de HUNTER en el escritorio de Atlas",
+      },
+      {
+        src: "/marketing/desk-stills/follow-up-drafts.webp",
+        name: "Follow-up",
+        label: "tú apruebas y envías",
+        caption: "Borradores de seguimiento que tú apruebas",
+        alt: "Borradores de seguimiento con Editar y Enviar en el escritorio de Atlas",
+      },
+      {
+        src: "/marketing/desk-stills/micah-gallery.webp",
+        name: "MICAH",
+        label: "solo borradores de galería",
+        caption: "galería Copiar/Descargar",
+        alt: "Borradores de la galería MICAH en el escritorio de Atlas",
+      },
+    ],
   },
 };
 
@@ -332,6 +388,37 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
             <Link className="atlas-button gold compact" href={withSiteLanguage("/login", language)}>{t.denCta}</Link>
           </div>
           <DashboardPreview language={language} />
+        </section>
+
+        <section className="atlas-stills-section" id="desk-stills" aria-labelledby="stills-title">
+          <div className="atlas-wrap">
+            <div className="atlas-stills-head">
+              <div>
+                <p className="atlas-section-label">{t.stillsLabel}</p>
+                <h2 id="stills-title">{t.stillsTitle}</h2>
+              </div>
+              <p className="atlas-stills-lede">{t.stillsCopy}</p>
+            </div>
+            <div className="atlas-stills-grid">
+              {t.stills.map((still) => (
+                <figure className="atlas-still-card" key={still.src}>
+                  <div className="atlas-still-frame">
+                    <Image
+                      alt={still.alt}
+                      className="atlas-still-image"
+                      fill
+                      sizes="(max-width: 820px) 100vw, 33vw"
+                      src={still.src}
+                    />
+                  </div>
+                  <figcaption>
+                    <strong>{still.name} — {still.label}</strong>
+                    <span>{still.caption}</span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="atlas-family-section" id="family" aria-labelledby="family-title">
