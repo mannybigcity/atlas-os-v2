@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isAfeCrmDemoOrganization, isSisOrganization } from "@/lib/client-portal/identity";
+import { isSuperAdminEmail } from "@/lib/env";
 import {
   composeMicahWeekBuildPrompt,
   defaultMicahBrandKit,
-  isMicahBrandDraft,
   normalizeBrandColor,
   parseMicahDayBriefs,
   parsePlainBrandText,
@@ -15,14 +15,18 @@ import {
   MICAH_NAVY,
   type MicahBrandKit,
 } from "@/lib/lions-den/micah-starter-week";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
+import { getUserMemberships } from "@/server/organizations/queries";
 import { readMicahBrandKit, writeMicahBrandKit } from "./brand.ts";
 import {
-  buildMicahGalleryCaptionUpdate,
-  isMicahDemeanor,
-  resolveMicahDemeanor,
-} from "./gallery-art.ts";
+  micahGalleryCaptionReturnPath,
+  planMicahGalleryCaptionSave,
+  writeMicahGalleryCaptionRow,
+  type MicahGalleryCaptionWriter,
+} from "./gallery-caption-save.ts";
+import { isMicahDemeanor, resolveMicahDemeanor } from "./gallery-art.ts";
 import { createMicahGalleryDraft } from "./gallery-draft.ts";
 
 function requiredText(formData: FormData, name: string) {
@@ -277,24 +281,64 @@ export async function buildMicahWeekFromDesk(
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function micahGalleryReturnPath(status: string, draftId?: string) {
-  const hash = draftId ? `#draft-${draftId}` : "#content-studio";
-  return `/client/micah?content=${status}${hash}`;
+function supabaseCaptionWriter(
+  client: Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>,
+): MicahGalleryCaptionWriter {
+  return async (input) => {
+    const { data, error } = await client
+      .from("organization_content_drafts")
+      .update({
+        caption: input.caption,
+        status: input.status,
+        metadata: input.metadata,
+      })
+      .eq("id", input.draftId)
+      .eq("organization_id", input.organizationId)
+      .select("caption")
+      .maybeSingle();
+    return {
+      caption: data ? String((data as { caption?: string }).caption ?? "") : null,
+      error: error?.message ?? (data ? null : "not_updated"),
+    };
+  };
+}
+
+async function galleryCaptionWriters(): Promise<MicahGalleryCaptionWriter[]> {
+  const writers: MicahGalleryCaptionWriter[] = [];
+  try {
+    writers.push(supabaseCaptionWriter(await createClient()));
+  } catch {
+    // Session client is optional when service-role can write.
+  }
+  try {
+    writers.push(supabaseCaptionWriter(createAdminClient()));
+  } catch {
+    // Service-role is the Brand Setup fallback. Trial owners cannot UPDATE drafts under RLS.
+  }
+  return writers;
 }
 
 export async function updateMicahGalleryCaption(formData: FormData) {
   const organizationId = requiredText(formData, "organizationId");
   const draftId = requiredText(formData, "draftId");
+  const returnPath = (status: string) => micahGalleryCaptionReturnPath(formData, status);
   const { user, organization } = await requireMicahOperator(organizationId);
 
   if (!user || !organizationId || !organization) {
-    redirect(micahGalleryReturnPath("edit_invalid"));
+    redirect(returnPath("edit_invalid"));
   }
   if (isSisOrganization(organization)) {
-    redirect(micahGalleryReturnPath("sis_blocked"));
+    redirect(returnPath("sis_blocked"));
   }
-  if (!uuidPattern.test(draftId)) {
-    redirect(micahGalleryReturnPath("edit_invalid"));
+  if (!uuidPattern.test(organizationId) || !uuidPattern.test(draftId)) {
+    redirect(returnPath("edit_invalid"));
+  }
+  if (!isSuperAdminEmail(user.email)) {
+    const memberships = await getUserMemberships(user.id);
+    const membership = memberships.data.find((item) => item.organization?.id === organizationId);
+    if (!membership) {
+      redirect(returnPath("edit_invalid"));
+    }
   }
 
   const supabase = await createClient();
@@ -305,38 +349,28 @@ export async function updateMicahGalleryCaption(formData: FormData) {
     .eq("organization_id", organizationId)
     .maybeSingle();
 
-  const metadata = ((draft as { metadata?: Record<string, unknown> } | null)?.metadata ?? {}) as Record<
-    string,
-    unknown
-  >;
-  if (loadError || !draft || isMicahBrandDraft(metadata)) {
-    redirect(micahGalleryReturnPath("edit_missing", draftId));
-  }
-
-  const patch = buildMicahGalleryCaptionUpdate({
-    metadata,
+  const planned = planMicahGalleryCaptionSave({
+    organization,
+    draft: draft as { metadata?: Record<string, unknown>; status?: string } | null,
+    loadError: Boolean(loadError),
     caption: formData.get("caption"),
-    status: (draft as { status?: string }).status,
   });
-  if (!patch) {
-    redirect(micahGalleryReturnPath("edit_invalid", draftId));
+  if (!planned.ok) {
+    redirect(returnPath(planned.reason));
   }
 
-  const { error } = await supabase
-    .from("organization_content_drafts")
-    .update({
-      caption: patch.caption,
-      status: patch.status,
-      metadata: patch.metadata,
-    })
-    .eq("id", draftId)
-    .eq("organization_id", organizationId);
-
-  if (error) {
-    redirect(micahGalleryReturnPath("edit_failed", draftId));
+  const saved = await writeMicahGalleryCaptionRow(await galleryCaptionWriters(), {
+    organizationId,
+    draftId,
+    caption: planned.patch.caption,
+    status: planned.patch.status,
+    metadata: planned.patch.metadata,
+  });
+  if (!saved) {
+    redirect(returnPath("edit_failed"));
   }
 
   revalidatePath("/client/micah");
   revalidatePath("/client");
-  redirect(micahGalleryReturnPath("edited", draftId));
+  redirect(returnPath("edited"));
 }

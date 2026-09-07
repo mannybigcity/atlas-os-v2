@@ -8,6 +8,7 @@ import {
   isAfeCrmDemoOrganization,
   isQTimeWorkspaceSlug,
 } from "@/lib/client-portal/identity";
+import { micahGalleryCaptionReturnTo } from "@/server/content-studio/gallery-caption-save";
 import { canShowMicahGalleryEdit } from "@/server/content-studio/gallery-art";
 import { presentLiveDeskDraft } from "@/lib/lions-den/live-desk";
 import {
@@ -73,6 +74,10 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
           demoDesk={isAfeCrmDemoOrganization(primaryOrganization)}
           organizationId={primaryOrganization.id}
           organizationName={primaryOrganization.name}
+          returnTo={micahGalleryCaptionReturnTo({
+            previewOrg: previewOrgSlug,
+            workspace: workspace.selectedWorkspaceSlug,
+          })}
           studio={{
             ...studio.data,
             drafts: studio.data.drafts.map((draft) => presentLiveDeskDraft(primaryOrganization, draft)),
