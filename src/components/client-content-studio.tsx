@@ -5,7 +5,7 @@ import {
   readMicahWorkspacePrefill,
 } from "@/server/content-studio/brand";
 import {
-  readOfficialAtlasLogoDataUri,
+  galleryLogoForMicahDesk,
   selectMicahWeekGallery,
 } from "@/server/content-studio/gallery-art";
 import type { ContentStudio } from "@/server/content-studio/queries";
@@ -15,6 +15,7 @@ type ClientContentStudioProps = {
   organizationId: string;
   organizationName?: string | null;
   canReview: boolean;
+  allowCaptionEdit?: boolean;
   demoDesk?: boolean;
   studio: ContentStudio;
 };
@@ -23,6 +24,7 @@ export async function ClientContentStudio({
   organizationId,
   organizationName,
   canReview,
+  allowCaptionEdit,
   demoDesk = false,
   studio,
 }: ClientContentStudioProps) {
@@ -32,7 +34,10 @@ export async function ClientContentStudio({
   const brand = brandKitForMicahDesk(studio.drafts, prefill);
   const cards = selectMicahWeekGallery(studio.drafts, {
     demoDesk,
-    logoDataUri: brand.logoDataUri || readOfficialAtlasLogoDataUri(),
+    logoDataUri: galleryLogoForMicahDesk({
+      demoDesk,
+      brandLogo: brand.logoDataUri,
+    }),
   });
 
   return (
@@ -73,6 +78,7 @@ export async function ClientContentStudio({
 
       {cards.length > 0 ? (
         <MicahWeekGallery
+          allowCaptionEdit={allowCaptionEdit ?? canReview}
           canReview={canReview}
           cards={cards}
           organizationId={organizationId}

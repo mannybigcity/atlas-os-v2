@@ -6,8 +6,8 @@ import {
   buildMicahWeekPack,
   clipCaptionText,
   clipDraftText,
+  galleryLogoForMicahDesk,
   isMicahDemeanor,
-  readOfficialAtlasLogoDataUri,
   type MicahDemeanor,
 } from "./gallery-art.ts";
 import { gradeKingdomCaption, gradeKingdomWeek } from "./kingdom-social.ts";
@@ -112,10 +112,10 @@ export async function createMicahGalleryDraft(
   input: MicahGalleryDraftInput,
 ): Promise<MicahGalleryDraftResult> {
   const brand = await readMicahBrandKit(input.organizationId);
-  const logoDataUri =
-    input.logoDataUri ||
-    brand.logoDataUri ||
-    readOfficialAtlasLogoDataUri();
+  const logoDataUri = galleryLogoForMicahDesk({
+    demoDesk: input.demoDesk,
+    brandLogo: input.logoDataUri || brand.logoDataUri,
+  });
   const pack = buildMicahWeekPack({
     prompt: input.prompt,
     demeanor: input.demeanor,

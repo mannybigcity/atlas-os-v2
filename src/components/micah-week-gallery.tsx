@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { reviewContentDraft } from "@/server/content-studio/actions";
+import { reviewContentDraft, updateMicahGalleryCaption } from "@/server/content-studio/actions";
 
 export type MicahWeekGalleryCard = {
   id: string | null;
@@ -22,6 +22,7 @@ export type MicahWeekGalleryCard = {
 type MicahWeekGalleryProps = {
   organizationId: string;
   canReview: boolean;
+  allowCaptionEdit?: boolean;
   spanish: boolean;
   cards: MicahWeekGalleryCard[];
 };
@@ -55,11 +56,13 @@ function MicahDayCard({
   card,
   organizationId,
   canReview,
+  allowCaptionEdit,
   spanish,
 }: {
   card: MicahWeekGalleryCard;
   organizationId: string;
   canReview: boolean;
+  allowCaptionEdit: boolean;
   spanish: boolean;
 }) {
   const [caption, setCaption] = useState(card.caption);
@@ -68,6 +71,7 @@ function MicahDayCard({
   );
   const source = svgDataUrl(card.imageSvg);
   const fileName = `micah-day-${card.day}-${card.weekday.toLowerCase()}.svg`;
+  const canSave = allowCaptionEdit && Boolean(card.id);
 
   async function copyVariant(
     value: string,
@@ -106,69 +110,90 @@ function MicahDayCard({
         </div>
         <h3 className="mt-2 text-lg font-bold text-slate-950">{card.title}</h3>
 
-        <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-          {spanish
-            ? "Facebook (gancho, valor, un llamado)"
-            : "Facebook caption (hook, payoff, one CTA)"}
-        </label>
-        <textarea
-          className="mt-2 min-h-36 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#071b42] focus:ring-4 focus:ring-[#fff8e6]"
-          onChange={(event) => setCaption(event.target.value)}
-          value={caption}
-        />
+        <form action={updateMicahGalleryCaption} className="mt-4 space-y-3">
+          {card.id ? <input name="draftId" type="hidden" value={card.id} /> : null}
+          <input name="organizationId" type="hidden" value={organizationId} />
+          <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+            {spanish
+              ? "Facebook (gancho, valor, un llamado)"
+              : "Facebook caption (hook, payoff, one CTA)"}
+          </label>
+          <textarea
+            className="mt-2 min-h-36 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#071b42] focus:ring-4 focus:ring-[#fff8e6]"
+            name="caption"
+            onChange={(event) => setCaption(event.target.value)}
+            value={caption}
+          />
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0c2b63]"
-            onClick={() => void copyVariant(caption, "facebook")}
-            type="button"
-          >
-            {copied === "facebook"
-              ? spanish
-                ? "Copiado"
-                : "Copied"
-              : spanish
-                ? "Copiar Facebook"
-                : "Copy caption"}
-          </button>
-          {card.instagramCaption ? (
+          <div className="flex flex-wrap gap-2">
             <button
-              className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
-              onClick={() => void copyVariant(card.instagramCaption ?? "", "instagram")}
+              className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0c2b63]"
+              onClick={() => void copyVariant(caption, "facebook")}
               type="button"
             >
-              {copied === "instagram"
+              {copied === "facebook"
                 ? spanish
                   ? "Copiado"
                   : "Copied"
                 : spanish
-                  ? "Copiar Instagram"
-                  : "Copy Instagram"}
+                  ? "Copiar Facebook"
+                  : "Copy caption"}
             </button>
-          ) : null}
-          {card.linkedinCaption ? (
-            <button
-              className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
-              onClick={() => void copyVariant(card.linkedinCaption ?? "", "linkedin")}
-              type="button"
+            {card.instagramCaption ? (
+              <button
+                className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+                onClick={() => void copyVariant(card.instagramCaption ?? "", "instagram")}
+                type="button"
+              >
+                {copied === "instagram"
+                  ? spanish
+                    ? "Copiado"
+                    : "Copied"
+                  : spanish
+                    ? "Copiar Instagram"
+                    : "Copy Instagram"}
+              </button>
+            ) : null}
+            {card.linkedinCaption ? (
+              <button
+                className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+                onClick={() => void copyVariant(card.linkedinCaption ?? "", "linkedin")}
+                type="button"
+              >
+                {copied === "linkedin"
+                  ? spanish
+                    ? "Copiado"
+                    : "Copied"
+                  : spanish
+                    ? "Copiar LinkedIn"
+                    : "Copy LinkedIn"}
+              </button>
+            ) : null}
+            <a
+              className="inline-flex rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+              download={fileName}
+              href={source}
             >
-              {copied === "linkedin"
-                ? spanish
-                  ? "Copiado"
-                  : "Copied"
-                : spanish
-                  ? "Copiar LinkedIn"
-                  : "Copy LinkedIn"}
-            </button>
+              {spanish ? "Descargar archivo" : "Download file"}
+            </a>
+            {canSave ? (
+              <button
+                className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+                data-micah-control="edit"
+                type="submit"
+              >
+                {spanish ? "Editar" : "Edit"}
+              </button>
+            ) : null}
+          </div>
+          {canSave ? (
+            <p className="text-xs leading-5 text-[#5c6578]">
+              {spanish
+                ? "Editar guarda el pie de foto en la galería. Copiar / Descargar solamente. Nunca se publica solo."
+                : "Edit saves the caption in this gallery. Copy/Download only. Never auto-post."}
+            </p>
           ) : null}
-          <a
-            className="inline-flex rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
-            download={fileName}
-            href={source}
-          >
-            {spanish ? "Descargar archivo" : "Download file"}
-          </a>
-        </div>
+        </form>
 
         {canReview && card.id ? (
           <form action={reviewContentDraft} className="mt-4 space-y-3">
@@ -211,6 +236,7 @@ function MicahDayCard({
 export function MicahWeekGallery({
   organizationId,
   canReview,
+  allowCaptionEdit,
   spanish,
   cards,
 }: MicahWeekGalleryProps) {
@@ -218,6 +244,7 @@ export function MicahWeekGallery({
     <div className="mt-6 grid gap-5 xl:grid-cols-2">
       {cards.map((card) => (
         <MicahDayCard
+          allowCaptionEdit={allowCaptionEdit ?? canReview}
           canReview={canReview}
           card={card}
           key={card.id ?? `day-${card.day}`}

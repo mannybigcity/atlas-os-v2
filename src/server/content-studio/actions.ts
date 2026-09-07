@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isAfeCrmDemoOrganization } from "@/lib/client-portal/identity";
+import { isAfeCrmDemoOrganization, isSisOrganization } from "@/lib/client-portal/identity";
 import {
   composeMicahWeekBuildPrompt,
   defaultMicahBrandKit,
+  isMicahBrandDraft,
   normalizeBrandColor,
   parseMicahDayBriefs,
   parsePlainBrandText,
@@ -17,7 +18,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
 import { readMicahBrandKit, writeMicahBrandKit } from "./brand.ts";
-import { isMicahDemeanor, resolveMicahDemeanor } from "./gallery-art.ts";
+import { isMicahDemeanor, parseMicahGalleryCaptionEdit, resolveMicahDemeanor } from "./gallery-art.ts";
 import { createMicahGalleryDraft } from "./gallery-draft.ts";
 
 function requiredText(formData: FormData, name: string) {
@@ -268,4 +269,72 @@ export async function buildMicahWeekFromDesk(
     error: null,
     message: draft.message,
   };
+}
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function micahGalleryReturnPath(status: string, draftId?: string) {
+  const hash = draftId ? `#draft-${draftId}` : "#content-studio";
+  return `/client/micah?content=${status}${hash}`;
+}
+
+export async function updateMicahGalleryCaption(formData: FormData) {
+  const organizationId = requiredText(formData, "organizationId");
+  const draftId = requiredText(formData, "draftId");
+  const caption = parseMicahGalleryCaptionEdit(formData.get("caption"));
+  const { user, organization } = await requireMicahOperator(organizationId);
+
+  if (!user || !organizationId || !organization) {
+    redirect(micahGalleryReturnPath("edit_invalid"));
+  }
+  if (isSisOrganization(organization)) {
+    redirect(micahGalleryReturnPath("sis_blocked"));
+  }
+  if (!uuidPattern.test(draftId) || !caption) {
+    redirect(micahGalleryReturnPath("edit_invalid", uuidPattern.test(draftId) ? draftId : undefined));
+  }
+
+  const supabase = await createClient();
+  const { data: draft, error: loadError } = await supabase
+    .from("organization_content_drafts")
+    .select("id, metadata, status")
+    .eq("id", draftId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  const metadata = ((draft as { metadata?: Record<string, unknown> } | null)?.metadata ?? {}) as Record<
+    string,
+    unknown
+  >;
+  if (loadError || !draft || isMicahBrandDraft(metadata)) {
+    redirect(micahGalleryReturnPath("edit_missing", draftId));
+  }
+
+  const nextStatus =
+    String((draft as { status?: string }).status) === "published"
+      ? "ready_for_review"
+      : String((draft as { status?: string }).status ?? "ready_for_review");
+
+  const { error } = await supabase
+    .from("organization_content_drafts")
+    .update({
+      caption,
+      status: nextStatus,
+      metadata: {
+        ...metadata,
+        owner_edited_at: new Date().toISOString(),
+        no_live_post: true,
+        no_scheduler: true,
+      },
+    })
+    .eq("id", draftId)
+    .eq("organization_id", organizationId);
+
+  if (error) {
+    redirect(micahGalleryReturnPath("edit_failed", draftId));
+  }
+
+  revalidatePath("/client/micah");
+  revalidatePath("/client");
+  redirect(micahGalleryReturnPath("edited", draftId));
 }

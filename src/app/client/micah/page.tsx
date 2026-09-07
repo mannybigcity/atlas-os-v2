@@ -7,6 +7,7 @@ import { MicahActivationMarker } from "@/components/lions-den/lions-den-activati
 import {
   isAfeCrmDemoOrganization,
   isQTimeWorkspaceSlug,
+  isSisOrganization,
 } from "@/lib/client-portal/identity";
 import { presentLiveDeskDraft } from "@/lib/lions-den/live-desk";
 import {
@@ -67,6 +68,7 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
       ) : null}
       {studio && !studio.setupRequired && primaryOrganization ? (
         <ClientContentStudio
+          allowCaptionEdit={canEditBusinessProfile && !isSisOrganization(primaryOrganization)}
           canReview={canEditBusinessProfile}
           demoDesk={isAfeCrmDemoOrganization(primaryOrganization)}
           organizationId={primaryOrganization.id}
