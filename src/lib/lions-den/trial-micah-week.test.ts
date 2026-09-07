@@ -40,13 +40,14 @@ test("SAMPLE MICAH week is seven paste-ready cards matched to pest work in Cypre
     assert.match(slot.dayLabel, /DAY \d · /);
     assert.match(slot.headline, /\S/);
     assert.doesNotMatch(slot.headline, /placeholder/i);
-    assert.match(slot.caption, /SAMPLE draft for Cypress Pest Pros/);
+    assert.match(slot.caption, /Draft for Cypress Pest Pros/);
     assert.match(slot.caption, /did not post/);
+    assert.doesNotMatch(`${slot.title} ${slot.caption} ${slot.imageSvg}`, /\bSAMPLE\b/);
     assert.match(slot.callToAction, /book|call|save this/i);
     assert.match(slot.instagramCaption, /#/);
     assert.match(slot.linkedinCaption, /#/);
     assert.notEqual(slot.instagramCaption, slot.caption);
-    assert.match(slot.imageSvg, /SAMPLE DRAFT/);
+    assert.match(slot.imageSvg, /Download and post yourself/);
     assert.equal(slot.imageSvg.includes(slot.dayLabel), true);
     assert.doesNotMatch(slot.imageSvg, /atlas-logo|atlas-lion|<image href=/i);
     assert.doesNotMatch(`${slot.caption} ${slot.headline}`, /SIS|Phone AI is live|auto-post|blotato/i);
@@ -128,7 +129,9 @@ test("MICAH gallery Edit saves captions and never live-posts", () => {
   assert.match(gallery, /Download file/);
   assert.doesNotMatch(gallery, /schedule this post|blotato|Phone AI is live/i);
   assert.match(page, /allowCaptionEdit=\{canShowMicahGalleryEdit\(primaryOrganization\)\}/);
+  assert.match(page, /canReview=\{canShowMicahGalleryEdit\(primaryOrganization\)\}/);
   assert.doesNotMatch(page, /allowCaptionEdit=\{canEditBusinessProfile/);
+  assert.doesNotMatch(page, /canReview=\{canEditBusinessProfile/);
   assert.match(actions, /export async function updateMicahGalleryCaption/);
   assert.match(actions, /persistMicahGalleryCaption/);
   const persist = readFileSync(join(root, "server/content-studio/gallery-caption-persist.ts"), "utf8");

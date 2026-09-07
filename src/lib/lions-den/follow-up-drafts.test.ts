@@ -9,6 +9,7 @@ import {
   followUpDraftMailto,
   isOwnerGatedFollowUpMailto,
 } from "./follow-up-drafts.ts";
+import { presentLiveDeskOpportunity } from "./live-desk.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -49,6 +50,16 @@ test("SAMPLE and DEMO labels stay visible on follow-up drafts", () => {
   );
   assert.equal(followUpDraftHasVisibleSampleLabel("ABC Plumbing (DEMO)", "Later follow-up"), true);
   assert.equal(followUpDraftHasVisibleSampleLabel("Harbor Grill", "Call after lunch"), false);
+
+  const presented = presentLiveDeskOpportunity(
+    { name: "Cypress Pest Pros", slug: "cypress-pest-pros-trial" },
+    {
+      name: "Rivergate Pest Co · SAMPLE",
+      nextAction: "SAMPLE draft follow-up — review, then you send. Atlas has not emailed anyone.",
+    },
+  );
+  assert.equal(followUpDraftHasVisibleSampleLabel(presented.name, presented.nextAction), false);
+  assert.doesNotMatch(`${presented.name} ${presented.nextAction}`, /\bSAMPLE\b|not a real location/i);
 });
 
 test("Send builds an owner-gated mailto and never invents a live mail API", () => {

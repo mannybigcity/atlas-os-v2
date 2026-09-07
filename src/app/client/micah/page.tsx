@@ -43,7 +43,6 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
   const spanish = language === "es";
   const workspace = await getClientWorkspaceContext("/client/micah", params);
   const {
-    canEditBusinessProfile,
     isClientPreview,
     previewOrgSlug,
     primaryOrganization,
@@ -70,7 +69,7 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
       {studio && !studio.setupRequired && primaryOrganization ? (
         <ClientContentStudio
           allowCaptionEdit={canShowMicahGalleryEdit(primaryOrganization)}
-          canReview={canEditBusinessProfile}
+          canReview={canShowMicahGalleryEdit(primaryOrganization)}
           demoDesk={isAfeCrmDemoOrganization(primaryOrganization)}
           organizationId={primaryOrganization.id}
           organizationName={primaryOrganization.name}

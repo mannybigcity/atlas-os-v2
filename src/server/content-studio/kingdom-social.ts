@@ -41,7 +41,7 @@ export function captionBodyBlocks(caption: string) {
     .map((block) => block.trim())
     .filter(Boolean);
   const textBlocks = blocks.filter((block) => !/^#/.test(block));
-  if (textBlocks[0] && /^(DEMO|Sample draft)\b/i.test(textBlocks[0])) {
+  if (textBlocks[0] && /^(DEMO|Sample draft|Draft for)\b/i.test(textBlocks[0])) {
     textBlocks.shift();
   }
   return textBlocks;
