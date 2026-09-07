@@ -84,6 +84,8 @@ test("week desk uses a JSON button path and never a form POST to /client/micah",
   assert.match(actions, /export async function buildMicahWeekFromDesk/);
   assert.match(actions, /export async function saveMicahBrandSetup/);
   assert.doesNotMatch(actions, /initialMicahDeskActionState/);
+  assert.doesNotMatch(actions, /export type \{ MicahDeskActionState \}/);
+  assert.doesNotMatch(actions, /export \{/);
   assert.match(desk, /@\/server\/content-studio\/desk-save/);
 });
 
