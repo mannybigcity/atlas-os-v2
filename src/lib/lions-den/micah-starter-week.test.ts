@@ -166,6 +166,7 @@ test("MICAH desk chrome uses the locked onboarding and day-block copy", () => {
   assert.match(gallery, /\{spanish \? "Editar" : "Edit"\}/);
   assert.match(gallery, /Save caption/);
   assert.match(gallery, /name="returnTo"/);
+  assert.match(gallery, /useActionState/);
   assert.match(gallery, /setEditing\(true\)/);
   assert.match(gallery, /Copy caption/);
   assert.match(gallery, /Download file/);

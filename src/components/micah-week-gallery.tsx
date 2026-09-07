@@ -1,7 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { reviewContentDraft, updateMicahGalleryCaption } from "@/server/content-studio/actions";
+import { useActionState, useEffect, useState } from "react";
+import {
+  initialMicahDeskActionState,
+  reviewContentDraft,
+  updateMicahGalleryCaption,
+} from "@/server/content-studio/actions";
 
 export type MicahWeekGalleryCard = {
   id: string | null;
@@ -73,6 +77,20 @@ function MicahDayCard({
   const [copied, setCopied] = useState<"facebook" | "instagram" | "linkedin" | null>(
     null,
   );
+  const [saveState, saveAction, saving] = useActionState(
+    updateMicahGalleryCaption,
+    initialMicahDeskActionState,
+  );
+
+  useEffect(() => {
+    setCaption(card.caption);
+  }, [card.caption]);
+
+  useEffect(() => {
+    if (saveState.status === "success") {
+      setEditing(false);
+    }
+  }, [saveState.status]);
   const source = svgDataUrl(card.imageSvg);
   const fileName = `micah-day-${card.day}-${card.weekday.toLowerCase()}.svg`;
   const canSave = allowCaptionEdit && Boolean(card.id);
@@ -175,7 +193,7 @@ function MicahDayCard({
         <h3 className="mt-2 text-lg font-bold text-slate-950">{card.title}</h3>
 
         {canSave ? (
-          <form action={updateMicahGalleryCaption} className="mt-4 space-y-3">
+          <form action={saveAction} className="mt-4 space-y-3">
             <input name="draftId" type="hidden" value={card.id ?? ""} />
             <input name="organizationId" type="hidden" value={organizationId} />
             <input name="returnTo" type="hidden" value={returnTo} />
@@ -207,9 +225,16 @@ function MicahDayCard({
                   <button
                     className="rounded-full bg-[#f5b932] px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#ffd36a]"
                     data-micah-control="save"
+                    disabled={saving}
                     type="submit"
                   >
-                    {spanish ? "Guardar pie de foto" : "Save caption"}
+                    {saving
+                      ? spanish
+                        ? "Guardando"
+                        : "Saving"
+                      : spanish
+                        ? "Guardar pie de foto"
+                        : "Save caption"}
                   </button>
                   <button
                     className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
@@ -231,6 +256,16 @@ function MicahDayCard({
                 </button>
               )}
             </div>
+            {saveState.status === "success" ? (
+              <p className="text-xs leading-5 text-[#0b6b3a]" data-micah-save="success">
+                {saveState.message}
+              </p>
+            ) : null}
+            {saveState.status === "error" ? (
+              <p className="text-xs leading-5 text-[#9b1c1c]" data-micah-save="error">
+                {saveState.error}
+              </p>
+            ) : null}
             <p className="text-xs leading-5 text-[#5c6578]">
               {spanish
                 ? "Editar, luego Guardar, deja el pie de foto en esta galería. Copiar / Descargar solamente. Nunca se publica solo."

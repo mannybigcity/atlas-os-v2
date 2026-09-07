@@ -17,11 +17,11 @@ import {
 } from "@/lib/lions-den/micah-starter-week";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { requireUser } from "@/server/auth/guards";
+import { getVerifiedUser, requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
 import { readMicahBrandKit, writeMicahBrandKit } from "./brand.ts";
 import {
-  micahGalleryCaptionReturnPath,
+  micahGalleryCaptionActionResult,
   planMicahGalleryCaptionSave,
   writeMicahGalleryCaptionRow,
   type MicahGalleryCaptionWriter,
@@ -279,7 +279,7 @@ export async function buildMicahWeekFromDesk(
   };
 }
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function supabaseCaptionWriter(
   client: Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>,
@@ -303,63 +303,103 @@ function supabaseCaptionWriter(
   };
 }
 
-async function galleryCaptionWriters(): Promise<MicahGalleryCaptionWriter[]> {
-  const writers: MicahGalleryCaptionWriter[] = [];
+async function galleryCaptionClients() {
+  const clients: Array<
+    Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>
+  > = [];
   try {
-    writers.push(supabaseCaptionWriter(await createClient()));
+    clients.push(await createClient());
   } catch {
-    // Session client is optional when service-role can write.
+    // Session client is optional when service-role can read/write.
   }
   try {
-    writers.push(supabaseCaptionWriter(createAdminClient()));
+    clients.push(createAdminClient());
   } catch {
     // Service-role is the Brand Setup fallback. Trial owners cannot UPDATE drafts under RLS.
   }
-  return writers;
+  return clients;
 }
 
-export async function updateMicahGalleryCaption(formData: FormData) {
+async function loadMicahGalleryDraft(organizationId: string, draftId: string) {
+  for (const client of await galleryCaptionClients()) {
+    try {
+      const { data, error } = await client
+        .from("organization_content_drafts")
+        .select("id, metadata, status")
+        .eq("id", draftId)
+        .eq("organization_id", organizationId)
+        .maybeSingle();
+      if (!error && data) {
+        return { draft: data as { metadata?: Record<string, unknown>; status?: string }, loadError: false };
+      }
+    } catch {
+      // Try the next reader.
+    }
+  }
+  return { draft: null, loadError: true };
+}
+
+async function saveMicahGalleryCaption(
+  formData: FormData,
+): Promise<MicahDeskActionState> {
+  const user = await getVerifiedUser();
+  if (!user) {
+    return micahGalleryCaptionActionResult("signed_out");
+  }
+
   const organizationId = requiredText(formData, "organizationId");
   const draftId = requiredText(formData, "draftId");
-  const returnPath = (status: string) => micahGalleryCaptionReturnPath(formData, status);
-  const { user, organization } = await requireMicahOperator(organizationId);
+  if (!uuidPattern.test(organizationId) || !uuidPattern.test(draftId)) {
+    return micahGalleryCaptionActionResult("edit_invalid");
+  }
 
-  if (!user || !organizationId || !organization) {
-    redirect(returnPath("edit_invalid"));
+  let organization: { id: string; name: string; slug: string } | null = null;
+  for (const client of await galleryCaptionClients()) {
+    try {
+      const { data } = await client
+        .from("organizations")
+        .select("id, name, slug")
+        .eq("id", organizationId)
+        .maybeSingle();
+      if (data) {
+        organization = {
+          id: String(data.id),
+          name: String(data.name ?? ""),
+          slug: String(data.slug ?? ""),
+        };
+        break;
+      }
+    } catch {
+      // Try the next reader.
+    }
+  }
+  if (!organization) {
+    return micahGalleryCaptionActionResult("edit_invalid");
   }
   if (isSisOrganization(organization)) {
-    redirect(returnPath("sis_blocked"));
-  }
-  if (!uuidPattern.test(organizationId) || !uuidPattern.test(draftId)) {
-    redirect(returnPath("edit_invalid"));
+    return micahGalleryCaptionActionResult("sis_blocked");
   }
   if (!isSuperAdminEmail(user.email)) {
     const memberships = await getUserMemberships(user.id);
     const membership = memberships.data.find((item) => item.organization?.id === organizationId);
     if (!membership) {
-      redirect(returnPath("edit_invalid"));
+      return micahGalleryCaptionActionResult("edit_invalid");
     }
   }
 
-  const supabase = await createClient();
-  const { data: draft, error: loadError } = await supabase
-    .from("organization_content_drafts")
-    .select("id, metadata, status")
-    .eq("id", draftId)
-    .eq("organization_id", organizationId)
-    .maybeSingle();
-
+  const loaded = await loadMicahGalleryDraft(organizationId, draftId);
   const planned = planMicahGalleryCaptionSave({
     organization,
-    draft: draft as { metadata?: Record<string, unknown>; status?: string } | null,
-    loadError: Boolean(loadError),
+    draft: loaded.draft,
+    loadError: loaded.loadError,
     caption: formData.get("caption"),
   });
   if (!planned.ok) {
-    redirect(returnPath(planned.reason));
+    return micahGalleryCaptionActionResult(planned.reason);
   }
 
-  const saved = await writeMicahGalleryCaptionRow(await galleryCaptionWriters(), {
+  const writers = (await galleryCaptionClients()).map((client) => supabaseCaptionWriter(client));
+  const saved = await writeMicahGalleryCaptionRow(writers, {
     organizationId,
     draftId,
     caption: planned.patch.caption,
@@ -367,10 +407,25 @@ export async function updateMicahGalleryCaption(formData: FormData) {
     metadata: planned.patch.metadata,
   });
   if (!saved) {
-    redirect(returnPath("edit_failed"));
+    return micahGalleryCaptionActionResult("edit_failed");
   }
 
-  revalidatePath("/client/micah");
-  revalidatePath("/client");
-  redirect(returnPath("edited"));
+  try {
+    revalidatePath("/client/micah");
+    revalidatePath("/client");
+  } catch {
+    // Caption is already stored. Stay on this page instead of crashing.
+  }
+  return micahGalleryCaptionActionResult("edited");
+}
+
+export async function updateMicahGalleryCaption(
+  _previousState: MicahDeskActionState,
+  formData: FormData,
+): Promise<MicahDeskActionState> {
+  try {
+    return await saveMicahGalleryCaption(formData);
+  } catch {
+    return micahGalleryCaptionActionResult("edit_failed");
+  }
 }
