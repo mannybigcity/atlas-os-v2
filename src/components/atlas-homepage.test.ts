@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -53,15 +53,69 @@ test("AFE homepage hero shows live BASIC GROW UNLIMITED prices from the pricing 
 
 test("AFE homepage states Phone AI / Front Desk is later and not live", () => {
   assert.match(homepage, /Phone AI \/ Front Desk is later and not live/);
-  assert.match(homepage, /Leads to review \(HUNTER\)/);
-  assert.match(homepage, /Follow-ups you approve/);
-  assert.match(homepage, /Social drafts \(MICAH gallery\)/);
+  assert.match(homepage, /HUNTER[\s\S]*leads to review/);
+  assert.match(homepage, /you approve then send/);
+  assert.match(homepage, /gallery drafts only/);
   assert.doesNotMatch(homepage, /Phone AI is live|live Phone AI|Front Desk is live/i);
 });
 
-test("AFE homepage keeps PANEL DE CLIENTES and does not sell SIS chrome", () => {
-  assert.match(homepage, /denTitle:\s*"PANEL DE CLIENTES"/);
+test("AFE homepage keeps CLIENT PANEL and does not sell SIS chrome", () => {
+  assert.match(homepage, /denTitle:\s*"CLIENT PANEL"/);
+  assert.match(homepage, /denCta:\s*"ENTER THE CLIENT PANEL"/);
+  assert.match(homepage, /denCta:\s*"ENTRAR AL CLIENT PANEL"/);
+  assert.doesNotMatch(homepage, /PANEL DE CLIENTES|Panel de clientes/);
   assert.doesNotMatch(homepage, /sis-homepage|SisHeader|sis-real|SIS Custom Creations/);
+});
+
+test("AFE homepage #den shows a real Lion’s Den Summary still, not the empty workspace mock", () => {
+  const den = homepage.slice(homepage.indexOf("atlas-den-section"), homepage.indexOf("atlas-stills-section"));
+  const summaryStill = join(root, "public/marketing/desk-stills/lions-den-summary.webp");
+
+  assert.match(den, /DeskSummaryStill/);
+  assert.match(homepage, /lions-den-summary\.webp/);
+  assert.match(homepage, /Desk menu/);
+  assert.match(homepage, /Summary, Prospects, Clients, Follow-up, Calendar, Notes, HUNTER, MICAH/);
+  assert.match(homepage, /Massive Action Maintenance/);
+  assert.match(homepage, /packed Prospects, HUNTER, Follow-up, and MICAH counts/);
+  assert.doesNotMatch(homepage, /Your workspace|Tu espacio de trabajo/);
+  assert.doesNotMatch(homepage, /No recent activity|No hay actividad reciente/);
+  assert.doesNotMatch(homepage, /"Dashboard"|"Leads"|"Conversations"|"Opportunities"/);
+  assert.doesNotMatch(den, /SAMPLE|#SampleDraft|sis-real|SIS Custom Creations|Floor/);
+  assert.equal(existsSync(summaryStill), true, "lions-den-summary.webp is missing");
+  assert.ok(statSync(summaryStill).size > 8_000, "lions-den-summary.webp should be a real still, not an empty placeholder");
+});
+
+test("AFE homepage shows three desk proof stills near #den without selling live send", () => {
+  const stills = homepage.slice(homepage.indexOf("atlas-stills-section"), homepage.indexOf("atlas-family-section"));
+  const stillFiles = [
+    "public/marketing/desk-stills/hunter-review-pile.webp",
+    "public/marketing/desk-stills/follow-up-drafts.webp",
+    "public/marketing/desk-stills/micah-gallery.webp",
+  ];
+
+  assert.match(homepage, /id="desk-stills"/);
+  assert.match(homepage, /See the desk before the trial/);
+  assert.match(homepage, /Teasers only\. The working sample stays behind the 7-day trial/);
+  assert.match(stills, /\{still\.name\} — \{still\.label\}/);
+  assert.match(homepage, /HUNTER[\s\S]*leads to review/);
+  assert.match(homepage, /you approve then send/);
+  assert.match(homepage, /gallery drafts only/);
+  assert.match(homepage, /Review pile/);
+  assert.match(homepage, /Follow-up drafts you approve/);
+  assert.match(homepage, /gallery Copy\/Download/);
+  assert.match(homepage, /hunter-review-pile\.webp/);
+  assert.match(homepage, /follow-up-drafts\.webp/);
+  assert.match(homepage, /micah-gallery\.webp/);
+  assert.doesNotMatch(stills, /auto-send|auto-call|live Front Desk|live social/i);
+  assert.doesNotMatch(stills, /SAMPLE|#SampleDraft|sis-real|SIS Custom Creations|Floor/);
+  assert.doesNotMatch(stills, /HUNTER 7|7 leads|ten finds/i);
+  assert.doesNotMatch(stills, /atlas-button gold/);
+
+  for (const file of stillFiles) {
+    const path = join(root, file);
+    assert.equal(existsSync(path), true, `${file} is missing`);
+    assert.ok(statSync(path).size > 8_000, `${file} should be an optimized still, not an empty placeholder`);
+  }
 });
 
 test("AFE header keeps the official pasted logo and trial as the gold nav CTA", () => {
