@@ -107,20 +107,20 @@ function presentOptionalText(
   return next || null;
 }
 
-function presentLiveDeskMetadata<T extends Record<string, unknown>>(
+function presentLiveDeskMetadata(
   organization: { name?: string | null; slug?: string | null } | null | undefined,
-  metadata: T | null | undefined,
-): T | null | undefined {
+  metadata: Record<string, unknown> | null | undefined,
+): Record<string, unknown> | null | undefined {
   if (!metadata || !isAfeLiveDesk(organization)) return metadata;
 
   let changed = false;
-  const next = { ...metadata };
+  const next: Record<string, unknown> = { ...metadata };
   for (const key of LIVE_DESK_METADATA_TEXT_KEYS) {
     const value = next[key];
     if (typeof value !== "string") continue;
     const presented = presentOptionalText(organization, value);
     if (presented !== value) {
-      next[key] = presented as T[typeof key];
+      next[key] = presented;
       changed = true;
     }
   }
