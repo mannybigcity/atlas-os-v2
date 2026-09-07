@@ -16,12 +16,14 @@ import {
   ATLAS_STAFF_EMPTY_ES,
   ATLAS_STAFF_SAMPLE_EMPTY_EN,
   ATLAS_STAFF_SAMPLE_EMPTY_ES,
+  isAfeLiveDesk,
   lionsDenHubChromeCopy,
   presentLiveDeskDraft,
   presentLiveDeskOpportunity,
   presentLiveDeskReviewItem,
   stripVisibleDemoLabel,
 } from "./live-desk.ts";
+import { prospectPlacesCard } from "./prospect-places.ts";
 
 const migrationPath = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -160,6 +162,122 @@ test("sell-desk review pile and gallery drop SAMPLE DRAFT and fake-location copy
   assert.doesNotMatch(`${draft.title} ${draft.headline} ${draft.caption} ${draft.imageSvg}`, /\bSAMPLE\b/);
   assert.match(String(draft.caption), /Atlas did not post this/);
   assert.match(String(draft.imageSvg), /Download and post yourself/);
+});
+
+test("dense2 Prospects address and MICAH #SampleDraft chrome are stripped on live desks", () => {
+  const dense2 = {
+    name: "MASSIVE ACTION MAINTENANCE",
+    slug: "massive-action-maintenance-e76b87",
+  };
+  const cypressMicah = { name: "Cypress Pest Pros Micah", slug: "cypress-pest-pros-micah" };
+  const sample = { name: SAMPLE_DESK_DISPLAY_NAME, slug: AFE_CRM_DEMO_SLUG };
+  const sis = { name: "SIS Custom Creations", slug: "sis-diy-big-complete-showcase" };
+  const sampleAddress = "SAMPLE address — Cypress, TX. Not a real location. Do not visit or contact.";
+  const sampleCaption =
+    "Monday Monday Motivation is a draft slot only. Copy or download when you are ready. Atlas did not post this to Facebook or Instagram. Nothing is scheduled. #SampleDraft";
+
+  assert.equal(isAfeLiveDesk(dense2), true);
+  assert.equal(isAfeLiveDesk(cypressMicah), true);
+  assert.equal(isAfeLiveDesk(sample), false);
+  assert.equal(isAfeLiveDesk(sis), false);
+
+  const prospect = presentLiveDeskOpportunity(dense2, {
+    name: "Cedar House Care",
+    contactName: "Alex Rivera",
+    researchSummary: "Local maintenance shop. Atlas has not contacted anyone.",
+    nextAction: "Review, then you send to Alex Rivera at Cedar House Care.",
+    metadata: { formatted_address: sampleAddress, business_status: "OPERATIONAL" },
+  });
+  const places = prospectPlacesCard({
+    id: "opp-cedar",
+    organizationId: "org-dense2",
+    name: prospect.name,
+    opportunityType: "customer",
+    stage: "follow_up_queued",
+    fitScore: 0,
+    ownerRole: "client",
+    sourceLabel: null,
+    sourceUrl: null,
+    contactName: prospect.contactName ?? null,
+    contactEmail: null,
+    contactPhone: null,
+    contactSocial: null,
+    researchSummary: prospect.researchSummary ?? "",
+    fitReason: null,
+    nextAction: prospect.nextAction ?? null,
+    nextActionDue: null,
+    metadata: prospect.metadata ?? {},
+    createdAt: "2026-09-07T00:00:00.000Z",
+    updatedAt: "2026-09-07T00:00:00.000Z",
+    events: [],
+  });
+  assert.equal(places.address, "Cypress, TX");
+  assert.doesNotMatch(String(places.address), /SAMPLE address|not a real location|#SampleDraft/i);
+
+  const northMill = presentLiveDeskOpportunity(dense2, {
+    name: "North Mill Upkeep",
+    metadata: { formatted_address: sampleAddress },
+  });
+  assert.equal(northMill.metadata?.formatted_address, "Cypress, TX");
+
+  const lakeshore = presentLiveDeskOpportunity(cypressMicah, {
+    name: "Lakeshore Facilities",
+    metadata: { formatted_address: sampleAddress },
+  });
+  assert.equal(lakeshore.metadata?.formatted_address, "Cypress, TX");
+
+  const draft = presentLiveDeskDraft(dense2, {
+    campaign: "This week's cards",
+    title: "Day 1 · Monday",
+    headline: "Monday Motivation",
+    caption: sampleCaption,
+    metadata: {
+      instagram_caption: `${sampleCaption} SAMPLE DRAFT`,
+      linkedin_caption: "SAMPLE DRAFT gallery card. #SampleDraft",
+    },
+  });
+  const visible = `${draft.caption} ${draft.metadata?.instagram_caption} ${draft.metadata?.linkedin_caption}`;
+  assert.doesNotMatch(visible, /#SampleDraft|SAMPLE DRAFT|draft slot only|not a real location/i);
+  assert.match(String(draft.caption), /Atlas did not post this to Facebook or Instagram/);
+  assert.match(String(draft.caption), /Nothing is scheduled/);
+
+  const sampleProspect = presentLiveDeskOpportunity(sample, {
+    name: "Cedar House Care",
+    metadata: { formatted_address: sampleAddress },
+  });
+  assert.equal(sampleProspect.metadata?.formatted_address, sampleAddress);
+
+  const sampleDraft = presentLiveDeskDraft(sample, {
+    campaign: "Week",
+    title: "Day 1",
+    headline: "Monday",
+    caption: sampleCaption,
+  });
+  assert.match(sampleDraft.caption, /#SampleDraft/);
+
+  const sisProspect = presentLiveDeskOpportunity(sis, {
+    name: "Cedar House Care",
+    metadata: { formatted_address: sampleAddress },
+  });
+  assert.equal(sisProspect.metadata?.formatted_address, sampleAddress);
+
+  const sisDraft = presentLiveDeskDraft(sis, {
+    campaign: "Week",
+    title: "Day 1",
+    headline: "Monday",
+    caption: sampleCaption,
+  });
+  assert.equal(sisDraft.caption, sampleCaption);
+
+  const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
+  const listPage = readFileSync(join(root, "src/app/client/prospects/page.tsx"), "utf8");
+  const detailPage = readFileSync(join(root, "src/app/client/prospects/[id]/page.tsx"), "utf8");
+  const liveDesk = readFileSync(join(root, "src/lib/lions-den/live-desk.ts"), "utf8");
+  assert.match(listPage, /presentLiveDeskOpportunity/);
+  assert.match(detailPage, /presentLiveDeskOpportunity/);
+  assert.match(liveDesk, /formatted_address/);
+  assert.match(liveDesk, /#SampleDraft/);
+  assert.match(liveDesk, /instagram_caption/);
 });
 
 test("MICAH uses the live Lion's Den hub pane and does not restore preview staff copy", () => {
