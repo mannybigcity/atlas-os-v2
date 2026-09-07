@@ -116,24 +116,25 @@ test("MICAH gallery Edit saves captions and never live-posts", () => {
   assert.match(gallery, /data-micah-control="save"/);
   assert.match(gallery, /data-micah-control="cancel"/);
   assert.match(gallery, /data-micah-caption="preview"/);
-  assert.match(gallery, /updateMicahGalleryCaption/);
-  assert.match(gallery, /useActionState/);
+  assert.match(gallery, /\/api\/client\/micah\/caption/);
+  assert.doesNotMatch(gallery, /useActionState/);
+  assert.doesNotMatch(gallery, /updateMicahGalleryCaption/);
   assert.match(gallery, /Copy caption/);
   assert.match(gallery, /Download file/);
   assert.doesNotMatch(gallery, /schedule this post|blotato|Phone AI is live/i);
   assert.match(page, /allowCaptionEdit=\{canShowMicahGalleryEdit\(primaryOrganization\)\}/);
   assert.doesNotMatch(page, /allowCaptionEdit=\{canEditBusinessProfile/);
   assert.match(actions, /export async function updateMicahGalleryCaption/);
-  assert.match(actions, /update_micah_gallery_caption/);
-  assert.match(actions, /writeMicahGalleryCaptionRow/);
-  assert.match(actions, /isSisOrganization/);
-  assert.match(actions, /sis_blocked/);
-  assert.match(actions, /rethrowNextControlFlow/);
-  assert.doesNotMatch(actions, /#draft-/);
-  assert.doesNotMatch(
-    actions.slice(actions.indexOf("async function saveMicahGalleryCaption")),
-    /redirect\(/,
-  );
+  assert.match(actions, /persistMicahGalleryCaption/);
+  const persist = readFileSync(join(root, "server/content-studio/gallery-caption-persist.ts"), "utf8");
+  assert.match(persist, /update_micah_gallery_caption/);
+  assert.match(persist, /writeMicahGalleryCaptionRow/);
+  assert.match(persist, /isSisOrganization/);
+  assert.match(persist, /sis_blocked/);
+  assert.doesNotMatch(persist, /unstable_rethrow/);
+  assert.doesNotMatch(persist, /revalidatePath/);
+  assert.doesNotMatch(persist, /#draft-/);
+  assert.doesNotMatch(persist, /redirect\(/);
   assert.doesNotMatch(actions, /status: "published"/);
   assert.doesNotMatch(actions, /blotato|schedule this post|Phone AI is live/i);
   assert.match(art, /galleryLogoForMicahDesk/);

@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   initialMicahDeskActionState,
   reviewContentDraft,
-  updateMicahGalleryCaption,
+  type MicahDeskActionState,
 } from "@/server/content-studio/actions";
 
 export type MicahWeekGalleryCard = {
@@ -77,10 +77,8 @@ function MicahDayCard({
   const [copied, setCopied] = useState<"facebook" | "instagram" | "linkedin" | null>(
     null,
   );
-  const [saveState, saveAction, saving] = useActionState(
-    updateMicahGalleryCaption,
-    initialMicahDeskActionState,
-  );
+  const [saveState, setSaveState] = useState<MicahDeskActionState>(initialMicahDeskActionState);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setCaption(card.caption);
@@ -91,6 +89,36 @@ function MicahDayCard({
       setEditing(false);
     }
   }, [saveState.status]);
+
+  async function saveCaption(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const response = await fetch("/api/client/micah/caption", {
+        method: "POST",
+        body: new FormData(event.currentTarget),
+        credentials: "same-origin",
+      });
+      const payload = (await response.json().catch(() => null)) as MicahDeskActionState | null;
+      if (payload?.status === "success" || payload?.status === "error") {
+        setSaveState(payload);
+        return;
+      }
+      setSaveState({
+        status: "error",
+        error: "Caption was not saved. Try again from this page. Nothing was posted.",
+        message: null,
+      });
+    } catch {
+      setSaveState({
+        status: "error",
+        error: "Caption was not saved. Try again from this page. Nothing was posted.",
+        message: null,
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
   const source = svgDataUrl(card.imageSvg);
   const fileName = `micah-day-${card.day}-${card.weekday.toLowerCase()}.svg`;
   const canSave = allowCaptionEdit && Boolean(card.id);
@@ -193,7 +221,7 @@ function MicahDayCard({
         <h3 className="mt-2 text-lg font-bold text-slate-950">{card.title}</h3>
 
         {canSave ? (
-          <form action={saveAction} className="mt-4 space-y-3">
+          <form className="mt-4 space-y-3" onSubmit={(event) => void saveCaption(event)}>
             <input name="draftId" type="hidden" value={card.id ?? ""} />
             <input name="organizationId" type="hidden" value={organizationId} />
             <input name="returnTo" type="hidden" value={returnTo} />

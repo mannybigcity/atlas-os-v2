@@ -193,31 +193,69 @@ test("swallowed Next digest errors are the live blank-page crash", async () => {
       ),
     (error) => error === digestError,
   );
+  const soft = await writeMicahGalleryCaptionRow(
+    [
+      async () => {
+        throw digestError;
+      },
+    ],
+    {
+      organizationId: "org-1",
+      draftId: "draft-1",
+      caption: "Monday in Cypress is won before 9am.\n\nCall to book this week's pest check.",
+      status: "ready_for_review",
+      metadata: { no_live_post: true },
+    },
+    { rethrowControlFlow: false },
+  );
+  assert.equal(soft, false);
 });
 
-test("save action never redirects and never swallows Next control-flow errors", () => {
+test("SAVE59 trial caption is a valid gallery edit", () => {
+  const planned = planMicahGalleryCaptionSave({
+    organization: { name: "Cypress Pest Pros Micah", slug: "cypress-pest-pros-micah-a5ddf6" },
+    draft: { metadata: { week_pack: true, week_day: 1, trial_seed: true }, status: "ready_for_review" },
+    caption: "SAVE59 Monday caption sticks — Atlas did not post this.",
+  });
+  assert.equal(planned.ok, true);
+  if (!planned.ok) return;
+  assert.notEqual(planned.patch.status, "published");
+});
+
+test("caption save uses a JSON route and never a useActionState flight", () => {
+  const persist = readFileSync(
+    join(process.cwd(), "src/server/content-studio/gallery-caption-persist.ts"),
+    "utf8",
+  );
+  const route = readFileSync(
+    join(process.cwd(), "src/app/api/client/micah/caption/route.ts"),
+    "utf8",
+  );
   const actions = readFileSync(join(process.cwd(), "src/server/content-studio/actions.ts"), "utf8");
-  const start = actions.indexOf("async function saveMicahGalleryCaption");
-  assert.ok(start >= 0);
-  const savePath = actions.slice(start);
-  assert.match(savePath, /export async function updateMicahGalleryCaption/);
-  assert.match(savePath, /_previousState: MicahDeskActionState/);
-  assert.match(actions, /update_micah_gallery_caption/);
-  assert.match(savePath, /rethrowNextControlFlow/);
-  assert.match(savePath, /unstable_rethrow/);
-  assert.doesNotMatch(savePath, /redirect\(/);
-  assert.doesNotMatch(savePath, /#draft-/);
-  assert.doesNotMatch(savePath, /try \{\s*clients\.push\(await createClient/);
-  assert.doesNotMatch(savePath, /revalidatePath\("\/client"\)/);
-  assert.match(actions, /sis_blocked/);
-  assert.match(actions, /edit_unavailable/);
-  assert.doesNotMatch(actions, /status: "published"/);
+  assert.match(persist, /update_micah_gallery_caption/);
+  assert.match(persist, /p_draft_id/);
+  assert.match(persist, /p_organization_id/);
+  assert.match(persist, /p_caption/);
+  assert.match(persist, /rethrowControlFlow: false/);
+  assert.doesNotMatch(persist, /unstable_rethrow/);
+  assert.doesNotMatch(persist, /revalidatePath/);
+  assert.doesNotMatch(persist, /redirect\(/);
+  assert.doesNotMatch(persist, /getUserMemberships/);
+  assert.match(persist, /sis_blocked/);
+  assert.match(persist, /edit_unavailable/);
+  assert.doesNotMatch(persist, /status: "published"/);
+  assert.match(route, /persistMicahGalleryCaption/);
+  assert.match(route, /Response\.json/);
+  assert.doesNotMatch(route, /redirect\(/);
+  assert.match(actions, /persistMicahGalleryCaption/);
 
   const gallery = readFileSync(join(process.cwd(), "src/components/micah-week-gallery.tsx"), "utf8");
-  assert.match(gallery, /useActionState/);
+  assert.match(gallery, /\/api\/client\/micah\/caption/);
+  assert.match(gallery, /event\.preventDefault/);
   assert.match(gallery, /data-micah-save="success"/);
   assert.match(gallery, /data-micah-save="error"/);
-  assert.doesNotMatch(gallery, /action=\{updateMicahGalleryCaption\}/);
+  assert.doesNotMatch(gallery, /useActionState/);
+  assert.doesNotMatch(gallery, /updateMicahGalleryCaption/);
 
   const migration = readFileSync(
     join(process.cwd(), "supabase/migrations/20260907161500_update_micah_gallery_caption.sql"),

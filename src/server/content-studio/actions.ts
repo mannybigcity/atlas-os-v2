@@ -1,9 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect, unstable_rethrow } from "next/navigation";
-import { isAfeCrmDemoOrganization, isSisOrganization } from "@/lib/client-portal/identity";
-import { isSuperAdminEmail } from "@/lib/env";
+import { redirect } from "next/navigation";
+import { isAfeCrmDemoOrganization } from "@/lib/client-portal/identity";
 import {
   composeMicahWeekBuildPrompt,
   defaultMicahBrandKit,
@@ -15,18 +14,10 @@ import {
   MICAH_NAVY,
   type MicahBrandKit,
 } from "@/lib/lions-den/micah-starter-week";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
-import { getUserMemberships } from "@/server/organizations/queries";
 import { readMicahBrandKit, writeMicahBrandKit } from "./brand.ts";
-import {
-  micahGalleryCaptionActionResult,
-  planMicahGalleryCaptionSave,
-  rethrowNextControlFlow,
-  writeMicahGalleryCaptionRow,
-  type MicahGalleryCaptionWriter,
-} from "./gallery-caption-save.ts";
+import { persistMicahGalleryCaption } from "./gallery-caption-persist.ts";
 import { isMicahDemeanor, resolveMicahDemeanor } from "./gallery-art.ts";
 import { createMicahGalleryDraft } from "./gallery-draft.ts";
 
@@ -280,152 +271,9 @@ export async function buildMicahWeekFromDesk(
   };
 }
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function supabaseCaptionWriter(
-  client: Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>,
-): MicahGalleryCaptionWriter {
-  return async (input) => {
-    const { data, error } = await client
-      .from("organization_content_drafts")
-      .update({
-        caption: input.caption,
-        status: input.status,
-        metadata: input.metadata,
-      })
-      .eq("id", input.draftId)
-      .eq("organization_id", input.organizationId)
-      .select("caption")
-      .maybeSingle();
-    return {
-      caption: data ? String((data as { caption?: string }).caption ?? "") : null,
-      error: error?.message ?? (data ? null : "not_updated"),
-    };
-  };
-}
-
-function supabaseCaptionRpcWriter(
-  client: Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>,
-): MicahGalleryCaptionWriter {
-  return async (input) => {
-    const { data, error } = await client.rpc("update_micah_gallery_caption", {
-      p_draft_id: input.draftId,
-      p_organization_id: input.organizationId,
-      p_caption: input.caption,
-    });
-    return {
-      caption: data == null ? null : String(data),
-      error: error?.message ?? null,
-    };
-  };
-}
-
-async function saveMicahGalleryCaption(
-  formData: FormData,
-): Promise<MicahDeskActionState> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return micahGalleryCaptionActionResult("signed_out");
-  }
-
-  const organizationId = requiredText(formData, "organizationId");
-  const draftId = requiredText(formData, "draftId");
-  if (!uuidPattern.test(organizationId) || !uuidPattern.test(draftId)) {
-    return micahGalleryCaptionActionResult("edit_invalid");
-  }
-
-  const { data: organizationRow } = await supabase
-    .from("organizations")
-    .select("id, name, slug")
-    .eq("id", organizationId)
-    .maybeSingle();
-  const organization = organizationRow
-    ? {
-        id: String(organizationRow.id),
-        name: String(organizationRow.name ?? ""),
-        slug: String(organizationRow.slug ?? ""),
-      }
-    : null;
-  if (!organization) {
-    return micahGalleryCaptionActionResult("edit_invalid");
-  }
-  if (isSisOrganization(organization)) {
-    return micahGalleryCaptionActionResult("sis_blocked");
-  }
-  if (!isSuperAdminEmail(user.email)) {
-    const memberships = await getUserMemberships(user.id);
-    const membership = memberships.data.find((item) => item.organization?.id === organizationId);
-    if (!membership && !memberships.setupRequired) {
-      return micahGalleryCaptionActionResult("edit_invalid");
-    }
-  }
-
-  const { data: draft, error: loadError } = await supabase
-    .from("organization_content_drafts")
-    .select("id, metadata, status")
-    .eq("id", draftId)
-    .eq("organization_id", organizationId)
-    .maybeSingle();
-
-  const planned = planMicahGalleryCaptionSave({
-    organization,
-    draft: draft as { metadata?: Record<string, unknown>; status?: string } | null,
-    loadError: Boolean(loadError),
-    caption: formData.get("caption"),
-  });
-  if (!planned.ok) {
-    return micahGalleryCaptionActionResult(planned.reason);
-  }
-
-  const writers: MicahGalleryCaptionWriter[] = [
-    supabaseCaptionRpcWriter(supabase),
-    supabaseCaptionWriter(supabase),
-  ];
-  let adminWriterReady = false;
-  try {
-    const admin = createAdminClient();
-    writers.push(supabaseCaptionRpcWriter(admin));
-    writers.push(supabaseCaptionWriter(admin));
-    adminWriterReady = true;
-  } catch {
-    // Service-role is optional. The membership RPC is the durable trial-owner write.
-  }
-
-  const saved = await writeMicahGalleryCaptionRow(writers, {
-    organizationId,
-    draftId,
-    caption: planned.patch.caption,
-    status: planned.patch.status,
-    metadata: planned.patch.metadata,
-  });
-  if (!saved) {
-    return micahGalleryCaptionActionResult(
-      adminWriterReady ? "edit_failed" : "edit_unavailable",
-    );
-  }
-
-  try {
-    revalidatePath("/client/micah");
-  } catch (error) {
-    rethrowNextControlFlow(error);
-  }
-  return micahGalleryCaptionActionResult("edited");
-}
-
 export async function updateMicahGalleryCaption(
   _previousState: MicahDeskActionState,
   formData: FormData,
 ): Promise<MicahDeskActionState> {
-  try {
-    return await saveMicahGalleryCaption(formData);
-  } catch (error) {
-    // Next cookies, notFound, and navigation control-flow throw NEXT_ digests.
-    // Swallowing them is the live blank “This page couldn’t load” crash after #58.
-    rethrowNextControlFlow(error);
-    unstable_rethrow(error);
-    return micahGalleryCaptionActionResult("edit_failed");
-  }
+  return persistMicahGalleryCaption(formData);
 }
