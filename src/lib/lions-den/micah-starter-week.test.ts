@@ -135,6 +135,7 @@ test("brand kit metadata is stored, not scraped, and ignored as a gallery card",
 
 test("MICAH desk chrome uses the locked onboarding and day-block copy", () => {
   const desk = readRepo("src/components/micah-week-desk.tsx");
+  const gallery = readRepo("src/components/micah-week-gallery.tsx");
   const studio = readRepo("src/components/client-content-studio.tsx");
   const days = readRepo("src/lib/lions-den/micah-starter-week.ts");
   const pane = readRepo("src/components/lions-den/atlas-staff-pane.tsx");
@@ -156,9 +157,20 @@ test("MICAH desk chrome uses the locked onboarding and day-block copy", () => {
   assert.match(studio, /Appointments stay on Calendar/);
   assert.match(studio, /brandKitForMicahDesk/);
   assert.match(studio, /readMicahWorkspacePrefill/);
+  assert.match(studio, /galleryLogoForMicahDesk/);
+  assert.match(gallery, /updateMicahGalleryCaption/);
+  assert.match(gallery, /data-micah-control="edit"/);
+  assert.match(gallery, /\{spanish \? "Editar" : "Edit"\}/);
+  assert.match(gallery, /Copy caption/);
+  assert.match(gallery, /Download file/);
+  assert.match(gallery, /Copy\/Download only. Never auto-post/);
+  assert.doesNotMatch(gallery, /schedule this post|blotato|auto-post this/i);
   assert.match(readRepo("src/app/client/micah/page.tsx"), /organizationName=\{primaryOrganization.name\}/);
+  assert.match(readRepo("src/app/client/micah/page.tsx"), /allowCaptionEdit/);
+  assert.match(readRepo("src/app/client/micah/page.tsx"), /isSisOrganization/);
   assert.match(readRepo("src/server/content-studio/brand.ts"), /readMicahWorkspacePrefill/);
   assert.match(readRepo("src/server/content-studio/brand.ts"), /inferTrialCityFromName/);
+  assert.match(readRepo("src/server/content-studio/brand.ts"), /trialMicahBrandPrefill/);
   assert.match(readRepo("src/server/content-studio/brand.ts"), /user_metadata\?\.city/);
   assert.doesNotMatch(studio, /Nothing in it yet/);
   assert.doesNotMatch(desk, /schedule this post/i);

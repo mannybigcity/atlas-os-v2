@@ -131,7 +131,7 @@ function createSeedClient(organizations: Array<{ id: string; name: string; slug:
   };
 }
 
-test("trial seed is a denser SAMPLE review pile, 2–3 prospects, 1 closed win, follow-up drafts, and 7 MICAH placeholders", () => {
+test("trial seed is a denser SAMPLE review pile, 2–3 prospects, 1 closed win, follow-up drafts, and 7 MICAH week cards", () => {
   const seed = getTrialLionsDenSeed({
     businessName: "Cypress Pest Pros",
     businessType: "Contractor or home service",
@@ -180,6 +180,11 @@ test("trial seed is a denser SAMPLE review pile, 2–3 prospects, 1 closed win, 
   assert.match(wonClient.contactEmail, /@example\.invalid$/);
   assert.match(wonClient.hunterPlaceId, /^trial-seed-won-/);
   assert.equal(seed.followUps.every((row) => row.daysUntilDue != null), true);
+  const monday = seed.micahSlots[0];
+  assert.match(monday.headline, /pest check/i);
+  assert.match(monday.caption, /Cypress Pest Pros/);
+  assert.match(monday.caption, /Cypress/);
+  assert.match(monday.callToAction, /pest check/i);
 });
 
 test("trial seed never invents phones, SIS, sample desk, Faith, or auto-send", () => {
@@ -203,7 +208,11 @@ test("trial seed never invents phones, SIS, sample desk, Faith, or auto-send", (
   for (const slot of seed.micahSlots) {
     assert.match(slot.caption, /SAMPLE/);
     assert.match(slot.caption, /did not post/);
-    assert.match(slot.callToAction, /Do not expect Atlas to post/i);
+    assert.match(slot.callToAction, /book|call|stop in|save this/i);
+    assert.doesNotMatch(slot.headline, /placeholder/i);
+    assert.match(slot.dayLabel, /DAY \d/);
+    assert.match(slot.imageSvg, /SAMPLE DRAFT/);
+    assert.doesNotMatch(slot.imageSvg, /atlas-logo|atlas-lion/i);
   }
 });
 

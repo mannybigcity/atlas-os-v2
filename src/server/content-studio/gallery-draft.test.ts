@@ -7,7 +7,9 @@ import {
   buildMicahDraftSvg,
   buildMicahWeekPack,
   captionForClipboard,
+  galleryLogoForMicahDesk,
   parseMicahDemeanor,
+  parseMicahGalleryCaptionEdit,
   readOfficialAtlasLogoDataUri,
   resolveMicahDemeanor,
   selectMicahWeekGallery,
@@ -153,6 +155,36 @@ test("week pack can use a client's colors without inventing a logo", () => {
   assert.match(cards[0]?.imageSvg ?? "", /#123456/);
   assert.match(cards[0]?.imageSvg ?? "", /#abcdef/);
   assert.doesNotMatch(cards[0]?.imageSvg ?? "", /<image href="/);
+});
+
+test("client desks do not stamp the AFE lion; DEMO may still paste the official logo", () => {
+  const official = readOfficialAtlasLogoDataUri();
+  assert.equal(
+    galleryLogoForMicahDesk({ demoDesk: false, brandLogo: null }),
+    null,
+  );
+  assert.equal(
+    galleryLogoForMicahDesk({ demoDesk: false, brandLogo: "data:image/png;base64,ZmFrZQ==" }),
+    "data:image/png;base64,ZmFrZQ==",
+  );
+  assert.equal(
+    galleryLogoForMicahDesk({ demoDesk: true, brandLogo: null }),
+    official,
+  );
+  const source = readFileSync(join(process.cwd(), "src/server/content-studio/gallery-draft.ts"), "utf8");
+  assert.match(source, /galleryLogoForMicahDesk/);
+  assert.doesNotMatch(source, /readOfficialAtlasLogoDataUri\(\)/);
+});
+
+test("owner caption edits stay gallery-only and reject auto-post language", () => {
+  const saved = parseMicahGalleryCaptionEdit(
+    "Monday in Cypress is won before 9am.\n\nPut the pest check on the calendar.\n\nCall to book this week's pest check.\n\n#PestCheck #Cypress",
+  );
+  assert.ok(saved);
+  assert.match(String(saved), /pest check/);
+  assert.equal(parseMicahGalleryCaptionEdit("too short"), null);
+  assert.equal(parseMicahGalleryCaptionEdit("Please auto-post this to Facebook with Blotato today."), null);
+  assert.equal(parseMicahGalleryCaptionEdit("Schedule this post for Friday."), null);
 });
 
 test("day-board generate writes one week-pack slot from the prompt theme", () => {

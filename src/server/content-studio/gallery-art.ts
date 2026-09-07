@@ -52,6 +52,15 @@ export function readOfficialAtlasLogoDataUri() {
   }
 }
 
+export function galleryLogoForMicahDesk(input: {
+  demoDesk?: boolean;
+  brandLogo?: string | null;
+}) {
+  if (input.brandLogo?.startsWith("data:image/")) return input.brandLogo;
+  if (input.demoDesk) return readOfficialAtlasLogoDataUri();
+  return null;
+}
+
 function headlineFromPrompt(source: string) {
   const cleaned = source.replace(/^answer:\s*/i, "").replace(/\s+/g, " ").trim();
   const occasion = cleaned.match(/\b(?:for|about)\s+(.+)$/i)?.[1]?.trim();
@@ -187,6 +196,15 @@ export function captionForClipboard(caption: string) {
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
     .trim();
+}
+
+export function parseMicahGalleryCaptionEdit(value: unknown) {
+  const caption = clipCaptionText(String(value ?? ""), 2200);
+  if (caption.length < 10) return null;
+  if (/\b(auto[-\s]?post|schedule this post|blotato|blacktwist)\b/i.test(caption)) {
+    return null;
+  }
+  return caption;
 }
 
 export type MicahWeekCard = {

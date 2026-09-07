@@ -1,4 +1,3 @@
-import { MICAH_STARTER_DAYS } from "./micah-starter-week.ts";
 import { isExcludedTrialInboxOrganization } from "./trial-inbox.ts";
 import {
   inferTrialDeskMarket,
@@ -8,12 +7,20 @@ import {
   type TrialDeskVertical,
 } from "./trial-desk-market.ts";
 import {
+  TRIAL_MICAH_WEEK_KEY,
+  getTrialMicahSeedSlots,
+  trialMicahSeedSlots,
+  type TrialMicahSeedSlot,
+} from "./trial-micah-week.ts";
+import {
   isAfeCrmDemoOrganization,
   isSisOrganization,
 } from "../client-portal/identity.ts";
 
 export const TRIAL_DESK_SEED_KIND = "afe_trial_lions_den_seed";
-export const TRIAL_DESK_SEED_WEEK_KEY = "trial-seed-week";
+export const TRIAL_DESK_SEED_WEEK_KEY = TRIAL_MICAH_WEEK_KEY;
+export { getTrialMicahSeedSlots, trialMicahSeedSlots };
+export type { TrialMicahSeedSlot };
 
 export type TrialHunterSeedFind = {
   seedKey: string;
@@ -48,19 +55,6 @@ export type TrialClientSeed = {
   note: string;
   hunterPlaceId: string;
   primaryType: string;
-};
-
-export type TrialMicahSeedSlot = {
-  day: number;
-  weekday: string;
-  theme: string;
-  slot: string;
-  title: string;
-  headline: string;
-  supportingText: string;
-  caption: string;
-  callToAction: string;
-  imageSvg: string;
 };
 
 export type TrialDeskOrganization = {
@@ -318,37 +312,6 @@ export function trialHunterSeedPlaceIds(marketInput: TrialDeskMarketInput = {}) 
   return getTrialHunterSeedFinds(marketInput).map((find) => find.placeId);
 }
 
-export function getTrialMicahSeedSlots(): TrialMicahSeedSlot[] {
-  return MICAH_STARTER_DAYS.map((item) => {
-    const slot = `${TRIAL_DESK_SEED_WEEK_KEY}-d${item.day}`;
-    const title = `SAMPLE · Day ${item.day} · ${item.weekday}`;
-    const headline = `${item.theme} · SAMPLE placeholder`;
-    const supportingText = "Gallery placeholder. Download and post it yourself.";
-    const caption = [
-      "SAMPLE gallery placeholder.",
-      `${item.weekday} ${item.theme} is a draft slot only. Copy or download when you are ready.`,
-      "Atlas did not post this to Facebook or Instagram. Nothing is scheduled.",
-      "#SampleDraft",
-    ].join("\n\n");
-    return {
-      day: item.day,
-      weekday: item.weekday,
-      theme: item.theme,
-      slot,
-      title,
-      headline,
-      supportingText,
-      caption,
-      callToAction: "Download this draft. Do not expect Atlas to post it.",
-      imageSvg: trialMicahPlaceholderSvg(headline, item.theme),
-    };
-  });
-}
-
-export function trialMicahSeedSlots() {
-  return getTrialMicahSeedSlots().map((item) => item.slot);
-}
-
 export function getTrialLionsDenSeed(marketInput: TrialDeskMarketInput = {}): TrialLionsDenSeed {
   const market = inferTrialDeskMarket(marketInput);
   const prospects = getTrialProspectSeeds(market);
@@ -357,7 +320,7 @@ export function getTrialLionsDenSeed(marketInput: TrialDeskMarketInput = {}): Tr
     prospects,
     followUps: prospects.filter((row) => row.daysUntilDue != null),
     clients: getTrialClientSeeds(market),
-    micahSlots: getTrialMicahSeedSlots(),
+    micahSlots: getTrialMicahSeedSlots(market),
     market,
   };
 }
@@ -370,20 +333,6 @@ export function trialDeskSeedWriteTables() {
     "organization_content_drafts",
     "organization_content_draft_events",
   ] as const;
-}
-
-function trialMicahPlaceholderSvg(headline: string, theme: string) {
-  const safeHeadline = escapeXml(headline);
-  const safeTheme = escapeXml(theme);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><rect width="1080" height="1080" fill="#071b42"/><text x="80" y="160" fill="#f5b932" font-size="34" font-family="Arial,sans-serif">SAMPLE DRAFT</text><text x="80" y="280" fill="#d8c27a" font-size="28" font-family="Arial,sans-serif">${safeTheme}</text><text x="80" y="420" fill="#ffffff" font-size="52" font-family="Arial,sans-serif">${safeHeadline}</text><text x="80" y="980" fill="#fff8e6" font-size="26" font-family="Arial,sans-serif">Download and post yourself. Atlas did not post this.</text></svg>`;
-}
-
-function escapeXml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
@@ -400,7 +349,7 @@ export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
     throw new Error("Trial seed should include exactly one SAMPLE closed client win.");
   }
   if (seed.micahSlots.length !== 7) {
-    throw new Error("Trial seed must include one MICAH placeholder for each weekday.");
+    throw new Error("Trial seed must include one MICAH week card for each weekday.");
   }
 
   const blob = JSON.stringify(seed);
@@ -472,11 +421,20 @@ export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
   }
 
   for (const slot of seed.micahSlots) {
-    if (!/\bSAMPLE\b/.test(slot.title) || !/\bSAMPLE\b/.test(slot.caption)) {
+    if (!/\bSAMPLE\b/.test(slot.title) || !/\bSAMPLE\b/.test(`${slot.caption} ${slot.imageSvg}`)) {
       throw new Error(`MICAH trial slot must be labeled SAMPLE: ${slot.title}`);
     }
     if (!/did not post|not posted|nothing is scheduled/i.test(slot.caption)) {
       throw new Error(`MICAH trial slot must stay gallery-only: ${slot.title}`);
+    }
+    if (/placeholder/i.test(`${slot.headline} ${slot.caption}`)) {
+      throw new Error(`MICAH trial slot must be real SAMPLE copy, not a placeholder: ${slot.title}`);
+    }
+    if (!slot.dayLabel || !slot.callToAction.trim()) {
+      throw new Error(`MICAH trial slot needs a day label and CTA: ${slot.title}`);
+    }
+    if (/atlas-logo|atlas-lion|sis custom creations/i.test(slot.imageSvg)) {
+      throw new Error(`MICAH trial slot must not stamp the AFE lion or SIS chrome: ${slot.title}`);
     }
   }
 }
@@ -880,7 +838,7 @@ export async function applyTrialLionsDenSeed(
       organization_id: organization!.id,
       draft_date: draftDate,
       slot: item.slot,
-      campaign: "SAMPLE week placeholders",
+      campaign: "SAMPLE week pack",
       title: item.title,
       headline: item.headline,
       supporting_text: item.supportingText,
@@ -899,12 +857,17 @@ export async function applyTrialLionsDenSeed(
         week_day: item.day,
         weekday: item.weekday,
         week_theme: item.theme,
+        day_label: item.dayLabel,
         micah_demeanor: "straight",
         faith_language: false,
         demo_labeled: true,
-        company_name: "",
+        company_name: seed.market.businessName,
+        instagram_caption: item.instagramCaption,
+        linkedin_caption: item.linkedinCaption,
+        kingdom_cta: item.callToAction,
         no_live_post: true,
         no_scheduler: true,
+        no_atlas_logo: true,
         requested_by: input.userId || null,
       },
     }));
@@ -929,7 +892,7 @@ export async function applyTrialLionsDenSeed(
             draft_id: row.id,
             organization_id: organization!.id,
             event_type: "created",
-            note: "SAMPLE MICAH week placeholder. Gallery draft only. Atlas did not post this.",
+            note: "SAMPLE MICAH week pack. Gallery draft only. Atlas did not post this.",
             actor_user_id: input.userId || null,
             actor_label: "MICAH",
           })),
