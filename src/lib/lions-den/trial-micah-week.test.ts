@@ -124,10 +124,11 @@ test("MICAH gallery Edit saves captions and never live-posts", () => {
   assert.match(page, /allowCaptionEdit=\{canShowMicahGalleryEdit\(primaryOrganization\)\}/);
   assert.doesNotMatch(page, /allowCaptionEdit=\{canEditBusinessProfile/);
   assert.match(actions, /export async function updateMicahGalleryCaption/);
-  assert.match(actions, /createAdminClient/);
+  assert.match(actions, /update_micah_gallery_caption/);
   assert.match(actions, /writeMicahGalleryCaptionRow/);
   assert.match(actions, /isSisOrganization/);
   assert.match(actions, /sis_blocked/);
+  assert.match(actions, /rethrowNextControlFlow/);
   assert.doesNotMatch(actions, /#draft-/);
   assert.doesNotMatch(
     actions.slice(actions.indexOf("async function saveMicahGalleryCaption")),

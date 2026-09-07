@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { isAfeCrmDemoOrganization, isSisOrganization } from "@/lib/client-portal/identity";
 import { isSuperAdminEmail } from "@/lib/env";
 import {
@@ -17,12 +17,13 @@ import {
 } from "@/lib/lions-den/micah-starter-week";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { getVerifiedUser, requireUser } from "@/server/auth/guards";
+import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
 import { readMicahBrandKit, writeMicahBrandKit } from "./brand.ts";
 import {
   micahGalleryCaptionActionResult,
   planMicahGalleryCaptionSave,
+  rethrowNextControlFlow,
   writeMicahGalleryCaptionRow,
   type MicahGalleryCaptionWriter,
 } from "./gallery-caption-save.ts";
@@ -303,46 +304,29 @@ function supabaseCaptionWriter(
   };
 }
 
-async function galleryCaptionClients() {
-  const clients: Array<
-    Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>
-  > = [];
-  try {
-    clients.push(await createClient());
-  } catch {
-    // Session client is optional when service-role can read/write.
-  }
-  try {
-    clients.push(createAdminClient());
-  } catch {
-    // Service-role is the Brand Setup fallback. Trial owners cannot UPDATE drafts under RLS.
-  }
-  return clients;
-}
-
-async function loadMicahGalleryDraft(organizationId: string, draftId: string) {
-  for (const client of await galleryCaptionClients()) {
-    try {
-      const { data, error } = await client
-        .from("organization_content_drafts")
-        .select("id, metadata, status")
-        .eq("id", draftId)
-        .eq("organization_id", organizationId)
-        .maybeSingle();
-      if (!error && data) {
-        return { draft: data as { metadata?: Record<string, unknown>; status?: string }, loadError: false };
-      }
-    } catch {
-      // Try the next reader.
-    }
-  }
-  return { draft: null, loadError: true };
+function supabaseCaptionRpcWriter(
+  client: Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>,
+): MicahGalleryCaptionWriter {
+  return async (input) => {
+    const { data, error } = await client.rpc("update_micah_gallery_caption", {
+      p_draft_id: input.draftId,
+      p_organization_id: input.organizationId,
+      p_caption: input.caption,
+    });
+    return {
+      caption: data == null ? null : String(data),
+      error: error?.message ?? null,
+    };
+  };
 }
 
 async function saveMicahGalleryCaption(
   formData: FormData,
 ): Promise<MicahDeskActionState> {
-  const user = await getVerifiedUser();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     return micahGalleryCaptionActionResult("signed_out");
   }
@@ -353,26 +337,18 @@ async function saveMicahGalleryCaption(
     return micahGalleryCaptionActionResult("edit_invalid");
   }
 
-  let organization: { id: string; name: string; slug: string } | null = null;
-  for (const client of await galleryCaptionClients()) {
-    try {
-      const { data } = await client
-        .from("organizations")
-        .select("id, name, slug")
-        .eq("id", organizationId)
-        .maybeSingle();
-      if (data) {
-        organization = {
-          id: String(data.id),
-          name: String(data.name ?? ""),
-          slug: String(data.slug ?? ""),
-        };
-        break;
+  const { data: organizationRow } = await supabase
+    .from("organizations")
+    .select("id, name, slug")
+    .eq("id", organizationId)
+    .maybeSingle();
+  const organization = organizationRow
+    ? {
+        id: String(organizationRow.id),
+        name: String(organizationRow.name ?? ""),
+        slug: String(organizationRow.slug ?? ""),
       }
-    } catch {
-      // Try the next reader.
-    }
-  }
+    : null;
   if (!organization) {
     return micahGalleryCaptionActionResult("edit_invalid");
   }
@@ -382,23 +358,42 @@ async function saveMicahGalleryCaption(
   if (!isSuperAdminEmail(user.email)) {
     const memberships = await getUserMemberships(user.id);
     const membership = memberships.data.find((item) => item.organization?.id === organizationId);
-    if (!membership) {
+    if (!membership && !memberships.setupRequired) {
       return micahGalleryCaptionActionResult("edit_invalid");
     }
   }
 
-  const loaded = await loadMicahGalleryDraft(organizationId, draftId);
+  const { data: draft, error: loadError } = await supabase
+    .from("organization_content_drafts")
+    .select("id, metadata, status")
+    .eq("id", draftId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
   const planned = planMicahGalleryCaptionSave({
     organization,
-    draft: loaded.draft,
-    loadError: loaded.loadError,
+    draft: draft as { metadata?: Record<string, unknown>; status?: string } | null,
+    loadError: Boolean(loadError),
     caption: formData.get("caption"),
   });
   if (!planned.ok) {
     return micahGalleryCaptionActionResult(planned.reason);
   }
 
-  const writers = (await galleryCaptionClients()).map((client) => supabaseCaptionWriter(client));
+  const writers: MicahGalleryCaptionWriter[] = [
+    supabaseCaptionRpcWriter(supabase),
+    supabaseCaptionWriter(supabase),
+  ];
+  let adminWriterReady = false;
+  try {
+    const admin = createAdminClient();
+    writers.push(supabaseCaptionRpcWriter(admin));
+    writers.push(supabaseCaptionWriter(admin));
+    adminWriterReady = true;
+  } catch {
+    // Service-role is optional. The membership RPC is the durable trial-owner write.
+  }
+
   const saved = await writeMicahGalleryCaptionRow(writers, {
     organizationId,
     draftId,
@@ -407,14 +402,15 @@ async function saveMicahGalleryCaption(
     metadata: planned.patch.metadata,
   });
   if (!saved) {
-    return micahGalleryCaptionActionResult("edit_failed");
+    return micahGalleryCaptionActionResult(
+      adminWriterReady ? "edit_failed" : "edit_unavailable",
+    );
   }
 
   try {
     revalidatePath("/client/micah");
-    revalidatePath("/client");
-  } catch {
-    // Caption is already stored. Stay on this page instead of crashing.
+  } catch (error) {
+    rethrowNextControlFlow(error);
   }
   return micahGalleryCaptionActionResult("edited");
 }
@@ -425,7 +421,11 @@ export async function updateMicahGalleryCaption(
 ): Promise<MicahDeskActionState> {
   try {
     return await saveMicahGalleryCaption(formData);
-  } catch {
+  } catch (error) {
+    // Next cookies, notFound, and navigation control-flow throw NEXT_ digests.
+    // Swallowing them is the live blank “This page couldn’t load” crash after #58.
+    rethrowNextControlFlow(error);
+    unstable_rethrow(error);
     return micahGalleryCaptionActionResult("edit_failed");
   }
 }
