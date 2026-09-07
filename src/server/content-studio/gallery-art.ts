@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { isSisOrganization } from "../../lib/client-portal/identity.ts";
 import {
   MICAH_GOLD,
   MICAH_NAVY,
@@ -205,6 +206,39 @@ export function parseMicahGalleryCaptionEdit(value: unknown) {
     return null;
   }
   return caption;
+}
+
+export function canShowMicahGalleryEdit(
+  organization?: { name?: string | null; slug?: string | null } | null,
+) {
+  if (!organization) return false;
+  return !isSisOrganization(organization);
+}
+
+export function buildMicahGalleryCaptionUpdate(input: {
+  metadata: Record<string, unknown>;
+  caption: unknown;
+  status?: string | null;
+  editedAt?: string;
+}): {
+  caption: string;
+  status: string;
+  metadata: Record<string, unknown>;
+} | null {
+  const caption = parseMicahGalleryCaptionEdit(input.caption);
+  if (!caption) return null;
+
+  const currentStatus = String(input.status ?? "ready_for_review");
+  return {
+    caption,
+    status: currentStatus === "published" ? "ready_for_review" : currentStatus,
+    metadata: {
+      ...input.metadata,
+      owner_edited_at: input.editedAt ?? new Date().toISOString(),
+      no_live_post: true,
+      no_scheduler: true,
+    },
+  };
 }
 
 export type MicahWeekCard = {

@@ -18,7 +18,11 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
 import { readMicahBrandKit, writeMicahBrandKit } from "./brand.ts";
-import { isMicahDemeanor, parseMicahGalleryCaptionEdit, resolveMicahDemeanor } from "./gallery-art.ts";
+import {
+  buildMicahGalleryCaptionUpdate,
+  isMicahDemeanor,
+  resolveMicahDemeanor,
+} from "./gallery-art.ts";
 import { createMicahGalleryDraft } from "./gallery-draft.ts";
 
 function requiredText(formData: FormData, name: string) {
@@ -281,7 +285,6 @@ function micahGalleryReturnPath(status: string, draftId?: string) {
 export async function updateMicahGalleryCaption(formData: FormData) {
   const organizationId = requiredText(formData, "organizationId");
   const draftId = requiredText(formData, "draftId");
-  const caption = parseMicahGalleryCaptionEdit(formData.get("caption"));
   const { user, organization } = await requireMicahOperator(organizationId);
 
   if (!user || !organizationId || !organization) {
@@ -290,8 +293,8 @@ export async function updateMicahGalleryCaption(formData: FormData) {
   if (isSisOrganization(organization)) {
     redirect(micahGalleryReturnPath("sis_blocked"));
   }
-  if (!uuidPattern.test(draftId) || !caption) {
-    redirect(micahGalleryReturnPath("edit_invalid", uuidPattern.test(draftId) ? draftId : undefined));
+  if (!uuidPattern.test(draftId)) {
+    redirect(micahGalleryReturnPath("edit_invalid"));
   }
 
   const supabase = await createClient();
@@ -310,22 +313,21 @@ export async function updateMicahGalleryCaption(formData: FormData) {
     redirect(micahGalleryReturnPath("edit_missing", draftId));
   }
 
-  const nextStatus =
-    String((draft as { status?: string }).status) === "published"
-      ? "ready_for_review"
-      : String((draft as { status?: string }).status ?? "ready_for_review");
+  const patch = buildMicahGalleryCaptionUpdate({
+    metadata,
+    caption: formData.get("caption"),
+    status: (draft as { status?: string }).status,
+  });
+  if (!patch) {
+    redirect(micahGalleryReturnPath("edit_invalid", draftId));
+  }
 
   const { error } = await supabase
     .from("organization_content_drafts")
     .update({
-      caption,
-      status: nextStatus,
-      metadata: {
-        ...metadata,
-        owner_edited_at: new Date().toISOString(),
-        no_live_post: true,
-        no_scheduler: true,
-      },
+      caption: patch.caption,
+      status: patch.status,
+      metadata: patch.metadata,
     })
     .eq("id", draftId)
     .eq("organization_id", organizationId);

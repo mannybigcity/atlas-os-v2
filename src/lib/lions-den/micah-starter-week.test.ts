@@ -160,14 +160,22 @@ test("MICAH desk chrome uses the locked onboarding and day-block copy", () => {
   assert.match(studio, /galleryLogoForMicahDesk/);
   assert.match(gallery, /updateMicahGalleryCaption/);
   assert.match(gallery, /data-micah-control="edit"/);
+  assert.match(gallery, /data-micah-control="save"/);
+  assert.match(gallery, /data-micah-control="cancel"/);
+  assert.match(gallery, /data-micah-caption="preview"/);
   assert.match(gallery, /\{spanish \? "Editar" : "Edit"\}/);
+  assert.match(gallery, /Save caption/);
+  assert.match(gallery, /setEditing\(true\)/);
   assert.match(gallery, /Copy caption/);
   assert.match(gallery, /Download file/);
   assert.match(gallery, /Copy\/Download only. Never auto-post/);
   assert.doesNotMatch(gallery, /schedule this post|blotato|auto-post this/i);
   assert.match(readRepo("src/app/client/micah/page.tsx"), /organizationName=\{primaryOrganization.name\}/);
-  assert.match(readRepo("src/app/client/micah/page.tsx"), /allowCaptionEdit/);
-  assert.match(readRepo("src/app/client/micah/page.tsx"), /isSisOrganization/);
+  assert.match(readRepo("src/app/client/micah/page.tsx"), /allowCaptionEdit=\{canShowMicahGalleryEdit\(primaryOrganization\)\}/);
+  assert.doesNotMatch(
+    readRepo("src/app/client/micah/page.tsx"),
+    /allowCaptionEdit=\{canEditBusinessProfile/,
+  );
   assert.match(readRepo("src/server/content-studio/brand.ts"), /readMicahWorkspacePrefill/);
   assert.match(readRepo("src/server/content-studio/brand.ts"), /inferTrialCityFromName/);
   assert.match(readRepo("src/server/content-studio/brand.ts"), /trialMicahBrandPrefill/);
