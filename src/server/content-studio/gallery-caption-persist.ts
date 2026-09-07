@@ -11,8 +11,26 @@ import {
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function requiredText(formData: FormData, name: string) {
-  return String(formData.get(name) ?? "").trim();
+export type MicahGalleryCaptionInput = {
+  organizationId?: unknown;
+  draftId?: unknown;
+  caption?: unknown;
+};
+
+function readCaptionInput(input: FormData | MicahGalleryCaptionInput): MicahGalleryCaptionInput {
+  if (typeof FormData !== "undefined" && input instanceof FormData) {
+    return {
+      organizationId: input.get("organizationId"),
+      draftId: input.get("draftId"),
+      caption: input.get("caption"),
+    };
+  }
+  const fields = input as MicahGalleryCaptionInput;
+  return {
+    organizationId: fields.organizationId,
+    draftId: fields.draftId,
+    caption: fields.caption,
+  };
 }
 
 function captionRpcWriter(
@@ -53,8 +71,9 @@ function captionTableWriter(
   };
 }
 
-export async function persistMicahGalleryCaption(formData: FormData) {
+export async function persistMicahGalleryCaption(input: FormData | MicahGalleryCaptionInput) {
   try {
+    const fields = readCaptionInput(input);
     const supabase = await createClient();
     const {
       data: { user },
@@ -63,8 +82,8 @@ export async function persistMicahGalleryCaption(formData: FormData) {
       return logCaptionSave(micahGalleryCaptionActionResult("signed_out"), "none", false);
     }
 
-    const organizationId = requiredText(formData, "organizationId");
-    const draftId = requiredText(formData, "draftId");
+    const organizationId = String(fields.organizationId ?? "").trim();
+    const draftId = String(fields.draftId ?? "").trim();
     if (!uuidPattern.test(organizationId) || !uuidPattern.test(draftId)) {
       return logCaptionSave(micahGalleryCaptionActionResult("edit_invalid"), "none", false);
     }
@@ -112,7 +131,7 @@ export async function persistMicahGalleryCaption(formData: FormData) {
       organization,
       draft: draft as { metadata?: Record<string, unknown>; status?: string } | null,
       loadError: Boolean(loadError),
-      caption: formData.get("caption"),
+      caption: fields.caption,
     });
     if (!planned.ok) {
       return logCaptionSave(micahGalleryCaptionActionResult(planned.reason), "none", false);

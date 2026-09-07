@@ -117,8 +117,13 @@ test("MICAH gallery Edit saves captions and never live-posts", () => {
   assert.match(gallery, /data-micah-control="cancel"/);
   assert.match(gallery, /data-micah-caption="preview"/);
   assert.match(gallery, /\/api\/client\/micah\/caption/);
+  assert.match(gallery, /data-micah-save-path="json-button"/);
   assert.doesNotMatch(gallery, /useActionState/);
   assert.doesNotMatch(gallery, /updateMicahGalleryCaption/);
+  assert.doesNotMatch(
+    gallery.slice(gallery.indexOf("data-micah-save-path"), gallery.indexOf("data-micah-save=\"success\"")),
+    /<form|type="submit"/,
+  );
   assert.match(gallery, /Copy caption/);
   assert.match(gallery, /Download file/);
   assert.doesNotMatch(gallery, /schedule this post|blotato|Phone AI is live/i);

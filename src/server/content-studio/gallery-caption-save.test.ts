@@ -246,12 +246,22 @@ test("caption save uses a JSON route and never a useActionState flight", () => {
   assert.doesNotMatch(persist, /status: "published"/);
   assert.match(route, /persistMicahGalleryCaption/);
   assert.match(route, /Response\.json/);
+  assert.match(route, /application\/json/);
   assert.doesNotMatch(route, /redirect\(/);
   assert.match(actions, /persistMicahGalleryCaption/);
 
   const gallery = readFileSync(join(process.cwd(), "src/components/micah-week-gallery.tsx"), "utf8");
+  const captionEditor = gallery.slice(
+    gallery.indexOf('data-micah-save-path="json-button"'),
+    gallery.indexOf("data-micah-save=\"success\""),
+  );
   assert.match(gallery, /\/api\/client\/micah\/caption/);
-  assert.match(gallery, /event\.preventDefault/);
+  assert.match(gallery, /data-micah-save-path="json-button"/);
+  assert.match(gallery, /"content-type": "application\/json"/);
+  assert.match(captionEditor, /type="button"/);
+  assert.doesNotMatch(captionEditor, /type="submit"/);
+  assert.doesNotMatch(captionEditor, /<form/);
+  assert.doesNotMatch(gallery, /event\.preventDefault/);
   assert.match(gallery, /data-micah-save="success"/);
   assert.match(gallery, /data-micah-save="error"/);
   assert.doesNotMatch(gallery, /useActionState/);

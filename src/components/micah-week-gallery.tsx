@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import {
   initialMicahDeskActionState,
   reviewContentDraft,
@@ -90,14 +90,22 @@ function MicahDayCard({
     }
   }, [saveState.status]);
 
-  async function saveCaption(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function saveCaption() {
+    if (!card.id) return;
     setSaving(true);
     try {
       const response = await fetch("/api/client/micah/caption", {
         method: "POST",
-        body: new FormData(event.currentTarget),
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json",
+        },
         credentials: "same-origin",
+        body: JSON.stringify({
+          organizationId,
+          draftId: card.id,
+          caption,
+        }),
       });
       const payload = (await response.json().catch(() => null)) as MicahDeskActionState | null;
       if (payload?.status === "success" || payload?.status === "error") {
@@ -221,10 +229,7 @@ function MicahDayCard({
         <h3 className="mt-2 text-lg font-bold text-slate-950">{card.title}</h3>
 
         {canSave ? (
-          <form className="mt-4 space-y-3" onSubmit={(event) => void saveCaption(event)}>
-            <input name="draftId" type="hidden" value={card.id ?? ""} />
-            <input name="organizationId" type="hidden" value={organizationId} />
-            <input name="returnTo" type="hidden" value={returnTo} />
+          <div className="mt-4 space-y-3" data-micah-save-path="json-button">
             <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               {spanish
                 ? "Facebook (gancho, valor, un llamado)"
@@ -233,7 +238,6 @@ function MicahDayCard({
             {editing ? (
               <textarea
                 className="mt-2 min-h-36 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#071b42] focus:ring-4 focus:ring-[#fff8e6]"
-                name="caption"
                 onChange={(event) => setCaption(event.target.value)}
                 value={caption}
               />
@@ -254,7 +258,8 @@ function MicahDayCard({
                     className="rounded-full bg-[#f5b932] px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#ffd36a]"
                     data-micah-control="save"
                     disabled={saving}
-                    type="submit"
+                    onClick={() => void saveCaption()}
+                    type="button"
                   >
                     {saving
                       ? spanish
@@ -299,7 +304,7 @@ function MicahDayCard({
                 ? "Editar, luego Guardar, deja el pie de foto en esta galería. Copiar / Descargar solamente. Nunca se publica solo."
                 : "Edit, then Save, stores the caption in this gallery. Copy/Download only. Never auto-post."}
             </p>
-          </form>
+          </div>
         ) : (
           <div className="mt-4 space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
