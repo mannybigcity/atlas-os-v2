@@ -4,6 +4,7 @@ import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-scre
 import { LionsDenProspectDetail } from "@/components/lions-den/lions-den-prospect-detail";
 import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
+import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getOrganizationOpportunity } from "@/server/opportunities/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
@@ -54,7 +55,7 @@ export default async function ProspectDetailPage({
           workspace.previewOrgSlug || undefined,
           workspace.selectedWorkspaceSlug || undefined,
         )}
-        prospect={result.data}
+        prospect={presentLiveDeskOpportunity(organization, result.data)}
         spanish={language === "es"}
       />
     </LionsDenBoardScreen>

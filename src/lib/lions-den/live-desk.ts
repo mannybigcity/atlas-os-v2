@@ -52,11 +52,22 @@ function tidyPresentedText(value: string) {
     .trim();
 }
 
+const LIVE_DESK_METADATA_TEXT_KEYS = [
+  "formatted_address",
+  "business_status",
+  "instagram_caption",
+  "linkedin_caption",
+] as const;
+
 export function stripVisibleSampleChrome(value: string | null | undefined): string {
   return tidyPresentedText(
     String(value ?? "")
+      .replace(/#SampleDraft\b/gi, "")
+      .replace(/\bSampleDraft\b/gi, "")
       .replace(/\bSAMPLE\s+DRAFT\b/gi, "")
       .replace(/\bSAMPLE\s+placeholder\b/gi, "")
+      .replace(/\bis a draft slot only\.?/gi, "")
+      .replace(/\bCopy or download when you are ready\.?/gi, "")
       .replace(/SAMPLE address — ([^.]+)\.\s*Not a real location\.\s*Do not visit or contact\./gi, "$1")
       .replace(/SAMPLE trial review pile — ([^—]+) — no live Places search/gi, "$1")
       .replace(/SAMPLE accepted find — ([^—]+) — no live Places search/gi, "$1")
@@ -96,6 +107,26 @@ function presentOptionalText(
   return next || null;
 }
 
+function presentLiveDeskMetadata<T extends Record<string, unknown>>(
+  organization: { name?: string | null; slug?: string | null } | null | undefined,
+  metadata: T | null | undefined,
+): T | null | undefined {
+  if (!metadata || !isAfeLiveDesk(organization)) return metadata;
+
+  let changed = false;
+  const next = { ...metadata };
+  for (const key of LIVE_DESK_METADATA_TEXT_KEYS) {
+    const value = next[key];
+    if (typeof value !== "string") continue;
+    const presented = presentOptionalText(organization, value);
+    if (presented !== value) {
+      next[key] = presented as T[typeof key];
+      changed = true;
+    }
+  }
+  return changed ? next : metadata;
+}
+
 export function presentLiveDeskOpportunity<
   T extends {
     name: string;
@@ -105,6 +136,8 @@ export function presentLiveDeskOpportunity<
     researchSummary?: string;
     fitReason?: string | null;
     nextAction?: string | null;
+    formattedAddress?: string | null;
+    metadata?: Record<string, unknown> | null;
     events?: Array<{ summary: string; body: string | null }>;
   },
 >(
@@ -123,6 +156,12 @@ export function presentLiveDeskOpportunity<
       presentLiveDeskText(organization, opportunity.researchSummary) || opportunity.researchSummary,
     fitReason: presentOptionalText(organization, opportunity.fitReason),
     nextAction: presentOptionalText(organization, opportunity.nextAction),
+    ...(opportunity.formattedAddress !== undefined
+      ? { formattedAddress: presentOptionalText(organization, opportunity.formattedAddress) }
+      : {}),
+    ...(opportunity.metadata
+      ? { metadata: presentLiveDeskMetadata(organization, opportunity.metadata) }
+      : {}),
     events: (opportunity.events ?? []).map((event) => ({
       ...event,
       summary: presentLiveDeskText(organization, event.summary) || event.summary,
@@ -153,6 +192,7 @@ export function presentLiveDeskDraft<
     caption: string;
     callToAction?: string | null;
     imageSvg?: string | null;
+    metadata?: Record<string, unknown> | null;
     events?: Array<{ note: string | null; actorLabel: string }>;
   },
 >(
@@ -170,6 +210,7 @@ export function presentLiveDeskDraft<
     caption: presentLiveDeskText(organization, draft.caption) || draft.caption,
     callToAction: presentOptionalText(organization, draft.callToAction),
     imageSvg: presentOptionalText(organization, draft.imageSvg),
+    ...(draft.metadata ? { metadata: presentLiveDeskMetadata(organization, draft.metadata) } : {}),
     events: (draft.events ?? []).map((event) => ({
       ...event,
       note: presentOptionalText(organization, event.note),
