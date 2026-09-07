@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { reviewContentDraft } from "@/server/content-studio/actions";
 import {
   initialMicahDeskActionState,
-  reviewContentDraft,
   type MicahDeskActionState,
-} from "@/server/content-studio/actions";
+} from "@/server/content-studio/desk-save";
 
 export type MicahWeekGalleryCard = {
   id: string | null;

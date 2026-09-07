@@ -17,7 +17,7 @@ import {
 import {
   initialMicahDeskActionState,
   type MicahDeskActionState,
-} from "@/server/content-studio/actions";
+} from "@/server/content-studio/desk-save";
 
 export type MicahWeekStripCard = {
   day: number;

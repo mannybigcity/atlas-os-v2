@@ -7,10 +7,7 @@ import { persistMicahGalleryCaption } from "./gallery-caption-persist.ts";
 import { persistMicahDesk } from "./desk-persist.ts";
 import { type MicahDeskActionState } from "./desk-save.ts";
 
-export {
-  initialMicahDeskActionState,
-  type MicahDeskActionState,
-} from "./desk-save.ts";
+export type { MicahDeskActionState } from "./desk-save.ts";
 
 function requiredText(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();

@@ -83,6 +83,8 @@ test("week desk uses a JSON button path and never a form POST to /client/micah",
   assert.match(actions, /persistMicahDesk/);
   assert.match(actions, /export async function buildMicahWeekFromDesk/);
   assert.match(actions, /export async function saveMicahBrandSetup/);
+  assert.doesNotMatch(actions, /initialMicahDeskActionState/);
+  assert.match(desk, /@\/server\/content-studio\/desk-save/);
 });
 
 test("caption Save stays a JSON button and is not re-wrapped in a form", () => {
@@ -98,4 +100,5 @@ test("caption Save stays a JSON button and is not re-wrapped in a form", () => {
   assert.doesNotMatch(captionEditor, /<form/);
   assert.doesNotMatch(gallery, /useActionState/);
   assert.doesNotMatch(gallery, /updateMicahGalleryCaption/);
+  assert.match(gallery, /@\/server\/content-studio\/desk-save/);
 });
