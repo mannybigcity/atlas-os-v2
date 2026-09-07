@@ -33,7 +33,7 @@ export function SiteHeader({ active, initialLanguage = "en" }: SiteHeaderProps) 
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
         <Link className="flex min-w-0 items-center gap-2 leading-tight text-[#071b42]" href={withSiteLanguage("/", language)}>
           <Image
-            alt="Atlas lion and mountain logo"
+            alt="Atlas For Entrepreneurs logo"
             className="h-10 w-10 shrink-0 object-contain sm:h-14 sm:w-14"
             height={720}
             priority
