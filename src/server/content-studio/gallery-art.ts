@@ -637,17 +637,18 @@ export function selectMicahWeekGallery(
     });
     const supportingText =
       draft.supportingText || "Download this draft and post it yourself.";
-    const shouldRefit = !draft.imageSvg || options.demoDesk;
-    const imageSvg = shouldRefit
-      ? buildMicahDraftSvg({
-          headline,
-          supportingText,
-          logoDataUri: options.logoDataUri,
-          dayLabel,
-          primaryColor: String(draft.metadata.primary_color ?? ""),
-          secondaryColor: String(draft.metadata.secondary_color ?? ""),
-        })
-      : draft.imageSvg;
+    const storedSvg = draft.imageSvg;
+    const imageSvg =
+      storedSvg && !options.demoDesk
+        ? storedSvg
+        : buildMicahDraftSvg({
+            headline,
+            supportingText,
+            logoDataUri: options.logoDataUri,
+            dayLabel,
+            primaryColor: String(draft.metadata.primary_color ?? ""),
+            secondaryColor: String(draft.metadata.secondary_color ?? ""),
+          });
     return {
       id: draft.id,
       day,
