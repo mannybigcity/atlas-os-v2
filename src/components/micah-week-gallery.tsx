@@ -23,6 +23,7 @@ type MicahWeekGalleryProps = {
   organizationId: string;
   canReview: boolean;
   allowCaptionEdit?: boolean;
+  returnTo?: string;
   spanish: boolean;
   cards: MicahWeekGalleryCard[];
 };
@@ -57,12 +58,14 @@ function MicahDayCard({
   organizationId,
   canReview,
   allowCaptionEdit,
+  returnTo,
   spanish,
 }: {
   card: MicahWeekGalleryCard;
   organizationId: string;
   canReview: boolean;
   allowCaptionEdit: boolean;
+  returnTo: string;
   spanish: boolean;
 }) {
   const [caption, setCaption] = useState(card.caption);
@@ -175,6 +178,7 @@ function MicahDayCard({
           <form action={updateMicahGalleryCaption} className="mt-4 space-y-3">
             <input name="draftId" type="hidden" value={card.id ?? ""} />
             <input name="organizationId" type="hidden" value={organizationId} />
+            <input name="returnTo" type="hidden" value={returnTo} />
             <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               {spanish
                 ? "Facebook (gancho, valor, un llamado)"
@@ -297,6 +301,7 @@ export function MicahWeekGallery({
   organizationId,
   canReview,
   allowCaptionEdit,
+  returnTo,
   spanish,
   cards,
 }: MicahWeekGalleryProps) {
@@ -309,6 +314,7 @@ export function MicahWeekGallery({
           card={card}
           key={card.id ?? `day-${card.day}`}
           organizationId={organizationId}
+          returnTo={returnTo || "/client/micah"}
           spanish={spanish}
         />
       ))}

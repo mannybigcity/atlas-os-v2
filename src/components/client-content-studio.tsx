@@ -16,6 +16,7 @@ type ClientContentStudioProps = {
   organizationName?: string | null;
   canReview: boolean;
   allowCaptionEdit?: boolean;
+  returnTo?: string;
   demoDesk?: boolean;
   studio: ContentStudio;
 };
@@ -25,6 +26,7 @@ export async function ClientContentStudio({
   organizationName,
   canReview,
   allowCaptionEdit,
+  returnTo,
   demoDesk = false,
   studio,
 }: ClientContentStudioProps) {
@@ -82,6 +84,7 @@ export async function ClientContentStudio({
           canReview={canReview}
           cards={cards}
           organizationId={organizationId}
+          returnTo={returnTo}
           spanish={spanish}
         />
       ) : null}

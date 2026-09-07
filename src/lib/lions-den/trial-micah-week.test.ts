@@ -123,9 +123,11 @@ test("MICAH gallery Edit saves captions and never live-posts", () => {
   assert.match(page, /allowCaptionEdit=\{canShowMicahGalleryEdit\(primaryOrganization\)\}/);
   assert.doesNotMatch(page, /allowCaptionEdit=\{canEditBusinessProfile/);
   assert.match(actions, /export async function updateMicahGalleryCaption/);
+  assert.match(actions, /createAdminClient/);
+  assert.match(actions, /writeMicahGalleryCaptionRow/);
   assert.match(actions, /isSisOrganization/);
   assert.match(actions, /sis_blocked/);
-  assert.match(actions, /buildMicahGalleryCaptionUpdate/);
+  assert.doesNotMatch(actions, /#draft-/);
   assert.doesNotMatch(actions, /status: "published"/);
   assert.doesNotMatch(actions, /blotato|schedule this post|Phone AI is live/i);
   assert.match(art, /galleryLogoForMicahDesk/);
