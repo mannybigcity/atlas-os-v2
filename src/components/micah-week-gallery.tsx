@@ -66,6 +66,7 @@ function MicahDayCard({
   spanish: boolean;
 }) {
   const [caption, setCaption] = useState(card.caption);
+  const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState<"facebook" | "instagram" | "linkedin" | null>(
     null,
   );
@@ -81,6 +82,66 @@ function MicahDayCard({
     setCopied(which);
     window.setTimeout(() => setCopied(null), 1600);
   }
+
+  function cancelEdit() {
+    setCaption(card.caption);
+    setEditing(false);
+  }
+
+  const copyButtons = (
+    <>
+      <button
+        className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0c2b63]"
+        onClick={() => void copyVariant(caption, "facebook")}
+        type="button"
+      >
+        {copied === "facebook"
+          ? spanish
+            ? "Copiado"
+            : "Copied"
+          : spanish
+            ? "Copiar Facebook"
+            : "Copy caption"}
+      </button>
+      {card.instagramCaption ? (
+        <button
+          className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+          onClick={() => void copyVariant(card.instagramCaption ?? "", "instagram")}
+          type="button"
+        >
+          {copied === "instagram"
+            ? spanish
+              ? "Copiado"
+              : "Copied"
+            : spanish
+              ? "Copiar Instagram"
+              : "Copy Instagram"}
+        </button>
+      ) : null}
+      {card.linkedinCaption ? (
+        <button
+          className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+          onClick={() => void copyVariant(card.linkedinCaption ?? "", "linkedin")}
+          type="button"
+        >
+          {copied === "linkedin"
+            ? spanish
+              ? "Copiado"
+              : "Copied"
+            : spanish
+              ? "Copiar LinkedIn"
+              : "Copy LinkedIn"}
+        </button>
+      ) : null}
+      <a
+        className="inline-flex rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+        download={fileName}
+        href={source}
+      >
+        {spanish ? "Descargar archivo" : "Download file"}
+      </a>
+    </>
+  );
 
   return (
     <article
@@ -110,90 +171,89 @@ function MicahDayCard({
         </div>
         <h3 className="mt-2 text-lg font-bold text-slate-950">{card.title}</h3>
 
-        <form action={updateMicahGalleryCaption} className="mt-4 space-y-3">
-          {card.id ? <input name="draftId" type="hidden" value={card.id} /> : null}
-          <input name="organizationId" type="hidden" value={organizationId} />
-          <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-            {spanish
-              ? "Facebook (gancho, valor, un llamado)"
-              : "Facebook caption (hook, payoff, one CTA)"}
-          </label>
-          <textarea
-            className="mt-2 min-h-36 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#071b42] focus:ring-4 focus:ring-[#fff8e6]"
-            name="caption"
-            onChange={(event) => setCaption(event.target.value)}
-            value={caption}
-          />
+        {canSave ? (
+          <form action={updateMicahGalleryCaption} className="mt-4 space-y-3">
+            <input name="draftId" type="hidden" value={card.id ?? ""} />
+            <input name="organizationId" type="hidden" value={organizationId} />
+            <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              {spanish
+                ? "Facebook (gancho, valor, un llamado)"
+                : "Facebook caption (hook, payoff, one CTA)"}
+            </label>
+            {editing ? (
+              <textarea
+                className="mt-2 min-h-36 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#071b42] focus:ring-4 focus:ring-[#fff8e6]"
+                name="caption"
+                onChange={(event) => setCaption(event.target.value)}
+                value={caption}
+              />
+            ) : (
+              <p
+                className="mt-2 min-h-36 whitespace-pre-wrap rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-950"
+                data-micah-caption="preview"
+              >
+                {caption}
+              </p>
+            )}
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0c2b63]"
-              onClick={() => void copyVariant(caption, "facebook")}
-              type="button"
-            >
-              {copied === "facebook"
-                ? spanish
-                  ? "Copiado"
-                  : "Copied"
-                : spanish
-                  ? "Copiar Facebook"
-                  : "Copy caption"}
-            </button>
-            {card.instagramCaption ? (
-              <button
-                className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
-                onClick={() => void copyVariant(card.instagramCaption ?? "", "instagram")}
-                type="button"
-              >
-                {copied === "instagram"
-                  ? spanish
-                    ? "Copiado"
-                    : "Copied"
-                  : spanish
-                    ? "Copiar Instagram"
-                    : "Copy Instagram"}
-              </button>
-            ) : null}
-            {card.linkedinCaption ? (
-              <button
-                className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
-                onClick={() => void copyVariant(card.linkedinCaption ?? "", "linkedin")}
-                type="button"
-              >
-                {copied === "linkedin"
-                  ? spanish
-                    ? "Copiado"
-                    : "Copied"
-                  : spanish
-                    ? "Copiar LinkedIn"
-                    : "Copy LinkedIn"}
-              </button>
-            ) : null}
-            <a
-              className="inline-flex rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
-              download={fileName}
-              href={source}
-            >
-              {spanish ? "Descargar archivo" : "Download file"}
-            </a>
-            {canSave ? (
-              <button
-                className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
-                data-micah-control="edit"
-                type="submit"
-              >
-                {spanish ? "Editar" : "Edit"}
-              </button>
-            ) : null}
-          </div>
-          {canSave ? (
+            <div className="flex flex-wrap gap-2">
+              {copyButtons}
+              {editing ? (
+                <>
+                  <button
+                    className="rounded-full bg-[#f5b932] px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#ffd36a]"
+                    data-micah-control="save"
+                    type="submit"
+                  >
+                    {spanish ? "Guardar pie de foto" : "Save caption"}
+                  </button>
+                  <button
+                    className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                    data-micah-control="cancel"
+                    onClick={cancelEdit}
+                    type="button"
+                  >
+                    {spanish ? "Cancelar" : "Cancel"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+                  data-micah-control="edit"
+                  onClick={() => setEditing(true)}
+                  type="button"
+                >
+                  {spanish ? "Editar" : "Edit"}
+                </button>
+              )}
+            </div>
             <p className="text-xs leading-5 text-[#5c6578]">
               {spanish
-                ? "Editar guarda el pie de foto en la galería. Copiar / Descargar solamente. Nunca se publica solo."
-                : "Edit saves the caption in this gallery. Copy/Download only. Never auto-post."}
+                ? "Editar, luego Guardar, deja el pie de foto en esta galería. Copiar / Descargar solamente. Nunca se publica solo."
+                : "Edit, then Save, stores the caption in this gallery. Copy/Download only. Never auto-post."}
             </p>
-          ) : null}
-        </form>
+          </form>
+        ) : (
+          <div className="mt-4 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              {spanish
+                ? "Facebook (gancho, valor, un llamado)"
+                : "Facebook caption (hook, payoff, one CTA)"}
+            </p>
+            <p
+              className="min-h-36 whitespace-pre-wrap rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-950"
+              data-micah-caption="preview"
+            >
+              {caption}
+            </p>
+            <div className="flex flex-wrap gap-2">{copyButtons}</div>
+            <p className="text-xs leading-5 text-[#5c6578]">
+              {spanish
+                ? "Copiar / Descargar solamente. Nunca se publica solo."
+                : "Copy/Download only. Never auto-post."}
+            </p>
+          </div>
+        )}
 
         {canReview && card.id ? (
           <form action={reviewContentDraft} className="mt-4 space-y-3">

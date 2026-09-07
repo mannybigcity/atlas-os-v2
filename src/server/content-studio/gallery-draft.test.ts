@@ -5,7 +5,9 @@ import test from "node:test";
 import {
   buildMicahDraftCopy,
   buildMicahDraftSvg,
+  buildMicahGalleryCaptionUpdate,
   buildMicahWeekPack,
+  canShowMicahGalleryEdit,
   captionForClipboard,
   galleryLogoForMicahDesk,
   parseMicahDemeanor,
@@ -185,6 +187,86 @@ test("owner caption edits stay gallery-only and reject auto-post language", () =
   assert.equal(parseMicahGalleryCaptionEdit("too short"), null);
   assert.equal(parseMicahGalleryCaptionEdit("Please auto-post this to Facebook with Blotato today."), null);
   assert.equal(parseMicahGalleryCaptionEdit("Schedule this post for Friday."), null);
+});
+
+test("trial owners can edit gallery captions; SIS cannot", () => {
+  assert.equal(
+    canShowMicahGalleryEdit({ name: "Cypress Pest Pros Micah", slug: "cypress-pest-pros-micah" }),
+    true,
+  );
+  assert.equal(
+    canShowMicahGalleryEdit({ name: "Sample desk", slug: "afe-crm-demo" }),
+    true,
+  );
+  assert.equal(
+    canShowMicahGalleryEdit({
+      name: "SIS Custom Creations",
+      slug: "sis-diy-big-complete-showcase",
+    }),
+    false,
+  );
+  assert.equal(canShowMicahGalleryEdit(null), false);
+});
+
+test("saved owner caption is what the gallery shows after reload and never publishes", () => {
+  const nextCaption =
+    "Monday in Cypress is won before 9am.\n\nPut the pest check on the calendar.\n\nCall to book this week's pest check.";
+  const patch = buildMicahGalleryCaptionUpdate({
+    metadata: {
+      week_pack: true,
+      week_day: 1,
+      week_theme: "Monday Motivation",
+      instagram_caption: "old Instagram SAMPLE",
+      linkedin_caption: "old LinkedIn SAMPLE",
+    },
+    caption: nextCaption,
+    status: "ready_for_review",
+    editedAt: "2026-09-07T13:00:00.000Z",
+  });
+  assert.ok(patch);
+  assert.equal(patch.caption, nextCaption);
+  assert.equal(patch.status, "ready_for_review");
+  assert.equal(patch.metadata.no_live_post, true);
+  assert.equal(patch.metadata.no_scheduler, true);
+  assert.equal(patch.metadata.owner_edited_at, "2026-09-07T13:00:00.000Z");
+  assert.equal(patch.metadata.week_pack, true);
+  assert.notEqual(patch.status, "published");
+
+  const published = buildMicahGalleryCaptionUpdate({
+    metadata: { week_pack: true, week_day: 2 },
+    caption: nextCaption,
+    status: "published",
+    editedAt: "2026-09-07T13:00:00.000Z",
+  });
+  assert.equal(published?.status, "ready_for_review");
+  assert.equal(published?.metadata.no_live_post, true);
+
+  assert.equal(
+    buildMicahGalleryCaptionUpdate({
+      metadata: { week_pack: true },
+      caption: "Please auto-post this to Facebook with Blotato today.",
+    }),
+    null,
+  );
+
+  const gallery = selectMicahWeekGallery(
+    [
+      {
+        id: "draft-monday",
+        title: "Day 1 · Monday · pest check",
+        headline: "Monday pest check",
+        caption: patch.caption,
+        supportingText: null,
+        imageSvg: "<svg></svg>",
+        imageUrl: null,
+        metadata: patch.metadata,
+      },
+    ],
+    { demoDesk: false, logoDataUri: null },
+  );
+  assert.equal(gallery.length, 1);
+  assert.equal(gallery[0]?.id, "draft-monday");
+  assert.equal(gallery[0]?.caption, nextCaption);
 });
 
 test("day-board generate writes one week-pack slot from the prompt theme", () => {
