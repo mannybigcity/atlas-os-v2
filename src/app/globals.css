@@ -59,7 +59,22 @@ button { font: inherit; }
 .atlas-hero-copy h1, .atlas-family-copy h2 { margin: 0; color: var(--navy); font-family: var(--font-display); font-size: clamp(3.55rem, 5.55vw, 5.95rem); font-weight: 950; letter-spacing: -.075em; line-height: .91; }
 .atlas-hero-copy h1 span, .atlas-hero-copy h1 strong, .atlas-family-copy h2 span, .atlas-family-copy h2 strong { display: block; }
 .atlas-hero-copy h1 strong, .atlas-family-copy h2 strong { color: var(--gold); }
-.atlas-hero-lede { max-width: 33rem; margin: 1.25rem 0 1.35rem; color: #12213d; font-size: .93rem; font-weight: 640; line-height: 1.72; }
+.atlas-hero-lede { max-width: 33rem; margin: 1.25rem 0 .95rem; color: #12213d; font-size: .93rem; font-weight: 640; line-height: 1.72; }
+.atlas-hero-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; max-width: 28.5rem; margin: 0 0 .7rem; }
+.atlas-hero-plan { position: relative; display: grid; justify-items: center; gap: .12rem; min-height: 4.4rem; padding: .7rem .4rem .55rem; border: 1px solid #dce4ef; border-radius: .5rem; background: #fff; text-align: center; }
+.atlas-hero-plan.featured { border-color: rgba(233,167,34,.72); background: #fffdf6; box-shadow: 0 .35rem .9rem rgba(233,167,34,.12); }
+.atlas-hero-plan-tag { position: absolute; top: -.42rem; left: 50%; transform: translateX(-50%); white-space: nowrap; border-radius: 999px; background: var(--gold); padding: .08rem .4rem; color: #191303; font-size: .48rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.atlas-hero-plan-name { color: var(--navy); font-size: .58rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.atlas-hero-plan-price { color: var(--navy); font-family: var(--font-display); font-size: 1.25rem; font-weight: 900; line-height: 1; }
+.atlas-hero-plan.featured .atlas-hero-plan-price { color: var(--gold); }
+.atlas-hero-plan-period { color: #52607a; font-size: .58rem; font-weight: 700; }
+.atlas-hero-honest { max-width: 33rem; margin: 0 0 1.05rem; color: #16325c; font-size: .68rem; font-weight: 620; line-height: 1.5; }
+@media (max-width: 540px) {
+  .atlas-hero-plans { max-width: 100%; gap: .35rem; }
+  .atlas-hero-plan { min-height: 4rem; padding: .65rem .2rem .45rem; }
+  .atlas-hero-plan-price { font-size: 1.05rem; }
+  .atlas-hero-plan-tag { font-size: .42rem; }
+}
 .atlas-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem 1.15rem; }
 .atlas-hero-link { color: var(--navy); font-size: .7rem; font-weight: 700; letter-spacing: .02em; text-decoration: underline; text-decoration-color: rgba(6, 38, 109, .32); text-underline-offset: .18em; }
 .atlas-hero-link:hover { color: #0a2f78; text-decoration-color: currentColor; }

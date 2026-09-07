@@ -5,6 +5,7 @@ import Link from "next/link";
 import { RecoveryLinkRedirect } from "@/components/recovery-link-redirect";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { SiteHeader } from "@/components/site-header";
+import { atlasPricingPlans } from "@/lib/pricing";
 import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
 
 type WorkflowStep = {
@@ -34,6 +35,9 @@ type LandingCopy = {
   closingCopy: string;
   stats: { value: string; label: string }[];
   bottomCta: string;
+  mostPopular: string;
+  perMonth: string;
+  honestDesk: string;
 };
 
 function IndustryGlyph({ index }: { index: number }) {
@@ -120,7 +124,11 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       { value: "CONTROL", label: "Monthly plans. Cancel anytime." },
       { value: "YOU", label: "Stay in control" },
     ],
-    bottomCta: "START FREE ASSESSMENT",
+    bottomCta: "Start 7-day free trial",
+    mostPopular: "Most popular",
+    perMonth: "/month",
+    honestDesk:
+      "UNLIMITED is the full desk today — HUNTER, follow-up with owner approval, MICAH gallery, and clients. Front Desk phone AI is later and not live.",
   },
   es: {
     eyebrow: "ATLAS PARA EMPRENDEDORES",
@@ -182,7 +190,11 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       { value: "CONTROL", label: "Planes mensuales. Cancela cuando quieras." },
       { value: "TÚ", label: "Mantienes el control" },
     ],
-    bottomCta: "EMPEZAR EVALUACIÓN GRATIS",
+    bottomCta: "Iniciar prueba gratuita de 7 días",
+    mostPopular: "Más popular",
+    perMonth: "/mes",
+    honestDesk:
+      "ILIMITADO es el escritorio completo hoy — HUNTER, seguimiento con aprobación del propietario, galería MICAH y clientes. La IA telefónica de Front Desk llega después y no está activa.",
   },
 };
 
@@ -245,6 +257,20 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
               <p className="atlas-kicker">{t.eyebrow}</p>
               <h1 id="atlas-title"><span>{t.headline[0]}</span><strong>{t.headline[1]}</strong></h1>
               <p className="atlas-hero-lede">{t.heroCopy}</p>
+              <div className="atlas-hero-plans" aria-label={language === "es" ? "Planes mensuales" : "Monthly plans"}>
+                {atlasPricingPlans.map((plan) => (
+                  <article
+                    className={plan.featured ? "atlas-hero-plan featured" : "atlas-hero-plan"}
+                    key={plan.slug}
+                  >
+                    {plan.featured ? <span className="atlas-hero-plan-tag">{t.mostPopular}</span> : null}
+                    <span className="atlas-hero-plan-name">{plan.name.replace(/^ATLAS\s+/, "")}</span>
+                    <strong className="atlas-hero-plan-price">${plan.monthlyPrice}</strong>
+                    <span className="atlas-hero-plan-period">{t.perMonth}</span>
+                  </article>
+                ))}
+              </div>
+              <p className="atlas-hero-honest">{t.honestDesk}</p>
               <div className="atlas-hero-actions">
                 <Link className="atlas-button gold" href={withSiteLanguage("/start-trial", language)}>{t.trial}</Link>
                 <Link className="atlas-hero-link" href={withSiteLanguage("/pricing#plans", language)}>{t.primary}</Link>
@@ -321,11 +347,11 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
 
         <section className="atlas-outcome-section" id="resources">
           <div className="atlas-outcome-stats">{t.stats.map((stat) => <article key={stat.label}><strong>{stat.value}</strong><span>{stat.label}</span></article>)}</div>
-          <Link className="atlas-outcome-cta" href={withSiteLanguage("/assessment", language)}><span>{t.bottomCta}</span><span aria-hidden="true" className="atlas-outcome-arrow">→</span></Link>
+          <Link className="atlas-outcome-cta" href={withSiteLanguage("/start-trial", language)}><span>{t.bottomCta}</span><span aria-hidden="true" className="atlas-outcome-arrow">→</span></Link>
         </section>
       </main>
 
-      <aside className="atlas-bottom-bar"><div className="atlas-wrap"><span>ATLAS</span><strong>{language === "es" ? "TÚ LIDERAS. ATLAS TE RESPALDA." : "YOU LEAD. ATLAS HAS YOUR BACK."}</strong><Link href={withSiteLanguage("/assessment", language)}>{t.bottomCta}</Link></div></aside>
+      <aside className="atlas-bottom-bar"><div className="atlas-wrap"><span>ATLAS</span><strong>{language === "es" ? "TÚ LIDERAS. ATLAS TE RESPALDA." : "YOU LEAD. ATLAS HAS YOUR BACK."}</strong><Link href={withSiteLanguage("/start-trial", language)}>{t.bottomCta}</Link></div></aside>
     </div>
   );
 }
