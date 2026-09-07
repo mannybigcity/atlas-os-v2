@@ -205,12 +205,12 @@ function MicahDayCard({
       className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
       id={card.id ? `draft-${card.id}` : `micah-day-${card.day}`}
     >
-      <div className="bg-[#071b42]">
+      <div className="overflow-hidden bg-[#071b42]">
         {/* Generated SVG is assembled by our server from escaped fields. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           alt={`${card.dayLabel}: ${card.headline}`}
-          className="aspect-square w-full object-cover"
+          className="aspect-square w-full object-contain"
           src={source}
         />
       </div>
