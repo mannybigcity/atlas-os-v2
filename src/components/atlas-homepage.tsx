@@ -16,8 +16,9 @@ type WorkflowStep = {
 
 type LandingCopy = {
   eyebrow: string;
-  headline: [string, string];
+  headline: string;
   heroCopy: string;
+  example: string;
   trial: string;
   primary: string;
   secondary: string;
@@ -63,12 +64,12 @@ function IndustryGlyph({ index }: { index: number }) {
 const copy: Record<SiteLanguage, LandingCopy> = {
   en: {
     eyebrow: "ATLAS FOR ENTREPRENEURS",
-    headline: ["YOU CARRY THE FAMILY.", "ATLAS CARRIES THE BUSINESS."],
-    heroCopy:
-      "Your owner-controlled business workspace for organizing prospects, follow-up, pipeline, and approved next actions, so you can stay focused on what matters most.",
-    trial: "START 7-DAY FREE TRIAL",
-    primary: "SEE ATLAS PLANS",
-    secondary: "START BUSINESS ASSESSMENT",
+    headline: "Stop losing good leads between the call, the quote, and the follow-up.",
+    heroCopy: "Keep prospects, callbacks, and next actions in one desk. You approve every customer message.",
+    example: "Example: New HVAC inquiry → reminder to call → you approve the follow-up → marked booked.",
+    trial: "Start 7-day free trial",
+    primary: "See how the desk works →",
+    secondary: "Business assessment",
     nav: {
       how: "How ATLAS Works",
       who: "Who It's For",
@@ -126,18 +127,17 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     ],
     bottomCta: "Start 7-day free trial",
     mostPopular: "Most popular",
-    perMonth: "/month",
-    honestDesk:
-      "UNLIMITED is the full desk today — HUNTER, follow-up with owner approval, MICAH gallery, and clients. Front Desk phone AI is later and not live.",
+    perMonth: "per month",
+    honestDesk: "Phone AI / Front Desk is later and not live.",
   },
   es: {
     eyebrow: "ATLAS PARA EMPRENDEDORES",
-    headline: ["TÚ CARGAS CON LA FAMILIA.", "ATLAS CARGA CON EL NEGOCIO."],
-    heroCopy:
-      "Tu espacio de trabajo con IA y control del propietario para organizar prospectos, seguimientos, oportunidades y próximos pasos aprobados, para que puedas enfocarte en lo que más importa.",
-    trial: "COMENZAR PRUEBA GRATIS DE 7 DÍAS",
-    primary: "VER PLANES DE ATLAS",
-    secondary: "EMPEZAR EVALUACIÓN DEL NEGOCIO",
+    headline: "Deja de perder buenos clientes entre la llamada, la cotización y el seguimiento.",
+    heroCopy: "Mantén prospectos, devoluciones de llamada y próximos pasos en un solo escritorio. Tú apruebas cada mensaje al cliente.",
+    example: "Ejemplo: Nueva consulta de HVAC → recordatorio para llamar → tú apruebas el seguimiento → marcado como reservado.",
+    trial: "Iniciar prueba gratuita de 7 días",
+    primary: "Mira cómo funciona el escritorio →",
+    secondary: "Evaluación del negocio",
     nav: {
       how: "Cómo funciona ATLAS",
       who: "Para quién es",
@@ -192,9 +192,8 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     ],
     bottomCta: "Iniciar prueba gratuita de 7 días",
     mostPopular: "Más popular",
-    perMonth: "/mes",
-    honestDesk:
-      "ILIMITADO es el escritorio completo hoy — HUNTER, seguimiento con aprobación del propietario, galería MICAH y clientes. La IA telefónica de Front Desk llega después y no está activa.",
+    perMonth: "al mes",
+    honestDesk: "La IA telefónica / Front Desk llega después y no está activa.",
   },
 };
 
@@ -221,10 +220,10 @@ function DashboardPreview({ language }: { language: SiteLanguage }) {
           <div><strong>{spanish ? "Tu espacio de trabajo" : "Your workspace"}</strong><small>{spanish ? "Aquí verás tus próximos pasos." : "Your next actions will appear here."}</small></div>
         </div>
         <div className="atlas-dashboard-metrics">
-          <article><strong>—</strong><span>{spanish ? "Prospectos" : "Leads"}</span></article>
-          <article><strong>—</strong><span>{spanish ? "Oportunidades" : "Opportunities"}</span></article>
-          <article><strong>—</strong><span>{spanish ? "Seguimientos" : "Follow-ups"}</span></article>
-          <article><strong>—</strong><span>{spanish ? "Valor disponible" : "Value when available"}</span></article>
+          <article><strong>—</strong><span>{spanish ? "Prospectos a revisar (HUNTER)" : "Leads to review (HUNTER)"}</span></article>
+          <article><strong>—</strong><span>{spanish ? "Seguimientos que tú apruebas" : "Follow-ups you approve"}</span></article>
+          <article><strong>—</strong><span>{spanish ? "Clientes" : "Clients"}</span></article>
+          <article><strong>—</strong><span>{spanish ? "Borradores sociales (galería MICAH)" : "Social drafts (MICAH gallery)"}</span></article>
         </div>
         <div className="atlas-dashboard-lower">
           <article className="atlas-activity-card">
@@ -255,8 +254,16 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
           <div className="atlas-wrap atlas-hero-grid">
             <div className="atlas-hero-copy">
               <p className="atlas-kicker">{t.eyebrow}</p>
-              <h1 id="atlas-title"><span>{t.headline[0]}</span><strong>{t.headline[1]}</strong></h1>
+              <h1 id="atlas-title">{t.headline}</h1>
               <p className="atlas-hero-lede">{t.heroCopy}</p>
+              <article className="atlas-hero-example">
+                <span aria-hidden="true" className="atlas-hero-example-icon">
+                  <svg fill="none" viewBox="0 0 24 24">
+                    <path d="M6.6 3.2c.4-.4 1.1-.5 1.6-.1l2.2 1.6c.5.3.7 1 .4 1.5L9.7 8.6c-.2.4-.1.8.1 1.2 1 1.6 2.4 3 4 4 .4.2.8.3 1.2.1l2.4-1.1c.5-.3 1.2-.1 1.5.4l1.6 2.2c.4.5.3 1.2-.1 1.6l-1.3 1.3c-.6.6-1.5.9-2.4.7-2.2-.4-5.3-2-8-4.7S4.8 8.3 4.4 6.1c-.2-.9.1-1.8.7-2.4z" fill="currentColor" />
+                  </svg>
+                </span>
+                <p>{t.example}</p>
+              </article>
               <div className="atlas-hero-plans" aria-label={language === "es" ? "Planes mensuales" : "Monthly plans"}>
                 {atlasPricingPlans.map((plan) => (
                   <article
@@ -270,12 +277,12 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
                   </article>
                 ))}
               </div>
-              <p className="atlas-hero-honest">{t.honestDesk}</p>
               <div className="atlas-hero-actions">
                 <Link className="atlas-button gold" href={withSiteLanguage("/start-trial", language)}>{t.trial}</Link>
-                <Link className="atlas-hero-link" href={withSiteLanguage("/pricing#plans", language)}>{t.primary}</Link>
+                <Link className="atlas-hero-link" href={withSiteLanguage("/#den", language)}>{t.primary}</Link>
                 <Link className="atlas-hero-link" href={withSiteLanguage("/assessment", language)}>{t.secondary}</Link>
               </div>
+              <p className="atlas-hero-honest"><span aria-hidden="true">ⓘ </span>{t.honestDesk}</p>
             </div>
             <div className="atlas-hero-art" aria-label={language === "es" ? "Atlas carga con el negocio" : "Atlas carries the business"}>
               <div className="atlas-sun" />

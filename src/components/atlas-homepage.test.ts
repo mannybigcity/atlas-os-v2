@@ -12,11 +12,26 @@ const footer = readFileSync(join(root, "src/components/site-footer.tsx"), "utf8"
 const hero = homepage.slice(homepage.indexOf("atlas-hero-copy"), homepage.indexOf("atlas-hero-art"));
 const bottomBar = homepage.slice(homepage.indexOf("atlas-bottom-bar"));
 
+test("AFE homepage catalyst hero speaks cash and follow-up in English and Spanish", () => {
+  assert.match(homepage, /Stop losing good leads between the call, the quote, and the follow-up/);
+  assert.match(homepage, /Keep prospects, callbacks, and next actions in one desk/);
+  assert.match(homepage, /You approve every customer message/);
+  assert.match(homepage, /New HVAC inquiry → reminder to call → you approve the follow-up → marked booked/);
+  assert.match(homepage, /Deja de perder buenos clientes entre la llamada, la cotización y el seguimiento/);
+  assert.match(homepage, /Mantén prospectos, devoluciones de llamada y próximos pasos en un solo escritorio/);
+  assert.match(homepage, /Nueva consulta de HVAC → recordatorio para llamar → tú apruebas el seguimiento → marcado como reservado/);
+  assert.doesNotMatch(homepage, /YOU CARRY THE FAMILY|ATLAS CARRIES THE BUSINESS|TÚ CARGAS CON LA FAMILIA/);
+  assert.doesNotMatch(homepage, /agentic/i);
+});
+
 test("AFE homepage hero has one gold trial button and quiet secondary links", () => {
   assert.match(hero, /atlas-button gold/);
+  assert.match(homepage, /trial:\s*"Start 7-day free trial"/);
+  assert.match(hero, /\{t\.trial\}/);
   assert.match(hero, /\/start-trial/);
   assert.equal([...hero.matchAll(/atlas-button/g)].length, 1);
-  assert.match(hero, /atlas-hero-link[\s\S]*\/pricing#plans/);
+  assert.match(hero, /atlas-hero-link[\s\S]*\/#den/);
+  assert.match(homepage, /See how the desk works →/);
   assert.match(hero, /atlas-hero-link[\s\S]*\/assessment/);
   assert.doesNotMatch(hero, /atlas-button outline/);
 });
@@ -36,11 +51,11 @@ test("AFE homepage hero shows live BASIC GROW UNLIMITED prices from the pricing 
   assert.match(hero, /plan\.featured/);
 });
 
-test("AFE homepage states UNLIMITED is the live desk and Front Desk phone AI is not live", () => {
-  assert.match(homepage, /UNLIMITED is the full desk today/);
-  assert.match(homepage, /HUNTER/);
-  assert.match(homepage, /MICAH gallery/);
-  assert.match(homepage, /Front Desk phone AI is later and not live/);
+test("AFE homepage states Phone AI / Front Desk is later and not live", () => {
+  assert.match(homepage, /Phone AI \/ Front Desk is later and not live/);
+  assert.match(homepage, /Leads to review \(HUNTER\)/);
+  assert.match(homepage, /Follow-ups you approve/);
+  assert.match(homepage, /Social drafts \(MICAH gallery\)/);
   assert.doesNotMatch(homepage, /Phone AI is live|live Phone AI|Front Desk is live/i);
 });
 
