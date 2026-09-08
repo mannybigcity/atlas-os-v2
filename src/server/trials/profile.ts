@@ -70,7 +70,7 @@ export async function getTrialProfile(userId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("atlas_trial_profiles")
-    .select("full_name,business_name,trial_started_at,trial_ends_at")
+    .select("full_name,business_name,trial_started_at,trial_ends_at,converted_organization_id")
     .eq("user_id", userId)
     .maybeSingle();
 

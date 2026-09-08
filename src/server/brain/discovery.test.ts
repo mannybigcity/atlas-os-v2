@@ -17,6 +17,7 @@ const organization = {
 const prospect = {
   id: "prospect-1",
   assessmentSubmissionId: null,
+  trialUserId: null,
   convertedOrganizationId: null,
   businessName: "North Star HVAC",
   status: "new",
@@ -150,4 +151,3 @@ function note(path: string) {
     size: 100,
   };
 }
-

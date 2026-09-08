@@ -47,7 +47,8 @@ export async function getClientWorkspaceContext(
   searchParams?: ClientWorkspaceSearchParams,
 ): Promise<ClientWorkspaceContext> {
   const user = await requireUser(nextPath);
-  if (await getTrialProfile(user.id)) {
+  const trialProfile = await getTrialProfile(user.id);
+  if (trialProfile && !trialProfile.converted_organization_id) {
     redirect("/starter");
   }
 

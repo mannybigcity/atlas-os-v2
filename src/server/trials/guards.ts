@@ -10,6 +10,12 @@ export async function requireTrialUser(nextPath: string) {
     redirect("/client?access=denied");
   }
 
+  // A converted trial owns a real client organization now; the starter
+  // workspace is no longer their home.
+  if (profile.converted_organization_id) {
+    redirect("/client?status=welcome");
+  }
+
   if (new Date(profile.trial_ends_at).getTime() <= Date.now()) {
     redirect("/pricing?trial=expired");
   }
