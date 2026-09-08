@@ -155,9 +155,9 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       {
         src: "/marketing/desk-stills/micah-gallery.webp",
         name: "MICAH",
-        label: "gallery drafts only",
-        caption: "gallery Copy/Download",
-        alt: "MICAH gallery drafts on the Atlas desk",
+        label: "social flyers only",
+        caption: "social flyers · Copy/Download",
+        alt: "MICAH social gallery flyers with captions and Copy caption / Download — Instagram and Facebook drafts for a local owner",
       },
     ],
     denStillAlt:
@@ -248,9 +248,9 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       {
         src: "/marketing/desk-stills/micah-gallery.webp",
         name: "MICAH",
-        label: "solo borradores de galería",
-        caption: "galería Copiar/Descargar",
-        alt: "Borradores de la galería MICAH en el escritorio de Atlas",
+        label: "solo flyers sociales",
+        caption: "flyers sociales · Copiar/Descargar",
+        alt: "Galería social MICAH con flyers, pies de foto y Copiar / Descargar — borradores de Instagram y Facebook para un dueño local",
       },
     ],
     denStillAlt:
