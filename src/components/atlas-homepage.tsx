@@ -157,7 +157,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
         name: "MICAH",
         label: "gallery drafts only",
         caption: "gallery Copy/Download",
-        alt: "MICAH gallery drafts on the Atlas desk",
+        alt: "MICAH gallery drafts with captions and Copy caption, Download, and Edit on the Atlas desk",
       },
     ],
     denStillAlt:
@@ -250,7 +250,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
         name: "MICAH",
         label: "solo borradores de galería",
         caption: "galería Copiar/Descargar",
-        alt: "Borradores de la galería MICAH en el escritorio de Atlas",
+        alt: "Borradores de la galería MICAH con pies de foto y Copiar, Descargar y Editar en el escritorio de Atlas",
       },
     ],
     denStillAlt:

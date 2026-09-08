@@ -92,6 +92,7 @@ test("AFE homepage shows three desk proof stills near #den without selling live 
     "public/marketing/desk-stills/follow-up-drafts.webp",
     "public/marketing/desk-stills/micah-gallery.webp",
   ];
+  const micahStill = join(root, "public/marketing/desk-stills/micah-gallery.webp");
 
   assert.match(homepage, /id="desk-stills"/);
   assert.match(homepage, /See the desk before the trial/);
@@ -103,6 +104,7 @@ test("AFE homepage shows three desk proof stills near #den without selling live 
   assert.match(homepage, /Review pile/);
   assert.match(homepage, /Follow-up drafts you approve/);
   assert.match(homepage, /gallery Copy\/Download/);
+  assert.match(homepage, /Copy caption, Download, and Edit/);
   assert.match(homepage, /hunter-review-pile\.webp/);
   assert.match(homepage, /follow-up-drafts\.webp/);
   assert.match(homepage, /micah-gallery\.webp/);
@@ -110,12 +112,17 @@ test("AFE homepage shows three desk proof stills near #den without selling live 
   assert.doesNotMatch(stills, /SAMPLE|#SampleDraft|sis-real|SIS Custom Creations|Floor/);
   assert.doesNotMatch(stills, /HUNTER 7|7 leads|ten finds/i);
   assert.doesNotMatch(stills, /atlas-button gold/);
+  assert.doesNotMatch(homepage, /Monday Motivation|Tip Tuesday|Brand Setup empty|empty blue day-cards/i);
 
   for (const file of stillFiles) {
     const path = join(root, file);
     assert.equal(existsSync(path), true, `${file} is missing`);
     assert.ok(statSync(path).size > 8_000, `${file} should be an optimized still, not an empty placeholder`);
   }
+  assert.ok(
+    statSync(micahStill).size > 80_000,
+    "micah-gallery.webp must be a packed gallery still with finished drafts, not Brand Setup empty navy day-cards",
+  );
 });
 
 test("AFE header keeps the official pasted logo and trial as the gold nav CTA", () => {
