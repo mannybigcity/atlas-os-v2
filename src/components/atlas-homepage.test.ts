@@ -51,12 +51,16 @@ test("AFE homepage hero shows live BASIC GROW UNLIMITED prices from the pricing 
   assert.match(hero, /plan\.featured/);
 });
 
-test("AFE homepage states Phone AI / Front Desk is later and not live", () => {
-  assert.match(homepage, /Phone AI \/ Front Desk is later and not live/);
+test("AFE homepage does not publish Phone AI / Front Desk later-and-not-live disclaimers", () => {
+  assert.doesNotMatch(homepage, /Phone AI \/ Front Desk is later and not live/);
+  assert.doesNotMatch(homepage, /La IA telefónica \/ Front Desk llega después y no está activa/);
+  assert.doesNotMatch(homepage, /honestDesk|atlas-hero-honest/);
+  assert.doesNotMatch(homepage, /later and not live|llega después y no está activa/i);
   assert.match(homepage, /HUNTER[\s\S]*leads to review/);
   assert.match(homepage, /you approve then send/);
   assert.match(homepage, /social flyers only/);
   assert.doesNotMatch(homepage, /Phone AI is live|live Phone AI|Front Desk is live/i);
+  assert.doesNotMatch(homepage, /\bFloor\b/);
 });
 
 test("AFE homepage keeps CLIENT PANEL and does not sell SIS chrome", () => {
@@ -96,7 +100,10 @@ test("AFE homepage shows three desk proof stills near #den without selling live 
 
   assert.match(homepage, /id="desk-stills"/);
   assert.match(homepage, /See the desk before the trial/);
-  assert.match(homepage, /Teasers only\. The working sample stays behind the 7-day trial/);
+  assert.doesNotMatch(homepage, /Teasers only\. The working sample stays behind the 7-day trial/);
+  assert.doesNotMatch(homepage, /Solo adelantos\. La muestra real queda detrás de la prueba de 7 días/);
+  assert.doesNotMatch(homepage, /stillsCopy|atlas-stills-lede/);
+  assert.doesNotMatch(homepage, /Teasers only|working sample stays behind|Solo adelantos/i);
   assert.match(stills, /\{still\.name\} — \{still\.label\}/);
   assert.match(homepage, /HUNTER[\s\S]*leads to review/);
   assert.match(homepage, /you approve then send/);
