@@ -38,10 +38,8 @@ type LandingCopy = {
   bottomCta: string;
   mostPopular: string;
   perMonth: string;
-  honestDesk: string;
   stillsLabel: string;
   stillsTitle: string;
-  stillsCopy: string;
   stills: Array<{ src: string; name: string; label: string; caption: string; alt: string }>;
   denStillAlt: string;
 };
@@ -133,10 +131,8 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     bottomCta: "Start 7-day free trial",
     mostPopular: "Most popular",
     perMonth: "per month",
-    honestDesk: "Phone AI / Front Desk is later and not live.",
     stillsLabel: "THE DESK",
     stillsTitle: "See the desk before the trial.",
-    stillsCopy: "Teasers only. The working sample stays behind the 7-day trial.",
     stills: [
       {
         src: "/marketing/desk-stills/hunter-review-pile.webp",
@@ -226,10 +222,8 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     bottomCta: "Iniciar prueba gratuita de 7 días",
     mostPopular: "Más popular",
     perMonth: "al mes",
-    honestDesk: "La IA telefónica / Front Desk llega después y no está activa.",
     stillsLabel: "EL ESCRITORIO",
     stillsTitle: "Mira el escritorio antes de la prueba.",
-    stillsCopy: "Solo adelantos. La muestra real queda detrás de la prueba de 7 días.",
     stills: [
       {
         src: "/marketing/desk-stills/hunter-review-pile.webp",
@@ -316,7 +310,6 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
                 <Link className="atlas-hero-link" href={withSiteLanguage("/#den", language)}>{t.primary}</Link>
                 <Link className="atlas-hero-link" href={withSiteLanguage("/assessment", language)}>{t.secondary}</Link>
               </div>
-              <p className="atlas-hero-honest"><span aria-hidden="true">ⓘ </span>{t.honestDesk}</p>
             </div>
             <div className="atlas-hero-art" aria-label={language === "es" ? "Atlas carga con el negocio" : "Atlas carries the business"}>
               <div className="atlas-sun" />
@@ -375,7 +368,6 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
                 <p className="atlas-section-label">{t.stillsLabel}</p>
                 <h2 id="stills-title">{t.stillsTitle}</h2>
               </div>
-              <p className="atlas-stills-lede">{t.stillsCopy}</p>
             </div>
             <div className="atlas-stills-grid">
               {t.stills.map((still) => (
