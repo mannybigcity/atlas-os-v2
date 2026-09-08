@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  CALL_PROSPECT_NEXT_ACTION,
+  NO_PHONE_PROSPECT_NEXT_ACTION,
+  presentedProspectNextAction,
+  presentedProspectStageLabel,
   prospectDetailPath,
+  prospectHasCallablePhone,
   prospectPlacesCard,
   prospectTelHref,
 } from "./prospect-places.ts";
@@ -72,4 +77,30 @@ test("detail card exposes Google phone, Maps, and website without inventing a nu
   );
   assert.equal(prospectTelHref("123"), null);
   assert.equal(prospectTelHref(null), null);
+  assert.equal(prospectTelHref("Google did not publish a phone number."), null);
+});
+
+test("missing phone never presents a Call next-action or READY FOR FOLLOW UP", () => {
+  const missing = prospect({
+    contactPhone: null,
+    nextAction: CALL_PROSPECT_NEXT_ACTION,
+    metadata: {
+      google_place_id: "ChIJ-dent",
+      national_phone_number: null,
+      international_phone_number: null,
+    },
+  });
+  assert.equal(prospectHasCallablePhone(missing), false);
+  assert.equal(presentedProspectNextAction(missing), NO_PHONE_PROSPECT_NEXT_ACTION);
+  assert.doesNotMatch(presentedProspectNextAction(missing), /Call this prospect/i);
+  assert.equal(presentedProspectStageLabel(missing), "Needs phone");
+  assert.equal(presentedProspectStageLabel(missing, true), "Falta teléfono");
+});
+
+test("present phone still presents the Call next-action", () => {
+  const ready = prospect();
+  assert.equal(prospectHasCallablePhone(ready), true);
+  assert.equal(presentedProspectNextAction(ready), CALL_PROSPECT_NEXT_ACTION);
+  assert.match(presentedProspectNextAction(ready), /Call this prospect/);
+  assert.equal(presentedProspectStageLabel(ready), "ready for follow up");
 });

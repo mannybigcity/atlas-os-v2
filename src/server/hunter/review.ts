@@ -1,4 +1,9 @@
-import { googleMapsUrlFromPlaceId } from "../../lib/lions-den/prospect-places.ts";
+import {
+  CALL_PROSPECT_NEXT_ACTION,
+  NO_PHONE_PROSPECT_NEXT_ACTION,
+  googleMapsUrlFromPlaceId,
+  publishedPlacePhone,
+} from "../../lib/lions-den/prospect-places.ts";
 import type { GooglePlaceProspect } from "@/server/integrations/google-places";
 
 export const HUNTER_DAILY_SEARCH_CAP = 20;
@@ -106,12 +111,12 @@ export function pickStoredPlacePhone(place: {
   nationalPhoneNumber?: string | null;
   internationalPhoneNumber?: string | null;
 }) {
-  const national = place.nationalPhoneNumber?.trim() || null;
-  const international = place.internationalPhoneNumber?.trim() || null;
+  const national = publishedPlacePhone(place.nationalPhoneNumber);
+  const international = publishedPlacePhone(place.internationalPhoneNumber);
   const chosen = national || international;
   if (!chosen) return null;
   const stored = chosen.slice(0, 80);
-  return stored.length >= 7 ? stored : null;
+  return stored.replace(/\D/g, "").length >= 7 ? stored : null;
 }
 
 export function acceptedProspectResearchSummary(place: {
@@ -121,13 +126,16 @@ export function acceptedProspectResearchSummary(place: {
   websiteUrl?: string | null;
 }) {
   const address = place.formattedAddress?.trim() || "Address not listed on Google Maps";
-  const phone = place.phone?.trim();
+  const phone = publishedPlacePhone(place.phone);
   const website = place.websiteUrl?.trim();
   const extras = [
     phone ? ` Phone: ${phone}.` : "",
     website ? ` Website: ${website}.` : "",
   ].join("");
-  return `Accepted from the HUNTER review pile. ${place.name} is now a Prospect the salesman can call. Address: ${address}.${extras} Atlas has not emailed, called, or texted this business.`;
+  const role = phone
+    ? `${place.name} is now a Prospect the salesman can call.`
+    : `${place.name} is now a Prospect, but Google did not publish a phone.`;
+  return `Accepted from the HUNTER review pile. ${role} Address: ${address}.${extras} Atlas has not emailed, called, or texted this business.`;
 }
 
 export type AcceptedHunterOpportunityInput = {
@@ -159,14 +167,14 @@ export function acceptedHunterOpportunityFields(input: AcceptedHunterOpportunity
   return {
     name: input.name.slice(0, 220),
     opportunity_type: "customer" as const,
-    stage: "ready_for_follow_up" as const,
+    stage: phone ? ("ready_for_follow_up" as const) : ("needs_client_input" as const),
     fit_score: 0,
     owner_role: "client" as const,
     source_label: "HUNTER Google Maps",
     source_url: mapsUrl?.slice(0, 2000) ?? null,
     contact_phone: phone,
     research_summary: researchSummary.slice(0, 3000),
-    next_action: acceptedProspectNextAction(),
+    next_action: acceptedProspectNextAction(phone),
     metadata: {
       hunter_review_item_id: input.reviewItemId,
       google_place_id: input.placeId.slice(0, 256),
@@ -177,7 +185,7 @@ export function acceptedHunterOpportunityFields(input: AcceptedHunterOpportunity
       national_phone_number: input.nationalPhoneNumber?.trim() || null,
       international_phone_number: input.internationalPhoneNumber?.trim() || null,
       no_outreach_sent: true,
-      accepted_for_calling: true,
+      accepted_for_calling: Boolean(phone),
       primary_type: input.primaryType,
       business_status: input.businessStatus,
     },
@@ -211,8 +219,10 @@ export function mergeHunterPlaceDetails(
   };
 }
 
-export function acceptedProspectNextAction() {
-  return "Call this prospect. Atlas has not contacted them.";
+export function acceptedProspectNextAction(phone?: string | null) {
+  return pickStoredPlacePhone({ nationalPhoneNumber: phone })
+    ? CALL_PROSPECT_NEXT_ACTION
+    : NO_PHONE_PROSPECT_NEXT_ACTION;
 }
 
 export function placesToReviewInserts(

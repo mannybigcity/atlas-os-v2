@@ -1,6 +1,7 @@
 import { LionsDenClientHub } from "@/components/lions-den/lions-den-client-hub";
 import { getClientPortalOrgLabel } from "@/lib/client-portal/identity";
 import { presentLiveDeskAiRequest } from "@/lib/lions-den/live-desk";
+import { freshDeskChatRequests } from "@/lib/lions-den/desk-chat";
 import type { LionsDenBoard } from "@/lib/lions-den/client-hub";
 import { canSeeTrialInboxNav } from "@/lib/lions-den/trial-inbox";
 import {
@@ -41,7 +42,9 @@ export async function LionsDenBoardScreen({
 
   const visibleRequests =
     aiRequests && !aiRequests.setupRequired
-      ? aiRequests.data.map((request) => presentLiveDeskAiRequest(organization, request))
+      ? freshDeskChatRequests(
+          aiRequests.data.map((request) => presentLiveDeskAiRequest(organization, request)),
+        )
       : [];
 
   return (

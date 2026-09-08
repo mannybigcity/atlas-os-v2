@@ -18,10 +18,10 @@ import { atlasStaffCanSend } from "@/lib/lions-den/atlas-staff-send";
 import { atlasDeskNextHref } from "@/lib/lions-den/atlas-desk-route";
 import {
   atlasAskUsageFromCounts,
-  atlasAskUsageLabel,
   isAtlasAskCapped,
   type AtlasAskPlan,
 } from "@/lib/lions-den/atlas-quota";
+import { freshDeskChatRequests } from "@/lib/lions-den/desk-chat";
 import { staffHandoffLine } from "@/lib/lions-den/atlas-staff-handoff";
 import { submitClientAiRequest } from "@/server/client-ai/actions";
 import { initialClientAiActionState } from "@/server/client-ai/types";
@@ -91,8 +91,7 @@ export function AtlasStaffPane({
   const hasWorkspace = Boolean(organizationId);
   const composerLocked = pending || capped;
   const canSend = atlasStaffCanSend({ organizationId, pending, capped });
-  const thread = [...requests].slice(0, 8).reverse();
-  const usageLabel = atlasAskUsageLabel(usage.used, plan);
+  const thread = freshDeskChatRequests(requests).slice(0, 8).reverse();
 
   useEffect(() => {
     setSpeechSupported(Boolean(speechRecognitionCtor()));
@@ -227,14 +226,6 @@ export function AtlasStaffPane({
         <h2 className="mt-1 font-[family-name:var(--font-display)] text-sm font-semibold tracking-wide text-[#071b42]">
           Atlas
         </h2>
-        <p className="mt-0.5 text-[11px] font-black tracking-[0.12em] text-[#8a6a12]">
-          {usageLabel}
-          {plan === "unlimited" ? (
-            <span className="ml-1 font-semibold tracking-normal text-[#5c6578]">
-              {spanish ? "hoy" : "today"}
-            </span>
-          ) : null}
-        </p>
       </div>
 
       <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-auto px-3">
@@ -285,7 +276,7 @@ export function AtlasStaffPane({
       {capped ? (
         <div className="shrink-0 border-t border-[#ece7d8] bg-white px-3 py-2 text-[11px] leading-4 text-[#071b42]">
           <p className="font-semibold">
-            {usage.planLabel} {usageLabel} {spanish ? "hoy." : "today."}
+            {spanish ? "Límite diario de Ask Atlas alcanzado." : "Daily Ask Atlas limit reached."}
           </p>
           <p className="mt-1 text-[#33415c]">
             {spanish

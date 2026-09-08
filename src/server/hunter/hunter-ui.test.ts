@@ -26,6 +26,9 @@ test("HUNTER desk shows the growth funnel and Accept, not a Maps-only dead end",
   assert.doesNotMatch(search, /name="weakSocial"[^>]*required/);
   assert.doesNotMatch(search, /name="missingWebsite"[^>]*defaultChecked/);
   assert.doesNotMatch(search, /name="weakSocial"[^>]*defaultChecked/);
+  assert.match(search, /Google did not publish a phone number/);
+  assert.match(search, /will not invent one/);
+  assert.match(search, /isMissingPlacePhone/);
   assert.match(search, /No gap leads in this search/);
   assert.match(search, /defaults\?\.service/);
   assert.match(search, /Local business type/);
@@ -47,7 +50,8 @@ test("HUNTER desk shows the growth funnel and Accept, not a Maps-only dead end",
   assert.match(pile, /Accept into Prospects/);
   assert.match(pile, /Skip/);
   assert.match(pile, /Open Prospects/);
-  assert.match(pile, /hunterGapLabels/);
+  assert.match(pile, /will not invent a number/);
+  assert.match(pile, /will not become a Call prospect/);
   assert.doesNotMatch(pile, /Apply the HUNTER review pile migration/);
   assert.match(pile, /HUNTER_REVIEW_PILE_MIGRATION/);
   assert.match(pile, /setupRequired/);
@@ -60,7 +64,12 @@ test("Prospect rows on Summary and Prospects open a Google Places detail view", 
   const accept = readRepo("src/server/hunter/actions.ts");
 
   assert.match(overview, /prospectDetailPath/);
+  assert.match(overview, /presentedProspectNextAction/);
+  assert.match(overview, /will not invent a number/);
   assert.match(list, /prospectDetailPath/);
+  assert.match(list, /presentedProspectNextAction/);
+  assert.match(detail, /presentedProspectNextAction/);
+  assert.match(detail, /presentedProspectStageLabel/);
   assert.match(detail, /Open in Google Maps|Abrir en Google Maps/);
   assert.match(detail, /phoneHref/);
   assert.match(detail, /Atlas did not call, email, or text anyone/);

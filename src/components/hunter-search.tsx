@@ -8,6 +8,7 @@ import {
   formatHunterGapLabel,
   hunterFiltersActive,
   hunterGapLabels,
+  isMissingPlacePhone,
 } from "@/server/hunter/filters";
 import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
 import type { HunterSearchFind } from "@/server/hunter/review";
@@ -234,7 +235,11 @@ function HunterSearchFindRow({
             <p className="mt-1 text-sm font-medium text-[#071b42]">
               {place.nationalPhoneNumber || place.internationalPhoneNumber}
             </p>
-          ) : null}
+          ) : (
+            <p className="mt-1 text-sm font-medium text-[#8a6a12]">
+              {spanish ? "Google no publicó un teléfono." : "Google did not publish a phone number."}
+            </p>
+          )}
           <p className="mt-1 text-xs uppercase tracking-[0.1em] text-[#8a93a3]">
             {place.primaryType?.replaceAll("_", " ") ?? (spanish ? "Negocio" : "Business")}
             {place.businessStatus ? ` · ${place.businessStatus.replaceAll("_", " ")}` : ""}
@@ -264,7 +269,18 @@ function HunterSearchFindRow({
         <div className="flex flex-wrap gap-2">
           {organizationId && place.lane === "review" && place.reviewItemId ? (
             <>
-              <form action={acceptHunterReviewItem}>
+              <form
+                action={acceptHunterReviewItem}
+                onSubmit={(event) => {
+                  if (!isMissingPlacePhone(place)) return;
+                  const ok = window.confirm(
+                    spanish
+                      ? "Google no publicó un teléfono. Atlas no inventará uno. ¿Aceptar igual? Esto no será un prospecto para llamar."
+                      : "Google did not publish a phone. Atlas will not invent one. Accept anyway? This will not become a Call prospect.",
+                  );
+                  if (!ok) event.preventDefault();
+                }}
+              >
                 <input name="organizationId" type="hidden" value={organizationId} />
                 <input name="reviewItemId" type="hidden" value={place.reviewItemId} />
                 <button className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white" type="submit">

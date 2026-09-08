@@ -7,7 +7,7 @@ import type { HunterReviewItem } from "@/server/hunter/review";
 import type { ContentDraft } from "@/server/content-studio/queries";
 import type { OrganizationNote } from "@/server/notes/queries";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
-import { prospectDetailPath, prospectPlacesCard } from "@/lib/lions-den/prospect-places";
+import { prospectDetailPath, prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
 import { countWonOpportunities } from "@/lib/lions-den/desk-clients";
 import { bucketFollowUpQueues, type DeskFollowUpItem } from "@/lib/lions-den/desk-queue";
 import { LionsDenCalendarBoard } from "@/components/lions-den/lions-den-calendar";
@@ -201,6 +201,13 @@ export function LionsDenOverview({
                 </article>
               ))
             )}
+            {reviewPile.length > 0 ? (
+              <p className="mt-1 text-[10px] leading-4 text-[#8a6a12]">
+                {spanish
+                  ? "Teléfono se confirma al aceptar. Atlas no inventa números."
+                  : "Phone is checked on Accept. Atlas will not invent a number."}
+              </p>
+            ) : null}
           </div>
         </section>
 
@@ -245,12 +252,14 @@ export function LionsDenOverview({
                             {[prospect.contactName, places.phone].filter(Boolean).join(" · ")}
                           </p>
                         ) : null}
-                        {prospect.nextAction ? (
-                          <p className="truncate text-[11px] text-[#33415c]">{prospect.nextAction}</p>
+                        {presentedProspectNextAction(prospect, spanish) ? (
+                          <p className="truncate text-[11px] text-[#33415c]">
+                            {presentedProspectNextAction(prospect, spanish)}
+                          </p>
                         ) : null}
                       </div>
                       <span className="shrink-0 rounded-full bg-[#fff8e6] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#071b42]">
-                        {prospect.stage.replaceAll("_", " ")}
+                        {presentedProspectStageLabel(prospect, spanish)}
                       </span>
                     </div>
                   </Link>

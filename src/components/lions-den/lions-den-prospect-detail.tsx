@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { prospectPlacesCard } from "@/lib/lions-den/prospect-places";
+import { prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 
 type LionsDenProspectDetailProps = {
@@ -31,7 +31,7 @@ export function LionsDenProspectDetail({
           </h2>
         </div>
         <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
-          {prospect.stage.replaceAll("_", " ")}
+          {presentedProspectStageLabel(prospect, spanish)}
         </span>
       </div>
 
@@ -106,12 +106,14 @@ export function LionsDenProspectDetail({
         </p>
       ) : null}
 
-      {prospect.nextAction ? (
+      {presentedProspectNextAction(prospect, spanish) ? (
         <div className="mt-6 rounded-2xl bg-[#fbfaf4] p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5c6578]">
             {spanish ? "Próxima acción" : "Next action"}
           </p>
-          <p className="mt-2 text-sm font-semibold text-[#071b42]">{prospect.nextAction}</p>
+          <p className="mt-2 text-sm font-semibold text-[#071b42]">
+            {presentedProspectNextAction(prospect, spanish)}
+          </p>
         </div>
       ) : null}
 

@@ -82,13 +82,20 @@ test("every founder Lion's Den board mounts LionsDenBoardScreen and the live Atl
   assert.match(pane, /Talk to Atlas/);
   assert.match(pane, /submitClientAiRequest/);
   assert.match(pane, /atlasDeskNextHref/);
+  assert.match(pane, /freshDeskChatRequests/);
   assert.match(pane, /value="atlas"/);
+  assert.doesNotMatch(pane, /atlasAskUsageLabel/);
+  assert.doesNotMatch(pane, /usageLabel/);
+  assert.doesNotMatch(pane, /0 \/ 5|0\/5/);
   assert.doesNotMatch(pane, /staffRole/);
   assert.doesNotMatch(pane, /setStaffRole/);
   assert.doesNotMatch(pane, /Atlas staff/);
   assert.doesNotMatch(pane, /previewMode/);
   assert.doesNotMatch(pane, /staff chat does not send/);
   assert.doesNotMatch(pane, /staff, not a closer/);
+
+  const hub = readRepo("src/components/lions-den/lions-den-board-screen.tsx");
+  assert.match(hub, /freshDeskChatRequests/);
 
   const followUp = readRepo("src/components/lions-den/lions-den-follow-up.tsx");
   assert.match(followUp, /THE FORTUNE IS IN THE FOLLOW-UP/);

@@ -90,15 +90,43 @@ export function applyHunterSearchFilters<T extends { websiteUrl?: string | null 
   return places.filter((place) => placeMatchesHunterFilters(place, filters));
 }
 
-export type HunterGapLabel = "no_website" | "social_only";
+export type HunterGapLabel = "no_phone" | "no_website" | "social_only";
 
-export function hunterGapLabels(place: { websiteUrl?: string | null }): HunterGapLabel[] {
-  if (isMissingWebsite(place)) return ["no_website"];
-  if (isSocialWebsiteUrl(place.websiteUrl)) return ["social_only"];
-  return [];
+export function placeHasPhoneFields(place: object) {
+  return "nationalPhoneNumber" in place || "internationalPhoneNumber" in place;
+}
+
+function publishedPhoneOnPlace(phone: string | null | undefined) {
+  const raw = phone?.trim() || null;
+  if (!raw || /google did not publish/i.test(raw)) return null;
+  return raw;
+}
+
+export function isMissingPlacePhone(place: {
+  nationalPhoneNumber?: string | null;
+  internationalPhoneNumber?: string | null;
+}) {
+  if (!placeHasPhoneFields(place)) return false;
+  const stored =
+    publishedPhoneOnPlace(place.nationalPhoneNumber) ||
+    publishedPhoneOnPlace(place.internationalPhoneNumber);
+  return !stored || stored.replace(/\D/g, "").length < 7;
+}
+
+export function hunterGapLabels(place: {
+  websiteUrl?: string | null;
+  nationalPhoneNumber?: string | null;
+  internationalPhoneNumber?: string | null;
+}): HunterGapLabel[] {
+  const labels: HunterGapLabel[] = [];
+  if (isMissingPlacePhone(place)) labels.push("no_phone");
+  if (isMissingWebsite(place)) labels.push("no_website");
+  else if (isSocialWebsiteUrl(place.websiteUrl)) labels.push("social_only");
+  return labels;
 }
 
 export function formatHunterGapLabel(label: HunterGapLabel, spanish: boolean) {
+  if (label === "no_phone") return spanish ? "Sin teléfono" : "No phone";
   if (label === "no_website") return spanish ? "Sin sitio web" : "No website";
   return spanish ? "Solo redes" : "Social page only";
 }

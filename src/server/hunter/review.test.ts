@@ -53,10 +53,14 @@ test("accepted HUNTER finds become call-ready prospects without outreach copy", 
   const summary = acceptedProspectResearchSummary({
     name: "Katy Paint Studio",
     formattedAddress: "123 Main St, Katy, TX",
+    phone: "(281) 555-0147",
   });
   assert.match(summary, /review pile/);
+  assert.match(summary, /salesman can call/);
   assert.match(summary, /has not emailed, called, or texted/);
-  assert.equal(acceptedProspectNextAction().includes("Call this prospect"), true);
+  assert.equal(acceptedProspectNextAction("(281) 555-0147").includes("Call this prospect"), true);
+  assert.doesNotMatch(acceptedProspectNextAction(null), /Call this prospect/i);
+  assert.match(acceptedProspectNextAction(null), /No phone on file/);
 });
 
 test("chat answers send owners to the REVIEW PILE, not a Maps dead end", () => {
@@ -243,6 +247,8 @@ test("Accept maps Google Places fields onto the Prospect without inventing a pho
   assert.match(withPhone.research_summary, /\(281\) 555-0147/);
   assert.match(withPhone.research_summary, /has not emailed, called, or texted/);
   assert.equal(withPhone.next_action.includes("Call this prospect"), true);
+  assert.equal(withPhone.stage, "ready_for_follow_up");
+  assert.equal(withPhone.metadata.accepted_for_calling, true);
 
   const missingPhone = acceptedHunterOpportunityFields({
     reviewItemId: "review-2",
@@ -260,7 +266,13 @@ test("Accept maps Google Places fields onto the Prospect without inventing a pho
     "https://www.google.com/maps/search/?api=1&query_place_id=ChIJ-old",
   );
   assert.doesNotMatch(missingPhone.research_summary, /Phone:/);
+  assert.match(missingPhone.research_summary, /Google did not publish a phone/);
+  assert.doesNotMatch(missingPhone.next_action, /Call this prospect/i);
+  assert.match(missingPhone.next_action, /No phone on file/);
+  assert.equal(missingPhone.stage, "needs_client_input");
+  assert.equal(missingPhone.metadata.accepted_for_calling, false);
   assert.equal(pickStoredPlacePhone({ nationalPhoneNumber: "123" }), null);
+  assert.equal(pickStoredPlacePhone({ nationalPhoneNumber: "Google did not publish a phone number." }), null);
 });
 
 test("Accept prefers Place Details phone and website over empty review-pile fields", () => {
