@@ -268,6 +268,116 @@ export async function addSalesNote(formData: FormData) {
   redirect(`/lions-den/sales/${prospectId}?crm=${error ? "note_failed" : "note_added"}`);
 }
 
+const contactChannels = new Set(["phone", "email", "sms", "social", "in_person", "other"]);
+const contactOutcomes: Record<string, string> = {
+  connected: "Connected",
+  voicemail: "Left voicemail",
+  no_answer: "No answer",
+  sent: "Message sent",
+  replied: "Reply received",
+  meeting_booked: "Meeting booked",
+  other: "Other",
+};
+const preContactStatuses = new Set(["new", "researching", "review_ready", "approved_for_outreach"]);
+
+function safeSalesReturnTo(formData: FormData, fallback: string) {
+  const value = field(formData, "returnTo", 200);
+  return value && value.startsWith("/lions-den") && !value.includes("?") ? value : fallback;
+}
+
+// Records a call, email, or text that a human already made. It never sends
+// anything; it keeps last_contacted_at and the pipeline stage honest.
+export async function logSalesContact(formData: FormData) {
+  const user = await requireSuperAdmin("/lions-den/sales");
+  const prospectId = field(formData, "prospectId", 36);
+  const fallback = `/lions-den/sales/${prospectId ?? ""}`;
+  const returnTo = safeSalesReturnTo(formData, fallback);
+  const channel = field(formData, "channel", 20) ?? "phone";
+  const outcome = field(formData, "outcome", 30) ?? "connected";
+  const note = field(formData, "note", 10000);
+
+  if (!prospectId || !uuidPattern.test(prospectId) || !contactChannels.has(channel) || !(outcome in contactOutcomes)) {
+    redirectWithError(returnTo, "invalid_contact_log");
+  }
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("atlas_sales_prospects")
+    .select("status")
+    .eq("id", prospectId)
+    .maybeSingle();
+
+  if (!existing) {
+    redirectWithError("/lions-den/sales", "invalid_prospect");
+  }
+
+  const replied = outcome === "replied" || outcome === "meeting_booked";
+  const nextStatus = replied && (preContactStatuses.has(existing.status) || existing.status === "contacted")
+    ? "replied"
+    : preContactStatuses.has(existing.status)
+      ? "contacted"
+      : existing.status;
+
+  const { error: eventError } = await supabase.from("atlas_sales_events").insert({
+    prospect_id: prospectId,
+    actor_user_id: user.id,
+    actor_role: "david",
+    event_type: replied ? "reply.received" : "contact.attempted",
+    channel,
+    direction: outcome === "replied" ? "inbound" : "outbound",
+    summary: `${humanizeChannel(channel)} · ${contactOutcomes[outcome]}`,
+    body: note,
+    metadata: { outcome },
+  });
+
+  if (eventError) {
+    redirectWithError(returnTo, "contact_log_failed");
+  }
+
+  await supabase
+    .from("atlas_sales_prospects")
+    .update({ last_contacted_at: new Date().toISOString(), status: nextStatus, updated_by: user.id })
+    .eq("id", prospectId);
+
+  redirect(`${returnTo}?crm=contact_logged`);
+}
+
+function humanizeChannel(channel: string) {
+  const labels: Record<string, string> = {
+    phone: "Phone call",
+    email: "Email",
+    sms: "Text message",
+    social: "Social message",
+    in_person: "In person",
+    other: "Contact",
+  };
+  return labels[channel] ?? "Contact";
+}
+
+// One-click stage change from list views (for example "Not a fit" on the
+// trial desk). The outreach approval gate still applies.
+export async function setSalesProspectStage(formData: FormData) {
+  const user = await requireSuperAdmin("/lions-den/sales");
+  const prospectId = field(formData, "prospectId", 36);
+  const status = field(formData, "status", 50);
+  const returnTo = safeSalesReturnTo(formData, `/lions-den/sales/${prospectId ?? ""}`);
+
+  if (!prospectId || !uuidPattern.test(prospectId) || !status || !statuses.has(status) || status === "duplicate") {
+    redirectWithError(returnTo, "invalid_stage");
+  }
+  if (status === "approved_for_outreach") {
+    redirectWithError(returnTo, "approval_requires_gate");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("atlas_sales_prospects")
+    .update({ status, updated_by: user.id })
+    .eq("id", prospectId);
+
+  redirect(`${returnTo}?crm=${error ? "update_failed" : "stage_updated"}`);
+}
+
 export async function approveSalesOutreach(formData: FormData) {
   await requireSuperAdmin("/lions-den/sales");
   const prospectId = field(formData, "prospectId", 36);

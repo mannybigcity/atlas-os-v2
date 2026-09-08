@@ -30,6 +30,7 @@ export type SalesAssignedRole = (typeof salesAssignedRoles)[number];
 export type SalesProspect = {
   id: string;
   assessmentSubmissionId: string | null;
+  trialUserId: string | null;
   convertedOrganizationId: string | null;
   businessName: string;
   status: SalesProspectStatus;
@@ -107,6 +108,7 @@ export type ContactSuppression = {
 type ProspectRow = {
   id: string;
   assessment_submission_id: string | null;
+  trial_user_id: string | null;
   converted_organization_id: string | null;
   business_name: string;
   status: SalesProspectStatus;
@@ -138,12 +140,13 @@ type ProspectRow = {
 };
 
 const prospectColumns =
-  "id, assessment_submission_id, converted_organization_id, business_name, status, assigned_role, industry, address_line_1, city, region, postal_code, country_code, website, website_domain, contact_name, contact_email, contact_phone, social_media, contact_basis, fit_score, fit_reason, research_summary, next_action, next_action_at, last_contacted_at, outreach_approved_at, approved_channels, duplicate_of, created_at, updated_at";
+  "id, assessment_submission_id, trial_user_id, converted_organization_id, business_name, status, assigned_role, industry, address_line_1, city, region, postal_code, country_code, website, website_domain, contact_name, contact_email, contact_phone, social_media, contact_basis, fit_score, fit_reason, research_summary, next_action, next_action_at, last_contacted_at, outreach_approved_at, approved_channels, duplicate_of, created_at, updated_at";
 
 function mapProspect(row: ProspectRow): SalesProspect {
   return {
     id: row.id,
     assessmentSubmissionId: row.assessment_submission_id,
+    trialUserId: row.trial_user_id,
     convertedOrganizationId: row.converted_organization_id,
     businessName: row.business_name,
     status: row.status,
