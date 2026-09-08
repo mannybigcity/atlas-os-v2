@@ -32,8 +32,8 @@ export function HunterReviewPile({
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#33415c]">
             {spanish
-              ? "Acepta un resultado para que el vendedor pueda llamarlo. Atlas no envía correos, llamadas ni SMS."
-              : "Accept a listing to make it a Prospect the salesman can call. Atlas does not email, call, or text anyone."}
+              ? "Acepta un resultado para moverlo a Prospectos. Si Google no publicó teléfono, no será un prospecto para llamar. Atlas no inventa números ni envía correos, llamadas ni SMS."
+              : "Accept a listing to make it a Prospect. If Google published no phone, this will not become a Call prospect. Atlas does not invent numbers, and it does not email, call, or text anyone."}
           </p>
         </div>
         <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
@@ -118,6 +118,11 @@ export function HunterReviewPile({
                       ))}
                     </div>
                   ) : null}
+                  <p className="mt-2 text-xs font-medium text-[#8a6a12]">
+                    {spanish
+                      ? "Teléfono se confirma al aceptar. Atlas no inventa números. Si Google no publicó uno, no será para llamar."
+                      : "Phone is checked on Accept. Atlas will not invent a number. If Google published none, this will not become a Call prospect."}
+                  </p>
                   <p className="mt-2 text-xs text-[#8a93a3]" translate="no">
                     Google Maps · {item.searchQuery}
                   </p>

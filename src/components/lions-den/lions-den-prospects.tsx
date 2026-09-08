@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
-import { prospectDetailPath, prospectPlacesCard } from "@/lib/lions-den/prospect-places";
+import { prospectDetailPath, prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
 
 type LionsDenProspectsBoardProps = {
   prospects: OrganizationOpportunity[];
@@ -69,10 +69,12 @@ export function LionsDenProspectsBoard({
                       {places.address ? (
                         <p className="mt-1 text-sm text-[#5c6578]">{places.address}</p>
                       ) : null}
-                      <p className="mt-1 text-sm text-[#5c6578]">{prospect.nextAction || prospect.researchSummary}</p>
+                      <p className="mt-1 text-sm text-[#5c6578]">
+                        {presentedProspectNextAction(prospect, spanish) || prospect.researchSummary}
+                      </p>
                     </div>
                     <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
-                      {prospect.stage.replaceAll("_", " ")}
+                      {presentedProspectStageLabel(prospect, spanish)}
                     </span>
                   </div>
                 </Link>

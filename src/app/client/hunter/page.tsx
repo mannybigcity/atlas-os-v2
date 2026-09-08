@@ -41,7 +41,7 @@ type HunterPageProps = {
 
 function hunterStatusCopy(code: string | undefined, spanish: boolean) {
   const messages: Record<string, { en: string; es: string; tone: "ok" | "warn" }> = {
-    accepted: { en: "That listing is now a Prospect. The salesman can call. Atlas did not contact anyone.", es: "Esa ficha ahora es un prospecto. El vendedor puede llamar. Atlas no contactó a nadie.", tone: "ok" },
+    accepted: { en: "That listing is now a Prospect. Atlas did not contact anyone.", es: "Esa ficha ahora es un prospecto. Atlas no contactó a nadie.", tone: "ok" },
     already_accepted: { en: "That listing was already accepted into Prospects. Open Prospects to call.", es: "Esa ficha ya estaba aceptada en Prospectos. Abre Prospectos para llamar.", tone: "ok" },
     dismissed: { en: "That listing was removed from the review pile.", es: "Esa ficha se quitó de la pila de revisión.", tone: "ok" },
     duplicate: { en: "A Prospect with that business name already exists. Open Prospects to work that call.", es: "Ya existe un prospecto con ese nombre. Abre Prospectos para esa llamada.", tone: "warn" },

@@ -47,6 +47,30 @@ test("No website uses Places websiteUri only and does not invent a site", () => 
   assert.equal(isMissingWebsite(facebookOnly), false);
   assert.deepEqual(hunterGapLabels(noSite), ["no_website"]);
   assert.deepEqual(hunterGapLabels(withSite), []);
+  assert.deepEqual(
+    hunterGapLabels({
+      websiteUrl: "https://katypaint.example/",
+      nationalPhoneNumber: null,
+      internationalPhoneNumber: null,
+    }),
+    ["no_phone"],
+  );
+  assert.deepEqual(
+    hunterGapLabels({
+      websiteUrl: null,
+      nationalPhoneNumber: "(281) 246-8800",
+      internationalPhoneNumber: "+1 281-246-8800",
+    }),
+    ["no_website"],
+  );
+  assert.deepEqual(
+    hunterGapLabels({
+      websiteUrl: null,
+      nationalPhoneNumber: null,
+      internationalPhoneNumber: null,
+    }),
+    ["no_phone", "no_website"],
+  );
 });
 
 test("Weak social treats a missing site or a social-profile website as a gap", () => {

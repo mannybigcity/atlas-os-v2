@@ -1,5 +1,12 @@
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 
+export const CALL_PROSPECT_NEXT_ACTION =
+  "Call this prospect. Atlas has not contacted them.";
+export const NO_PHONE_PROSPECT_NEXT_ACTION =
+  "No phone on file. Open Maps, add a number, or follow up another way. Atlas has not contacted them.";
+export const NO_PHONE_PROSPECT_NEXT_ACTION_ES =
+  "Sin teléfono. Abre Maps, agrega un número, o sigue de otra forma. Atlas no los ha contactado.";
+
 export function googleMapsUrlFromPlaceId(placeId: string | null | undefined) {
   const id = placeId?.trim();
   if (!id) return null;
@@ -13,12 +20,31 @@ export function prospectDetailPath(opportunityId: string, listHref = "/client/pr
   return `${url.pathname}${url.search}`;
 }
 
+export function isUnpublishedPlacePhone(phone: string | null | undefined) {
+  const raw = phone?.trim() ?? "";
+  if (!raw) return true;
+  return /google did not publish/i.test(raw) || /no (publicó|publico) un tel[eé]fono/i.test(raw);
+}
+
+export function publishedPlacePhone(phone: string | null | undefined) {
+  const raw = phone?.trim() || null;
+  if (!raw || isUnpublishedPlacePhone(raw)) return null;
+  return raw;
+}
+
 export function prospectTelHref(phone: string | null | undefined) {
-  const raw = phone?.trim();
+  const raw = publishedPlacePhone(phone);
   if (!raw) return null;
   const href = raw.replace(/[^\d+]/g, "");
   if (href.replace(/\D/g, "").length < 7) return null;
   return `tel:${href}`;
+}
+
+export function looksLikeCallNextAction(text: string | null | undefined) {
+  const raw = String(text ?? "").trim();
+  if (!raw) return false;
+  if (/\bdo not call\b|\bno llames\b/i.test(raw)) return false;
+  return /\bcall\b|\bllama(?:r|me)?\b|\bllame\b/i.test(raw);
 }
 
 function metadataString(value: unknown) {
@@ -37,10 +63,11 @@ function addressFromResearchSummary(summary: string | null | undefined) {
 
 export function prospectPlacesCard(prospect: OrganizationOpportunity) {
   const metadata = prospect.metadata ?? {};
-  const phone =
+  const phone = publishedPlacePhone(
     prospect.contactPhone?.trim() ||
-    metadataString(metadata.national_phone_number) ||
-    metadataString(metadata.international_phone_number);
+      metadataString(metadata.national_phone_number) ||
+      metadataString(metadata.international_phone_number),
+  );
   const placeId = metadataString(metadata.google_place_id);
   const mapsUrl =
     prospect.sourceUrl?.trim() ||
@@ -60,4 +87,35 @@ export function prospectPlacesCard(prospect: OrganizationOpportunity) {
     primaryType: metadataString(metadata.primary_type),
     businessStatus: metadataString(metadata.business_status),
   };
+}
+
+export function prospectHasCallablePhone(prospect: OrganizationOpportunity) {
+  return Boolean(prospectPlacesCard(prospect).phoneHref);
+}
+
+export function presentedProspectNextAction(
+  prospect: OrganizationOpportunity,
+  spanish = false,
+) {
+  if (prospectHasCallablePhone(prospect)) {
+    return prospect.nextAction?.trim() || CALL_PROSPECT_NEXT_ACTION;
+  }
+  if (!prospect.nextAction?.trim() || looksLikeCallNextAction(prospect.nextAction)) {
+    return spanish ? NO_PHONE_PROSPECT_NEXT_ACTION_ES : NO_PHONE_PROSPECT_NEXT_ACTION;
+  }
+  return prospect.nextAction;
+}
+
+export function presentedProspectStageLabel(
+  prospect: OrganizationOpportunity,
+  spanish = false,
+) {
+  const stage = prospect.stage;
+  if (
+    !prospectHasCallablePhone(prospect) &&
+    (stage === "ready_for_follow_up" || stage === "needs_client_input")
+  ) {
+    return spanish ? "Falta teléfono" : "Needs phone";
+  }
+  return stage.replaceAll("_", " ");
 }
