@@ -2,9 +2,12 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenProspectDetail } from "@/components/lions-den/lions-den-prospect-detail";
-import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
+import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
+import { prospectStatusMessage } from "@/lib/lions-den/prospect-actions";
+import { trialInboxPreviewHref } from "@/lib/lions-den/trial-inbox";
+import { trialLinkFromMetadata } from "@/lib/lions-den/trial-prospect";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getOrganizationOpportunity } from "@/server/opportunities/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
@@ -24,6 +27,7 @@ type ProspectDetailPageProps = {
     lang?: string;
     previewOrg?: string;
     workspace?: string;
+    status?: string;
   }>;
 };
 
@@ -47,16 +51,29 @@ export default async function ProspectDetailPage({
   }
   if (!result.data) notFound();
 
+  const spanish = language === "es";
+  const previewOrgSlug = workspace.previewOrgSlug || undefined;
+  const workspaceSlug = workspace.selectedWorkspaceSlug || undefined;
+  const trialLink = trialLinkFromMetadata(result.data.metadata);
+
   return (
     <LionsDenBoardScreen board="prospects" workspace={workspace}>
       <LionsDenProspectDetail
-        backHref={lionsDenHref(
-          "/client/prospects",
-          workspace.previewOrgSlug || undefined,
-          workspace.selectedWorkspaceSlug || undefined,
-        )}
+        allowActions={
+          workspace.canEditBusinessProfile &&
+          !workspace.isClientPreview &&
+          !isSisOrganization(organization)
+        }
+        backHref={lionsDenHref("/client/prospects", previewOrgSlug, workspaceSlug)}
         prospect={presentLiveDeskOpportunity(organization, result.data)}
-        spanish={language === "es"}
+        returnTo={lionsDenHref(`/client/prospects/${id}`, previewOrgSlug, workspaceSlug)}
+        spanish={spanish}
+        statusMessage={prospectStatusMessage(query?.status, spanish)}
+        trialDeskHref={
+          workspace.isSuperAdmin && trialLink?.organizationSlug
+            ? trialInboxPreviewHref(trialLink.organizationSlug)
+            : null
+        }
       />
     </LionsDenBoardScreen>
   );

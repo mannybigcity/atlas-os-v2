@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenTrialInboxBoard } from "@/components/lions-den/lions-den-trial-inbox";
+import { trialDeskStatusMessage } from "@/lib/lions-den/prospect-actions";
 import { canSeeTrialInboxNav } from "@/lib/lions-den/trial-inbox";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getAfeTrialInbox } from "@/server/trials/inbox";
@@ -21,6 +22,10 @@ type TrialInboxPageProps = {
     lang?: string;
     previewOrg?: string;
     workspace?: string;
+    trial?: string;
+    added?: string;
+    failed?: string;
+    reason?: string;
   }>;
 };
 
@@ -46,6 +51,7 @@ export default async function TrialInboxPage({ searchParams }: TrialInboxPagePro
         rows={inbox.setupRequired ? [] : inbox.data}
         setupRequired={inbox.setupRequired}
         spanish={language === "es"}
+        statusMessage={trialDeskStatusMessage(params, language === "es")}
       />
     </LionsDenBoardScreen>
   );
