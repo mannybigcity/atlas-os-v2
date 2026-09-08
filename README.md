@@ -94,9 +94,15 @@ processed flag; this window is the human-approval queue.
 `confirmed` (email confirmed, no sign-in), `signed_up` (not confirmed yet).
 Upgraded orgs are excluded from the queue.
 
-**Click.** A row opens that org’s desk with `/client?previewOrg=<slug>`.
-Trials are never copied into Prospects or HUNTER. Atlas does not email, call,
-or text anyone.
+**Buttons.** Each row shows the phone, business type, and growth goal from the
+trial form, plus **Call / Text / Email** (device `tel:` / `sms:` / `mailto:`
+links), **Add to Prospects** (or **Open prospect** once linked), and **Open
+their desk** (`/client?previewOrg=<slug>`). New trial workspaces are linked to
+the founder's Prospects desk automatically; **Add N to Prospects** backfills
+older ones. The prospect record has Log a touch, Edit contact, Next step, and
+stage buttons. Full runbook: `docs/TRIAL_FUNNEL_CRM.md`. Atlas still never
+emails, calls, or texts anyone; every contact is made by a human from their own
+phone.
 
 **Exclusions.** SIS Custom Creations, sample desk `afe-crm-demo`, the AFE
 operator desk, QTime, the founder mailbox, `@atlasforentrepreneurs.com`
