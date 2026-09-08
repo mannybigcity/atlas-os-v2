@@ -63,6 +63,12 @@ export type TrialInboxCandidate = {
   emailConfirmedAt?: string | null;
   lastSignInAt?: string | null;
   upgraded?: boolean;
+  phone?: string | null;
+  businessType?: string | null;
+  primaryGrowthGoal?: string | null;
+  /** organization_opportunities.id in the founder's operator desk, when linked. */
+  prospectId?: string | null;
+  prospectStage?: string | null;
 };
 
 export type TrialInboxRow = {
@@ -78,6 +84,12 @@ export type TrialInboxRow = {
   organizationId: string;
   organizationSlug: string;
   previewHref: string;
+  phone: string | null;
+  businessType: string | null;
+  primaryGrowthGoal: string | null;
+  prospectId: string | null;
+  prospectStage: string | null;
+  prospectHref: string | null;
 };
 
 export function trialInboxWindowStart(now: Date, days = TRIAL_INBOX_WINDOW_DAYS) {
@@ -189,6 +201,12 @@ export function trialInboxPreviewHref(slug: string) {
   return `/client?previewOrg=${encodeURIComponent(slug)}`;
 }
 
+/** The founder's CRM record for this trial. Lives on the operator desk, so no previewOrg. */
+export function trialInboxProspectHref(prospectId: string | null | undefined) {
+  const id = String(prospectId ?? "").trim();
+  return id ? `/client/prospects/${encodeURIComponent(id)}` : null;
+}
+
 export function trialInboxStatusLabel(status: TrialInboxStatus, spanish = false) {
   const labels: Record<TrialInboxStatus, { en: string; es: string }> = {
     signed_up: { en: "Signed up", es: "Registrado" },
@@ -264,6 +282,12 @@ export function selectTrialInboxRows(
       organizationId: String(candidate.organizationId ?? ""),
       organizationSlug: slug,
       previewHref: trialInboxPreviewHref(slug),
+      phone: cleanDisplay(candidate.phone),
+      businessType: cleanDisplay(candidate.businessType),
+      primaryGrowthGoal: cleanDisplay(candidate.primaryGrowthGoal),
+      prospectId: cleanDisplay(candidate.prospectId),
+      prospectStage: cleanDisplay(candidate.prospectStage),
+      prospectHref: trialInboxProspectHref(candidate.prospectId),
     };
 
     if (!existing || (parseTimestamp(row.startedAt) ?? 0) >= (parseTimestamp(existing.startedAt) ?? 0)) {

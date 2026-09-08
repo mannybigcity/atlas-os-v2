@@ -7,6 +7,7 @@ import {
   workspaceSlugFromIdentity,
 } from "@/server/stripe/paid-workspace-identity";
 import { ensureTrialLionsDenSeed } from "@/server/trials/desk-seed";
+import { ensureTrialProspect } from "@/server/trials/prospect-link";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
@@ -81,6 +82,27 @@ async function createUniqueOrganization(service: ServiceClient, name: string, de
   throw new Error("Could not allocate a unique trial workspace slug.");
 }
 
+// A brand-new trial workspace means a brand-new lead. Put it on the founder's
+// Prospects desk right away so it can be called, texted, or emailed by a human.
+// Best effort: a CRM hiccup must never block the trial owner from their desk.
+async function linkTrialLeadToFounderProspects(
+  service: ServiceClient,
+  userId: string,
+  organizationId: string,
+) {
+  try {
+    const link = await ensureTrialProspect(
+      { userId, organizationId, linkedFrom: "trial_signup" },
+      service,
+    );
+    if (!link.ok && link.error !== "excluded") {
+      console.error("Atlas trial lead -> Prospects link skipped", { userId, error: link.error });
+    }
+  } catch (error) {
+    console.error("Atlas trial lead -> Prospects link failed", error);
+  }
+}
+
 export async function ensureTrialWorkspace(input: TrialWorkspaceInput): Promise<TrialWorkspaceResult> {
   const businessName = cleanBusinessName(input.businessName);
   const email = String(input.email ?? "").trim().toLowerCase();
@@ -136,6 +158,7 @@ export async function ensureTrialWorkspace(input: TrialWorkspaceInput): Promise<
     }
 
     await seedDesk(organizationId);
+    await linkTrialLeadToFounderProspects(service, input.userId, organizationId);
     return { ok: true, organizationId };
   } catch (error) {
     const racedOrganizationId = await findExistingMembershipOrganizationId(service, input.userId);

@@ -9,6 +9,11 @@ import {
 } from "@/lib/lions-den/trial-inbox";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { WorkspaceQueryResult } from "@/server/organizations/queries";
+import {
+  findOperatorDeskOrganizationId,
+  loadTrialProspectLinks,
+  type TrialProspectLink,
+} from "@/server/trials/prospect-link";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
@@ -28,6 +33,9 @@ type MembershipRow = {
 type TrialProfileRow = {
   user_id: string;
   full_name: string | null;
+  phone: string | null;
+  business_type: string | null;
+  primary_growth_goal: string | null;
   trial_started_at: string | null;
 };
 
@@ -82,10 +90,11 @@ export async function getAfeTrialInbox(
 
     const membershipRows = (memberships.data ?? []) as MembershipRow[];
     const userIds = [...new Set(membershipRows.map((row) => row.user_id))];
-    const [owners, trialProfiles, billing] = await Promise.all([
+    const [owners, trialProfiles, billing, prospects] = await Promise.all([
       loadOwnerIdentities(service, userIds),
       loadTrialProfiles(service, userIds),
       loadLinkedBilling(service, organizationIds),
+      loadFounderProspectLinks(service, userIds),
     ]);
 
     const orgById = new Map(organizationRows.map((row) => [row.id, row]));
@@ -96,6 +105,7 @@ export async function getAfeTrialInbox(
       if (!organization) continue;
       const owner = owners.get(membership.user_id);
       const profile = trialProfiles.get(membership.user_id);
+      const prospect = prospects.get(membership.user_id);
       candidates.push({
         userId: membership.user_id,
         ownerName: owner?.fullName || profile?.full_name || null,
@@ -109,6 +119,11 @@ export async function getAfeTrialInbox(
         emailConfirmedAt: owner?.emailConfirmedAt || null,
         lastSignInAt: owner?.lastSignInAt || null,
         upgraded: billing.has(organization.id),
+        phone: profile?.phone || null,
+        businessType: profile?.business_type || null,
+        primaryGrowthGoal: profile?.primary_growth_goal || null,
+        prospectId: prospect?.id || null,
+        prospectStage: prospect?.stage || null,
       });
     }
 
@@ -183,7 +198,7 @@ async function loadTrialProfiles(service: ServiceClient, userIds: string[]) {
   try {
     const result = await service
       .from("atlas_trial_profiles")
-      .select("user_id, full_name, trial_started_at")
+      .select("user_id, full_name, phone, business_type, primary_growth_goal, trial_started_at")
       .in("user_id", userIds);
     if (result.error) return profiles;
     for (const row of (result.data ?? []) as TrialProfileRow[]) {
@@ -194,6 +209,18 @@ async function loadTrialProfiles(service: ServiceClient, userIds: string[]) {
   }
 
   return profiles;
+}
+
+async function loadFounderProspectLinks(service: ServiceClient, userIds: string[]) {
+  if (userIds.length === 0) return new Map<string, TrialProspectLink>();
+  try {
+    const operatorDeskId = await findOperatorDeskOrganizationId(service);
+    if (!operatorDeskId) return new Map<string, TrialProspectLink>();
+    return await loadTrialProspectLinks(service, operatorDeskId, userIds);
+  } catch {
+    // The queue still renders; rows simply show "Add to Prospects".
+    return new Map<string, TrialProspectLink>();
+  }
 }
 
 async function loadLinkedBilling(service: ServiceClient, organizationIds: string[]) {
