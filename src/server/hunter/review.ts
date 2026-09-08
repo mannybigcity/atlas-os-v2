@@ -167,7 +167,7 @@ export function acceptedHunterOpportunityFields(input: AcceptedHunterOpportunity
   return {
     name: input.name.slice(0, 220),
     opportunity_type: "customer" as const,
-    stage: (phone ? "ready_for_follow_up" : "needs_client_input") as const,
+    stage: phone ? ("ready_for_follow_up" as const) : ("needs_client_input" as const),
     fit_score: 0,
     owner_role: "client" as const,
     source_label: "HUNTER Google Maps",

@@ -1,5 +1,3 @@
-import { publishedPlacePhone } from "../../lib/lions-den/prospect-places.ts";
-
 export type HunterSearchFilters = {
   missingWebsite: boolean;
   weakSocial: boolean;
@@ -98,14 +96,20 @@ export function placeHasPhoneFields(place: object) {
   return "nationalPhoneNumber" in place || "internationalPhoneNumber" in place;
 }
 
+function publishedPhoneOnPlace(phone: string | null | undefined) {
+  const raw = phone?.trim() || null;
+  if (!raw || /google did not publish/i.test(raw)) return null;
+  return raw;
+}
+
 export function isMissingPlacePhone(place: {
   nationalPhoneNumber?: string | null;
   internationalPhoneNumber?: string | null;
 }) {
   if (!placeHasPhoneFields(place)) return false;
   const stored =
-    publishedPlacePhone(place.nationalPhoneNumber) ||
-    publishedPlacePhone(place.internationalPhoneNumber);
+    publishedPhoneOnPlace(place.nationalPhoneNumber) ||
+    publishedPhoneOnPlace(place.internationalPhoneNumber);
   return !stored || stored.replace(/\D/g, "").length < 7;
 }
 
