@@ -14,6 +14,7 @@ type HunterReviewRow = {
   formatted_address: string | null;
   google_maps_url: string | null;
   website_url: string | null;
+  phone?: string | null;
   primary_type: string | null;
   business_status: string | null;
   search_query: string;
@@ -31,6 +32,7 @@ function mapReviewItem(row: HunterReviewRow): HunterReviewItem {
     formattedAddress: row.formatted_address,
     googleMapsUrl: row.google_maps_url,
     websiteUrl: row.website_url,
+    phone: row.phone ?? null,
     primaryType: row.primary_type,
     businessStatus: row.business_status,
     searchQuery: row.search_query,
@@ -47,7 +49,7 @@ export async function getHunterReviewPile(
   const { data, error } = await supabase
     .from("organization_hunter_review_items")
     .select(
-      "id, organization_id, place_id, name, formatted_address, google_maps_url, website_url, primary_type, business_status, search_query, status, accepted_opportunity_id, created_at",
+      "id, organization_id, place_id, name, formatted_address, google_maps_url, website_url, phone, primary_type, business_status, search_query, status, accepted_opportunity_id, created_at",
     )
     .eq("organization_id", organizationId)
     .eq("status", "pending")

@@ -1,3 +1,4 @@
+import { readJobValue } from "./prospect-stages.ts";
 import { isTrialSampleOpportunity } from "./trial-samples.ts";
 
 export type DeskClient = {
@@ -15,6 +16,8 @@ export type DeskClient = {
   createdAt: string;
   /** True for the example win Atlas seeds into a trial desk. */
   sample?: boolean;
+  /** Dollar value the owner typed when marking the prospect won. */
+  jobValue?: number | null;
 };
 
 export function wonOpportunityToDeskClient(row: {
@@ -30,6 +33,7 @@ export function wonOpportunityToDeskClient(row: {
   metadata?: Record<string, unknown> | null;
 }): DeskClient {
   const notes = row.researchSummary.replace(/\s+/g, " ").trim();
+  const jobValue = readJobValue(row.metadata);
   return {
     id: row.id,
     displayName: row.name,
@@ -44,6 +48,7 @@ export function wonOpportunityToDeskClient(row: {
     paymentTotal: null,
     createdAt: row.createdAt,
     sample: isTrialSampleOpportunity(row),
+    ...(jobValue != null ? { jobValue } : {}),
   };
 }
 

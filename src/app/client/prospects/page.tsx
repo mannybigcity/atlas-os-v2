@@ -22,6 +22,7 @@ type ProspectsPageProps = {
     lang?: string;
     previewOrg?: string;
     workspace?: string;
+    prospect?: string;
   }>;
 };
 
@@ -39,6 +40,8 @@ export default async function ProspectsPage({ searchParams }: ProspectsPageProps
   return (
     <LionsDenBoardScreen board="prospects" workspace={workspace}>
       <LionsDenProspectsBoard
+        notice={params?.prospect}
+        organizationId={workspace.primaryOrganization?.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospects={(pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
           presentLiveDeskOpportunity(workspace.primaryOrganization, item),
