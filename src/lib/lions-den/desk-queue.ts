@@ -2,6 +2,7 @@ export type DeskFollowUpDraftControls = {
   opportunityId: string;
   organizationId: string;
   contactEmail: string | null;
+  contactPhone?: string | null;
   contactName: string | null;
   draftBody: string;
 };
