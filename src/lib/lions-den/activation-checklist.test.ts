@@ -92,8 +92,9 @@ test("copy stays office-manager short and never invents DEMO or outreach", () =>
   const es = activationChecklistCopy({ spanish: true });
   const visible = `${en.eyebrow} ${en.title} ${en.hint} ${en.doneHint} ${en.steps.find10.detail} ${en.steps.accept1.detail} ${en.steps.micah.detail}`;
 
-  assert.equal(en.eyebrow, "First three");
-  assert.equal(en.title, "Open the desk.");
+  assert.equal(en.eyebrow, "Start here · your first 3 steps");
+  assert.equal(en.title, "Land your first real prospect this week.");
+  assert.doesNotMatch(visible, /salesman|open the desk/i);
   assert.match(en.hint, /You call/);
   assert.match(en.hint, /does not email, call, or text/);
   assert.equal(en.steps.find10.label, "Find 10");

@@ -17,6 +17,16 @@ import {
   isActivationSampleWalkthrough,
   shouldShowActivationChecklist,
 } from "@/lib/lions-den/activation-checklist";
+import {
+  countRealHunterFinds,
+  countRealProspects,
+  hasTrialSamples,
+  isTrialSampleDraft,
+  isTrialSampleHunterItem,
+  isTrialSampleOpportunity,
+  trialSampleCopy,
+} from "@/lib/lions-den/trial-samples";
+import { clearTrialSamples } from "@/server/trials/sample-actions";
 
 type LionsDenOverviewProps = {
   organizationId?: string;
@@ -35,10 +45,6 @@ type LionsDenOverviewProps = {
   notes: OrganizationNote[];
 };
 
-function isDemoLabel(_value: string | null | undefined) {
-  return false;
-}
-
 export function LionsDenOverview({
   organizationId,
   organizationName,
@@ -56,6 +62,13 @@ export function LionsDenOverview({
   notes,
 }: LionsDenOverviewProps) {
   const href = (path: string) => lionsDenHref(path, previewOrgSlug, workspaceSlug);
+  const sampleCopy = trialSampleCopy(spanish);
+  const showSampleBanner =
+    Boolean(organizationId) &&
+    !sisDashboard &&
+    hasTrialSamples({ opportunities: prospects, hunterItems: reviewPile, drafts });
+  const realFoundCount = countRealHunterFinds(reviewPile) + countRealProspects(prospects.filter((item) => item.stage !== "won"));
+  const realAcceptedCount = countRealProspects(prospects);
   const deskOrganization = {
     name: organizationName,
     slug: organizationSlug || workspaceSlug || previewOrgSlug,
@@ -77,6 +90,7 @@ export function LionsDenOverview({
         detail: item.nextAction,
         dueAt: item.nextActionDue!,
         href: prospectDetailPath(item.id, href("/client/prospects")),
+        sample: isTrialSampleOpportunity(item),
       })),
     ...partyEvents
       .filter((item) => item.nextActionDue)
@@ -113,17 +127,37 @@ export function LionsDenOverview({
       <section className="ld-desk-metrics space-y-1.5">
         {showActivation && organizationId ? (
           <LionsDenActivationChecklist
-            acceptedCount={acceptedCount}
-            drafts={drafts}
-            foundCount={foundCount}
+            acceptedCount={sampleWalkthrough ? acceptedCount : realAcceptedCount}
+            drafts={drafts.filter((draft) => sampleWalkthrough || !isTrialSampleDraft(draft))}
+            foundCount={sampleWalkthrough ? foundCount : realFoundCount}
             hunterHref={href("/client/hunter")}
             micahHref={`${href("/client/micah")}#micah-week-desk`}
             organizationId={organizationId}
-            pendingCount={reviewPile.length}
+            pendingCount={sampleWalkthrough ? reviewPile.length : countRealHunterFinds(reviewPile)}
             prospectsHref={href("/client/prospects")}
             sampleWalkthrough={sampleWalkthrough}
             spanish={spanish}
           />
+        ) : null}
+        {showSampleBanner && organizationId ? (
+          <div className="ld-sample-banner flex flex-col gap-2 rounded-md border border-[#e9d9a6] bg-[#fff8e6] px-3 py-2 sm:flex-row sm:items-center sm:justify-between" role="note">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#8a6a12]">
+                {sampleCopy.badge} · {sampleCopy.bannerTitle}
+              </p>
+              <p className="mt-0.5 text-xs leading-5 text-[#5c4a12]">{sampleCopy.bannerBody}</p>
+            </div>
+            <form action={clearTrialSamples} className="shrink-0">
+              <input name="organizationId" type="hidden" value={organizationId} />
+              {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+              <button
+                className="rounded-full border border-[#8a6a12] bg-white px-3 py-1.5 text-xs font-semibold text-[#5c4a12] transition hover:bg-[#8a6a12] hover:text-white"
+                type="submit"
+              >
+                {sampleCopy.clear}
+              </button>
+            </form>
+          </div>
         ) : null}
         <div className="ld-desk-metrics-row">
           <MetricChip href={href("/client/prospects")} label={spanish ? "Prospectos" : "Prospects"} value={prospects.length} />
@@ -173,7 +207,7 @@ export function LionsDenOverview({
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1">
                         <h3 className="truncate text-sm font-semibold text-[#071b42]">{item.name}</h3>
-                        {isDemoLabel(item.name) ? <DemoBadge /> : null}
+                        {isTrialSampleHunterItem(item) ? <DemoBadge label={sampleCopy.badge} /> : null}
                       </div>
                       {item.formattedAddress ? (
                         <p className="truncate text-[11px] text-[#5c6578]">{item.formattedAddress}</p>
@@ -245,7 +279,7 @@ export function LionsDenOverview({
                           <h3 className="truncate text-sm font-semibold text-[#071b42] underline decoration-[#d8c27a] underline-offset-2">
                             {prospect.name}
                           </h3>
-                          {isDemoLabel(prospect.name) ? <DemoBadge /> : null}
+                          {isTrialSampleOpportunity(prospect) ? <DemoBadge label={sampleCopy.badge} /> : null}
                         </div>
                         {prospect.contactName || places.phone ? (
                           <p className="truncate text-[11px] text-[#071b42]">
@@ -319,7 +353,7 @@ export function LionsDenOverview({
                 {drafts.slice(0, 4).map((draft) => (
                   <li className="flex items-center justify-between gap-2 text-xs" key={draft.id}>
                     <span className="truncate font-semibold text-[#071b42]">{draft.title || draft.headline}</span>
-                    {isDemoLabel(draft.title) || isDemoLabel(draft.headline) ? <DemoBadge /> : null}
+                    {isTrialSampleDraft(draft) ? <DemoBadge label={sampleCopy.badge} /> : null}
                   </li>
                 ))}
               </ul>
@@ -404,10 +438,13 @@ export function LionsDenOverview({
   );
 }
 
-function DemoBadge() {
+function DemoBadge({ label }: { label: string }) {
   return (
-    <span className="rounded-full bg-[#fff8e6] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-[#8a6a12]">
-      DEMO
+    <span
+      className="rounded-full bg-[#fff8e6] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-[#8a6a12]"
+      title="Sample record added by Atlas so you can see how the desk works. Not a real business."
+    >
+      {label}
     </span>
   );
 }
@@ -442,6 +479,7 @@ function QueueColumn({
   overdueIds?: Set<string>;
   spanish: boolean;
 }) {
+  const sampleLabel = trialSampleCopy(spanish).badge;
   return (
     <div className="ld-followup-col min-h-0 overflow-auto rounded-md border border-[#ece7d8] bg-[#fbfaf4] p-2">
       <div className="flex items-center justify-between gap-2">
@@ -452,7 +490,7 @@ function QueueColumn({
         <p className="mt-2 text-xs leading-5 text-[#5c6578]">{emptyText}</p>
       ) : (
         items.slice(0, 8).map((item) => (
-          <QueueRow item={item} key={item.id} overdue={overdueIds?.has(item.id)} overdueLabel={spanish ? "Atrasado" : "Overdue"} />
+          <QueueRow item={item} key={item.id} overdue={overdueIds?.has(item.id)} overdueLabel={spanish ? "Atrasado" : "Overdue"} sampleLabel={sampleLabel} />
         ))
       )}
     </div>
@@ -463,16 +501,18 @@ function QueueRow({
   item,
   overdue,
   overdueLabel,
+  sampleLabel,
 }: {
   item: DeskFollowUpItem;
   overdue?: boolean;
   overdueLabel?: string;
+  sampleLabel: string;
 }) {
   const inner = (
     <>
       <div className="flex flex-wrap items-center gap-1">
         <p className="text-sm font-semibold leading-5 text-[#071b42]">{item.title}</p>
-        {isDemoLabel(item.title) ? <DemoBadge /> : null}
+        {item.sample ? <DemoBadge label={sampleLabel} /> : null}
         {overdue ? (
           <span className="rounded-full bg-[#fff1f1] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8a1f1f]">
             {overdueLabel}
