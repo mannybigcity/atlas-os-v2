@@ -11,6 +11,7 @@ import {
   type LionsDenBoard,
 } from "@/lib/lions-den/client-hub";
 import { trialInboxNavLabel } from "@/lib/lions-den/trial-inbox";
+import { TRIAL_UPGRADE_HREF, trialPillCopy, type DeskTrialStatus } from "@/lib/lions-den/trial-status";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import type { ClientAiRequest } from "@/server/client-ai/queries";
 import type { ClientAiDailyUsage } from "@/server/client-ai/queries";
@@ -27,6 +28,7 @@ type LionsDenClientHubProps = {
   aiUsage?: ClientAiDailyUsage | null;
   showTrialInbox?: boolean;
   trialInboxCount?: number;
+  trial?: DeskTrialStatus | null;
   children: ReactNode;
 };
 
@@ -42,10 +44,17 @@ export async function LionsDenClientHub({
   aiUsage = null,
   showTrialInbox = false,
   trialInboxCount = 0,
+  trial = null,
   children,
 }: LionsDenClientHubProps) {
   const language = await getSiteLanguage();
   const spanish = language === "es";
+  const trialPill = trial ? trialPillCopy(trial, spanish) : null;
+  const settingsHref = lionsDenHref("/client/settings", previewOrgSlug, workspaceSlug);
+  const utilityLinks = [
+    { id: "settings", href: settingsHref, label: spanish ? "Ajustes y plan" : "Settings & plan" },
+    { id: "help", href: `${settingsHref}#help`, label: spanish ? "Ayuda" : "Help" },
+  ];
   const organization = { name: organizationName, slug: organizationSlug || workspaceSlug };
   const portalName = getClientPortalName(organizationName, organization);
   const orgLabel = getClientPortalOrgLabel(organization);
@@ -82,6 +91,21 @@ export async function LionsDenClientHub({
                   </Link>
                 ))
               : null}
+            {trialPill ? (
+              <Link
+                aria-label={`${trialPill.label}. ${trialPill.action}`}
+                className={`ld-trial-pill inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                  trial?.endingSoon || trial?.expired
+                    ? "border-[#ffb4a2] bg-[#ffb4a2]/15 text-[#ffd8cc] hover:bg-[#ffb4a2]/25"
+                    : "border-[#f5b932]/60 bg-[#f5b932]/10 text-[#ffe08a] hover:bg-[#f5b932]/20"
+                }`}
+                data-days-remaining={trial?.daysRemaining}
+                href={TRIAL_UPGRADE_HREF}
+              >
+                <span>{trialPill.label}</span>
+                <span className="rounded-full bg-[#f5b932] px-2 py-0.5 text-[#071b42]">{trialPill.action}</span>
+              </Link>
+            ) : null}
             <LanguageSwitcher />
             <form action={signOut}>
               <button
@@ -140,6 +164,23 @@ export async function LionsDenClientHub({
                   );
                 })
               : null}
+            <span aria-hidden className="hidden xl:block xl:h-px xl:my-2 xl:bg-white/15" />
+            {utilityLinks.map((item) => {
+              const active = item.id === board;
+              return (
+                <Link
+                  className={`block shrink-0 rounded-md px-2.5 py-1.5 text-sm font-semibold transition ${
+                    active
+                      ? "bg-[#f5b932] text-[#071b42]"
+                      : "text-white/70 hover:bg-white/10 hover:text-white"
+                  }`}
+                  href={item.href}
+                  key={item.id}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
         </aside>
 

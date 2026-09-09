@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { prospectDetailPath, prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
+import { isTrialSampleOpportunity, trialSampleCopy } from "@/lib/lions-den/trial-samples";
+import { SampleBadge } from "@/components/lions-den/sample-badge";
 
 type LionsDenProspectsBoardProps = {
   prospects: OrganizationOpportunity[];
@@ -58,8 +60,9 @@ export function LionsDenProspectsBoard({
                 <Link className="block rounded-2xl outline-offset-4 hover:bg-[#fffdf6]" href={href}>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h3 className="font-semibold text-[#071b42] underline decoration-[#d8c27a] underline-offset-4">
-                        {prospect.name}
+                      <h3 className="flex flex-wrap items-center gap-2 font-semibold text-[#071b42]">
+                        <span className="underline decoration-[#d8c27a] underline-offset-4">{prospect.name}</span>
+                        {isTrialSampleOpportunity(prospect) ? <SampleBadge label={trialSampleCopy(spanish).badge} /> : null}
                       </h3>
                       {prospect.contactName || places.phone ? (
                         <p className="mt-1 text-sm font-medium text-[#071b42]">

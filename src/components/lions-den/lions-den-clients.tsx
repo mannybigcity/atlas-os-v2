@@ -1,4 +1,6 @@
 import type { DeskClient } from "@/lib/lions-den/desk-clients";
+import { trialSampleCopy } from "@/lib/lions-den/trial-samples";
+import { SampleBadge } from "@/components/lions-den/sample-badge";
 
 type LionsDenClientsBoardProps = {
   customers: DeskClient[];
@@ -90,7 +92,10 @@ export function LionsDenClientsBoard({
                 return (
                   <tr key={customer.id}>
                     <td className="py-3 pr-3 align-top">
-                      <p className="font-semibold text-[#071b42]">{customer.displayName}</p>
+                      <p className="flex flex-wrap items-center gap-2 font-semibold text-[#071b42]">
+                        <span>{customer.displayName}</span>
+                        {customer.sample ? <SampleBadge label={trialSampleCopy(spanish).badge} /> : null}
+                      </p>
                       {customer.contactName ? (
                         <p className="mt-0.5 text-[11px] text-[#5c6578]">{customer.contactName}</p>
                       ) : null}

@@ -2,6 +2,8 @@ import { acceptHunterReviewItem, dismissHunterReviewItem } from "@/server/hunter
 import { formatHunterGapLabel, hunterGapLabels } from "@/server/hunter/filters";
 import { HUNTER_REVIEW_PILE_MIGRATION } from "@/server/hunter/review";
 import type { HunterReviewItem } from "@/server/hunter/review";
+import { isTrialSampleHunterItem, trialSampleCopy } from "@/lib/lions-den/trial-samples";
+import { SampleBadge } from "@/components/lions-den/sample-badge";
 
 type HunterReviewPileProps = {
   organizationId: string;
@@ -98,7 +100,10 @@ export function HunterReviewPile({
             <article className="py-4" key={item.id}>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <h3 className="font-semibold text-[#071b42]">{item.name}</h3>
+                  <h3 className="flex flex-wrap items-center gap-2 font-semibold text-[#071b42]">
+                    <span>{item.name}</span>
+                    {isTrialSampleHunterItem(item) ? <SampleBadge label={trialSampleCopy(spanish).badge} /> : null}
+                  </h3>
                   {item.formattedAddress ? (
                     <p className="mt-1 text-sm text-[#5c6578]">{item.formattedAddress}</p>
                   ) : null}
