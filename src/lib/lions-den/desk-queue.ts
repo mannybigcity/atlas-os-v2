@@ -13,6 +13,8 @@ export type DeskFollowUpItem = {
   dueAt: string;
   href?: string;
   draftControls?: DeskFollowUpDraftControls;
+  /** True for records Atlas seeded into a trial desk as examples. */
+  sample?: boolean;
 };
 
 export type DeskFollowUpQueues = {

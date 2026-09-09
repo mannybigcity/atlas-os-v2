@@ -6,6 +6,7 @@ import {
 } from "@/lib/lions-den/trial-desk-seed";
 import type { TrialDeskMarketInput } from "@/lib/lions-den/trial-desk-market";
 import { createServiceClient } from "@/lib/supabase/service";
+import { ownerClearedTrialSamples } from "@/server/trials/desk-settings";
 
 export async function ensureTrialLionsDenSeed(input: {
   organizationId: string;
@@ -16,6 +17,9 @@ export async function ensureTrialLionsDenSeed(input: {
 }) {
   try {
     const client = input.client ?? createServiceClient();
+    if (await ownerClearedTrialSamples(client, input.organizationId)) {
+      return { status: "skipped" as const, reason: "samples_cleared" };
+    }
     return await applyTrialLionsDenSeed(client, {
       organizationId: input.organizationId,
       userId: input.userId,

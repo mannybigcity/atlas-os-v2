@@ -1,3 +1,5 @@
+import { isTrialSampleOpportunity } from "./trial-samples.ts";
+
 export type DeskClient = {
   id: string;
   displayName: string;
@@ -11,6 +13,8 @@ export type DeskClient = {
   invoiceTotal: number | null;
   paymentTotal: number | null;
   createdAt: string;
+  /** True for the example win Atlas seeds into a trial desk. */
+  sample?: boolean;
 };
 
 export function wonOpportunityToDeskClient(row: {
@@ -22,6 +26,8 @@ export function wonOpportunityToDeskClient(row: {
   sourceLabel: string | null;
   researchSummary: string;
   createdAt: string;
+  sourceUrl?: string | null;
+  metadata?: Record<string, unknown> | null;
 }): DeskClient {
   const notes = row.researchSummary.replace(/\s+/g, " ").trim();
   return {
@@ -37,6 +43,7 @@ export function wonOpportunityToDeskClient(row: {
     invoiceTotal: null,
     paymentTotal: null,
     createdAt: row.createdAt,
+    sample: isTrialSampleOpportunity(row),
   };
 }
 
