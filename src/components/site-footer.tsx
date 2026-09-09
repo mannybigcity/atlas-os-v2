@@ -54,8 +54,14 @@ export function SiteFooter({ initialLanguage = "en" }: { initialLanguage?: SiteL
             <h2 className="text-xs font-black uppercase tracking-[0.18em] text-white">
               {spanish ? "Contacto" : "Contact"}
             </h2>
+            <Link
+              className="mt-4 block text-sm leading-7 text-slate-100 hover:text-white"
+              href={withSiteLanguage("/contact", language)}
+            >
+              {spanish ? "Página de contacto" : "Contact page"}
+            </Link>
             <a
-              className="mt-4 block break-words text-sm leading-7 text-slate-100 hover:text-white"
+              className="mt-2 block break-words text-sm leading-7 text-slate-100 hover:text-white"
               href="mailto:atlasforentrepreneurs@gmail.com"
             >
               atlasforentrepreneurs@gmail.com
