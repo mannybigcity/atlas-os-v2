@@ -2,6 +2,7 @@ import { acceptHunterReviewItem, dismissHunterReviewItem } from "@/server/hunter
 import { formatHunterGapLabel, hunterGapLabels } from "@/server/hunter/filters";
 import { HUNTER_REVIEW_PILE_MIGRATION } from "@/server/hunter/review";
 import type { HunterReviewItem } from "@/server/hunter/review";
+import { prospectTelHref } from "@/lib/lions-den/prospect-places";
 import { isTrialSampleHunterItem, trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import { SampleBadge } from "@/components/lions-den/sample-badge";
 
@@ -104,6 +105,13 @@ export function HunterReviewPile({
                     <span>{item.name}</span>
                     {isTrialSampleHunterItem(item) ? <SampleBadge label={trialSampleCopy(spanish).badge} /> : null}
                   </h3>
+                  {prospectTelHref(item.phone) ? (
+                    <p className="mt-1 text-sm font-medium text-[#071b42]">
+                      <a className="underline decoration-[#d8c27a] underline-offset-4" href={prospectTelHref(item.phone) ?? undefined}>
+                        {item.phone}
+                      </a>
+                    </p>
+                  ) : null}
                   {item.formattedAddress ? (
                     <p className="mt-1 text-sm text-[#5c6578]">{item.formattedAddress}</p>
                   ) : null}
@@ -124,9 +132,13 @@ export function HunterReviewPile({
                     </div>
                   ) : null}
                   <p className="mt-2 text-xs font-medium text-[#8a6a12]">
-                    {spanish
-                      ? "Teléfono se confirma al aceptar. Atlas no inventa números. Si Google no publicó uno, no será para llamar."
-                      : "Phone is checked on Accept. Atlas will not invent a number. If Google published none, this will not become a Call prospect."}
+                    {prospectTelHref(item.phone)
+                      ? spanish
+                        ? "Teléfono publicado por Google. Acepta para ponerlo en tu lista de llamadas."
+                        : "Phone published by Google. Accept to put it on your call list."
+                      : spanish
+                        ? "Google no publicó teléfono aquí. Atlas no inventa números; puedes agregar uno después de aceptar."
+                        : "Google published no phone for this listing. Atlas will not invent a number; you can add one after accepting."}
                   </p>
                   <p className="mt-2 text-xs text-[#8a93a3]" translate="no">
                     Google Maps · {item.searchQuery}
