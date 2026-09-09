@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isSisOrganization } from "@/lib/client-portal/identity";
-import { followUpDraftMailto } from "@/lib/lions-den/follow-up-drafts";
+import { followUpSentCheckIn } from "@/lib/lions-den/follow-up-drafts";
 import { isSuperAdminEmail } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
@@ -84,7 +84,7 @@ async function loadFollowUpDraft(
   const { data, error } = await supabase
     .from("organization_opportunities")
     .select(
-      "id, organization_id, name, contact_name, contact_email, next_action, next_action_due, metadata",
+      "id, organization_id, name, stage, contact_name, contact_email, contact_phone, next_action, next_action_due, metadata",
     )
     .eq("id", opportunityId)
     .eq("organization_id", organizationId)
@@ -140,9 +140,18 @@ export async function updateFollowUpDraft(formData: FormData) {
   redirect(followUpReturnPath(formData, "edited"));
 }
 
-export async function openFollowUpOwnerSend(formData: FormData) {
+/** Stages that already sit past "contacted"; sending another note must not move them backward. */
+const STAGES_PAST_CONTACTED = new Set(["contacted", "responded", "won", "lost"]);
+
+/**
+ * The owner tells us they sent the draft themselves (email, text, or by hand).
+ * Atlas records that, moves the prospect to Contacted, and queues a check-in
+ * draft a few days out. Nothing is transmitted by Atlas.
+ */
+export async function markFollowUpSent(formData: FormData) {
   const organizationId = field(formData, "organizationId", 36) ?? "";
   const opportunityId = field(formData, "opportunityId", 36) ?? "";
+  const spanish = field(formData, "lang", 5) === "es";
   const { supabase } = await requireAfeFollowUpOperator(organizationId, formData);
 
   if (!uuidPattern.test(opportunityId)) {
@@ -154,35 +163,44 @@ export async function openFollowUpOwnerSend(formData: FormData) {
     redirect(followUpReturnPath(formData, "missing_draft"));
   }
 
+  const sentAt = new Date();
+  const checkIn = followUpSentCheckIn({ contactName: draft.contact_name, spanish, sentAt });
   const metadata = {
     ...asOpportunityMetadata(draft.metadata),
-    owner_send_opened_at: new Date().toISOString(),
+    owner_sent_at: sentAt.toISOString(),
+    owner_contacted_at: sentAt.toISOString(),
     no_outreach_sent: true,
   };
-  await supabase
+  const stage = STAGES_PAST_CONTACTED.has(String(draft.stage)) ? draft.stage : "contacted";
+
+  const { error } = await supabase
     .from("organization_opportunities")
-    .update({ metadata })
+    .update({
+      stage,
+      metadata,
+      next_action: checkIn.nextAction,
+      next_action_due: checkIn.nextActionDue,
+    })
     .eq("id", opportunityId)
     .eq("organization_id", organizationId);
+
+  if (error) {
+    console.error("Atlas follow-up sent mark failed", error);
+    redirect(followUpReturnPath(formData, "sent_failed"));
+  }
 
   await supabase.from("organization_opportunity_events").insert({
     opportunity_id: opportunityId,
     organization_id: organizationId,
-    event_type: "note_added",
+    event_type: "contacted",
     actor_role: "client",
-    summary: "Owner opened send. Atlas did not email, call, or text anyone.",
+    summary: `Owner sent the follow-up themselves. Atlas did not email, call, or text anyone. Check-in queued for ${checkIn.nextActionDue}.`,
     body: draft.next_action,
   });
 
-  const mailto = followUpDraftMailto({
-    email: draft.contact_email,
-    prospectName: draft.name,
-    contactName: draft.contact_name,
-    body: String(draft.next_action ?? ""),
-  });
-
   revalidateFollowUpDesk();
-  redirect(followUpReturnPath(formData, mailto ? "send_opened" : "copy_draft"));
+  revalidatePath(`/client/prospects/${opportunityId}`);
+  redirect(followUpReturnPath(formData, "sent"));
 }
 
 export async function deleteFollowUpDraft(formData: FormData) {

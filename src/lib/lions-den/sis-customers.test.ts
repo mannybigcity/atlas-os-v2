@@ -113,7 +113,22 @@ test("won opportunities map to the interim Clients list without mixing SIS field
     invoiceTotal: null,
     paymentTotal: null,
     createdAt: "2026-08-01T00:00:00.000Z",
+    sample: false,
   });
+  assert.equal(
+    wonOpportunityToDeskClient({
+      id: "opp-2",
+      name: "Cedar Ridge HOA",
+      contactName: "Dana Whitfield",
+      contactEmail: "desk+trial-cedar@example.invalid",
+      contactPhone: null,
+      sourceLabel: "Closed win — no outreach",
+      researchSummary: "Seeded win.",
+      createdAt: "2026-08-01T00:00:00.000Z",
+      metadata: { trial_seed: true },
+    }).sample,
+    true,
+  );
   assert.equal(countWonOpportunities([{ stage: "won" }, { stage: "researching" }, { stage: "won" }]), 2);
   assert.equal(countWonOpportunities([]), 0);
 });

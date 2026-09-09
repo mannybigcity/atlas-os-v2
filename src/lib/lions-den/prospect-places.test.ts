@@ -102,5 +102,6 @@ test("present phone still presents the Call next-action", () => {
   assert.equal(prospectHasCallablePhone(ready), true);
   assert.equal(presentedProspectNextAction(ready), CALL_PROSPECT_NEXT_ACTION);
   assert.match(presentedProspectNextAction(ready), /Call this prospect/);
-  assert.equal(presentedProspectStageLabel(ready), "ready for follow up");
+  assert.equal(presentedProspectStageLabel(ready), "To call");
+  assert.equal(presentedProspectStageLabel(ready, true), "Por llamar");
 });

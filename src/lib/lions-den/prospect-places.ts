@@ -1,4 +1,5 @@
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
+import { prospectStageLabel } from "./prospect-stages.ts";
 
 export const CALL_PROSPECT_NEXT_ACTION =
   "Call this prospect. Atlas has not contacted them.";
@@ -117,5 +118,5 @@ export function presentedProspectStageLabel(
   ) {
     return spanish ? "Falta teléfono" : "Needs phone";
   }
-  return stage.replaceAll("_", " ");
+  return prospectStageLabel(stage, spanish);
 }

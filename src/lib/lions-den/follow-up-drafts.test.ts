@@ -4,9 +4,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
+  FOLLOW_UP_CHECK_IN_DAYS,
   canShowFollowUpDraftControls,
   followUpDraftHasVisibleSampleLabel,
   followUpDraftMailto,
+  followUpDraftSms,
+  followUpDraftText,
+  followUpSentCheckIn,
   isOwnerGatedFollowUpMailto,
 } from "./follow-up-drafts.ts";
 import { presentLiveDeskOpportunity } from "./live-desk.ts";
@@ -95,26 +99,78 @@ test("Send builds an owner-gated mailto and never invents a live mail API", () =
   );
 });
 
-test("Follow-up desk shows Edit/Send/Delete on AFE drafts and keeps send owner-gated", () => {
+test("Text opens Messages with the draft; Copy text matches the email body", () => {
+  const sms = followUpDraftSms({ phone: "(713) 555-0100", body: "Quick question about your pest routes." });
+  assert.ok(sms);
+  assert.match(sms, /^sms:7135550100\?&body=/);
+  assert.match(sms, /Quick%20question/);
+  assert.doesNotMatch(sms, /Hi%20/);
+
+  assert.equal(followUpDraftSms({ phone: null, body: "x" }), null);
+  assert.equal(followUpDraftSms({ phone: "Phone not published", body: "x" }), null);
+  assert.equal(followUpDraftSms({ phone: "12", body: "x" }), null);
+
+  const text = followUpDraftText({ contactName: "Casey Nguyen", body: "Quick question." });
+  assert.equal(text, "Hi Casey Nguyen,\n\nQuick question.");
+  assert.equal(followUpDraftText({ contactName: null, body: "  Quick question.  " }), "Quick question.");
+
+  const mailto = followUpDraftMailto({
+    email: "owner@example.com",
+    prospectName: "Harbor Grill",
+    contactName: "Casey Nguyen",
+    body: "Quick question.",
+  });
+  assert.ok(mailto);
+  assert.match(mailto, new RegExp(`body=${encodeURIComponent(text)}$`));
+});
+
+test("I sent this queues a sendable check-in a few days out and never a same-day nag", () => {
+  const sentAt = new Date(2026, 8, 9, 15, 30);
+  const en = followUpSentCheckIn({ contactName: "Casey", spanish: false, sentAt });
+  assert.equal(en.nextActionDue, "2026-09-12");
+  assert.equal(FOLLOW_UP_CHECK_IN_DAYS, 3);
+  assert.match(en.nextAction, /following up on my message from Wednesday/);
+  assert.match(en.nextAction, /quick call\?$/);
+
+  const es = followUpSentCheckIn({ contactName: "Casey", spanish: true, sentAt });
+  assert.equal(es.nextActionDue, "2026-09-12");
+  assert.match(es.nextAction, /miércoles/);
+
+  const monthEnd = followUpSentCheckIn({ spanish: false, sentAt: new Date(2026, 8, 29) });
+  assert.equal(monthEnd.nextActionDue, "2026-10-02");
+});
+
+test("Follow-up desk offers Email/Text/Copy/Edit/Delete plus I sent this, and Atlas never transmits", () => {
   const board = readRepo("src/components/lions-den/lions-den-follow-up.tsx");
+  const copyButton = readRepo("src/components/lions-den/follow-up-copy-button.tsx");
   const page = readRepo("src/app/client/david/page.tsx");
   const actions = readRepo("src/server/opportunities/actions.ts");
 
   assert.match(board, /data-followup-control="edit"/);
-  assert.match(board, /data-followup-control="send"/);
+  assert.match(board, /data-followup-control="email"/);
+  assert.match(board, /data-followup-control="text"/);
   assert.match(board, /data-followup-control="delete"/);
+  assert.match(board, /data-followup-control="sent"/);
   assert.match(board, /\{spanish \? "Editar" : "Edit"\}/);
-  assert.match(board, /\{spanish \? "Enviar" : "Send"\}/);
+  assert.match(board, /\{spanish \? "Correo" : "Email"\}/);
+  assert.match(board, /\{spanish \? "Mensaje" : "Text"\}/);
   assert.match(board, /\{spanish \? "Eliminar" : "Delete"\}/);
+  assert.match(board, /\{spanish \? "Ya lo envié" : "I sent this"\}/);
   assert.match(board, /followUpDraftMailto/);
+  assert.match(board, /followUpDraftSms/);
+  assert.match(board, /followUpDraftText/);
+  assert.match(board, /FollowUpCopyButton/);
   assert.match(board, /allowDraftControls/);
   assert.match(board, /updateFollowUpDraft/);
   assert.match(board, /deleteFollowUpDraft/);
-  assert.match(board, /openFollowUpOwnerSend/);
-  assert.match(board, /Send opens your email\. Atlas does not send\./);
+  assert.match(board, /markFollowUpSent/);
+  assert.match(board, /Email and Text open your own apps with the draft filled in\. Atlas does not send\./);
+  assert.match(board, /No email on file\. Edit the prospect to add one\./);
+  assert.match(board, /No phone on file\. Edit the prospect to add one\./);
   assert.match(board, /name="draftBody"/);
   assert.match(board, /SAMPLE/);
   assert.match(board, /followupStatus/);
+  assert.match(board, /status === "sent"/);
   assert.match(board, /href: `\/client\/sis\/party\/\$\{item\.id\}`/);
   assert.doesNotMatch(
     board,
@@ -123,18 +179,26 @@ test("Follow-up desk shows Edit/Send/Delete on AFE drafts and keeps send owner-g
   assert.doesNotMatch(board, /resend|sendgrid|postmark|twilio|auto-?send/i);
   assert.doesNotMatch(board, /organization_sis_/);
 
+  assert.match(copyButton, /^"use client";/);
+  assert.match(copyButton, /navigator\.clipboard\.writeText/);
+  assert.match(copyButton, /data-followup-control="copy"/);
+  assert.doesNotMatch(copyButton, /fetch\(|resend|twilio/i);
+
   assert.match(page, /canShowFollowUpDraftControls/);
   assert.match(page, /allowDraftControls=\{canShowFollowUpDraftControls\(primaryOrganization\)\}/);
 
   assert.match(actions, /isSisOrganization/);
   assert.match(actions, /sis_blocked/);
-  assert.match(actions, /Owner opened send\. Atlas did not email/);
+  assert.match(actions, /export async function markFollowUpSent/);
+  assert.match(actions, /Owner sent the follow-up themselves\. Atlas did not email, call, or text anyone/);
   assert.match(actions, /Owner edited the follow-up draft/);
   assert.match(actions, /Owner deleted the follow-up draft from the queue/);
   assert.match(actions, /next_action_due: null/);
   assert.match(actions, /no_outreach_sent: true/);
-  assert.match(actions, /followUpDraftMailto/);
-  assert.match(actions, /send_opened/);
+  assert.match(actions, /followUpSentCheckIn/);
+  assert.match(actions, /STAGES_PAST_CONTACTED/);
+  assert.match(actions, /event_type: "contacted"/);
+  assert.doesNotMatch(actions, /openFollowUpOwnerSend/);
   assert.doesNotMatch(actions, /redirect\(mailto\)/);
   assert.doesNotMatch(actions, /resend|sendgrid|postmark|twilio/i);
   assert.doesNotMatch(actions, /organization_sis_/);

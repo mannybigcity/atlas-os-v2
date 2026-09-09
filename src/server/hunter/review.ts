@@ -19,6 +19,8 @@ export type HunterReviewItem = {
   formattedAddress: string | null;
   googleMapsUrl: string | null;
   websiteUrl: string | null;
+  /** Published Google phone captured at search time; null when Google lists none. */
+  phone?: string | null;
   primaryType: string | null;
   businessStatus: string | null;
   searchQuery: string;
@@ -200,6 +202,7 @@ export function mergeHunterPlaceDetails(
     formatted_address: string | null;
     google_maps_url: string | null;
     website_url: string | null;
+    phone?: string | null;
     primary_type: string | null;
     business_status: string | null;
   },
@@ -212,7 +215,7 @@ export function mergeHunterPlaceDetails(
     formattedAddress: details?.formattedAddress ?? item.formatted_address,
     googleMapsUrl: details?.googleMapsUrl ?? item.google_maps_url,
     websiteUrl: details?.websiteUrl ?? item.website_url,
-    nationalPhoneNumber: details?.nationalPhoneNumber ?? null,
+    nationalPhoneNumber: details?.nationalPhoneNumber ?? item.phone ?? null,
     internationalPhoneNumber: details?.internationalPhoneNumber ?? null,
     primaryType: details?.primaryType ?? item.primary_type,
     businessStatus: details?.businessStatus ?? item.business_status,
@@ -238,6 +241,7 @@ export function placesToReviewInserts(
     formatted_address: place.formattedAddress?.slice(0, 500) ?? null,
     google_maps_url: place.googleMapsUrl?.slice(0, 2000) ?? null,
     website_url: place.websiteUrl?.slice(0, 2000) ?? null,
+    phone: pickStoredPlacePhone(place),
     primary_type: place.primaryType?.slice(0, 120) ?? null,
     business_status: place.businessStatus?.slice(0, 80) ?? null,
     search_query: query.slice(0, 1000),

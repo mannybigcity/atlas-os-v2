@@ -2,6 +2,7 @@ export type DeskFollowUpDraftControls = {
   opportunityId: string;
   organizationId: string;
   contactEmail: string | null;
+  contactPhone?: string | null;
   contactName: string | null;
   draftBody: string;
 };
@@ -13,6 +14,8 @@ export type DeskFollowUpItem = {
   dueAt: string;
   href?: string;
   draftControls?: DeskFollowUpDraftControls;
+  /** True for records Atlas seeded into a trial desk as examples. */
+  sample?: boolean;
 };
 
 export type DeskFollowUpQueues = {

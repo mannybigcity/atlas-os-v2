@@ -57,6 +57,7 @@ export async function LionsDenBoardScreen({
       organizationSlug={organization?.slug}
       previewOrgSlug={workspace.previewOrgSlug || undefined}
       showTrialInbox={showTrialInbox}
+      trial={workspace.trial}
       trialInboxCount={resolvedTrialInboxCount}
       workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       workspaces={workspace.memberships.data.flatMap((membership) =>

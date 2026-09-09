@@ -14,6 +14,7 @@ export type LionsDenBoard =
   | "notes"
   | "hunter"
   | "micah"
+  | "settings"
   | "trial-inbox";
 
 export const LIONS_DEN_NAVY = "#071b42";

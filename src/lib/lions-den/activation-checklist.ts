@@ -134,56 +134,56 @@ export function activationChecklistCopy(input: {
 
   if (spanish) {
     return {
-      eyebrow: sampleWalkthrough ? "Recorrido SAMPLE" : "Primeros tres",
-      title: "Abre el escritorio.",
-      hint: "Tú llamas. Atlas no envía correos, llamadas ni SMS.",
-      doneHint: "Estos tres están listos. El vendedor es dueño de la llamada.",
+      eyebrow: sampleWalkthrough ? "Recorrido SAMPLE" : "Empieza aquí · tus primeros 3 pasos",
+      title: "Consigue tu primer prospecto real esta semana.",
+      hint: "Tú haces la llamada. Atlas no envía correos, llamadas ni SMS por ti.",
+      doneHint: "Listo. Ya tienes negocios reales en el escritorio: ahora la llamada es tuya.",
       hide: "Ocultar",
       hideAria: "Ocultar la lista de primeros pasos",
       sampleBadge: "SAMPLE",
       steps: {
         find10: {
           label: "Busca 10",
-          detail: "Abre HUNTER y busca un mercado. Diez fichas quedan en la pila.",
-          done: "Hay 10 hallazgos en HUNTER.",
+          detail: "Abre HUNTER, escribe tu oficio y tu código postal. Atlas trae 10 negocios cercanos de Google Maps.",
+          done: "Ya tienes 10 negocios reales en HUNTER.",
         },
         accept1: {
           label: "Acepta 1",
-          detail: "Pasa un hallazgo a Prospectos. Atlas no contacta a nadie.",
-          done: "Un hallazgo ya es Prospecto.",
+          detail: "Elige el negocio que más te convenga y acéptalo. Pasa a Prospectos con su teléfono, si Google lo publica.",
+          done: "Tu primer prospecto real está en la lista.",
         },
         micah: {
           label: "Abre MICAH",
-          detail: "Día 1 / galería. Solo descarga. MICAH no publica.",
-          done: "MICAH ya está abierto.",
+          detail: "Día 1 / galería: descarga la tarjeta del lunes y publícala tú mismo. MICAH no publica.",
+          done: "Ya viste tus tarjetas de la semana.",
         },
       },
     };
   }
 
   return {
-    eyebrow: sampleWalkthrough ? "SAMPLE walkthrough" : "First three",
-    title: "Open the desk.",
-    hint: "You call. Atlas does not email, call, or text.",
-    doneHint: "These three are done. The salesman owns the next call.",
+    eyebrow: sampleWalkthrough ? "SAMPLE walkthrough" : "Start here · your first 3 steps",
+    title: "Land your first real prospect this week.",
+    hint: "You call. Atlas does not email, call, or text anyone for you.",
+    doneHint: "Done. Real businesses are on your desk now; the next call is yours.",
     hide: "Hide",
     hideAria: "Hide the first-three checklist",
     sampleBadge: "SAMPLE",
     steps: {
       find10: {
         label: "Find 10",
-        detail: "Open HUNTER and search a market. Ten listings stay in the pile.",
-        done: "Ten HUNTER finds are on the desk.",
+        detail: "Open HUNTER, type your trade and ZIP code. Atlas pulls 10 nearby businesses from Google Maps.",
+        done: "You have 10 real businesses in HUNTER.",
       },
       accept1: {
         label: "Accept 1",
-        detail: "Move one find into Prospects. Atlas does not contact them.",
-        done: "One find is now a Prospect.",
+        detail: "Pick the business you would most like to work with and accept it. It moves to Prospects with its phone number, when Google lists one.",
+        done: "Your first real prospect is on the list.",
       },
       micah: {
         label: "Open MICAH",
-        detail: "Day 1 / gallery. Download only. MICAH does not post.",
-        done: "MICAH is open.",
+        detail: "Day 1 / gallery: download Monday's card and post it yourself. MICAH does not post.",
+        done: "You have seen this week's cards.",
       },
     },
   };

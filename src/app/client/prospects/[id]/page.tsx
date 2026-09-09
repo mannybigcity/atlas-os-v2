@@ -24,6 +24,7 @@ type ProspectDetailPageProps = {
     lang?: string;
     previewOrg?: string;
     workspace?: string;
+    prospect?: string;
   }>;
 };
 
@@ -55,8 +56,12 @@ export default async function ProspectDetailPage({
           workspace.previewOrgSlug || undefined,
           workspace.selectedWorkspaceSlug || undefined,
         )}
+        notice={query?.prospect}
+        organizationId={organization.id}
+        previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospect={presentLiveDeskOpportunity(organization, result.data)}
         spanish={language === "es"}
+        workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
     </LionsDenBoardScreen>
   );

@@ -1,20 +1,40 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
+import { isTrialSampleOpportunity, trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
+import { SampleBadge } from "@/components/lions-den/sample-badge";
+import {
+  ProspectContactActions,
+  ProspectDeleteForm,
+  ProspectEditorForm,
+  ProspectNotice,
+  ProspectStageButtons,
+} from "@/components/lions-den/prospect-controls";
 
 type LionsDenProspectDetailProps = {
   prospect: OrganizationOpportunity;
   backHref: string;
+  organizationId?: string;
+  previewOrgSlug?: string;
+  workspaceSlug?: string;
+  notice?: string;
   spanish: boolean;
 };
 
 export function LionsDenProspectDetail({
   prospect,
   backHref,
+  organizationId,
+  previewOrgSlug,
+  workspaceSlug,
+  notice,
   spanish,
 }: LionsDenProspectDetailProps) {
   const places = prospectPlacesCard(prospect);
+  const scope = organizationId ? { organizationId, previewOrgSlug, workspaceSlug } : null;
+  const ownerNotes = typeof prospect.metadata?.owner_notes === "string" ? prospect.metadata.owner_notes : null;
+  const history = [...prospect.events].reverse().slice(0, 8);
 
   return (
     <section className="rounded-[1.6rem] border border-[#d8c27a] bg-white p-5 sm:p-6">
@@ -26,13 +46,21 @@ export function LionsDenProspectDetail({
           <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#f5b932]">
             {spanish ? "Prospecto" : "Prospect"}
           </p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[#071b42]">
-            {prospect.name}
+          <h2 className="mt-2 flex flex-wrap items-center gap-3 text-3xl font-semibold tracking-[-0.05em] text-[#071b42]">
+            <span>{prospect.name}</span>
+            {isTrialSampleOpportunity(prospect) ? <SampleBadge label={trialSampleCopy(spanish).badge} /> : null}
           </h2>
+          {prospect.contactName ? <p className="mt-1 text-sm font-medium text-[#33415c]">{prospect.contactName}</p> : null}
         </div>
         <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
           {presentedProspectStageLabel(prospect, spanish)}
         </span>
+      </div>
+
+      <ProspectNotice spanish={spanish} status={notice} />
+
+      <div className="mt-5">
+        <ProspectContactActions prospect={prospect} spanish={spanish} />
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -48,9 +76,23 @@ export function LionsDenProspectDetail({
                 places.phone
               )
             ) : spanish ? (
-              "Google no publicó un teléfono."
+              "Sin teléfono. Agrégalo en Editar."
             ) : (
-              "Google did not publish a phone number."
+              "No phone on file. Add one under Edit."
+            )
+          }
+        />
+        <DetailField
+          label="Email"
+          value={
+            prospect.contactEmail ? (
+              <a className="break-all font-semibold text-[#071b42] underline" href={`mailto:${prospect.contactEmail}`}>
+                {prospect.contactEmail}
+              </a>
+            ) : spanish ? (
+              "Sin correo guardado."
+            ) : (
+              "No email stored."
             )
           }
         />
@@ -77,10 +119,10 @@ export function LionsDenProspectDetail({
             )
           }
         />
-        <DetailField
-          label="Google Maps"
-          value={
-            places.mapsUrl ? (
+        {places.mapsUrl ? (
+          <DetailField
+            label="Google Maps"
+            value={
               <a
                 className="font-semibold text-[#071b42] underline"
                 href={places.mapsUrl}
@@ -89,13 +131,9 @@ export function LionsDenProspectDetail({
               >
                 {spanish ? "Abrir en Google Maps" : "Open in Google Maps"}
               </a>
-            ) : spanish ? (
-              "No hay enlace de Maps."
-            ) : (
-              "No Maps link stored."
-            )
-          }
-        />
+            }
+          />
+        ) : null}
       </div>
 
       {places.primaryType || places.businessStatus ? (
@@ -117,12 +155,63 @@ export function LionsDenProspectDetail({
         </div>
       ) : null}
 
+      {scope ? (
+        <div className="mt-4 rounded-2xl border border-[#ece7d8] p-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5c6578]">
+            {spanish ? "¿Qué pasó?" : "What happened?"}
+          </p>
+          <p className="mt-1 text-xs text-[#5c6578]">
+            {spanish
+              ? "Marca la etapa después de cada llamada para que el escritorio sepa qué sigue."
+              : "Mark the stage after each call so the desk knows what is next."}
+          </p>
+          <div className="mt-3">
+            <ProspectStageButtons {...scope} prospect={prospect} spanish={spanish} />
+          </div>
+        </div>
+      ) : null}
+
       <div className="mt-4 rounded-2xl border border-[#ece7d8] p-4">
         <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5c6578]">
           {spanish ? "Notas" : "Notes"}
         </p>
-        <p className="mt-2 text-sm leading-6 text-[#33415c]">{prospect.researchSummary}</p>
+        <p className="mt-2 text-sm leading-6 text-[#33415c]">{ownerNotes || prospect.researchSummary}</p>
       </div>
+
+      {scope ? (
+        <details className="mt-4 rounded-2xl border border-[#ece7d8] p-4" data-prospect-edit>
+          <summary className="cursor-pointer text-sm font-semibold text-[#071b42]">
+            {spanish ? "Editar datos del prospecto" : "Edit prospect details"}
+          </summary>
+          <div className="mt-3">
+            <ProspectEditorForm {...scope} prospect={prospect} spanish={spanish} />
+          </div>
+        </details>
+      ) : null}
+
+      {history.length > 0 ? (
+        <details className="mt-4 rounded-2xl border border-[#ece7d8] p-4" data-prospect-history>
+          <summary className="cursor-pointer text-sm font-semibold text-[#071b42]">
+            {spanish ? `Historial (${history.length})` : `History (${history.length})`}
+          </summary>
+          <ol className="mt-3 space-y-2">
+            {history.map((event) => (
+              <li className="text-sm text-[#33415c]" key={event.id}>
+                <span className="text-xs text-[#8a93a3]">
+                  {new Date(event.createdAt).toLocaleDateString(spanish ? "es-US" : "en-US", { month: "short", day: "numeric" })}
+                </span>{" "}
+                {event.summary}
+              </li>
+            ))}
+          </ol>
+        </details>
+      ) : null}
+
+      {scope ? (
+        <div className="mt-4">
+          <ProspectDeleteForm {...scope} prospect={prospect} spanish={spanish} />
+        </div>
+      ) : null}
 
       <p className="mt-5 rounded-2xl border border-[#d8c27a] bg-[#fff8e6] px-4 py-3 text-sm font-semibold text-[#071b42]">
         {spanish
