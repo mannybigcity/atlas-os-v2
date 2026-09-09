@@ -19,6 +19,7 @@ import {
   shouldOpenAfeOperatorDesk,
   shouldOpenSisWorkingDesk,
 } from "@/lib/client-portal/identity";
+import { describeDeskTrial, type DeskTrialStatus } from "@/lib/lions-den/trial-status";
 import { requireUser } from "@/server/auth/guards";
 import { getTrialProfile } from "@/server/trials/profile";
 import { isTrialSignupMetadata } from "@/server/trials/metadata";
@@ -67,6 +68,8 @@ export type ClientWorkspaceContext = {
   canCreateNotes: boolean;
   previewOrganization: WorkspaceQueryResult<OrganizationSummary | null> | null;
   selectedWorkspaceSlug: string;
+  /** Present only for trial accounts that have not paid yet. */
+  trial: DeskTrialStatus | null;
 };
 
 export function clientWorkspaceHref(path: string, previewOrgSlug?: string) {
@@ -115,15 +118,21 @@ export async function getClientWorkspaceContext(
     trialProfile = await getTrialProfile(user.id);
   }
 
+  let trial: DeskTrialStatus | null = null;
   if (trialProfile) {
+    const hasActivePaidEntitlement = await userHasActivePaidEntitlement(user.id);
     if (
       shouldBlockExpiredTrial({
         trialEndsAt: trialProfile.trial_ends_at,
-        hasActivePaidEntitlement: await userHasActivePaidEntitlement(user.id),
+        hasActivePaidEntitlement,
       })
     ) {
       redirect("/pricing?trial=expired");
     }
+    trial = describeDeskTrial({
+      trialEndsAt: trialProfile.trial_ends_at,
+      hasActivePaidEntitlement,
+    });
 
     if (!isTrialWorkspaceSetupError(searchParams?.error)) {
       const workspace = await ensureTrialWorkspaceForUser({
@@ -322,5 +331,6 @@ export async function getClientWorkspaceContext(
         ? { data: primaryOrganization, setupRequired: false, error: null }
         : previewOrganization,
     selectedWorkspaceSlug: primaryOrganization?.slug ?? "",
+    trial,
   };
 }
