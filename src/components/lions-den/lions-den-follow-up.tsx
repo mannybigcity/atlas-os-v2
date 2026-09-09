@@ -3,7 +3,7 @@ import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import type { SisInboxTask, SisPartyEventSummary } from "@/server/sis-workspace/queries";
 import {
   deleteFollowUpDraft,
-  openFollowUpOwnerSend,
+  markFollowUpSent,
   updateFollowUpDraft,
 } from "@/server/opportunities/actions";
 import {
@@ -12,12 +12,16 @@ import {
   type DeskFollowUpItem,
 } from "@/lib/lions-den/desk-queue";
 import {
+  FOLLOW_UP_CHECK_IN_DAYS,
   FOLLOW_UP_OWNER_SEND_HINT_EN,
   FOLLOW_UP_OWNER_SEND_HINT_ES,
   followUpDraftHasVisibleSampleLabel,
   followUpDraftMailto,
+  followUpDraftSms,
+  followUpDraftText,
 } from "@/lib/lions-den/follow-up-drafts";
-import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
+import { prospectDetailPath, publishedPlacePhone } from "@/lib/lions-den/prospect-places";
+import { FollowUpCopyButton } from "./follow-up-copy-button";
 
 type FollowUpDraftControls = DeskFollowUpDraftControls;
 
@@ -59,6 +63,12 @@ export function LionsDenFollowUpBoard({
               opportunityId: item.id,
               organizationId: item.organizationId,
               contactEmail: item.contactEmail,
+              contactPhone: publishedPlacePhone(
+                item.contactPhone ||
+                  (typeof item.metadata?.national_phone_number === "string"
+                    ? item.metadata.national_phone_number
+                    : null),
+              ),
               contactName: item.contactName,
               draftBody: item.nextAction ?? "",
             }
@@ -156,14 +166,14 @@ function FollowUpStatusNote({
         ? spanish
           ? "Borrador quitado de la cola. El prospecto sigue en Prospectos."
           : "Draft removed from the queue. The prospect stays on Prospects."
-        : status === "copy_draft"
+        : status === "sent"
           ? spanish
-            ? "No hay correo en el expediente. Copia el borrador y envíalo tú. Atlas no envía."
-            : "No email on file. Copy this draft and send it yourself. Atlas does not send."
-          : status === "send_opened"
+            ? `Anotado: lo enviaste tú. El prospecto pasó a Contactado y un recordatorio para dar seguimiento aparecerá aquí en ${FOLLOW_UP_CHECK_IN_DAYS} días.`
+            : `Logged: you sent it. The prospect is now Contacted and a check-in draft will show here in ${FOLLOW_UP_CHECK_IN_DAYS} days.`
+          : status === "sent_failed"
             ? spanish
-              ? "Send queda en tu correo. Atlas no envió nada."
-              : "Send stays in your email. Atlas did not send anything."
+              ? "No se pudo anotar el envío. Inténtalo de nuevo."
+              : "Could not log that send. Try again."
           : status === "sis_blocked"
             ? spanish
               ? "Este control no corre en SIS."
@@ -293,10 +303,52 @@ function FollowUpDraftActions({
     contactName: controls.contactName,
     body: controls.draftBody,
   });
+  const sms = followUpDraftSms({ phone: controls.contactPhone, body: controls.draftBody });
+  const copyText = followUpDraftText({ contactName: controls.contactName, body: controls.draftBody });
+  const primary = "inline-flex rounded-full bg-[#071b42] px-3 py-1.5 text-sm font-semibold text-white";
+  const disabled =
+    "inline-flex cursor-not-allowed rounded-full border border-dashed border-[#d5d0c4] bg-[#fbfaf4] px-3 py-1.5 text-sm font-semibold text-[#9aa3b5]";
+  const hiddenScope = (
+    <>
+      <input name="organizationId" type="hidden" value={controls.organizationId} />
+      <input name="opportunityId" type="hidden" value={controls.opportunityId} />
+      <input name="returnTo" type="hidden" value={returnTo} />
+    </>
+  );
 
   return (
     <div className="mt-3 space-y-2" data-followup-controls="draft">
       <div className="flex flex-wrap gap-2">
+        {mailto ? (
+          <a className={primary} data-followup-control="email" href={mailto}>
+            {spanish ? "Correo" : "Email"}
+          </a>
+        ) : (
+          <span
+            className={disabled}
+            data-followup-control="email"
+            title={spanish ? "Sin correo en el expediente. Edita el prospecto para agregar uno." : "No email on file. Edit the prospect to add one."}
+          >
+            {spanish ? "Correo" : "Email"}
+          </span>
+        )}
+
+        {sms ? (
+          <a className={primary} data-followup-control="text" href={sms}>
+            {spanish ? "Mensaje" : "Text"}
+          </a>
+        ) : (
+          <span
+            className={disabled}
+            data-followup-control="text"
+            title={spanish ? "Sin teléfono en el expediente. Edita el prospecto para agregar uno." : "No phone on file. Edit the prospect to add one."}
+          >
+            {spanish ? "Mensaje" : "Text"}
+          </span>
+        )}
+
+        <FollowUpCopyButton spanish={spanish} text={copyText} />
+
         <details className="group">
           <summary
             className="inline-flex cursor-pointer list-none rounded-full border border-[#071b42] bg-white px-3 py-1.5 text-sm font-semibold text-[#071b42] [&::-webkit-details-marker]:hidden"
@@ -305,9 +357,7 @@ function FollowUpDraftActions({
             {spanish ? "Editar" : "Edit"}
           </summary>
           <form action={updateFollowUpDraft} className="mt-2 space-y-2 rounded-xl border border-[#ece7d8] bg-[#fbfaf4] p-3">
-            <input name="organizationId" type="hidden" value={controls.organizationId} />
-            <input name="opportunityId" type="hidden" value={controls.opportunityId} />
-            <input name="returnTo" type="hidden" value={returnTo} />
+            {hiddenScope}
             <label className="block text-[11px] font-black uppercase tracking-[0.12em] text-[#5c6578]">
               {spanish ? "Borrador" : "Draft body"}
               <textarea
@@ -326,33 +376,8 @@ function FollowUpDraftActions({
           </form>
         </details>
 
-        {mailto ? (
-          <a
-            className="inline-flex rounded-full bg-[#071b42] px-3 py-1.5 text-sm font-semibold text-white"
-            data-followup-control="send"
-            href={mailto}
-          >
-            {spanish ? "Enviar" : "Send"}
-          </a>
-        ) : (
-          <form action={openFollowUpOwnerSend}>
-            <input name="organizationId" type="hidden" value={controls.organizationId} />
-            <input name="opportunityId" type="hidden" value={controls.opportunityId} />
-            <input name="returnTo" type="hidden" value={returnTo} />
-            <button
-              className="inline-flex rounded-full bg-[#071b42] px-3 py-1.5 text-sm font-semibold text-white"
-              data-followup-control="send"
-              type="submit"
-            >
-              {spanish ? "Enviar" : "Send"}
-            </button>
-          </form>
-        )}
-
         <form action={deleteFollowUpDraft}>
-          <input name="organizationId" type="hidden" value={controls.organizationId} />
-          <input name="opportunityId" type="hidden" value={controls.opportunityId} />
-          <input name="returnTo" type="hidden" value={returnTo} />
+          {hiddenScope}
           <button
             className="inline-flex rounded-full border border-[#d5d0c4] bg-white px-3 py-1.5 text-sm font-semibold text-[#5c6578]"
             data-followup-control="delete"
@@ -362,10 +387,28 @@ function FollowUpDraftActions({
           </button>
         </form>
       </div>
+
+      <form action={markFollowUpSent} className="flex flex-wrap items-center gap-2">
+        {hiddenScope}
+        <input name="lang" type="hidden" value={spanish ? "es" : "en"} />
+        <button
+          className="inline-flex rounded-full border-2 border-[#8a6a12] bg-[#fff8e6] px-3 py-1.5 text-sm font-bold text-[#8a6a12]"
+          data-followup-control="sent"
+          type="submit"
+        >
+          {spanish ? "Ya lo envié" : "I sent this"}
+        </button>
+        <span className="text-[11px] leading-5 text-[#5c6578]">
+          {spanish
+            ? `Marca Contactado y programa un recordatorio en ${FOLLOW_UP_CHECK_IN_DAYS} días.`
+            : `Marks Contacted and queues a check-in in ${FOLLOW_UP_CHECK_IN_DAYS} days.`}
+        </span>
+      </form>
+
       <p className="text-[11px] leading-5 text-[#5c6578]">
         {spanish
-          ? "Send abre tu correo. Atlas no envía nada."
-          : "Send opens your email. Atlas does not send."}
+          ? "Correo y Mensaje abren tus propias apps con el borrador listo. Atlas no envía nada."
+          : "Email and Text open your own apps with the draft filled in. Atlas does not send."}
       </p>
     </div>
   );
