@@ -8,3 +8,6 @@
 
 [functions."daily-content-studio"]
   schedule = "0 14 * * *"
+
+[functions."overnight-engine"]
+  schedule = "0 4 * * *"
