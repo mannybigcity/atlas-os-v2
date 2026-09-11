@@ -6,6 +6,11 @@
   NODE_VERSION = "22"
   NPM_FLAGS = "--no-audit --no-fund"
 
+# Function names may only use alphanumeric characters, hyphens, and underscores.
+# Do not put *.test.mjs (or any other dotted filenames) under netlify/functions/
+# — Netlify deploys every file in that folder as a function.
+# Keep function tests in netlify/functions-tests/.
+
 [functions."daily-content-studio"]
   schedule = "0 14 * * *"
 
