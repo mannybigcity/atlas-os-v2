@@ -27,6 +27,7 @@ type LandingCopy = {
   peopleTitle: string;
   people: { name: string; mark: string }[];
   howTitle: string;
+  howOutcome: string;
   workflow: WorkflowStep[];
   denTitle: string;
   denCopy: string;
@@ -102,6 +103,8 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       { name: "DJs & party planners", mark: "DJ" },
     ],
     howTitle: "HOW ATLAS WORKS FOR YOUR BUSINESS",
+    howOutcome:
+      "Atlas finds the next conversation, drafts the follow-up, and parks it for one-tap approval. You wake up to a brief. Nothing sends without you.",
     workflow: [
       { title: "Find", body: "Organize prospects and opportunities around the business goal.", mark: "01" },
       { title: "Respond", body: "Keep notes, tasks, and owner-approved follow-up drafts in one place.", mark: "02" },
@@ -193,6 +196,8 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       { name: "DJs y organizadores", mark: "DJ" },
     ],
     howTitle: "CÓMO FUNCIONA ATLAS PARA TU NEGOCIO",
+    howOutcome:
+      "Atlas encuentra la próxima conversación, redacta el seguimiento y lo deja listo para aprobarlo de un toque. Te despiertas con un resumen. Nada se envía sin ti.",
     workflow: [
       { title: "Organiza", body: "Organiza prospectos y oportunidades alrededor de una meta del negocio.", mark: "01" },
       { title: "Responde", body: "Mantén notas, tareas y borradores de seguimiento aprobados en un solo lugar.", mark: "02" },
@@ -341,6 +346,7 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
 
         <section className="atlas-workflow-section atlas-wrap" id="how" aria-labelledby="workflow-title">
           <h2 id="workflow-title">{t.howTitle}</h2>
+          <p className="atlas-workflow-lede">{t.howOutcome}</p>
           <div className="atlas-workflow-grid">
             {t.workflow.map((step, index) => <article key={step.title}>
               <span className="atlas-workflow-symbol" aria-hidden="true">
