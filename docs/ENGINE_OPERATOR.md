@@ -16,7 +16,7 @@ Grok cannot apply production SQL or set Netlify secrets.
 
 1. Merge the PR or deploy this branch.
 2. Paste the migration into the **production** Supabase SQL editor and run it.
-   `service_role` needs SELECT, INSERT, UPDATE on `public.engine_runs`, `public.engine_drafts`, and `public.morning_briefs` for the Netlify overnight-engine function (`20260911190000_afe_engine_service_role_grants.sql`).
+   `service_role` needs SELECT, INSERT, UPDATE on `public.engine_runs`, `public.engine_drafts`, and `public.morning_briefs`, plus SELECT on `public.atlas_sales_prospects` and `public.atlas_contact_suppressions`, for the Netlify overnight-engine function (`20260911190000_afe_engine_service_role_grants.sql`).
 3. Confirm these already exist on Netlify (same as chat digest):
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`

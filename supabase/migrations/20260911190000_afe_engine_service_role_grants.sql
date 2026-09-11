@@ -5,3 +5,5 @@
 grant select, insert, update on table public.engine_runs to service_role;
 grant select, insert, update on table public.engine_drafts to service_role;
 grant select, insert, update on table public.morning_briefs to service_role;
+grant select on table public.atlas_sales_prospects to service_role;
+grant select on table public.atlas_contact_suppressions to service_role;
