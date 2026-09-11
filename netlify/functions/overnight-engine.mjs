@@ -108,6 +108,50 @@ async function loadSuppressions() {
   }
 }
 
+/** Founder briefs are unique on brief_date where organization_id is null (partial index). */
+async function upsertFounderMorningBrief({ runId, day, subject, body_md, body_html }) {
+  const existing = await rest(
+    `morning_briefs?brief_date=eq.${day}&organization_id=is.null&select=id&limit=1`,
+  );
+  const fields = {
+    engine_run_id: runId,
+    subject,
+    body_md,
+    body_html,
+  };
+  if (existing?.[0]?.id) {
+    const patched = await rest(`morning_briefs?id=eq.${existing[0].id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ ...fields, emailed_at: null }),
+    });
+    return patched?.[0] ?? existing[0];
+  }
+  const created = await rest("morning_briefs", {
+    method: "POST",
+    body: JSON.stringify({ ...fields, brief_date: day }),
+  });
+  return created?.[0] ?? null;
+}
+
+/** Avoid duplicate needs_approval rows when Run now is hit twice the same day. */
+async function insertDraftsSkippingExisting(drafts, day) {
+  if (!drafts.length) return 0;
+  let existing = [];
+  try {
+    existing =
+      (await rest(
+        `engine_drafts?status=eq.needs_approval&created_at=gte.${day}&select=prospect_id,kind`,
+      )) || [];
+  } catch {
+    existing = [];
+  }
+  const seen = new Set(existing.map((row) => `${row.prospect_id}:${row.kind}`));
+  const fresh = drafts.filter((row) => !seen.has(`${row.prospect_id}:${row.kind}`));
+  if (!fresh.length) return 0;
+  await rest("engine_drafts", { method: "POST", body: JSON.stringify(fresh) });
+  return fresh.length;
+}
+
 async function emailBrief({ subject, html, text, day }) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.ATLAS_NOTIFICATION_FROM;
@@ -177,9 +221,7 @@ const handler = async () => {
       };
     });
 
-    if (drafts.length) {
-      await rest("engine_drafts", { method: "POST", body: JSON.stringify(drafts) });
-    }
+    const draftCount = await insertDraftsSkippingExisting(drafts, day);
 
     const lines = scored
       .map((s, i) => `${i + 1}. ${s.business_name} (${s.status}, ${s.score}) — ${s.reasons.join("; ")}`)
@@ -206,20 +248,17 @@ const handler = async () => {
       .replaceAll("<", "<")
       .replaceAll(">", ">")}</pre>`;
 
-    const brief = await rest("morning_briefs", {
-      method: "POST",
-      body: JSON.stringify({
-        engine_run_id: runId,
-        brief_date: day,
-        subject,
-        body_md,
-        body_html: html,
-      }),
+    const brief = await upsertFounderMorningBrief({
+      runId,
+      day,
+      subject,
+      body_md,
+      body_html: html,
     });
 
     const emailed = await emailBrief({ subject, html, text: body_md, day });
-    if (emailed && brief?.[0]?.id) {
-      await rest(`morning_briefs?id=eq.${brief[0].id}`, {
+    if (emailed && brief?.id) {
+      await rest(`morning_briefs?id=eq.${brief.id}`, {
         method: "PATCH",
         body: JSON.stringify({ emailed_at: new Date().toISOString() }),
       });
@@ -232,7 +271,7 @@ const handler = async () => {
           status: "succeeded",
           finished_at: new Date().toISOString(),
           stale_count: scored.length,
-          draft_count: drafts.length,
+          draft_count: draftCount,
           notes: `prospects_seen=${prospects?.length || 0}`,
         }),
       });
@@ -244,7 +283,7 @@ const handler = async () => {
         source: "atlas_sales",
         scanned: prospects?.length || 0,
         stale: scored.length,
-        drafts: drafts.length,
+        drafts: draftCount,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
