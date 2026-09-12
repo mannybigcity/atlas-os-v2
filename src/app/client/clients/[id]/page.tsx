@@ -4,6 +4,8 @@ import Link from "next/link";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenProspectDetail } from "@/components/lions-den/lions-den-prospect-detail";
 import { ProspectContactActions, ProspectNotice } from "@/components/lions-den/prospect-controls";
+import { ClientProfileForm } from "@/components/lions-den/client-profile-form";
+import { LinkedNotesPanel } from "@/components/lions-den/linked-notes-panel";
 import { WonReviewCard } from "@/components/lions-den/won-review-card";
 import { lastDeskContactLabel, sisDeskActivityLines } from "@/lib/lions-den/prospect-stages";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
@@ -144,6 +146,26 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
             </button>
           </form>
 
+          <ClientProfileForm
+            metadata={customer.metadata}
+            organizationId={organization.id}
+            previewOrgSlug={workspace.previewOrgSlug || undefined}
+            recordId={customer.id}
+            recordTable="sis_customer"
+            returnPath={`/client/clients/${customer.id}`}
+            spanish={spanish}
+            workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+          />
+          <LinkedNotesPanel
+            organizationId={organization.id}
+            previewOrgSlug={workspace.previewOrgSlug || undefined}
+            record={{ kind: "sis_customer", id: customer.id }}
+            recordName={customer.displayName}
+            returnPath={`/client/clients/${customer.id}`}
+            spanish={spanish}
+            workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+          />
+
           <div className="mt-4 rounded-2xl border border-[#ece7d8] p-4" data-prospect-history>
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5c6578]">
               {spanish ? "Actividad" : "Activity"}
@@ -211,6 +233,25 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospect={result.data}
+        spanish={spanish}
+        workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+      />
+      <ClientProfileForm
+        metadata={result.data.metadata}
+        organizationId={organization.id}
+        previewOrgSlug={workspace.previewOrgSlug || undefined}
+        recordId={result.data.id}
+        recordTable="opportunity"
+        returnPath={`/client/clients/${result.data.id}`}
+        spanish={spanish}
+        workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+      />
+      <LinkedNotesPanel
+        organizationId={organization.id}
+        previewOrgSlug={workspace.previewOrgSlug || undefined}
+        record={{ kind: "client", id: result.data.id }}
+        recordName={prospect.name}
+        returnPath={`/client/clients/${result.data.id}`}
         spanish={spanish}
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />

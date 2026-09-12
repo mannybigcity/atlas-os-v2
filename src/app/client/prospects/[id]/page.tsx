@@ -2,6 +2,9 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenProspectDetail } from "@/components/lions-den/lions-den-prospect-detail";
+import { ClientProfileForm } from "@/components/lions-den/client-profile-form";
+import { LinkedNotesPanel } from "@/components/lions-den/linked-notes-panel";
+import { noteRecordKindForStage } from "@/lib/lions-den/note-links";
 import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
@@ -68,6 +71,25 @@ export default async function ProspectDetailPage({
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospect={prospect}
+        spanish={language === "es"}
+        workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+      />
+      <ClientProfileForm
+        metadata={result.data.metadata}
+        organizationId={organization.id}
+        previewOrgSlug={workspace.previewOrgSlug || undefined}
+        recordId={result.data.id}
+        recordTable="opportunity"
+        returnPath={`/client/prospects/${result.data.id}`}
+        spanish={language === "es"}
+        workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+      />
+      <LinkedNotesPanel
+        organizationId={organization.id}
+        previewOrgSlug={workspace.previewOrgSlug || undefined}
+        record={{ kind: noteRecordKindForStage(result.data.stage), id: result.data.id }}
+        recordName={prospect.name}
+        returnPath={`/client/prospects/${result.data.id}`}
         spanish={language === "es"}
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
