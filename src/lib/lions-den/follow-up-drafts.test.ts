@@ -136,7 +136,8 @@ test("I sent this queues a sendable check-in a few days out and never a same-day
   assert.equal(es.nextActionDue, "2026-09-12");
   assert.match(es.nextAction, /miércoles/);
 
-  const monthEnd = followUpSentCheckIn({ spanish: false, sentAt: new Date(2026, 8, 29) });
+  // Noon, so the owner's day is unambiguous whatever zone the test machine runs in.
+  const monthEnd = followUpSentCheckIn({ spanish: false, sentAt: new Date(2026, 8, 29, 12) });
   assert.equal(monthEnd.nextActionDue, "2026-10-02");
 });
 

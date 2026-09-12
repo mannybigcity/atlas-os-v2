@@ -13,6 +13,7 @@ import {
 } from "@/lib/lions-den/prospect-stages";
 import { CALL_PROSPECT_NEXT_ACTION, NO_PHONE_PROSPECT_NEXT_ACTION } from "@/lib/lions-den/prospect-places";
 import { wonReviewAsk } from "@/lib/lions-den/won-follow-through";
+import { FOLLOW_UP_CHECK_IN_DAYS } from "@/lib/lions-den/follow-up-drafts";
 import { createClient } from "@/lib/supabase/server";
 import { getDeskReviewLink } from "@/server/trials/desk-review-link";
 import { requireUser } from "@/server/auth/guards";
@@ -37,6 +38,12 @@ function scopedPath(base: string, formData: FormData, status?: string) {
   if (status) params.set("prospect", status);
   const query = params.toString();
   return query ? `${base}?${query}` : base;
+}
+
+function localDateInDays(days: number) {
+  const now = new Date();
+  const due = new Date(now.getFullYear(), now.getMonth(), now.getDate() + days);
+  return `${due.getFullYear()}-${String(due.getMonth() + 1).padStart(2, "0")}-${String(due.getDate()).padStart(2, "0")}`;
 }
 
 function usesClientRecord(formData: FormData) {
@@ -356,6 +363,15 @@ export async function setProspectStage(formData: FormData) {
             : existing.contact_phone
               ? CALL_PROSPECT_NEXT_ACTION
               : NO_PHONE_PROSPECT_NEXT_ACTION;
+  // "Follow up in 2 to 3 days" only means something if the Follow-up desk has a date to show it on.
+  const nextActionDue =
+    stage === "contacted"
+      ? localDateInDays(FOLLOW_UP_CHECK_IN_DAYS)
+      : stage === "responded"
+        ? localDateInDays(1)
+        : stage === "won" || stage === "lost"
+          ? null
+          : undefined;
 
   const { error } = await supabase
     .from("organization_opportunities")
@@ -363,7 +379,11 @@ export async function setProspectStage(formData: FormData) {
       stage,
       next_action: nextAction,
       metadata,
-      ...(reviewAsk ? { next_action_due: reviewAsk.nextActionDue } : {}),
+      ...(reviewAsk
+        ? { next_action_due: reviewAsk.nextActionDue }
+        : nextActionDue === undefined
+          ? {}
+          : { next_action_due: nextActionDue }),
     })
     .eq("id", opportunityId)
     .eq("organization_id", organizationId);

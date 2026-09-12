@@ -4,8 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prospectTelHref, prospectWhatsAppHref } from "@/lib/lions-den/prospect-places";
 import {
+  deskContactCheckIn,
+  deskContactOutcomePlan,
   deskContactStamp,
   deskContactSummary,
+  isDeskContactOutcome,
+  prospectNoteEvent,
+  readLastDeskContact,
   type DeskContactChannel,
 } from "@/lib/lions-den/prospect-stages";
 import { asOpportunityMetadata } from "@/server/opportunities/queries";
@@ -14,6 +19,16 @@ import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
 const STAGES_PAST_CONTACTED = new Set(["contacted", "responded", "won", "lost"]);
+/** Won and lost records never get pulled back into the follow-up queue by a call. */
+const STAGES_CLOSED = new Set(["won", "lost"]);
+
+function revalidateRecord(opportunityId: string) {
+  for (const path of ["/client", "/client/prospects", "/client/clients", "/client/david"]) {
+    revalidatePath(path);
+  }
+  revalidatePath(`/client/prospects/${opportunityId}`);
+  revalidatePath(`/client/clients/${opportunityId}`);
+}
 
 function text(formData: FormData, name: string, maxLength: number) {
   return String(formData.get(name) ?? "")
@@ -91,12 +106,18 @@ export async function logDeskContact(formData: FormData) {
     }
 
     const stamp = deskContactStamp(channel, actor);
+    const closed = STAGES_CLOSED.has(String(data.stage));
+    // The moment the owner reaches out, a dated check-in lands on the Follow-up desk
+    // so the prospect does not vanish from the queue. Atlas never sends it.
+    const checkIn = deskContactCheckIn(channel, { spanish, at: new Date(stamp.at) });
     const { error: eventError } = await supabase.from("organization_opportunity_events").insert({
       opportunity_id: opportunityId,
       organization_id: organizationId,
       event_type: "contacted",
       actor_role: "client",
-      summary: deskContactSummary(channel, phone ?? "", actor).slice(0, 500),
+      summary: `${deskContactSummary(channel, phone ?? "", actor)}${
+        closed ? "" : ` Check-in queued for ${checkIn.nextActionDue}.`
+      }`.slice(0, 500),
       body: href.slice(0, 3000),
     });
     if (eventError) {
@@ -110,9 +131,13 @@ export async function logDeskContact(formData: FormData) {
           last_desk_contact: stamp,
           owner_contacted_at: stamp.at,
         },
-        ...(STAGES_PAST_CONTACTED.has(String(data.stage))
+        ...(closed
           ? {}
-          : { stage: "contacted", next_action: "Wait for a reply, then follow up." }),
+          : {
+              next_action: checkIn.nextAction,
+              next_action_due: checkIn.nextActionDue,
+              ...(STAGES_PAST_CONTACTED.has(String(data.stage)) ? {} : { stage: "contacted" }),
+            }),
       })
       .eq("id", opportunityId)
       .eq("organization_id", organizationId);
@@ -120,10 +145,7 @@ export async function logDeskContact(formData: FormData) {
       console.error("Desk contact stamp failed", updateError);
     }
 
-    revalidatePath("/client/prospects");
-    revalidatePath("/client/clients");
-    revalidatePath(`/client/prospects/${opportunityId}`);
-    revalidatePath(`/client/clients/${opportunityId}`);
+    revalidateRecord(opportunityId);
     return;
   }
 
@@ -168,4 +190,130 @@ export async function logDeskContact(formData: FormData) {
   }
 
   redirect(scopedPath(detailBase, formData, "invalid"));
+}
+
+function recordPath(opportunityId: string, formData: FormData) {
+  const returnTo = text(formData, "returnTo", 80);
+  return returnTo.startsWith("/client/clients/") ? returnTo : `/client/prospects/${opportunityId}`;
+}
+
+/**
+ * The owner tells us how the call went. That becomes the next dated step on the
+ * Follow-up desk (or "Needs phone" for a wrong number). Atlas contacts no one.
+ */
+export async function logDeskContactOutcome(formData: FormData) {
+  const organizationId = text(formData, "organizationId", 36);
+  const opportunityId = text(formData, "opportunityId", 36);
+  const outcome = text(formData, "outcome", 24);
+  const note = text(formData, "note", 600);
+  const spanish = text(formData, "lang", 2) === "es";
+  const { user, supabase } = await requireProspectOwner(organizationId, formData);
+  if (!uuidPattern.test(opportunityId)) {
+    redirect(scopedPath("/client/prospects", formData, "invalid"));
+  }
+  const detailBase = recordPath(opportunityId, formData);
+  if (!isDeskContactOutcome(outcome)) {
+    redirect(scopedPath(detailBase, formData, "invalid"));
+  }
+
+  const { data } = await supabase
+    .from("organization_opportunities")
+    .select("id, stage, metadata")
+    .eq("id", opportunityId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  if (!data) {
+    redirect(scopedPath(detailBase, formData, "missing"));
+  }
+
+  const metadata = asOpportunityMetadata(data.metadata);
+  const lastContact = readLastDeskContact(metadata);
+  const now = new Date();
+  const plan = deskContactOutcomePlan(outcome, { spanish, by: user.email, note, at: now });
+  const closed = STAGES_CLOSED.has(String(data.stage));
+
+  const { error: eventError } = await supabase.from("organization_opportunity_events").insert({
+    opportunity_id: opportunityId,
+    organization_id: organizationId,
+    event_type: plan.eventType,
+    actor_role: "client",
+    summary: plan.summary,
+    body: note || null,
+  });
+  if (eventError) {
+    console.error("Desk contact outcome event failed", eventError);
+    redirect(scopedPath(detailBase, formData, "failed"));
+  }
+
+  const { error: updateError } = await supabase
+    .from("organization_opportunities")
+    .update({
+      metadata: {
+        ...metadata,
+        last_desk_contact: {
+          ...(lastContact ?? deskContactStamp("call", user.email)),
+          outcome,
+          outcomeAt: now.toISOString(),
+        },
+        ...(plan.stage === "responded" ? { owner_responded_at: now.toISOString() } : {}),
+      },
+      // A won client stays won even if a call goes to voicemail; only open records move.
+      ...(closed
+        ? {}
+        : {
+            next_action: plan.nextAction,
+            next_action_due: plan.nextActionDue,
+            ...(plan.stage ? { stage: plan.stage } : {}),
+          }),
+    })
+    .eq("id", opportunityId)
+    .eq("organization_id", organizationId);
+  if (updateError) {
+    console.error("Desk contact outcome stamp failed", updateError);
+    redirect(scopedPath(detailBase, formData, "failed"));
+  }
+
+  revalidateRecord(opportunityId);
+  redirect(scopedPath(detailBase, formData, outcome === "wrong_number" && !closed ? "outcome_wrong_number" : "outcome_saved"));
+}
+
+/** A quick line on the timeline ("Maria said call back Tuesday"). Nothing else changes. */
+export async function addProspectNote(formData: FormData) {
+  const organizationId = text(formData, "organizationId", 36);
+  const opportunityId = text(formData, "opportunityId", 36);
+  const { supabase } = await requireProspectOwner(organizationId, formData);
+  if (!uuidPattern.test(opportunityId)) {
+    redirect(scopedPath("/client/prospects", formData, "invalid"));
+  }
+  const detailBase = recordPath(opportunityId, formData);
+  const note = prospectNoteEvent(text(formData, "note", 3000));
+  if (!note) {
+    redirect(scopedPath(detailBase, formData, "invalid"));
+  }
+
+  const { data } = await supabase
+    .from("organization_opportunities")
+    .select("id")
+    .eq("id", opportunityId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  if (!data) {
+    redirect(scopedPath(detailBase, formData, "missing"));
+  }
+
+  const { error } = await supabase.from("organization_opportunity_events").insert({
+    opportunity_id: opportunityId,
+    organization_id: organizationId,
+    event_type: "note_added",
+    actor_role: "client",
+    summary: note.summary,
+    body: note.body,
+  });
+  if (error) {
+    console.error("Prospect note failed", error);
+    redirect(scopedPath(detailBase, formData, "failed"));
+  }
+
+  revalidateRecord(opportunityId);
+  redirect(scopedPath(detailBase, formData, "note_saved"));
 }

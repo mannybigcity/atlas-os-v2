@@ -1,3 +1,4 @@
+import { deskDateInDays } from "../desk-time.ts";
 import {
   AFE_CRM_DEMO_SLUG,
   FOUNDER_MAILBOX_EMAIL,
@@ -178,13 +179,7 @@ export function sampleDeskWriteTables() {
 }
 
 function isoDateFromToday(daysUntilDue: number) {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() + daysUntilDue);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return deskDateInDays(daysUntilDue);
 }
 
 export function seedSqlTouchesForbiddenLogin(sql: string) {

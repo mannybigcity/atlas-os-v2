@@ -99,7 +99,10 @@ test("lead page is public, honeypotted, and never authenticates the visitor", ()
   assert.match(actions, /atlas-inbound-owner-/);
   assert.match(actions, /atlas-inbound-reply-/);
   assert.match(actions, /No marketing was sent/);
-  assert.doesNotMatch(actions, /twilio|sms:/i);
+  // The owner may be texted about the lead; the lead is never texted by Atlas.
+  assert.doesNotMatch(actions, /sms:/i);
+  assert.doesNotMatch(actions, /sendOwnerSms\(\{\s*to: values\.phone/);
+  assert.match(actions, /sendOwnerSms\(\{\s*to: owners\.phone/);
 
   assert.match(prospects, /InboundLeadLinkCard/);
   assert.match(prospects, /isSisOrganization/);
