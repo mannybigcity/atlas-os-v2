@@ -15,6 +15,8 @@ import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getLeadPageOrganization, leadPageBaseUrl } from "@/server/leads/queries";
 import { sendLeadEmail } from "@/server/leads/email";
+import { inboundLeadOwnerSms } from "@/lib/notifications/owner-sms";
+import { sendOwnerSms } from "@/server/notifications/twilio";
 
 type OwnerContact = { emails: string[]; phone: string | null };
 
@@ -97,6 +99,19 @@ export async function submitInboundLead(formData: FormData) {
     to: owners.emails,
     replyTo: values.email || null,
     idempotencyKey: `atlas-inbound-owner-${inserted.id}`,
+  });
+
+  // Owner-only text. The lead is never texted by Atlas.
+  await sendOwnerSms({
+    to: owners.phone,
+    body: inboundLeadOwnerSms({
+      businessName: organization.name,
+      leadName: values.name,
+      leadPhone: values.phone,
+      problem: values.problem,
+      prospectUrl: `${siteUrl}${prospectDetailPath(inserted.id)}`,
+    }),
+    idempotencyKey: `atlas-inbound-owner-sms-${inserted.id}`,
   });
 
   if (values.email) {
