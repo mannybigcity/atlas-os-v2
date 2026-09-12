@@ -18,6 +18,10 @@ type DeskEmailComposeProps = {
   returnTo?: string;
   detailHref?: string;
   initialOpen?: boolean;
+  /** Prefilled by a quote; the owner still reads and sends it himself. */
+  initialSubject?: string;
+  initialBody?: string;
+  quoteId?: string;
 };
 
 const actionClass =
@@ -42,6 +46,9 @@ export function DeskEmailCompose({
   returnTo,
   detailHref,
   initialOpen = false,
+  initialSubject,
+  initialBody,
+  quoteId,
 }: DeskEmailComposeProps) {
   const [open, setOpen] = useState(() => {
     if (initialOpen) return true;
@@ -104,7 +111,7 @@ export function DeskEmailCompose({
               {spanish ? "Asunto" : "Subject"}
               <input
                 className={fieldClass}
-                defaultValue={spanish ? `Seguimiento: ${prospectName}` : `Follow-up: ${prospectName}`}
+                defaultValue={initialSubject ?? (spanish ? `Seguimiento: ${prospectName}` : `Follow-up: ${prospectName}`)}
                 name="subject"
                 required
                 type="text"
@@ -115,15 +122,17 @@ export function DeskEmailCompose({
               <textarea
                 className={fieldClass}
                 defaultValue={
-                  spanish
+                  initialBody ??
+                  (spanish
                     ? `Hola,\n\nTe escribo para dar seguimiento con ${prospectName}. ¿Tienes un momento esta semana?\n\nGracias.`
-                    : `Hi,\n\nI am following up with ${prospectName}. Do you have a few minutes this week?\n\nThank you.`
+                    : `Hi,\n\nI am following up with ${prospectName}. Do you have a few minutes this week?\n\nThank you.`)
                 }
                 name="body"
                 required
-                rows={6}
+                rows={initialBody ? 12 : 6}
               />
             </label>
+            {quoteId ? <input name="quoteId" type="hidden" value={quoteId} /> : null}
             <div className="flex flex-wrap items-center gap-3">
               <button className={actionClass} type="submit">
                 {spanish ? "Enviar y guardar seguimiento" : "Send and save follow-up"}

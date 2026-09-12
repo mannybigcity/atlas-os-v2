@@ -12,6 +12,7 @@ import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { fillMissingOpportunityEmail } from "@/server/hunter/fill-website-email";
 import { getOrganizationOpportunity } from "@/server/opportunities/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
+import { getDeskPayLink } from "@/server/trials/desk-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ type ProspectDetailPageProps = {
     previewOrg?: string;
     workspace?: string;
     prospect?: string;
+    quote?: string;
   }>;
 };
 
@@ -52,7 +54,10 @@ export default async function ProspectDetailPage({
   }
   if (!result.data) notFound();
 
-  const filled = await fillMissingOpportunityEmail(organization.id, result.data.id);
+  const [filled, payLink] = await Promise.all([
+    fillMissingOpportunityEmail(organization.id, result.data.id),
+    getDeskPayLink(organization.id),
+  ]);
   const prospect = presentLiveDeskOpportunity(organization, {
     ...result.data,
     contactEmail: filled.email ?? result.data.contactEmail,
@@ -68,6 +73,9 @@ export default async function ProspectDetailPage({
         )}
         fromEmail={workspace.user.email ?? ""}
         notice={query?.prospect}
+        businessName={organization.name}
+        openQuoteId={query?.quote}
+        payLink={payLink}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospect={prospect}

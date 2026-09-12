@@ -17,6 +17,7 @@ import { getOrganizationOpportunity } from "@/server/opportunities/queries";
 import { getSisCustomer } from "@/server/sis-workspace/queries";
 import { updateSisCustomer } from "@/server/sis-workspace/actions";
 import { getSiteLanguage } from "@/lib/site-language-server";
+import { getDeskPayLink } from "@/server/trials/desk-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ type ClientDetailPageProps = {
     previewOrg?: string;
     workspace?: string;
     prospect?: string;
+    quote?: string;
   }>;
 };
 
@@ -209,7 +211,10 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
     );
   }
 
-  const filled = await fillMissingOpportunityEmail(organization.id, result.data.id);
+  const [filled, payLink] = await Promise.all([
+    fillMissingOpportunityEmail(organization.id, result.data.id),
+    getDeskPayLink(organization.id),
+  ]);
   const prospect = presentLiveDeskOpportunity(organization, {
     ...result.data,
     contactEmail: filled.email ?? result.data.contactEmail,
@@ -221,6 +226,9 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
         backHref={backHref}
         fromEmail={workspace.user.email ?? ""}
         notice={query?.prospect}
+        businessName={organization.name}
+        openQuoteId={query?.quote}
+        payLink={payLink}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospect={prospect}

@@ -2,8 +2,10 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
 import { lastDeskContactLabel, needsDeskContactOutcome, readLastDeskContact } from "@/lib/lions-den/prospect-stages";
+import { deskQuoteText, readDeskQuotes } from "@/lib/lions-den/desk-quote";
 import { isTrialSampleOpportunity, trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
+import { DeskQuoteCard } from "@/components/lions-den/desk-quote-card";
 import { SampleBadge } from "@/components/lions-den/sample-badge";
 import {
   DeskContactOutcomeForm,
@@ -25,6 +27,12 @@ type LionsDenProspectDetailProps = {
   spanish: boolean;
   fromEmail?: string;
   variant?: "prospect" | "client";
+  /** The owner's business name, signed at the bottom of a quote. */
+  businessName?: string | null;
+  /** The owner's pay link or how-to-pay line from desk settings. */
+  payLink?: string | null;
+  /** From ?quote=: the quote the owner just wrote, prefilled into the compose box. */
+  openQuoteId?: string;
 };
 
 export function LionsDenProspectDetail({
@@ -37,6 +45,9 @@ export function LionsDenProspectDetail({
   spanish,
   fromEmail,
   variant = "prospect",
+  businessName,
+  payLink,
+  openQuoteId,
 }: LionsDenProspectDetailProps) {
   const places = prospectPlacesCard(prospect);
   const clientRecord = variant === "client";
@@ -45,6 +56,12 @@ export function LionsDenProspectDetail({
   const ownerNotes = typeof prospect.metadata?.owner_notes === "string" ? prospect.metadata.owner_notes : null;
   const history = [...prospect.events].reverse().slice(0, 20);
   const lastContact = readLastDeskContact(prospect.metadata);
+  const openQuote = openQuoteId
+    ? readDeskQuotes(prospect.metadata).find((item) => item.id === openQuoteId && item.status === "drafted") ?? null
+    : null;
+  const quoteCompose = openQuote
+    ? deskQuoteText({ quote: openQuote, prospectName: prospect.name, contactName: prospect.contactName, businessName, payLink, spanish })
+    : null;
   const askOutcome = Boolean(scope && lastContact && needsDeskContactOutcome(lastContact));
   const dueLabel = prospect.nextActionDue
     ? new Intl.DateTimeFormat(spanish ? "es-US" : "en-US", { weekday: "short", month: "short", day: "numeric" }).format(
@@ -100,7 +117,11 @@ export function LionsDenProspectDetail({
                   previewOrgSlug,
                   returnTo: recordPath,
                   workspaceSlug,
-                  initialOpen: notice === "email_found" || notice === "email_sent" || notice === "email_queued",
+                  initialOpen:
+                    notice === "email_found" || notice === "email_sent" || notice === "email_queued" || Boolean(quoteCompose),
+                  initialSubject: quoteCompose?.subject,
+                  initialBody: quoteCompose?.body,
+                  quoteId: openQuote?.id,
                 }
               : undefined
           }
@@ -238,6 +259,20 @@ export function LionsDenProspectDetail({
           <div className="mt-3">
             <ProspectStageButtons {...scope} prospect={prospect} spanish={spanish} />
           </div>
+        </div>
+      ) : null}
+
+      {scope ? (
+        <div className="mt-4">
+          <DeskQuoteCard
+            {...scope}
+            businessName={businessName}
+            openQuoteId={openQuoteId}
+            payLink={payLink}
+            prospect={prospect}
+            returnTo={recordPath}
+            spanish={spanish}
+          />
         </div>
       ) : null}
 
