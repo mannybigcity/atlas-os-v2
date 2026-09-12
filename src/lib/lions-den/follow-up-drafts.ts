@@ -1,6 +1,7 @@
 import { isSisOrganization } from "../client-portal/identity.ts";
 import { isSampleLabeledSeedText } from "./live-desk.ts";
 import { prospectWhatsAppHref } from "./prospect-places.ts";
+import { deskDateInDays, deskWeekday } from "../desk-time.ts";
 
 export const FOLLOW_UP_OWNER_SEND_HINT_EN =
   "Edit the draft, then Email or WhatsApp opens your own app with it filled in. Copy works for anything else. Atlas never emails, texts, or calls. When it is out the door, tap “I sent this”.";
@@ -57,12 +58,6 @@ export function followUpDraftSms(input: { phone?: string | null; body: string })
   return followUpDraftWhatsApp(input);
 }
 
-function localDateOnly(date: Date) {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
 /**
  * What the queue holds after the owner taps "I sent this": a sendable check-in
  * draft due a few days out, so the follow-up loop keeps going.
@@ -73,14 +68,12 @@ export function followUpSentCheckIn(input: {
   sentAt?: Date;
 }) {
   const sentAt = input.sentAt ?? new Date();
-  const due = new Date(sentAt.getFullYear(), sentAt.getMonth(), sentAt.getDate() + FOLLOW_UP_CHECK_IN_DAYS);
-  const sentLabel = new Intl.DateTimeFormat(input.spanish ? "es" : "en", {
-    weekday: "long",
-  }).format(sentAt);
+  // The owner's calendar, not the server's: 8pm Friday in Texas is still Friday.
+  const sentLabel = deskWeekday(sentAt, input.spanish);
   const nextAction = input.spanish
     ? `Solo doy seguimiento a mi mensaje del ${sentLabel}. ¿Tienes un momento esta semana para una llamada rápida?`
     : `Just following up on my message from ${sentLabel}. Do you have a minute this week for a quick call?`;
-  return { nextAction, nextActionDue: localDateOnly(due) };
+  return { nextAction, nextActionDue: deskDateInDays(FOLLOW_UP_CHECK_IN_DAYS, { from: sentAt }) };
 }
 
 export function isOwnerGatedFollowUpMailto(href: string | null | undefined) {
