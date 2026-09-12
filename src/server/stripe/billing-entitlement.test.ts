@@ -150,6 +150,18 @@ test("an active webhook entitlement unlocks after the trial clock expires", () =
     }),
     true,
   );
+  assert.equal(
+    shouldBlockExpiredTrial({
+      trialEndsAt: "2026-01-01T00:00:00.000Z",
+      hasActivePaidEntitlement: false,
+      organization: {
+        name: "SIS Custom Creations",
+        slug: "sis-diy-big-complete-showcase",
+      },
+      now: Date.parse("2026-09-05T00:00:00.000Z"),
+    }),
+    false,
+  );
 });
 
 test("webhook is the entitlement writer; success page is confirmation only", () => {
@@ -179,6 +191,16 @@ test("webhook is the entitlement writer; success page is confirmation only", () 
   const workspaceContext = readFileSync(join(root, "src/server/client-workspace/context.ts"), "utf8");
   const authActions = readFileSync(join(root, "src/server/auth/actions.ts"), "utf8");
   assert.match(trialGuard, /userHasActivePaidEntitlement/);
+  assert.match(trialGuard, /isSisOrganization/);
   assert.match(workspaceContext, /userHasActivePaidEntitlement/);
-  assert.match(authActions, /userHasActivePaidEntitlement/);
+  assert.match(workspaceContext, /decideExpiredTrialAccess/);
+  assert.match(authActions, /isSisOrganization/);
+  assert.match(authActions, /getUserMemberships/);
+  assert.doesNotMatch(
+    authActions.slice(
+      authActions.indexOf("export async function signInWithPassword"),
+      authActions.indexOf("export async function signInToSampleDesk"),
+    ),
+    /redirect\("\/pricing\?trial=expired"\)/,
+  );
 });

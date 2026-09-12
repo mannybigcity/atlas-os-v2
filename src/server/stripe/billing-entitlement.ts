@@ -4,6 +4,7 @@ import {
   isQTimeWorkspaceSlug,
   isSisOrganization,
 } from "../../lib/client-portal/identity.ts";
+import { decideExpiredTrialAccess } from "../../lib/trials/expired-desk.ts";
 
 export const ATLAS_PLAN_PRICE_ENV = {
   basic: "STRIPE_ATLAS_BASIC_PRICE_ID",
@@ -93,8 +94,18 @@ export function shouldBlockExpiredTrial(input: {
   trialEndsAt?: string | null;
   hasActivePaidEntitlement: boolean;
   now?: number;
+  organization?: { name?: string | null; slug?: string | null } | null;
+  isSisOrganization?: boolean;
 }) {
-  if (input.hasActivePaidEntitlement) return false;
-  if (!input.trialEndsAt) return false;
-  return new Date(input.trialEndsAt).getTime() <= (input.now ?? Date.now());
+  const organization = input.isSisOrganization
+    ? { name: "SIS Custom Creations", slug: "sis-diy-big-complete-showcase" }
+    : input.organization;
+  return (
+    decideExpiredTrialAccess({
+      trialEndsAt: input.trialEndsAt,
+      hasActivePaidEntitlement: input.hasActivePaidEntitlement,
+      organization,
+      now: input.now,
+    }) === "readOnly"
+  );
 }

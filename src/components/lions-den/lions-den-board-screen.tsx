@@ -1,9 +1,12 @@
+import type { ReactNode } from "react";
+import Link from "next/link";
 import { LionsDenClientHub } from "@/components/lions-den/lions-den-client-hub";
 import { getClientPortalOrgLabel } from "@/lib/client-portal/identity";
 import { presentLiveDeskAiRequest } from "@/lib/lions-den/live-desk";
 import { freshDeskChatRequests } from "@/lib/lions-den/desk-chat";
 import type { LionsDenBoard } from "@/lib/lions-den/client-hub";
 import { canSeeTrialInboxNav } from "@/lib/lions-den/trial-inbox";
+import { getSiteLanguage } from "@/lib/site-language-server";
 import {
   defaultClientAiDailyUsage,
   getClientAiDailyUsage,
@@ -11,7 +14,6 @@ import {
 } from "@/server/client-ai/queries";
 import type { ClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getAfeTrialInboxCount } from "@/server/trials/inbox";
-import type { ReactNode } from "react";
 
 export async function LionsDenBoardScreen({
   board,
@@ -46,6 +48,8 @@ export async function LionsDenBoardScreen({
           aiRequests.data.map((request) => presentLiveDeskAiRequest(organization, request)),
         )
       : [];
+  const language = await getSiteLanguage();
+  const spanish = language === "es";
 
   return (
     <LionsDenClientHub
@@ -69,6 +73,21 @@ export async function LionsDenBoardScreen({
           : [],
       )}
     >
+      {workspace.readOnly ? (
+        <div
+          className="mb-4 rounded-2xl border border-[#ffb4a2] bg-[#fff4f1] px-4 py-3 text-sm text-[#071b42]"
+          data-trial-readonly-banner
+        >
+          <span>
+            {spanish
+              ? "Tu prueba terminó. Puedes leer todo; mejora tu plan para seguir trabajando. "
+              : "Your trial ended. You can read everything; upgrade to keep working. "}
+          </span>
+          <Link className="font-semibold underline" href="/pricing?trial=expired">
+            {spanish ? "Elegir plan" : "Choose a plan"}
+          </Link>
+        </div>
+      ) : null}
       {children}
     </LionsDenClientHub>
   );
