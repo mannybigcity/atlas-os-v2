@@ -6,6 +6,7 @@ import { readDeskEmailAttachments } from "@/lib/lions-den/desk-email-attachments
 import { sendLeadEmail } from "@/server/leads/email";
 import { fillMissingOpportunityEmail } from "@/server/hunter/fill-website-email";
 import { deskContactStamp } from "@/lib/lions-den/prospect-stages";
+import { readDeskQuotes, withDeskQuote } from "@/lib/lions-den/desk-quote";
 import { asOpportunityMetadata } from "@/server/opportunities/queries";
 import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
 
@@ -107,7 +108,13 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
       .eq("id", opportunityId)
       .eq("organization_id", organizationId)
       .maybeSingle();
-    const metadata = asOpportunityMetadata(existing?.metadata);
+    let metadata = asOpportunityMetadata(existing?.metadata);
+    // A quote that went out in this email is now "sent" on the record.
+    const quoteId = text(formData, "quoteId", 36);
+    const quote = quoteId ? readDeskQuotes(metadata).find((item) => item.id === quoteId) : undefined;
+    if (quote && quote.status === "drafted") {
+      metadata = withDeskQuote(metadata, { ...quote, status: "sent", statusAt: new Date().toISOString() });
+    }
     const stamp = deskContactStamp("email", user.email);
     const actor = user.email ?? "Owner";
     await supabase.from("organization_opportunity_events").insert({

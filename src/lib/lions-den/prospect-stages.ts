@@ -284,6 +284,28 @@ export function prospectNoticeCopy(status: string | undefined, spanish: boolean)
       return spanish
         ? "Quedó en el historial. Atlas no hizo la llamada ni envió el WhatsApp; eso fue tuyo."
         : "Saved on the history. Atlas did not place the call or send the WhatsApp; that was you.";
+    case "quote_ready":
+      return spanish
+        ? "Cotización lista abajo. Revísala y envíala por correo o WhatsApp. Atlas no la envía ni cobra."
+        : "Quote written below. Review it, then send it by email or WhatsApp. Atlas does not send it or collect the money.";
+    case "quote_invalid":
+      return spanish
+        ? "Revisa la cotización: descripción, precio y días de validez."
+        : "Check the quote: description, price, and valid days.";
+    case "quote_sent":
+      return spanish
+        ? "Cotización marcada como enviada. El recordatorio ya está en Seguimiento."
+        : "Quote marked sent. The check-in is on the Follow-up desk.";
+    case "quote_accepted":
+      return spanish
+        ? "Aceptaron. Ahora es cliente y el valor del trabajo quedó guardado."
+        : "They accepted. They are a client now and the job value is saved.";
+    case "quote_declined":
+      return spanish
+        ? "Anotado. Sigue abierto; pregunta qué precio les funciona."
+        : "Noted. Still open; ask what number works for them.";
+    case "pay_link_saved":
+      return spanish ? "Forma de pago guardada. Va en cada cotización." : "Pay link saved. It goes in every quote.";
     default:
       return null;
   }

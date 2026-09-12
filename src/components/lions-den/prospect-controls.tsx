@@ -72,6 +72,9 @@ export function ProspectContactActions({
     returnTo?: string;
     detailHref?: string;
     initialOpen?: boolean;
+    initialSubject?: string;
+    initialBody?: string;
+    quoteId?: string;
   };
 }) {
   const links = prospectContactLinks(prospect);
@@ -151,6 +154,9 @@ export function ProspectContactActions({
           workspaceSlug={compose.workspaceSlug}
           detailHref={compose.detailHref}
           initialOpen={compose.initialOpen}
+          initialSubject={compose.initialSubject}
+          initialBody={compose.initialBody}
+          quoteId={compose.quoteId}
         />
       ) : links.mailto ? (
         <a className={base} href={links.mailto}>
