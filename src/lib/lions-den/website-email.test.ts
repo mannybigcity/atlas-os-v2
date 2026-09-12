@@ -79,10 +79,12 @@ test("Call and WhatsApp write a contacted event the salesman started", () => {
   assert.match(contact, /event_type: "contacted"/);
   assert.match(contact, /deskContactStamp/);
   assert.match(contact, /last_desk_contact/);
+  assert.match(contact, /next_action_due/);
   assert.doesNotMatch(contact, /redirect\(href\)/);
   assert.doesNotMatch(contact, /twilio/i);
   assert.match(email, /event_type: "contacted"/);
   assert.match(email, /last_desk_contact: stamp/);
+  assert.match(email, /next_action_due/);
   assert.match(button, /^"use client";/);
   assert.match(button, /window\.location\.assign\(href\)/);
   assert.match(button, /window\.open\(href/);

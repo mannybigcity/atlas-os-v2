@@ -1,13 +1,17 @@
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import {
+  deskContactOutcomeOptions,
+  lastDeskContactLabel,
   prospectContactLinks,
   prospectNoticeCopy,
   prospectStageActions,
   readJobValue,
+  type DeskContactStamp,
 } from "@/lib/lions-den/prospect-stages";
 import { prospectWhatsAppHref } from "@/lib/lions-den/prospect-places";
 import { DeskContactButton } from "@/components/lions-den/desk-contact-button";
 import { DeskEmailCompose } from "@/components/lions-den/desk-email-compose";
+import { addProspectNote, logDeskContactOutcome } from "@/server/opportunities/desk-contact-actions";
 import {
   createProspect,
   deleteProspect,
@@ -164,11 +168,116 @@ export function ProspectContactActions({
       {compose && !compact ? (
         <p className="basis-full text-xs text-[#5c6578]">
           {spanish
-            ? "Llamar usa tu teléfono (Phone Link en la laptop). WhatsApp solo si ellos lo tienen. Cada toque queda en Actividad."
-            : "Call uses your phone (Phone Link on a laptop). WhatsApp only if they have WhatsApp. Each tap is saved on Activity."}
+            ? "Llamar usa tu teléfono (Phone Link en la laptop). WhatsApp solo si ellos lo tienen. Cada toque queda en Actividad y deja un seguimiento con fecha en Seguimiento."
+            : "Call uses your phone (Phone Link on a laptop). WhatsApp only if they have WhatsApp. Each tap is saved on Activity and queues a dated check-in on the Follow-up desk."}
         </p>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Shows up after a Call until the owner says how it went. One tap turns the
+ * result into the next dated step on the Follow-up desk. Atlas contacts no one.
+ */
+export function DeskContactOutcomeForm({
+  prospect,
+  lastContact,
+  spanish,
+  returnTo,
+  ...scope
+}: Scope & {
+  prospect: Pick<OrganizationOpportunity, "id">;
+  lastContact: DeskContactStamp;
+  spanish: boolean;
+  returnTo: string;
+}) {
+  return (
+    <form
+      action={logDeskContactOutcome}
+      className="rounded-2xl border border-[#d8c27a] bg-[#fff8e6] p-4"
+      data-contact-outcome
+    >
+      <ScopeFields {...scope} />
+      <input name="opportunityId" type="hidden" value={prospect.id} />
+      <input name="returnTo" type="hidden" value={returnTo} />
+      <input name="lang" type="hidden" value={spanish ? "es" : "en"} />
+      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a6a12]">
+        {spanish ? "¿Cómo fue la llamada?" : "How did the call go?"}
+      </p>
+      <p className="mt-1 text-xs text-[#5c4a12]">
+        {spanish ? "Última: " : "Last: "}
+        {lastDeskContactLabel(lastContact, spanish)}
+        {spanish
+          ? ". Un toque y el siguiente paso queda en Seguimiento con fecha."
+          : ". One tap and the next step lands on the Follow-up desk with a date."}
+      </p>
+      <label className="mt-3 block text-xs font-semibold text-[#5c4a12]">
+        {spanish ? "¿Qué dijeron? (opcional)" : "What did they say? (optional)"}
+        <input
+          className="mt-1 block w-full rounded-md border border-[#d8c27a] bg-white px-3 py-2 text-sm text-[#071b42] placeholder:text-[#8a93a3]"
+          maxLength={600}
+          name="note"
+          placeholder={spanish ? "Ej. Maria dijo que llame el martes" : "e.g. Maria said call back Tuesday"}
+          type="text"
+        />
+      </label>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {deskContactOutcomeOptions(spanish).map((option) => (
+          <button
+            className={
+              option.outcome === "wrong_number"
+                ? "rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#5c6578] transition hover:border-[#071b42] hover:text-[#071b42]"
+                : "rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:border-[#071b42]"
+            }
+            key={option.outcome}
+            name="outcome"
+            type="submit"
+            value={option.outcome}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </form>
+  );
+}
+
+/** A one-line note straight onto the Activity timeline. Saving contacts no one. */
+export function ProspectNoteForm({
+  prospect,
+  spanish,
+  returnTo,
+  ...scope
+}: Scope & {
+  prospect: Pick<OrganizationOpportunity, "id">;
+  spanish: boolean;
+  returnTo: string;
+}) {
+  return (
+    <form action={addProspectNote} className="flex flex-col gap-2 sm:flex-row sm:items-start" data-prospect-note>
+      <ScopeFields {...scope} />
+      <input name="opportunityId" type="hidden" value={prospect.id} />
+      <input name="returnTo" type="hidden" value={returnTo} />
+      <label className="block flex-1 text-xs font-semibold text-[#5c6578]">
+        <span className="sr-only">{spanish ? "Nota" : "Note"}</span>
+        <textarea
+          className={fieldClass}
+          maxLength={3000}
+          minLength={2}
+          name="note"
+          placeholder={spanish ? "Agrega una nota: qué dijeron, qué sigue…" : "Add a note: what they said, what is next…"}
+          required
+          rows={2}
+        />
+      </label>
+      <button
+        className="w-fit rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:border-[#071b42] sm:mt-1"
+        type="submit"
+      >
+        {spanish ? "Guardar nota" : "Save note"}
+      </button>
+    </form>
   );
 }
 
@@ -210,6 +319,7 @@ export function ProspectStageButtons({
           <input name="opportunityId" type="hidden" value={prospect.id} />
           <input name="stage" type="hidden" value="won" />
           <input name="returnTo" type="hidden" value={returnTo} />
+          <input name="lang" type="hidden" value={spanish ? "es" : "en"} />
           <label className="block text-xs font-semibold text-[#5c4a12]">
             {spanish ? "Valor del trabajo (opcional)" : "Job value (optional)"}
             <input

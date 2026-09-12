@@ -1,5 +1,6 @@
 "use client";
 
+import { useFormStatus } from "react-dom";
 import { logDeskContact } from "@/server/opportunities/desk-contact-actions";
 
 type DeskContactButtonProps = {
@@ -16,6 +17,17 @@ type DeskContactButtonProps = {
   workspaceSlug?: string;
   returnTo?: string;
 };
+
+/** Disabled while the attempt is being written, so a double tap is one line on the record, not two. */
+function SubmitButton({ className, label, extra }: Pick<DeskContactButtonProps, "className" | "label" | "extra">) {
+  const { pending } = useFormStatus();
+  return (
+    <button aria-busy={pending} className={`${className}${pending ? " opacity-70" : ""}`} disabled={pending} type="submit">
+      {label}
+      {extra ? <span className="ml-2 font-normal text-white/80">{extra}</span> : null}
+    </button>
+  );
+}
 
 /**
  * Logs the attempt on the record, then opens the owner's phone or WhatsApp.
@@ -54,10 +66,7 @@ export function DeskContactButton({
       {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
       <input name="channel" type="hidden" value={channel} />
       <input name="lang" type="hidden" value={spanish ? "es" : "en"} />
-      <button className={className} type="submit">
-        {label}
-        {extra ? <span className="ml-2 font-normal text-white/80">{extra}</span> : null}
-      </button>
+      <SubmitButton className={className} extra={extra} label={label} />
     </form>
   );
 }

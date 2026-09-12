@@ -23,9 +23,9 @@ named in the batch you are about to build. Do not explore the repo broadly; the 
   Smoke after deploy: log into a trial desk, open `/client/david`, find a business prospect with an email,
   confirm the Amanda card shows "Nothing sends until you approve.", click Approve, confirm the status line flips
   to "Approved. Amanda sends email 1 of 3 today." Check Netlify function logs for `amanda-outreach` at 15:00 UTC.
-- One known failing test on the base branch: `src/server/sis-capture-card/intake.test.ts`. Leave it. 308/309 is green.
-- ESLint reports pre-existing errors in four unrelated files (`atlas-mfa-enrollment`, `atlas-staff-pane`,
-  `lions-den-activation-checklist`, `micah-week-gallery`). Lint only the files you touch: `npx eslint <paths>`.
+- `npm test` must be fully green (the old `sis-capture-card/intake.test.ts` failure was a missing `.ts` extension; fixed).
+- `npx eslint src netlify` must report 0 errors. `react-hooks/set-state-in-effect` is a warning in three older components; do not add new warnings.
+- CI (`.github/workflows/ci.yml`) runs typecheck, lint, unit tests, function tests, and `next build` on every PR. A red check means do not ask for merge.
 
 ---
 
@@ -58,8 +58,8 @@ inbound leads into prospects. AFE is not SIS (a separate party/gift client on th
 6. **Reuse the existing pattern; do not introduce a new one.** Scheduled jobs look like
    `netlify/functions/daily-content-studio.mjs` (service-role REST via fetch). Server actions look like
    `src/server/opportunities/actions.ts`. Email looks like `src/server/leads/email.ts`. Copy the shape.
-7. **No new npm dependencies** unless the PR body says why. `npm ci` is already fragile (typescript@6 beta peer
-   conflict); use `npm install --no-audit --no-fund --legacy-peer-deps`.
+7. **No new npm dependencies** unless the PR body says why. Versions are pinned; `npm ci --no-audit --no-fund` is the
+   install command. Never change a pin to `latest`.
 8. **Bilingual.** Every user-facing string is `spanish ? "…" : "…"`. Spanish is real Spanish, not a placeholder.
 9. **When blocked on a credential or a decision only Manny can make, finish everything else, then ask one
    precise question** at the end of the report ("I need X in Netlify env; without it Y is skipped, nothing breaks").
@@ -87,7 +87,7 @@ inbound leads into prospects. AFE is not SIS (a separate party/gift client on th
 
 ```
 1. git fetch origin launch/afe-emergency-revenue-20260822 && git checkout -b cursor/<topic>-0cb3 FETCH_HEAD
-2. npm install --no-audit --no-fund --legacy-peer-deps      (once per machine)
+2. npm ci --no-audit --no-fund                              (once per machine)
 3. Read only the files listed for the batch. Write the pure module + its .test.ts. Run that one test:
       node --test --experimental-strip-types src/lib/<area>/<file>.test.ts
 4. Wire it (action / page / component / netlify function). Add or update the contract test.

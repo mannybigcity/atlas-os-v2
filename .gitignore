@@ -33,3 +33,6 @@ next-env.d.ts
 
 # Local Netlify folder
 .netlify
+
+# scratch space; never tracked
+/tmp/

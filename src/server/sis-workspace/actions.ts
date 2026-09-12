@@ -1,5 +1,6 @@
 "use server";
 
+import { deskDateOnly } from "@/lib/desk-time";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getVerifiedUser } from "@/server/auth/guards";
@@ -35,7 +36,7 @@ export async function createSisPartyEvent(formData: FormData) {
   const nextAction = text(formData, "nextAction", 1200);
   const nextActionDue = date(formData, "nextActionDue");
   if (hostName.length < 2 || nextAction.length < 2 || !nextActionDue) throw new Error("Host name and a dated next action are required.");
-  if (nextActionDue < new Date().toISOString().slice(0, 10)) throw new Error("Next action cannot be in the past.");
+  if (nextActionDue < deskDateOnly()) throw new Error("Next action cannot be in the past.");
   const supabase = await createClient();
   const { data: customer, error: customerError } = await supabase.from("organization_sis_customers").insert({ organization_id: organizationId, display_name: hostName, email: text(formData, "email", 320) || null, phone: text(formData, "phone", 80) || null, source_label: "SIS operations", created_by: user.id }).select("id").single();
   if (customerError || !customer) throw new Error(customerError?.message ?? "Unable to create customer.");
@@ -53,7 +54,7 @@ export async function advanceSisPartyStage(formData: FormData) {
   const nextAction = text(formData, "nextAction", 1200);
   const nextActionDue = date(formData, "nextActionDue");
   if (!partyEventId || !stages.includes(stage) || !nextAction || !nextActionDue) throw new Error("A valid stage and next action are required.");
-  if (nextActionDue < new Date().toISOString().slice(0, 10)) throw new Error("Next action cannot be in the past.");
+  if (nextActionDue < deskDateOnly()) throw new Error("Next action cannot be in the past.");
   const supabase = await createClient();
   const { error } = await supabase.from("organization_sis_party_events").update({ stage, next_action: nextAction, next_action_due: nextActionDue }).eq("organization_id", organizationId).eq("id", partyEventId);
   if (error) throw new Error(error.message);

@@ -1,4 +1,5 @@
 import type { OpportunityStage } from "@/server/opportunities/queries";
+import { FOLLOW_UP_CHECK_IN_DAYS } from "./follow-up-drafts.ts";
 import { prospectTelHref, prospectWhatsAppHref, publishedPlacePhone } from "./prospect-places.ts";
 
 /**
@@ -174,10 +175,21 @@ export function validateProspectEditor(values: ProspectEditorValues, spanish: bo
 
 export type DeskContactChannel = "call" | "whatsapp" | "email";
 
+/** What the owner says happened after a call. Messages get no outcome; the check-in covers them. */
+export const DESK_CONTACT_OUTCOMES = ["no_answer", "voicemail", "talked", "wants_quote", "wrong_number"] as const;
+
+export type DeskContactOutcome = (typeof DESK_CONTACT_OUTCOMES)[number];
+
+export function isDeskContactOutcome(value: unknown): value is DeskContactOutcome {
+  return (DESK_CONTACT_OUTCOMES as readonly string[]).includes(String(value ?? ""));
+}
+
 export type DeskContactStamp = {
   channel: DeskContactChannel;
   at: string;
   by?: string;
+  outcome?: DeskContactOutcome;
+  outcomeAt?: string;
 };
 
 export function deskContactStamp(channel: DeskContactChannel, by?: string | null): DeskContactStamp {
@@ -192,11 +204,182 @@ export function deskContactStamp(channel: DeskContactChannel, by?: string | null
 export function readLastDeskContact(metadata: Record<string, unknown> | null | undefined): DeskContactStamp | null {
   const raw = metadata?.last_desk_contact;
   if (!raw || typeof raw !== "object") return null;
-  const row = raw as { channel?: string; at?: string; by?: string };
+  const row = raw as { channel?: string; at?: string; by?: string; outcome?: string; outcomeAt?: string };
   if (row.channel !== "call" && row.channel !== "whatsapp" && row.channel !== "email") return null;
   if (!row.at || Number.isNaN(new Date(row.at).getTime())) return null;
   const by = typeof row.by === "string" && row.by.trim() ? row.by.trim().slice(0, 320) : undefined;
-  return { channel: row.channel, at: row.at, ...(by ? { by } : {}) };
+  const outcome = isDeskContactOutcome(row.outcome) ? row.outcome : undefined;
+  const outcomeAt =
+    outcome && typeof row.outcomeAt === "string" && !Number.isNaN(new Date(row.outcomeAt).getTime())
+      ? row.outcomeAt
+      : undefined;
+  return {
+    channel: row.channel,
+    at: row.at,
+    ...(by ? { by } : {}),
+    ...(outcome ? { outcome } : {}),
+    ...(outcomeAt ? { outcomeAt } : {}),
+  };
+}
+
+/** How long the record keeps asking "how did the call go?" after an un-logged call. */
+export const DESK_CONTACT_OUTCOME_WINDOW_HOURS = 48;
+
+/** True when the last touch was a call the owner has not told us the result of yet. */
+export function needsDeskContactOutcome(
+  contact: DeskContactStamp | null | undefined,
+  now: Date = new Date(),
+) {
+  if (!contact || contact.channel !== "call" || contact.outcome) return false;
+  const age = now.getTime() - new Date(contact.at).getTime();
+  return age >= 0 && age <= DESK_CONTACT_OUTCOME_WINDOW_HOURS * 60 * 60 * 1000;
+}
+
+function localDateOnly(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function weekdayLabel(date: Date, spanish: boolean) {
+  return new Intl.DateTimeFormat(spanish ? "es" : "en", { weekday: "long" }).format(date);
+}
+
+function dueInDays(from: Date, days: number) {
+  return localDateOnly(new Date(from.getFullYear(), from.getMonth(), from.getDate() + days));
+}
+
+/**
+ * What lands on the Follow-up desk the moment the owner taps Call, WhatsApp, or
+ * Email: a sendable check-in draft a few days out, so the prospect does not fall
+ * off the queue right after the owner reached out. Atlas does not send it.
+ */
+export function deskContactCheckIn(
+  channel: DeskContactChannel,
+  input: { spanish: boolean; at?: Date },
+) {
+  const at = input.at ?? new Date();
+  const day = weekdayLabel(at, input.spanish);
+  const noun =
+    channel === "call"
+      ? input.spanish
+        ? "mi llamada"
+        : "my call"
+      : channel === "whatsapp"
+        ? input.spanish
+          ? "mi WhatsApp"
+          : "my WhatsApp"
+        : input.spanish
+          ? "mi correo"
+          : "my email";
+  const nextAction = input.spanish
+    ? `Solo doy seguimiento a ${noun} del ${day}. ¿Tienes un momento esta semana para una llamada rápida?`
+    : `Just following up on ${noun} from ${day}. Do you have a minute this week for a quick call?`;
+  return { nextAction, nextActionDue: dueInDays(at, FOLLOW_UP_CHECK_IN_DAYS) };
+}
+
+export function deskContactOutcomeOptions(spanish: boolean): Array<{ outcome: DeskContactOutcome; label: string }> {
+  return [
+    { outcome: "no_answer", label: spanish ? "No contestaron" : "No answer" },
+    { outcome: "voicemail", label: spanish ? "Dejé buzón" : "Left voicemail" },
+    { outcome: "talked", label: spanish ? "Hablamos" : "We talked" },
+    { outcome: "wants_quote", label: spanish ? "Quieren cotización" : "They want a quote" },
+    { outcome: "wrong_number", label: spanish ? "Número equivocado" : "Wrong number" },
+  ];
+}
+
+export function deskContactOutcomeLabel(outcome: DeskContactOutcome, spanish: boolean) {
+  return deskContactOutcomeOptions(spanish).find((item) => item.outcome === outcome)?.label ?? outcome;
+}
+
+export type DeskContactOutcomePlan = {
+  /** Event row type; talked / wants_quote count as a reply. */
+  eventType: "note_added" | "reply_received";
+  /** English summary for the Activity timeline. */
+  summary: string;
+  /** Stage to move to, or null to leave the stage alone. */
+  stage: "responded" | "needs_client_input" | null;
+  nextAction: string;
+  nextActionDue: string | null;
+};
+
+/**
+ * Turns "how did the call go?" into the next thing on the desk. Each outcome
+ * either queues a sendable check-in with a date or, for a wrong number, sends
+ * the record back to "Needs phone". Nothing here contacts anyone.
+ */
+export function deskContactOutcomePlan(
+  outcome: DeskContactOutcome,
+  input: { spanish: boolean; by?: string | null; note?: string | null; at?: Date },
+): DeskContactOutcomePlan {
+  const at = input.at ?? new Date();
+  const actor = String(input.by ?? "").trim() || "Owner";
+  const note = String(input.note ?? "").trim();
+  const noteTail = note ? ` Note: ${note}` : "";
+  const day = weekdayLabel(at, input.spanish);
+  const es = input.spanish;
+
+  switch (outcome) {
+    case "no_answer":
+      return {
+        eventType: "note_added",
+        summary: `${actor} called; no answer. Atlas did not place the call.${noteTail}`.slice(0, 500),
+        stage: null,
+        nextAction: es
+          ? `Te marqué el ${day} y no te alcancé. ¿Cuándo es buen momento para hablar?`
+          : `Tried you on ${day} and missed you. When is a good time to talk?`,
+        nextActionDue: dueInDays(at, 1),
+      };
+    case "voicemail":
+      return {
+        eventType: "note_added",
+        summary: `${actor} called and left a voicemail. Atlas did not place the call.${noteTail}`.slice(0, 500),
+        stage: null,
+        nextAction: es
+          ? `Te dejé un mensaje de voz el ${day}. Con gusto hablamos cuando te acomode.`
+          : `Left you a voicemail on ${day}. Happy to talk whenever works for you.`,
+        nextActionDue: dueInDays(at, 2),
+      };
+    case "talked":
+      return {
+        eventType: "reply_received",
+        summary: `${actor} called and they talked. Atlas did not place the call.${noteTail}`.slice(0, 500),
+        stage: "responded",
+        nextAction: es
+          ? `Gusto en hablar contigo el ${day}. Avísame cuando quieras dar el siguiente paso.`
+          : `Good talking with you on ${day}. Let me know when you want to take the next step.`,
+        nextActionDue: dueInDays(at, FOLLOW_UP_CHECK_IN_DAYS),
+      };
+    case "wants_quote":
+      return {
+        eventType: "reply_received",
+        summary: `${actor} called; they want a quote. Atlas did not place the call.${noteTail}`.slice(0, 500),
+        stage: "responded",
+        nextAction: es
+          ? `Como platicamos el ${day}, aquí va la cotización. Llámame con cualquier duda.`
+          : `As promised on ${day}, here is the quote. Call me with any questions.`,
+        nextActionDue: dueInDays(at, 1),
+      };
+    case "wrong_number":
+      return {
+        eventType: "note_added",
+        summary: `${actor} called; wrong number. Atlas did not place the call.${noteTail}`.slice(0, 500),
+        stage: "needs_client_input",
+        nextAction: es
+          ? "Número equivocado. Busca el teléfono correcto (sitio web, Maps) y actualiza el registro. Atlas no los ha contactado."
+          : "Wrong number. Find the right phone (website, Maps) and update the record. Atlas has not contacted them.",
+        nextActionDue: null,
+      };
+  }
+}
+
+/** A quick note the owner types on the timeline; the note itself is the summary so it reads in the list. */
+export function prospectNoteEvent(note: string) {
+  const text = note.replace(/\s+/g, " ").trim();
+  if (text.length < 2) return null;
+  // The events table wants 5 to 500 characters in the summary.
+  const summary = text.length < 5 ? `Note: ${text}` : text.length > 500 ? `${text.slice(0, 497)}...` : text;
+  return { summary, body: note.trim().slice(0, 3000) };
 }
 
 export function lastDeskContactLabel(contact: DeskContactStamp, spanish: boolean) {
@@ -217,7 +400,8 @@ export function lastDeskContactLabel(contact: DeskContactStamp, spanish: boolean
         : spanish
           ? "Correo"
           : "Email";
-  return contact.by ? `${channel} · ${date} · ${contact.by}` : `${channel} · ${date}`;
+  const outcome = contact.outcome ? ` · ${deskContactOutcomeLabel(contact.outcome, spanish)}` : "";
+  return contact.by ? `${channel} · ${date} · ${contact.by}${outcome}` : `${channel} · ${date}${outcome}`;
 }
 
 export function deskContactSummary(
@@ -252,8 +436,14 @@ export function prospectNoticeCopy(status: string | undefined, spanish: boolean)
       return spanish ? "Prospecto eliminado." : "Prospect deleted.";
     case "won":
       return spanish
-        ? "Ganado. Ahora aparece en Clientes."
-        : "Marked won. They now show under Clients.";
+        ? "Ganado. Ahora aparece en Clientes. En tres días el escritorio te recuerda pedir la reseña."
+        : "Marked won. They now show under Clients. In three days the desk reminds you to ask for the review.";
+    case "review_link_saved":
+      return spanish
+        ? "Enlace de reseñas guardado. Los próximos clientes ganados lo reciben en el pedido de reseña."
+        : "Review link saved. Future won clients get it inside the review ask.";
+    case "review_link_invalid":
+      return spanish ? "Ese enlace no se ve bien. Revísalo e inténtalo de nuevo." : "That link does not look right. Check it and try again.";
     case "lost":
       return spanish ? "Marcado como perdido. Puedes regresarlo a la lista cuando quieras." : "Marked lost. You can bring them back to the call list any time.";
     case "staged":
@@ -286,6 +476,16 @@ export function prospectNoticeCopy(status: string | undefined, spanish: boolean)
       return spanish
         ? "Quedó en el historial. Atlas no hizo la llamada ni envió el WhatsApp; eso fue tuyo."
         : "Saved on the history. Atlas did not place the call or send the WhatsApp; that was you.";
+    case "outcome_saved":
+      return spanish
+        ? "Resultado guardado. El siguiente paso ya está en Seguimiento con fecha. Atlas no contactó a nadie."
+        : "Outcome saved. The next step is on the Follow-up desk with a date. Atlas did not contact anyone.";
+    case "outcome_wrong_number":
+      return spanish
+        ? "Anotado. El prospecto volvió a “Falta teléfono”. Busca el número correcto en Editar."
+        : "Noted. The prospect is back under “Needs phone”. Find the right number under Edit.";
+    case "note_saved":
+      return spanish ? "Nota guardada en la actividad." : "Note saved on the activity.";
     default:
       return null;
   }

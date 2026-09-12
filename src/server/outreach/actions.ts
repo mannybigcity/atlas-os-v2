@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
 import { amandaBusinessFromWorkspace } from "@/server/outreach/queries";
+import { reportDeskError } from "@/server/observability/report-error";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -129,7 +130,7 @@ export async function approveAmandaSequence(formData: FormData) {
     { onConflict: "opportunity_id,channel" },
   );
   if (error) {
-    console.error("Amanda approve failed", error);
+    await reportDeskError("outreach.approveAmandaSequence", error, { organizationId, opportunityId });
     redirect(returnPath(formData, "amanda_failed"));
   }
 
@@ -161,7 +162,7 @@ export async function stopAmandaSequence(formData: FormData) {
     .eq("opportunity_id", opportunityId)
     .in("status", ["draft", "approved", "sending"]);
   if (error) {
-    console.error("Amanda stop failed", error);
+    await reportDeskError("outreach.stopAmandaSequence", error, { organizationId, opportunityId });
     redirect(returnPath(formData, "amanda_failed"));
   }
 

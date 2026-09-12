@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - launch/afe-emergency-revenue-20260822
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: typecheck · lint · test · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Production-only integrations skip cleanly without these; the build must not need them.
+      NEXT_TELEMETRY_DISABLED: "1"
+      DESK_TIMEZONE: America/Chicago
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install (lockfile only)
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npx eslint src netlify --max-warnings 50
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Netlify function tests
+        run: npm run test:functions
+
+      - name: Build
+        run: npx next build

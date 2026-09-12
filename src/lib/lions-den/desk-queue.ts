@@ -1,4 +1,5 @@
 import type { AmandaDeskInfo } from "./amanda-outreach.ts";
+import { deskDateOnly, deskDayKey, deskTimeZone, shiftDateOnly } from "../desk-time.ts";
 
 export type DeskFollowUpDraftControls = {
   opportunityId: string;
@@ -58,12 +59,18 @@ export function isSameLocalDay(left: Date, right: Date) {
   );
 }
 
+/**
+ * Buckets by the owner's calendar day (DESK_TIMEZONE), not the server's. A
+ * check-in due Tuesday must not show under Today at 8pm Monday in Texas just
+ * because UTC already rolled over.
+ */
 export function bucketFollowUpQueues(
   items: DeskFollowUpItem[],
   now = new Date(),
+  timeZone = deskTimeZone(),
 ): DeskFollowUpQueues {
-  const today = startOfLocalDay(now);
-  const tomorrow = addLocalDays(today, 1);
+  const today = deskDateOnly(now, timeZone);
+  const tomorrow = shiftDateOnly(today, 1);
   const queues: DeskFollowUpQueues = {
     overdue: [],
     today: [],
@@ -72,15 +79,14 @@ export function bucketFollowUpQueues(
   };
 
   for (const item of items) {
-    const due = parseDeskDate(item.dueAt);
-    if (!due) continue;
+    const dueDay = deskDayKey(item.dueAt, timeZone);
+    if (!dueDay) continue;
 
-    const dueDay = startOfLocalDay(due);
-    if (dueDay.getTime() < today.getTime()) {
+    if (dueDay < today) {
       queues.overdue.push(item);
-    } else if (isSameLocalDay(dueDay, today)) {
+    } else if (dueDay === today) {
       queues.today.push(item);
-    } else if (isSameLocalDay(dueDay, tomorrow)) {
+    } else if (dueDay === tomorrow) {
       queues.tomorrow.push(item);
     } else {
       queues.later.push(item);
@@ -88,7 +94,7 @@ export function bucketFollowUpQueues(
   }
 
   const byDue = (left: DeskFollowUpItem, right: DeskFollowUpItem) =>
-    (parseDeskDate(left.dueAt)?.getTime() ?? 0) - (parseDeskDate(right.dueAt)?.getTime() ?? 0);
+    (deskDayKey(left.dueAt, timeZone) ?? "").localeCompare(deskDayKey(right.dueAt, timeZone) ?? "");
 
   queues.overdue.sort(byDue);
   queues.today.sort(byDue);
