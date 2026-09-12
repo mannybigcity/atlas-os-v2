@@ -1,5 +1,5 @@
 import type { OpportunityStage } from "@/server/opportunities/queries";
-import { prospectTelHref, publishedPlacePhone } from "./prospect-places.ts";
+import { prospectTelHref, prospectWhatsAppHref, publishedPlacePhone } from "./prospect-places.ts";
 
 /**
  * The stages an owner may move a prospect into from the desk. Internal stages
@@ -92,8 +92,7 @@ export function sumJobValues(items: Array<{ jobValue?: number | null }>) {
 }
 
 export function prospectSmsHref(phone: string | null | undefined) {
-  const tel = prospectTelHref(phone);
-  return tel ? tel.replace(/^tel:/, "sms:") : null;
+  return prospectWhatsAppHref(phone);
 }
 
 export function prospectMailtoHref(email: string | null | undefined) {
@@ -117,6 +116,7 @@ export function prospectContactLinks(input: {
     phone,
     tel: prospectTelHref(phone),
     sms: prospectSmsHref(phone),
+    whatsapp: prospectWhatsAppHref(phone),
     mailto: prospectMailtoHref(input.contactEmail),
   };
 }

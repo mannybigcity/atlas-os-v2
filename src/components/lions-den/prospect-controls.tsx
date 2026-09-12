@@ -5,6 +5,7 @@ import {
   prospectStageActions,
   readJobValue,
 } from "@/lib/lions-den/prospect-stages";
+import { prospectWhatsAppHref } from "@/lib/lions-den/prospect-places";
 import { DeskEmailCompose } from "@/components/lions-den/desk-email-compose";
 import {
   createProspect,
@@ -48,8 +49,8 @@ export function ProspectNotice({ status, spanish }: { status?: string; spanish: 
 }
 
 /**
- * Call / Text stay on the owner's phone. Email opens an Atlas compose box
- * next to Text so the owner can write and keep the follow-up.
+ * Call stays on the owner's phone dialer. Text opens WhatsApp on this
+ * device (phone or laptop). Email opens an Atlas compose box.
  */
 export function ProspectContactActions({
   prospect,
@@ -87,9 +88,21 @@ export function ProspectContactActions({
           {compact ? null : <span className="ml-2 font-normal text-white/80">{links.phone}</span>}
         </a>
       ) : null}
-      {links.sms ? (
-        <a className={base} href={links.sms}>
-          {spanish ? "Mensaje" : "Text"}
+      {links.whatsapp ? (
+        <a
+          className={base}
+          href={
+            prospectWhatsAppHref(
+              links.phone,
+              spanish
+                ? "Hola, te escribo para dar seguimiento. ¿Tienes un momento?"
+                : "Hi, I'm following up. Do you have a few minutes?",
+            ) ?? links.whatsapp
+          }
+          rel="noreferrer"
+          target="_blank"
+        >
+          WhatsApp
         </a>
       ) : null}
       {compose ? (

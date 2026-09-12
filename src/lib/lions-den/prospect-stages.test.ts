@@ -61,7 +61,8 @@ test("job value accepts human money input and rejects junk", () => {
 test("contact links open the owner's own phone and email apps, never invent numbers", () => {
   const links = prospectContactLinks({ contactPhone: "(713) 555-0100", contactEmail: "owner@example.com" });
   assert.equal(links.tel, "tel:7135550100");
-  assert.equal(links.sms, "sms:7135550100");
+  assert.equal(links.whatsapp, "https://wa.me/17135550100");
+  assert.equal(links.sms, links.whatsapp);
   assert.equal(links.mailto, "mailto:owner@example.com");
 
   const fromMetadata = prospectContactLinks({ contactPhone: null, metadata: { national_phone_number: "+1 281-555-0199" } });
@@ -71,6 +72,7 @@ test("contact links open the owner's own phone and email apps, never invent numb
   assert.equal(unpublished.phone, null);
   assert.equal(unpublished.tel, null);
   assert.equal(unpublished.sms, null);
+  assert.equal(unpublished.whatsapp, null);
   assert.equal(unpublished.mailto, null);
 });
 

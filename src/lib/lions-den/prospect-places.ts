@@ -41,6 +41,19 @@ export function prospectTelHref(phone: string | null | undefined) {
   return `tel:${href}`;
 }
 
+/** WhatsApp on the owner's phone or laptop. Atlas does not send the message. */
+export function prospectWhatsAppHref(phone: string | null | undefined, message?: string) {
+  const tel = prospectTelHref(phone);
+  if (!tel) return null;
+  let digits = tel.replace(/^tel:/, "").replace(/\D/g, "");
+  if (digits.length === 10) digits = `1${digits}`;
+  if (digits.length < 11 || digits.length > 15) return null;
+  const url = new URL(`https://wa.me/${digits}`);
+  const text = String(message ?? "").trim();
+  if (text) url.searchParams.set("text", text.slice(0, 600));
+  return url.toString();
+}
+
 export function looksLikeCallNextAction(text: string | null | undefined) {
   const raw = String(text ?? "").trim();
   if (!raw) return false;
