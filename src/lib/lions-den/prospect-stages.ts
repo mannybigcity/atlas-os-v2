@@ -258,6 +258,8 @@ export function prospectNoticeCopy(status: string | undefined, spanish: boolean)
       return spanish ? "Marcado como perdido. Puedes regresarlo a la lista cuando quieras." : "Marked lost. You can bring them back to the call list any time.";
     case "staged":
       return spanish ? "Etapa actualizada." : "Stage updated.";
+    case "profile_saved":
+      return spanish ? "Datos del cliente guardados." : "Client details saved.";
     case "invalid":
       return spanish ? "Revisa los campos marcados e inténtalo de nuevo." : "Check the highlighted fields and try again.";
     case "failed":
