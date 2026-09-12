@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
+import { InboundLeadLinkCard } from "@/components/lions-den/inbound-lead-link-card";
 import { LionsDenProspectsBoard } from "@/components/lions-den/lions-den-prospects";
-import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
+import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
+import { isInboundOpportunity, leadPageUrl } from "@/lib/lions-den/inbound-leads";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
+import { leadPageBaseUrl } from "@/server/leads/queries";
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
@@ -36,14 +39,24 @@ export default async function ProspectsPage({ searchParams }: ProspectsPageProps
   const pipeline = workspace.primaryOrganization
     ? await getOpportunityPipeline(workspace.primaryOrganization.id)
     : null;
+  const prospects = pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : [];
+  const organization = workspace.primaryOrganization;
+  const showLeadPage = Boolean(organization?.slug) && !isSisOrganization(organization);
 
   return (
     <LionsDenBoardScreen board="prospects" workspace={workspace}>
+      {showLeadPage && organization ? (
+        <InboundLeadLinkCard
+          inboundCount={prospects.filter((item) => isInboundOpportunity(item)).length}
+          leadPageUrl={leadPageUrl(leadPageBaseUrl(), organization.slug ?? "")}
+          spanish={language === "es"}
+        />
+      ) : null}
       <LionsDenProspectsBoard
         notice={params?.prospect}
         organizationId={workspace.primaryOrganization?.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
-        prospects={(pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
+        prospects={prospects.map((item) =>
           presentLiveDeskOpportunity(workspace.primaryOrganization, item),
         )}
         spanish={language === "es"}
