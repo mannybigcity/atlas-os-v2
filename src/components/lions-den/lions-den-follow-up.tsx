@@ -401,8 +401,8 @@ function FollowUpDraftActions({
         )}
 
         {sms ? (
-          <a className={primary} data-followup-control="text" href={sms}>
-            {spanish ? "Mensaje" : "Text"}
+          <a className={primary} data-followup-control="text" href={sms} rel="noreferrer" target="_blank">
+            WhatsApp
           </a>
         ) : (
           <span
@@ -410,7 +410,7 @@ function FollowUpDraftActions({
             data-followup-control="text"
             title={spanish ? "Sin teléfono en el expediente. Edita el prospecto para agregar uno." : "No phone on file. Edit the prospect to add one."}
           >
-            {spanish ? "Mensaje" : "Text"}
+            WhatsApp
           </span>
         )}
 
@@ -474,8 +474,8 @@ function FollowUpDraftActions({
 
       <p className="text-[11px] leading-5 text-[#5c6578]">
         {spanish
-          ? "Correo y Mensaje abren tus propias apps con el borrador listo. Atlas no envía nada."
-          : "Email and Text open your own apps with the draft filled in. Atlas does not send."}
+          ? "Correo y WhatsApp abren tus propias apps con el borrador listo. Atlas no envía nada."
+          : "Email and WhatsApp open your own apps with the draft filled in. Atlas does not send."}
       </p>
 
       {controls.amanda ? (

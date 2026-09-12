@@ -99,11 +99,11 @@ test("Send builds an owner-gated mailto and never invents a live mail API", () =
   );
 });
 
-test("Text opens Messages with the draft; Copy text matches the email body", () => {
+test("Text opens WhatsApp with the draft; Copy text matches the email body", () => {
   const sms = followUpDraftSms({ phone: "(713) 555-0100", body: "Quick question about your pest routes." });
   assert.ok(sms);
-  assert.match(sms, /^sms:7135550100\?&body=/);
-  assert.match(sms, /Quick%20question/);
+  assert.match(sms, /^https:\/\/wa\.me\/17135550100\?text=/);
+  assert.match(sms, /Quick/);
   assert.doesNotMatch(sms, /Hi%20/);
 
   assert.equal(followUpDraftSms({ phone: null, body: "x" }), null);
@@ -153,7 +153,7 @@ test("Follow-up desk offers Email/Text/Copy/Edit/Delete plus I sent this, and At
   assert.match(board, /data-followup-control="sent"/);
   assert.match(board, /\{spanish \? "Editar" : "Edit"\}/);
   assert.match(board, /\{spanish \? "Correo" : "Email"\}/);
-  assert.match(board, /\{spanish \? "Mensaje" : "Text"\}/);
+  assert.match(board, /WhatsApp/);
   assert.match(board, /\{spanish \? "Eliminar" : "Delete"\}/);
   assert.match(board, /\{spanish \? "Ya lo envié" : "I sent this"\}/);
   assert.match(board, /followUpDraftMailto/);
@@ -164,7 +164,7 @@ test("Follow-up desk offers Email/Text/Copy/Edit/Delete plus I sent this, and At
   assert.match(board, /updateFollowUpDraft/);
   assert.match(board, /deleteFollowUpDraft/);
   assert.match(board, /markFollowUpSent/);
-  assert.match(board, /Email and Text open your own apps with the draft filled in\. Atlas does not send\./);
+  assert.match(board, /Email and WhatsApp open your own apps with the draft filled in\. Atlas does not send\./);
   assert.match(board, /No email on file\. Edit the prospect to add one\./);
   assert.match(board, /No phone on file\. Edit the prospect to add one\./);
   assert.match(board, /name="draftBody"/);

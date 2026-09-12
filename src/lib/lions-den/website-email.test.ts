@@ -37,6 +37,8 @@ test("desk Email and Text stay blue with white type and a pointer, and clients o
   assert.match(controls, /bg-\[#1246a0\]/);
   assert.match(controls, /!text-white/);
   assert.match(controls, /DeskEmailCompose/);
+  assert.match(controls, /WhatsApp/);
+  assert.match(controls, /prospectWhatsAppHref/);
   assert.match(clients, /data-client-row/);
   assert.match(clients, /cursor-pointer/);
   assert.match(clients, /clientHref/);

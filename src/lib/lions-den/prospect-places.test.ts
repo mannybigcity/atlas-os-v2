@@ -9,6 +9,7 @@ import {
   prospectHasCallablePhone,
   prospectPlacesCard,
   prospectTelHref,
+  prospectWhatsAppHref,
 } from "./prospect-places.ts";
 import type { OrganizationOpportunity } from "../../server/opportunities/queries.ts";
 
@@ -78,6 +79,12 @@ test("detail card exposes Google phone, Maps, and website without inventing a nu
   assert.equal(prospectTelHref("123"), null);
   assert.equal(prospectTelHref(null), null);
   assert.equal(prospectTelHref("Google did not publish a phone number."), null);
+  assert.equal(prospectWhatsAppHref("(281) 636-0131"), "https://wa.me/12816360131");
+  assert.equal(
+    prospectWhatsAppHref("+1 281-555-0199", "Hi there"),
+    "https://wa.me/12815550199?text=Hi+there",
+  );
+  assert.equal(prospectWhatsAppHref("Google did not publish a phone number."), null);
 });
 
 test("missing phone never presents a Call next-action or READY FOR FOLLOW UP", () => {
