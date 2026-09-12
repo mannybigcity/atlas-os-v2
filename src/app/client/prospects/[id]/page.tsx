@@ -56,6 +56,7 @@ export default async function ProspectDetailPage({
           workspace.previewOrgSlug || undefined,
           workspace.selectedWorkspaceSlug || undefined,
         )}
+        fromEmail={workspace.user.email ?? ""}
         notice={query?.prospect}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}

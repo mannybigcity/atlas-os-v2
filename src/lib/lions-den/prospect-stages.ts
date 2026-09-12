@@ -196,6 +196,22 @@ export function prospectNoticeCopy(status: string | undefined, spanish: boolean)
       return spanish ? "No se pudo guardar. Inténtalo de nuevo." : "That did not save. Try again.";
     case "missing":
       return spanish ? "Ese prospecto ya no existe." : "That prospect no longer exists.";
+    case "email_found":
+      return spanish
+        ? "HUNTER encontró un correo en el sitio web. Revísalo antes de escribir."
+        : "HUNTER found an email on the website. Review it before you write.";
+    case "email_not_found":
+      return spanish
+        ? "HUNTER no encontró un correo en ese sitio. Agrégalo en Editar."
+        : "HUNTER did not find an email on that site. Add one under Edit.";
+    case "email_sent":
+      return spanish
+        ? "Correo enviado. Las respuestas llegan a tu correo de acceso. El seguimiento quedó guardado."
+        : "Email sent. Replies come back to your login email. The follow-up is saved.";
+    case "email_queued":
+      return spanish
+        ? "Borrador guardado en el seguimiento. No pudimos confirmar el envío; ábrelo en tu correo si hace falta."
+        : "Draft saved on the follow-up. We could not confirm delivery; open it in your mail app if needed.";
     default:
       return null;
   }

@@ -16,6 +16,7 @@ import {
   mergeHunterPlaceDetails,
 } from "@/server/hunter/review";
 import { getGooglePlaceDetails } from "@/server/integrations/google-places";
+import { findEmailOnBusinessWebsite } from "@/server/hunter/website-email";
 import type { HunterSearchState } from "@/server/hunter/types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -162,9 +163,12 @@ export async function acceptHunterReviewItem(formData: FormData) {
     placeDetails = null;
   }
 
-  const opportunityFields = acceptedHunterOpportunityFields(
-    mergeHunterPlaceDetails(item, placeDetails),
-  );
+  const merged = mergeHunterPlaceDetails(item, placeDetails);
+  const websiteEmail = merged.websiteUrl ? await findEmailOnBusinessWebsite(merged.websiteUrl) : null;
+  const opportunityFields = acceptedHunterOpportunityFields({
+    ...merged,
+    contactEmail: websiteEmail,
+  });
   const researchSummary = opportunityFields.research_summary;
   const { data: opportunity, error: opportunityError } = await supabase
     .from("organization_opportunities")

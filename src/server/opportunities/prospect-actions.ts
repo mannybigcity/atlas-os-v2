@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isSisOrganization } from "@/lib/client-portal/identity";
 import { isSuperAdminEmail } from "@/lib/env";
 import {
   JOB_VALUE_METADATA_KEY,
@@ -46,7 +45,7 @@ function detailPath(opportunityId: string, formData: FormData, status?: string) 
   return scopedPath(`/client/prospects/${opportunityId}`, formData, status);
 }
 
-async function requireProspectOwner(organizationId: string, formData: FormData) {
+export async function requireProspectOwner(organizationId: string, formData: FormData) {
   const user = await requireUser("/client/prospects");
   if (!uuidPattern.test(organizationId)) {
     redirect(listPath(formData, "invalid"));
@@ -57,7 +56,7 @@ async function requireProspectOwner(organizationId: string, formData: FormData) 
     .select("id, name, slug")
     .eq("id", organizationId)
     .maybeSingle();
-  if (!organization || isSisOrganization(organization)) {
+  if (!organization) {
     redirect(listPath(formData, "invalid"));
   }
   if (!isSuperAdminEmail(user.email)) {

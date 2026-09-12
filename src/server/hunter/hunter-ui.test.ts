@@ -77,7 +77,9 @@ test("Prospect rows on Summary and Prospects open a Google Places detail view", 
   assert.match(detail, /presentedProspectStageLabel/);
   assert.match(detail, /Open in Google Maps|Abrir en Google Maps/);
   assert.match(detail, /phoneHref/);
-  assert.match(detail, /Atlas did not call, email, or text anyone/);
+  assert.match(detail, /Atlas does not call or text anyone/);
+  assert.match(detail, /Email goes out only when you write and send it here/);
   assert.match(accept, /getGooglePlaceDetails/);
   assert.match(accept, /acceptedHunterOpportunityFields/);
+  assert.match(accept, /findEmailOnBusinessWebsite/);
 });

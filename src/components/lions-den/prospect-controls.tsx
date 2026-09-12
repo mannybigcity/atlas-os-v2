@@ -5,6 +5,7 @@ import {
   prospectStageActions,
   readJobValue,
 } from "@/lib/lions-den/prospect-stages";
+import { DeskEmailCompose } from "@/components/lions-den/desk-email-compose";
 import {
   createProspect,
   deleteProspect,
@@ -45,41 +46,76 @@ export function ProspectNotice({ status, spanish }: { status?: string; spanish: 
 }
 
 /**
- * Call / Text / Email open the owner's own phone or mail app. Atlas never
- * dials, texts, or sends on their behalf.
+ * Call / Text stay on the owner's phone. Email opens an Atlas compose box
+ * next to Text so the owner can write and keep the follow-up.
  */
 export function ProspectContactActions({
   prospect,
   spanish,
   compact = false,
+  compose,
 }: {
-  prospect: Pick<OrganizationOpportunity, "contactPhone" | "contactEmail" | "metadata">;
+  prospect: Pick<OrganizationOpportunity, "name" | "contactPhone" | "contactEmail" | "metadata" | "contactSocial">;
   spanish: boolean;
   compact?: boolean;
+  compose?: {
+    fromEmail: string;
+    organizationId: string;
+    opportunityId?: string;
+    customerId?: string;
+    previewOrgSlug?: string;
+    workspaceSlug?: string;
+    returnTo?: string;
+    detailHref?: string;
+    initialOpen?: boolean;
+  };
 }) {
   const links = prospectContactLinks(prospect);
-  if (!links.tel && !links.mailto) return null;
+  const website =
+    (typeof prospect.metadata?.website_url === "string" ? prospect.metadata.website_url : null) ||
+    prospect.contactSocial;
   const base = compact
-    ? "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition"
-    : "inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold transition";
+    ? "inline-flex cursor-pointer items-center rounded-full bg-[#1246a0] px-3 py-1 text-xs font-semibold !text-white transition hover:bg-[#0a2f78] hover:!text-white"
+    : "inline-flex cursor-pointer items-center rounded-full bg-[#1246a0] px-4 py-2 text-sm font-semibold !text-white transition hover:bg-[#0a2f78] hover:!text-white";
   return (
-    <div className="flex flex-wrap gap-2" data-prospect-contact>
+    <div className="flex flex-wrap items-start gap-2" data-prospect-contact>
       {links.tel ? (
-        <a className={`${base} bg-[#071b42] text-white hover:bg-[#0a2a5c]`} href={links.tel}>
+        <a className={base} href={links.tel}>
           {spanish ? "Llamar" : "Call"}
           {compact ? null : <span className="ml-2 font-normal text-white/80">{links.phone}</span>}
         </a>
       ) : null}
       {links.sms ? (
-        <a className={`${base} border border-[#071b42] text-[#071b42] hover:bg-[#071b42] hover:text-white`} href={links.sms}>
+        <a className={base} href={links.sms}>
           {spanish ? "Mensaje" : "Text"}
         </a>
       ) : null}
-      {links.mailto ? (
-        <a className={`${base} border border-[#071b42] text-[#071b42] hover:bg-[#071b42] hover:text-white`} href={links.mailto}>
+      {compose ? (
+        <DeskEmailCompose
+          compact={compact}
+          customerId={compose.customerId}
+          fromEmail={compose.fromEmail}
+          opportunityId={compose.opportunityId}
+          organizationId={compose.organizationId}
+          previewOrgSlug={compose.previewOrgSlug}
+          prospectName={prospect.name}
+          returnTo={compose.returnTo}
+          spanish={spanish}
+          toEmail={prospect.contactEmail}
+          website={website}
+          workspaceSlug={compose.workspaceSlug}
+          detailHref={compose.detailHref}
+          initialOpen={compose.initialOpen}
+        />
+      ) : links.mailto ? (
+        <a className={base} href={links.mailto}>
           {spanish ? "Correo" : "Email"}
         </a>
-      ) : null}
+      ) : (
+        <span className={`${base} cursor-default opacity-70`}>
+          {spanish ? "Correo" : "Email"}
+        </span>
+      )}
     </div>
   );
 }

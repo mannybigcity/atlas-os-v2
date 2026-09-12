@@ -238,6 +238,7 @@ test("Accept maps Google Places fields onto the Prospect without inventing a pho
   });
 
   assert.equal(withPhone.contact_phone, "(281) 555-0147");
+  assert.equal(withPhone.contact_email, null);
   assert.equal(withPhone.source_url, "https://maps.google.com/?cid=9");
   assert.equal(withPhone.metadata.google_place_id, "ChIJ-mobile-dent");
   assert.equal(withPhone.metadata.formatted_address, "Cypress, TX");
