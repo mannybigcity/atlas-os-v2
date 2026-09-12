@@ -16,3 +16,7 @@
 
 [functions."overnight-engine"]
   schedule = "0 4 * * *"
+
+# Amanda sends one approved B2B email step per due sequence. 15:00 UTC = 10am CT.
+[functions."amanda-outreach"]
+  schedule = "0 15 * * *"

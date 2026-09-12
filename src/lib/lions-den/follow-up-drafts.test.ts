@@ -185,7 +185,8 @@ test("Follow-up desk offers Email/Text/Copy/Edit/Delete plus I sent this, and At
   assert.doesNotMatch(copyButton, /fetch\(|resend|twilio/i);
 
   assert.match(page, /canShowFollowUpDraftControls/);
-  assert.match(page, /allowDraftControls=\{canShowFollowUpDraftControls\(primaryOrganization\)\}/);
+  assert.match(page, /const allowDraftControls = canShowFollowUpDraftControls\(primaryOrganization\)/);
+  assert.match(page, /allowDraftControls=\{allowDraftControls\}/);
 
   assert.match(actions, /isSisOrganization/);
   assert.match(actions, /sis_blocked/);

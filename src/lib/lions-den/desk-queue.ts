@@ -1,3 +1,5 @@
+import type { AmandaDeskInfo } from "./amanda-outreach.ts";
+
 export type DeskFollowUpDraftControls = {
   opportunityId: string;
   organizationId: string;
@@ -5,6 +7,8 @@ export type DeskFollowUpDraftControls = {
   contactPhone?: string | null;
   contactName: string | null;
   draftBody: string;
+  /** Present when Amanda can write to this prospect (a business with an email, not an inbound homeowner). */
+  amanda?: AmandaDeskInfo;
 };
 
 export type DeskFollowUpItem = {

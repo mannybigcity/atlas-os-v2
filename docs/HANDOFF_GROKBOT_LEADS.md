@@ -1,5 +1,8 @@
 # Handoff: leads, follow-up, and Amanda (for Grok Bot)
 
+> Update 2026-09-12 (later): PR #79 is merged and Batch C shipped as PR #80. For how to work and the current
+> backlog, read `docs/HANDOFF_GROKBOT_OPERATING.md` first. Sections 2, 3, and 5 below are still accurate.
+
 Written 2026-09-12 by the Cursor agent that built Batches 1–3 (merged, PR #72) and Batches A–B (open, PR #79).
 Read this before touching anything under `src/lib/lions-den`, `src/server/leads`, `src/server/hunter`, or `src/app/go`.
 

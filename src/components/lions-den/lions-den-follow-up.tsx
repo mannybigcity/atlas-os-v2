@@ -21,9 +21,22 @@ import {
   followUpDraftText,
 } from "@/lib/lions-den/follow-up-drafts";
 import { prospectDetailPath, publishedPlacePhone } from "@/lib/lions-den/prospect-places";
+import {
+  amandaSequenceSteps,
+  canOfferAmandaSequence,
+  type AmandaBusiness,
+  type AmandaDeskInfo,
+  type AmandaSequenceRecord,
+} from "@/lib/lions-den/amanda-outreach";
+import { AmandaSequenceCard } from "./amanda-sequence-card";
 import { FollowUpCopyButton } from "./follow-up-copy-button";
 
 type FollowUpDraftControls = DeskFollowUpDraftControls;
+
+export type FollowUpAmandaContext = {
+  business: AmandaBusiness;
+  sequences: Record<string, AmandaSequenceRecord>;
+};
 
 type LionsDenFollowUpBoardProps = {
   prospects: OrganizationOpportunity[];
@@ -33,7 +46,39 @@ type LionsDenFollowUpBoardProps = {
   allowDraftControls?: boolean;
   returnTo?: string;
   followupStatus?: string;
+  /** When set, prospects with a business email get Amanda's approve-to-send card. */
+  amanda?: FollowUpAmandaContext | null;
 };
+
+function amandaInfoFor(
+  item: OrganizationOpportunity,
+  amanda: FollowUpAmandaContext | null | undefined,
+  spanish: boolean,
+): AmandaDeskInfo | undefined {
+  if (!amanda) return undefined;
+  const sequence = amanda.sequences[item.id] ?? null;
+  const offerable = canOfferAmandaSequence({
+    opportunityType: item.opportunityType,
+    contactEmail: item.contactEmail,
+    metadata: item.metadata,
+    stage: item.stage,
+  });
+  if (!offerable && !sequence) return undefined;
+  const primaryType = item.metadata?.primary_type;
+  return {
+    toEmail: sequence?.toEmail ?? String(item.contactEmail ?? "").trim().toLowerCase(),
+    proposedSteps: amandaSequenceSteps({
+      business: amanda.business,
+      prospect: {
+        prospectName: item.name,
+        contactName: item.contactName,
+        prospectType: typeof primaryType === "string" ? primaryType.replaceAll("_", " ") : null,
+      },
+      spanish,
+    }),
+    sequence,
+  };
+}
 
 function formatDate(value: string | null) {
   if (!value) return null;
@@ -48,6 +93,7 @@ export function LionsDenFollowUpBoard({
   allowDraftControls = false,
   returnTo = "/client/david",
   followupStatus,
+  amanda,
 }: LionsDenFollowUpBoardProps) {
   const items: DeskFollowUpItem[] = [
     ...prospects
@@ -71,6 +117,7 @@ export function LionsDenFollowUpBoard({
               ),
               contactName: item.contactName,
               draftBody: item.nextAction ?? "",
+              amanda: amandaInfoFor(item, amanda, spanish),
             }
           : undefined,
       })),
@@ -178,6 +225,26 @@ function FollowUpStatusNote({
             ? spanish
               ? "Este control no corre en SIS."
               : "These controls do not run on SIS."
+          : status === "amanda_approved"
+            ? spanish
+              ? "Aprobado. Amanda envía el primer correo en la próxima corrida (cada mañana). Si responden, se detiene y te avisa."
+              : "Approved. Amanda sends the first email on the next run (every morning). If they reply, she stops and tells you."
+          : status === "amanda_stopped"
+            ? spanish
+              ? "Amanda se detuvo. Los correos restantes no se enviarán."
+              : "Amanda stopped. The remaining emails will not be sent."
+          : status === "amanda_no_email"
+            ? spanish
+              ? "Amanda solo escribe a negocios con correo. Agrega uno al prospecto o llama directo."
+              : "Amanda only writes to businesses with an email. Add one to the prospect or call directly."
+          : status === "amanda_stop_requested"
+            ? spanish
+              ? "Ese negocio pidió no recibir más correos. Amanda no volverá a escribirles; puedes llamar."
+              : "That business asked us to stop emailing. Amanda will not write them again; you can still call."
+          : status === "amanda_failed"
+            ? spanish
+              ? "No se pudo guardar la aprobación. Inténtalo de nuevo."
+              : "Could not save that approval. Try again."
             : null;
 
   if (!copy) return null;
@@ -410,6 +477,16 @@ function FollowUpDraftActions({
           ? "Correo y Mensaje abren tus propias apps con el borrador listo. Atlas no envía nada."
           : "Email and Text open your own apps with the draft filled in. Atlas does not send."}
       </p>
+
+      {controls.amanda ? (
+        <AmandaSequenceCard
+          info={controls.amanda}
+          opportunityId={controls.opportunityId}
+          organizationId={controls.organizationId}
+          returnTo={returnTo}
+          spanish={spanish}
+        />
+      ) : null}
     </div>
   );
 }
