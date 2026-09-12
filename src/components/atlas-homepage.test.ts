@@ -63,6 +63,26 @@ test("AFE homepage does not publish Phone AI / Front Desk later-and-not-live dis
   assert.doesNotMatch(homepage, /\bFloor\b/);
 });
 
+test("AFE homepage states the one-sentence outcome above the how-it-works feature grid", () => {
+  const workflow = homepage.slice(homepage.indexOf("atlas-workflow-section"), homepage.indexOf("atlas-den-section"));
+
+  assert.match(
+    homepage,
+    /Atlas finds the next conversation, drafts the follow-up, and parks it for one-tap approval\. You wake up to a brief\. Nothing sends without you\./,
+  );
+  assert.match(
+    homepage,
+    /Atlas encuentra la próxima conversación, redacta el seguimiento y lo deja listo para aprobarlo de un toque\. Te despiertas con un resumen\. Nada se envía sin ti\./,
+  );
+  assert.match(workflow, /atlas-workflow-lede/);
+  assert.match(workflow, /\{t\.howOutcome\}/);
+  assert.ok(
+    workflow.indexOf("atlas-workflow-lede") < workflow.indexOf("atlas-workflow-grid"),
+    "outcome lede must sit above the feature grid",
+  );
+  assert.doesNotMatch(homepage, /howOutcome:[\s\S]{0,80}Front Desk|howOutcome:[\s\S]{0,80}Phone AI/);
+});
+
 test("AFE homepage keeps CLIENT PANEL and does not sell SIS chrome", () => {
   assert.match(homepage, /denTitle:\s*"CLIENT PANEL"/);
   assert.match(homepage, /denCta:\s*"ENTER THE CLIENT PANEL"/);

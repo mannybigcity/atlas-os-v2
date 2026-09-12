@@ -96,7 +96,7 @@ export default async function ResponsibleAiPage() {
       <LegalSection title={spanish ? "Preguntas y preocupaciones" : "Questions and concerns"}>
         <p>
           {spanish ? "Si una recomendación de Atlas parece inexacta, insegura, no autorizada o incompatible con estos principios, deja de usarla y escribe a " : "If an Atlas recommendation appears inaccurate, unsafe, unauthorized, or inconsistent with these principles, stop using the output and email "}
-          <a className={legalLinkClass} href="mailto:hello@siscustomcreations.com">
+          <a className={legalLinkClass} href="mailto:atlasforentrepreneurs@gmail.com">
             atlasforentrepreneurs@gmail.com
           </a>
           {spanish ? ". Atlas revisará la preocupación y, cuando corresponda, corregirá el flujo de trabajo o restringirá su uso." : ". Atlas will review the concern and, where appropriate, correct the workflow or restrict its use."}

@@ -50,7 +50,7 @@ export default async function AccessibilityPage() {
       <LegalSection title={spanish ? "¿Necesitas ayuda o encontraste una barrera?" : "Need help or found a barrier?"}>
         <p>
           {spanish ? "Si no puedes acceder a una parte del sitio web o completar la evaluación, escribe a " : "If you cannot access part of the website or complete the assessment, email "}
-          <a className={legalLinkClass} href="mailto:hello@siscustomcreations.com?subject=Accessibility%20request">
+          <a className={legalLinkClass} href="mailto:atlasforentrepreneurs@gmail.com?subject=Accessibility%20request">
             atlasforentrepreneurs@gmail.com
           </a>{" "}
           {spanish ? "con el asunto “Solicitud de accesibilidad”. Describe la página, información o acción que intentabas usar y el formato o asistencia que te ayudaría." : "with the subject “Accessibility request.” Please describe the page, information, or action you were trying to use and the format or assistance that would help."}

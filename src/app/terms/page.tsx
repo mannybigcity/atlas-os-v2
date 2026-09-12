@@ -174,7 +174,7 @@ export default async function TermsPage() {
         </p>
         <p>
           {spanish ? "Puedes enviar preguntas a " : "Questions may be sent to "}
-          <a className={legalLinkClass} href="mailto:hello@siscustomcreations.com">
+          <a className={legalLinkClass} href="mailto:atlasforentrepreneurs@gmail.com">
             atlasforentrepreneurs@gmail.com
           </a>
           .
