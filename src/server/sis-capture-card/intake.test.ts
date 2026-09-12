@@ -4,7 +4,7 @@ import {
   buildCaptureFingerprintSeed,
   normalizeWebsite,
   parseSisCaptureCardInput,
-} from "./intake";
+} from "./intake.ts";
 
 test("normalizeWebsite rejects local hosts for customer websites", () => {
   assert.equal(normalizeWebsite("localhost"), null);
