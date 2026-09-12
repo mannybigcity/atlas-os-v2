@@ -18,8 +18,9 @@ test("HUNTER website scrape prefers a real business inbox and ignores junk", () 
     Reach the owner at hello@katypest.com
   `;
   const emails = extractBusinessEmails(html);
-  assert.deepEqual(emails.sort(), ["hello@katypest.com", "info@katypest.com"]);
+  assert.deepEqual([...emails].sort(), ["hello@katypest.com", "info@katypest.com"]);
   assert.equal(pickBestBusinessEmail(emails), "info@katypest.com");
+  assert.equal(pickBestBusinessEmail(["hello@katypest.com", "info@katypest.com"]), "info@katypest.com");
   assert.equal(pickBestBusinessEmail(["owner@katypest.com"]), "owner@katypest.com");
   assert.equal(pickBestBusinessEmail([]), null);
   assert.equal(isHttpWebsiteUrl("https://katypest.com/"), "https://katypest.com/");

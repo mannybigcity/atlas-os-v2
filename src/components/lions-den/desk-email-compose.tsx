@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { findProspectWebsiteEmail, sendDeskFollowUpEmail } from "@/server/opportunities/desk-email-actions";
 
 type DeskEmailComposeProps = {
@@ -41,15 +41,12 @@ export function DeskEmailCompose({
   detailHref,
   initialOpen = false,
 }: DeskEmailComposeProps) {
-  const [open, setOpen] = useState(initialOpen);
+  const [open, setOpen] = useState(() => {
+    if (initialOpen) return true;
+    if (typeof window === "undefined") return false;
+    return window.location.hash === "#desk-email";
+  });
   const label = spanish ? "Correo" : "Email";
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.location.hash === "#desk-email") {
-      setOpen(true);
-    }
-  }, []);
 
   if (compact) {
     return (

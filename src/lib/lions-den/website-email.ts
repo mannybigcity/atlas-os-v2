@@ -54,11 +54,16 @@ export function pickBestBusinessEmail(emails: string[]) {
     .map((email) => normalizeWebsiteEmail(email))
     .filter((email): email is string => Boolean(email));
   if (cleaned.length === 0) return null;
-  const preferred = cleaned.find((email) => {
-    const local = email.split("@")[0] ?? "";
-    return PREFERRED_LOCAL.includes(local);
+  const ranked = [...cleaned].sort((left, right) => {
+    const leftLocal = left.split("@")[0] ?? "";
+    const rightLocal = right.split("@")[0] ?? "";
+    const leftRank = PREFERRED_LOCAL.indexOf(leftLocal);
+    const rightRank = PREFERRED_LOCAL.indexOf(rightLocal);
+    const leftScore = leftRank === -1 ? PREFERRED_LOCAL.length : leftRank;
+    const rightScore = rightRank === -1 ? PREFERRED_LOCAL.length : rightRank;
+    return leftScore - rightScore;
   });
-  return preferred ?? cleaned[0] ?? null;
+  return ranked[0] ?? null;
 }
 
 export function isHttpWebsiteUrl(value: string | null | undefined) {
