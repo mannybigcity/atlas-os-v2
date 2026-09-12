@@ -15,6 +15,7 @@ import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getLeadPageOrganization, leadPageBaseUrl } from "@/server/leads/queries";
 import { sendLeadEmail } from "@/server/leads/email";
+import { reportDeskError } from "@/server/observability/report-error";
 
 type OwnerContact = { emails: string[]; phone: string | null };
 
@@ -72,7 +73,7 @@ export async function submitInboundLead(formData: FormData) {
     .single();
 
   if (error || !inserted) {
-    console.error("Atlas inbound lead insert failed", { code: error?.code, slug });
+    await reportDeskError("leads.createInboundLead", error, { code: error?.code, slug });
     redirect(leadPageRedirect(slug, "failed", spanish));
   }
 
