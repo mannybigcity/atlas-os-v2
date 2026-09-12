@@ -13,6 +13,7 @@ import {
 import { defaultClientAiDailyUsage, getClientAiDailyUsage, getClientAiRequests } from "@/server/client-ai/queries";
 import { getPilotWorkspace } from "@/server/pilot/queries";
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
+import { amandaBusinessFromWorkspace, getAmandaSequences } from "@/server/outreach/queries";
 import { getSisDashboardData } from "@/server/sis-workspace/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
@@ -56,12 +57,26 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
   const sisDashboard = primaryOrganization && isSisOrganization(primaryOrganization)
     ? await getSisDashboardData(primaryOrganization.id)
     : null;
+  const allowDraftControls = canShowFollowUpDraftControls(primaryOrganization);
+  const amandaSequences = primaryOrganization && allowDraftControls
+    ? await getAmandaSequences(primaryOrganization.id)
+    : null;
+  const amanda = primaryOrganization && amandaSequences && !amandaSequences.setupRequired
+    ? {
+        business: amandaBusinessFromWorkspace({
+          organizationName: primaryOrganization.name,
+          userMetadata: workspace.user.user_metadata as Record<string, unknown>,
+        }),
+        sequences: amandaSequences.data,
+      }
+    : null;
 
   if (!isQTimeWorkspaceSlug(primaryOrganization?.slug)) {
     return (
       <LionsDenBoardScreen board="follow-up" workspace={workspace}>
         <LionsDenFollowUpBoard
-          allowDraftControls={canShowFollowUpDraftControls(primaryOrganization)}
+          allowDraftControls={allowDraftControls}
+          amanda={amanda}
           inboxTasks={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.inboxTasks : []}
           partyEvents={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.partyEvents : []}
           prospects={(pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
