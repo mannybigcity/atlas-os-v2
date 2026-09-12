@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { prospectDetailPath, prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
+import { isInboundOpportunity } from "@/lib/lions-den/inbound-leads";
 import { isTrialSampleOpportunity, trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import { SampleBadge } from "@/components/lions-den/sample-badge";
 import {
@@ -131,6 +132,15 @@ function ProspectList({
                     {prospect.name}
                   </Link>
                   {isTrialSampleOpportunity(prospect) ? <SampleBadge label={trialSampleCopy(spanish).badge} /> : null}
+                  {isInboundOpportunity(prospect) ? (
+                    <span
+                      className="rounded-full bg-[#fff1f1] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-[#8a1f1f]"
+                      data-inbound-badge
+                      title={spanish ? "Este cliente te contactó por tu página. Llama primero." : "This customer reached out through your lead page. Call them first."}
+                    >
+                      {spanish ? "Entrante · caliente" : "Inbound · hot"}
+                    </span>
+                  ) : null}
                 </h3>
                 {prospect.contactName || places.phone ? (
                   <p className="mt-1 text-sm font-medium text-[#071b42]">

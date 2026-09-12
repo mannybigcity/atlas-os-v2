@@ -24,6 +24,7 @@ const PUBLIC_APP_DIRS = [
   "checkout",
   "contact",
   "forgot-password",
+  "go",
   "login",
   "pricing",
   "privacy",
