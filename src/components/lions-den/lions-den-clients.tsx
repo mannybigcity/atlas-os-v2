@@ -3,12 +3,18 @@ import type { DeskClient } from "@/lib/lions-den/desk-clients";
 import { sumJobValues } from "@/lib/lions-den/prospect-stages";
 import { trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import { SampleBadge } from "@/components/lions-den/sample-badge";
+import { ProspectContactActions } from "@/components/lions-den/prospect-controls";
 
 type LionsDenClientsBoardProps = {
   customers: DeskClient[];
   setupRequired?: boolean;
   spanish: boolean;
   clientHref?: (customer: DeskClient) => string;
+  organizationId?: string;
+  fromEmail?: string;
+  previewOrgSlug?: string;
+  workspaceSlug?: string;
+  sisCustomers?: boolean;
 };
 
 function formatMoney(value: number | null) {
@@ -43,6 +49,11 @@ export function LionsDenClientsBoard({
   setupRequired,
   spanish,
   clientHref,
+  organizationId,
+  fromEmail,
+  previewOrgSlug,
+  workspaceSlug,
+  sisCustomers,
 }: LionsDenClientsBoardProps) {
   const wonTotal = sumJobValues(customers.filter((customer) => !customer.sample));
   return (
@@ -105,18 +116,11 @@ export function LionsDenClientsBoard({
 
                 const href = clientHref?.(customer);
                 return (
-                  <tr
-                    className={href ? "relative cursor-pointer hover:bg-[#fff8e6]" : undefined}
-                    data-client-row
-                    key={customer.id}
-                  >
+                  <tr className={href ? "cursor-pointer hover:bg-[#fff8e6]" : undefined} data-client-row key={customer.id}>
                     <td className="py-3 pr-3 align-top">
                       <p className="flex flex-wrap items-center gap-2 font-semibold text-[#071b42]">
                         {href ? (
-                          <Link
-                            className="cursor-pointer underline decoration-[#d8c27a] underline-offset-2 after:absolute after:inset-0 hover:text-[#1246a0]"
-                            href={href}
-                          >
+                          <Link className="cursor-pointer underline decoration-[#d8c27a] underline-offset-2 hover:text-[#1246a0]" href={href}>
                             {customer.displayName}
                           </Link>
                         ) : (
@@ -129,6 +133,31 @@ export function LionsDenClientsBoard({
                       ) : null}
                       {customer.phone ? (
                         <p className="mt-0.5 text-[11px] text-[#5c6578]">{customer.phone}</p>
+                      ) : null}
+                      {organizationId && href ? (
+                        <div className="relative z-10 mt-2">
+                          <ProspectContactActions
+                            compact
+                            compose={{
+                              customerId: sisCustomers ? customer.id : undefined,
+                              detailHref: href,
+                              fromEmail: fromEmail ?? "",
+                              opportunityId: sisCustomers ? undefined : customer.id,
+                              organizationId,
+                              previewOrgSlug,
+                              returnTo: `/client/clients/${customer.id}`,
+                              workspaceSlug,
+                            }}
+                            prospect={{
+                              name: customer.displayName,
+                              contactEmail: customer.email,
+                              contactPhone: customer.phone,
+                              contactSocial: null,
+                              metadata: {},
+                            }}
+                            spanish={spanish}
+                          />
+                        </div>
                       ) : null}
                     </td>
                     <td className="py-3 pr-3 align-top text-[#33415c]">{customer.businessName || "—"}</td>

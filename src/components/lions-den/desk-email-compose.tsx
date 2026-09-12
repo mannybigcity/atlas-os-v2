@@ -79,6 +79,7 @@ export function DeskEmailCompose({
               {opportunityId ? <input name="opportunityId" type="hidden" value={opportunityId} /> : null}
               {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
               {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+              {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
               <button className={compactActionClass} type="submit">
                 {spanish ? "HUNTER: buscar correo en el sitio" : "HUNTER: find email on the website"}
               </button>

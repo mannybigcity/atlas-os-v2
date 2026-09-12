@@ -17,14 +17,16 @@ type Scope = {
   organizationId: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientRecord?: boolean;
 };
 
-function ScopeFields({ organizationId, previewOrgSlug, workspaceSlug }: Scope) {
+function ScopeFields({ organizationId, previewOrgSlug, workspaceSlug, clientRecord }: Scope) {
   return (
     <>
       <input name="organizationId" type="hidden" value={organizationId} />
       {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
       {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+      {clientRecord ? <input name="clientRecord" type="hidden" value="1" /> : null}
     </>
   );
 }

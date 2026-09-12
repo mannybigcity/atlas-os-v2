@@ -85,6 +85,7 @@ test("Clients page loads SIS customers or won opportunities and opens a client r
   assert.match(overview, /href\("\/client\/clients"\)/);
   assert.match(page, /clientHref/);
   assert.match(page, /\/client\/clients\/\$\{customer\.id\}/);
+  assert.doesNotMatch(page, /\/client\/prospects\/\$\{customer\.id\}/);
 });
 
 test("won opportunities map to the interim Clients list without mixing SIS fields", () => {

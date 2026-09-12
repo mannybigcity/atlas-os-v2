@@ -37,12 +37,19 @@ function scopedPath(base: string, formData: FormData, status?: string) {
   return query ? `${base}?${query}` : base;
 }
 
+function usesClientRecord(formData: FormData) {
+  return text(formData, "clientRecord", 8) === "1";
+}
+
 function listPath(formData: FormData, status?: string) {
-  return scopedPath("/client/prospects", formData, status);
+  return scopedPath(usesClientRecord(formData) ? "/client/clients" : "/client/prospects", formData, status);
 }
 
 function detailPath(opportunityId: string, formData: FormData, status?: string) {
-  return scopedPath(`/client/prospects/${opportunityId}`, formData, status);
+  const base = usesClientRecord(formData)
+    ? `/client/clients/${opportunityId}`
+    : `/client/prospects/${opportunityId}`;
+  return scopedPath(base, formData, status);
 }
 
 export async function requireProspectOwner(organizationId: string, formData: FormData) {

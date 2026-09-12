@@ -50,8 +50,12 @@ export async function findProspectWebsiteEmail(formData: FormData) {
     (typeof metadata.website_url === "string" ? metadata.website_url : null) ||
     existing.contact_social;
   const found = await findEmailOnBusinessWebsite(website);
+  const returnTo = text(formData, "returnTo", 80);
+  const detailBase = returnTo.startsWith("/client/clients/")
+    ? returnTo
+    : `/client/prospects/${opportunityId}`;
   if (!found) {
-    redirect(scopedPath(`/client/prospects/${opportunityId}`, formData, "email_not_found"));
+    redirect(scopedPath(detailBase, formData, "email_not_found"));
   }
 
   const { error } = await supabase
@@ -68,7 +72,7 @@ export async function findProspectWebsiteEmail(formData: FormData) {
     .eq("organization_id", organizationId);
 
   if (error) {
-    redirect(scopedPath(`/client/prospects/${opportunityId}`, formData, "failed"));
+    redirect(scopedPath(detailBase, formData, "failed"));
   }
 
   await supabase.from("organization_opportunity_events").insert({
@@ -81,7 +85,8 @@ export async function findProspectWebsiteEmail(formData: FormData) {
   });
 
   revalidatePath(`/client/prospects/${opportunityId}`);
-  redirect(scopedPath(`/client/prospects/${opportunityId}`, formData, "email_found"));
+  revalidatePath(`/client/clients/${opportunityId}`);
+  redirect(scopedPath(detailBase, formData, "email_found"));
 }
 
 export async function sendDeskFollowUpEmail(formData: FormData) {

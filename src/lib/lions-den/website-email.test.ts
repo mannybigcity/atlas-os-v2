@@ -40,17 +40,26 @@ test("desk Email and Text stay blue with white type and a pointer, and clients o
   assert.match(clients, /data-client-row/);
   assert.match(clients, /cursor-pointer/);
   assert.match(clients, /clientHref/);
+  assert.match(clients, /ProspectContactActions/);
   assert.match(compose, /data-desk-email-compose/);
   assert.match(compose, /Your login email/);
   assert.match(compose, /Tu correo de acceso/);
 });
 
-test("SIS client records open for edit, call, and Atlas email", () => {
+test("every desk opens a client record for edit, call, and Atlas email", () => {
   const page = readFileSync(join(root, "app/client/clients/[id]/page.tsx"), "utf8");
+  const list = readFileSync(join(root, "app/client/clients/page.tsx"), "utf8");
   const actions = readFileSync(join(root, "server/sis-workspace/actions.ts"), "utf8");
+  const detail = readFileSync(join(root, "components/lions-den/lions-den-prospect-detail.tsx"), "utf8");
   assert.match(page, /data-client-editor/);
   assert.match(page, /ProspectContactActions/);
   assert.match(page, /updateSisCustomer/);
+  assert.match(page, /getOrganizationOpportunity/);
+  assert.match(page, /getSisCustomer/);
+  assert.match(page, /variant="client"/);
   assert.match(page, /fromEmail: workspace.user.email/);
+  assert.doesNotMatch(page, /if \(!isSisOrganization\(organization\)\)/);
+  assert.doesNotMatch(list, /\/client\/prospects\/\$\{customer\.id\}/);
+  assert.match(detail, /variant === "client"/);
   assert.match(actions, /prospect", "updated"/);
 });

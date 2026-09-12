@@ -57,14 +57,19 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
       <LionsDenClientsBoard
         clientHref={(customer) =>
           lionsDenHref(
-            sisDesk ? `/client/clients/${customer.id}` : `/client/prospects/${customer.id}`,
+            `/client/clients/${customer.id}`,
             workspace.previewOrgSlug || undefined,
             workspace.selectedWorkspaceSlug || undefined,
           )
         }
         customers={customers}
+        fromEmail={workspace.user.email ?? ""}
+        organizationId={organization?.id}
+        previewOrgSlug={workspace.previewOrgSlug || undefined}
         setupRequired={setupRequired}
+        sisCustomers={sisDesk}
         spanish={language === "es"}
+        workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
     </LionsDenBoardScreen>
   );
