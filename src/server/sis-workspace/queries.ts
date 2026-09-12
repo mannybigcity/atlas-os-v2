@@ -24,6 +24,7 @@ export type SisCustomer = {
   invoiceTotal: number | null;
   paymentTotal: number | null;
   createdAt: string;
+  metadata: unknown;
   lastContact?: DeskContactStamp | null;
 };
 
@@ -107,6 +108,7 @@ function normalizeCustomer(row: SisCustomerRow): SisCustomer {
     invoiceTotal: paypal.invoiceTotal,
     paymentTotal: paypal.paymentTotal,
     createdAt: row.created_at,
+    metadata: row.metadata ?? {},
     ...(lastContact ? { lastContact } : {}),
   };
 }

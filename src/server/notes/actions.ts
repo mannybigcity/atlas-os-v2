@@ -1,7 +1,15 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isSuperAdminEmail } from "@/lib/env";
+import {
+  linkedNoteEventSummary,
+  noteFollowUpPlan,
+  noteRecordHref,
+  parseNoteRecord,
+  type NoteRecordRef,
+} from "@/lib/lions-den/note-links";
 import { createClient } from "@/lib/supabase/server";
 import { requireSuperAdmin, requireUser } from "@/server/auth/guards";
 import { safeRedirectPath } from "@/lib/paths";
@@ -95,7 +103,7 @@ export async function createOrganizationNote(formData: FormData) {
   }
 
   const supabase = await requireOrganizationMembership(organizationId, user);
-  const { error } = await supabase.rpc("create_note_thread", {
+  const { data: noteId, error } = await supabase.rpc("create_note_thread", {
     p_organization_id: organizationId,
     p_title: title,
     p_body: body,
@@ -105,7 +113,102 @@ export async function createOrganizationNote(formData: FormData) {
     redirect(notesReturnPath(formData, "error"));
   }
 
-  redirect(notesReturnPath(formData, "created"));
+  const record = parseNoteRecord(formData.get("record"));
+  const plan = noteFollowUpPlan({ noteType, title, body, dueDate: formData.get("dueDate") });
+  await linkNoteToRecord({
+    supabase,
+    organizationId,
+    noteId: typeof noteId === "string" ? noteId : null,
+    noteType,
+    title,
+    body,
+    record,
+    plan,
+  });
+
+  redirect(notesReturnPath(formData, record ? "linked" : "created"));
+}
+
+type LinkNoteInput = {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  organizationId: string;
+  noteId: string | null;
+  noteType: string;
+  title: string;
+  body: string;
+  record: NoteRecordRef | null;
+  plan: ReturnType<typeof noteFollowUpPlan>;
+};
+
+/**
+ * Ties the note to its prospect or client and mirrors it onto that record:
+ * an Activity line on opportunities, and (for a dated follow-up) the record's
+ * next step so it shows on Follow-up and Calendar. Best effort: a failure here
+ * never loses the note itself.
+ */
+async function linkNoteToRecord({ supabase, organizationId, noteId, noteType, title, body, record, plan }: LinkNoteInput) {
+  if (!noteId) return;
+  let recordName: string | null = null;
+
+  if (record && record.kind !== "sis_customer") {
+    const { data: opportunity } = await supabase
+      .from("organization_opportunities")
+      .select("id, name, stage")
+      .eq("id", record.id)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+    if (!opportunity) return;
+    recordName = opportunity.name;
+
+    await supabase.from("organization_opportunity_events").insert({
+      opportunity_id: record.id,
+      organization_id: organizationId,
+      event_type: "note_added",
+      actor_role: "client",
+      summary: linkedNoteEventSummary(title),
+      body: body.slice(0, 3000),
+      metadata: { note_id: noteId },
+    });
+
+    if (plan && !["won", "lost", "archived"].includes(opportunity.stage)) {
+      await supabase
+        .from("organization_opportunities")
+        .update({ next_action: plan.nextAction, next_action_due: plan.nextActionDue })
+        .eq("id", record.id)
+        .eq("organization_id", organizationId);
+    }
+  } else if (record) {
+    const { data: customer } = await supabase
+      .from("organization_sis_customers")
+      .select("id, display_name")
+      .eq("id", record.id)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+    if (!customer) return;
+    recordName = customer.display_name;
+  }
+
+  const { error } = await supabase
+    .from("organization_notes")
+    .update({
+      record_kind: record?.kind ?? null,
+      record_id: record?.id ?? null,
+      record_name: recordName,
+      note_type: noteType,
+      due_date: plan?.nextActionDue ?? null,
+    })
+    .eq("id", noteId)
+    .eq("organization_id", organizationId);
+  if (error) {
+    console.error("Atlas note link failed", { code: error.code, noteId });
+  }
+
+  if (record) {
+    revalidatePath(noteRecordHref(record));
+    revalidatePath("/client/follow-up");
+    revalidatePath("/client/calendar");
+  }
+  revalidatePath("/client/notes");
 }
 
 export async function createClientNoteMessage(formData: FormData) {

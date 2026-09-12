@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
 import { asOpportunityMetadata } from "@/server/opportunities/queries";
 import { getUserMemberships } from "@/server/organizations/queries";
+import { reportDeskError } from "@/server/observability/report-error";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -185,7 +186,7 @@ export async function markFollowUpSent(formData: FormData) {
     .eq("organization_id", organizationId);
 
   if (error) {
-    console.error("Atlas follow-up sent mark failed", error);
+    await reportDeskError("opportunities.markFollowUpSent", error, { organizationId, opportunityId });
     redirect(followUpReturnPath(formData, "sent_failed"));
   }
 

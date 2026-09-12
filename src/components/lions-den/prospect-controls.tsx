@@ -325,6 +325,7 @@ export function ProspectStageButtons({
           <input name="opportunityId" type="hidden" value={prospect.id} />
           <input name="stage" type="hidden" value="won" />
           <input name="returnTo" type="hidden" value={returnTo} />
+          <input name="lang" type="hidden" value={spanish ? "es" : "en"} />
           <label className="block text-xs font-semibold text-[#5c4a12]">
             {spanish ? "Valor del trabajo (opcional)" : "Job value (optional)"}
             <input
