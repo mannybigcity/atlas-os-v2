@@ -252,8 +252,14 @@ export function prospectNoticeCopy(status: string | undefined, spanish: boolean)
       return spanish ? "Prospecto eliminado." : "Prospect deleted.";
     case "won":
       return spanish
-        ? "Ganado. Ahora aparece en Clientes."
-        : "Marked won. They now show under Clients.";
+        ? "Ganado. Ahora aparece en Clientes. En tres días el escritorio te recuerda pedir la reseña."
+        : "Marked won. They now show under Clients. In three days the desk reminds you to ask for the review.";
+    case "review_link_saved":
+      return spanish
+        ? "Enlace de reseñas guardado. Los próximos clientes ganados lo reciben en el pedido de reseña."
+        : "Review link saved. Future won clients get it inside the review ask.";
+    case "review_link_invalid":
+      return spanish ? "Ese enlace no se ve bien. Revísalo e inténtalo de nuevo." : "That link does not look right. Check it and try again.";
     case "lost":
       return spanish ? "Marcado como perdido. Puedes regresarlo a la lista cuando quieras." : "Marked lost. You can bring them back to the call list any time.";
     case "staged":

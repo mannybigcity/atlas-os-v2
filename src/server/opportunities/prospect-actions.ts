@@ -12,7 +12,9 @@ import {
   type ProspectEditorValues,
 } from "@/lib/lions-den/prospect-stages";
 import { CALL_PROSPECT_NEXT_ACTION, NO_PHONE_PROSPECT_NEXT_ACTION } from "@/lib/lions-den/prospect-places";
+import { wonReviewAsk } from "@/lib/lions-den/won-follow-through";
 import { createClient } from "@/lib/supabase/server";
+import { getDeskReviewLink } from "@/server/trials/desk-review-link";
 import { requireUser } from "@/server/auth/guards";
 import { asOpportunityMetadata } from "@/server/opportunities/queries";
 import { getUserMemberships } from "@/server/organizations/queries";
@@ -72,7 +74,7 @@ export async function requireProspectOwner(organizationId: string, formData: For
       redirect("/client?access=denied");
     }
   }
-  return { user, supabase };
+  return { user, supabase, organization };
 }
 
 function revalidateProspectDesk(opportunityId?: string) {
@@ -306,14 +308,14 @@ export async function setProspectStage(formData: FormData) {
   const organizationId = text(formData, "organizationId", 36);
   const opportunityId = text(formData, "opportunityId", 36);
   const stage = text(formData, "stage", 40);
-  const { supabase } = await requireProspectOwner(organizationId, formData);
+  const { supabase, organization } = await requireProspectOwner(organizationId, formData);
   if (!uuidPattern.test(opportunityId) || !isOwnerProspectStage(stage)) {
     redirect(listPath(formData, "invalid"));
   }
 
   const { data: existing } = await supabase
     .from("organization_opportunities")
-    .select("id, name, stage, metadata, contact_phone")
+    .select("id, name, stage, metadata, contact_phone, contact_name")
     .eq("id", opportunityId)
     .eq("organization_id", organizationId)
     .maybeSingle();
@@ -330,10 +332,22 @@ export async function setProspectStage(formData: FormData) {
   if (stage === "lost") metadata.lost_at = new Date().toISOString();
   if (stage === "contacted") metadata.owner_contacted_at = new Date().toISOString();
 
-  const nextAction =
+  const spanish = text(formData, "lang", 5) === "es";
+  const reviewAsk =
     stage === "won"
-      ? "Client. Deliver the job and ask for a review or referral."
-      : stage === "lost"
+      ? wonReviewAsk({
+          prospectName: existing.name,
+          contactName: existing.contact_name,
+          businessName: organization.name ?? "",
+          reviewLink: await getDeskReviewLink(supabase, organizationId),
+          spanish,
+          wonAt: new Date(metadata.won_at as string),
+        })
+      : null;
+
+  const nextAction = reviewAsk
+    ? reviewAsk.nextAction
+    : stage === "lost"
         ? "Not now. Check back in a few months if it still fits."
         : stage === "responded"
           ? "They replied. Book the job or send a quote."
@@ -345,7 +359,12 @@ export async function setProspectStage(formData: FormData) {
 
   const { error } = await supabase
     .from("organization_opportunities")
-    .update({ stage, next_action: nextAction, metadata })
+    .update({
+      stage,
+      next_action: nextAction,
+      metadata,
+      ...(reviewAsk ? { next_action_due: reviewAsk.nextActionDue } : {}),
+    })
     .eq("id", opportunityId)
     .eq("organization_id", organizationId);
   if (error) {
@@ -361,7 +380,9 @@ export async function setProspectStage(formData: FormData) {
     organization_id: organizationId,
     event_type: eventType,
     actor_role: "client",
-    summary: `Owner moved ${existing.name} to ${stage.replaceAll("_", " ")}.${money} Atlas did not contact anyone.`,
+    summary: `Owner moved ${existing.name} to ${stage.replaceAll("_", " ")}.${money}${
+      reviewAsk ? ` Review and referral ask queued for ${reviewAsk.nextActionDue}.` : ""
+    } Atlas did not contact anyone.`,
     body: null,
   });
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenProspectDetail } from "@/components/lions-den/lions-den-prospect-detail";
 import { ProspectContactActions, ProspectNotice } from "@/components/lions-den/prospect-controls";
+import { WonReviewCard } from "@/components/lions-den/won-review-card";
 import { lastDeskContactLabel, sisDeskActivityLines } from "@/lib/lions-den/prospect-stages";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
@@ -203,6 +204,14 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
         prospect={prospect}
         spanish={spanish}
         variant="client"
+        workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+      />
+      <WonReviewCard
+        businessName={organization.name ?? ""}
+        organizationId={organization.id}
+        previewOrgSlug={workspace.previewOrgSlug || undefined}
+        prospect={result.data}
+        spanish={spanish}
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
     </LionsDenBoardScreen>
