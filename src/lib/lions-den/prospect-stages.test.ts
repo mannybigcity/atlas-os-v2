@@ -1,13 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  DESK_CONTACT_OUTCOMES,
+  deskContactCheckIn,
+  deskContactOutcomeOptions,
+  deskContactOutcomePlan,
+  isDeskContactOutcome,
   isOwnerProspectStage,
+  needsDeskContactOutcome,
   normalizeWebsite,
   parseJobValue,
   lastDeskContactLabel,
   deskContactStamp,
   deskContactSummary,
   prospectContactLinks,
+  prospectNoteEvent,
   prospectNoticeCopy,
   readLastDeskContact,
   sisDeskActivityLines,
@@ -126,4 +133,109 @@ test("notices are plain and repeat that Atlas did not contact anyone when it mat
   assert.equal(prospectNoticeCopy(undefined, false), null);
   assert.equal(prospectNoticeCopy("something_else", false), null);
   assert.match(prospectNoticeCopy("contact_logged", false) ?? "", /did not place the call/);
+  assert.match(prospectNoticeCopy("outcome_saved", false) ?? "", /Follow-up desk with a date/);
+  assert.match(prospectNoticeCopy("outcome_saved", true) ?? "", /Seguimiento/);
+  assert.match(prospectNoticeCopy("outcome_wrong_number", false) ?? "", /Needs phone/);
+  assert.match(prospectNoticeCopy("note_saved", false) ?? "", /Note saved/);
+});
+
+test("every Call, WhatsApp, or Email puts a dated, sendable check-in on the follow-up desk", () => {
+  const friday = new Date(2026, 8, 11, 15, 30); // local Friday
+  const call = deskContactCheckIn("call", { spanish: false, at: friday });
+  assert.equal(call.nextActionDue, "2026-09-14");
+  assert.match(call.nextAction, /my call from Friday/);
+  assert.match(call.nextAction, /quick call\?$/);
+  const whatsapp = deskContactCheckIn("whatsapp", { spanish: true, at: friday });
+  assert.equal(whatsapp.nextActionDue, "2026-09-14");
+  assert.match(whatsapp.nextAction, /mi WhatsApp del viernes/);
+  const email = deskContactCheckIn("email", { spanish: false, at: new Date(2026, 8, 29) });
+  assert.equal(email.nextActionDue, "2026-10-02", "rolls over the month end");
+  assert.match(email.nextAction, /my email from Tuesday/);
+  assert.doesNotMatch(call.nextAction, /Wait for a reply/);
+});
+
+test("the record asks how the call went for two days, only for calls, only once", () => {
+  const now = new Date("2026-09-12T20:00:00.000Z");
+  assert.equal(needsDeskContactOutcome(null, now), false);
+  assert.equal(needsDeskContactOutcome({ channel: "call", at: "2026-09-12T19:00:00.000Z" }, now), true);
+  assert.equal(needsDeskContactOutcome({ channel: "whatsapp", at: "2026-09-12T19:00:00.000Z" }, now), false);
+  assert.equal(needsDeskContactOutcome({ channel: "email", at: "2026-09-12T19:00:00.000Z" }, now), false);
+  assert.equal(
+    needsDeskContactOutcome({ channel: "call", at: "2026-09-12T19:00:00.000Z", outcome: "no_answer" }, now),
+    false,
+    "already answered",
+  );
+  assert.equal(needsDeskContactOutcome({ channel: "call", at: "2026-09-10T19:00:00.000Z" }, now), false, "too old");
+  assert.equal(needsDeskContactOutcome({ channel: "call", at: "2026-09-13T19:00:00.000Z" }, now), false, "future");
+
+  const stamped = readLastDeskContact({
+    last_desk_contact: { channel: "call", at: "2026-09-12T19:00:00.000Z", by: "owner@example.com", outcome: "voicemail", outcomeAt: "2026-09-12T19:05:00.000Z" },
+  });
+  assert.equal(stamped?.outcome, "voicemail");
+  assert.equal(stamped?.outcomeAt, "2026-09-12T19:05:00.000Z");
+  assert.match(lastDeskContactLabel(stamped!, false), /Left voicemail$/);
+  assert.match(lastDeskContactLabel(stamped!, true), /Dejé buzón$/);
+  const junk = readLastDeskContact({ last_desk_contact: { channel: "call", at: "2026-09-12T19:00:00.000Z", outcome: "ghosted" } });
+  assert.equal(junk?.outcome, undefined);
+});
+
+test("call outcomes each become a dated next step, and nothing contacts anyone", () => {
+  const friday = new Date(2026, 8, 11, 15, 30);
+  assert.deepEqual(
+    deskContactOutcomeOptions(false).map((item) => item.outcome),
+    [...DESK_CONTACT_OUTCOMES],
+  );
+  assert.deepEqual(
+    deskContactOutcomeOptions(true).map((item) => item.label),
+    ["No contestaron", "Dejé buzón", "Hablamos", "Quieren cotización", "Número equivocado"],
+  );
+  assert.equal(isDeskContactOutcome("talked"), true);
+  assert.equal(isDeskContactOutcome("ghosted"), false);
+
+  const noAnswer = deskContactOutcomePlan("no_answer", { spanish: false, by: "owner@example.com", at: friday });
+  assert.equal(noAnswer.eventType, "note_added");
+  assert.equal(noAnswer.stage, null);
+  assert.equal(noAnswer.nextActionDue, "2026-09-12", "try again tomorrow");
+  assert.match(noAnswer.summary, /^owner@example.com called; no answer\./);
+  assert.match(noAnswer.nextAction, /missed you/);
+
+  const voicemail = deskContactOutcomePlan("voicemail", { spanish: true, at: friday, note: "Pidió que llame por la tarde" });
+  assert.equal(voicemail.nextActionDue, "2026-09-13");
+  assert.match(voicemail.summary, /Note: Pidió que llame por la tarde$/);
+  assert.match(voicemail.nextAction, /mensaje de voz el viernes/);
+
+  const talked = deskContactOutcomePlan("talked", { spanish: false, at: friday });
+  assert.equal(talked.eventType, "reply_received");
+  assert.equal(talked.stage, "responded");
+  assert.equal(talked.nextActionDue, "2026-09-14");
+
+  const quote = deskContactOutcomePlan("wants_quote", { spanish: false, at: friday });
+  assert.equal(quote.stage, "responded");
+  assert.equal(quote.nextActionDue, "2026-09-12", "the quote goes out tomorrow");
+  assert.match(quote.nextAction, /here is the quote/);
+
+  const wrong = deskContactOutcomePlan("wrong_number", { spanish: false, at: friday });
+  assert.equal(wrong.stage, "needs_client_input");
+  assert.equal(wrong.nextActionDue, null);
+  assert.match(wrong.nextAction, /Find the right phone/);
+
+  for (const outcome of DESK_CONTACT_OUTCOMES) {
+    const plan = deskContactOutcomePlan(outcome, { spanish: false, at: friday });
+    assert.match(plan.summary, /Atlas did not place the call/, outcome);
+    assert.ok(plan.summary.length >= 5 && plan.summary.length <= 500, outcome);
+    assert.ok(plan.nextAction.length >= 5 && plan.nextAction.length <= 1200, outcome);
+  }
+});
+
+test("timeline notes read as themselves and fit the events table", () => {
+  assert.equal(prospectNoteEvent("   "), null);
+  assert.equal(prospectNoteEvent("x"), null);
+  assert.deepEqual(prospectNoteEvent("Busy"), { summary: "Note: Busy", body: "Busy" });
+  const note = prospectNoteEvent("Talked to Maria.\nShe wants three units quoted   next week.");
+  assert.equal(note?.summary, "Talked to Maria. She wants three units quoted next week.");
+  assert.equal(note?.body, "Talked to Maria.\nShe wants three units quoted   next week.");
+  const long = prospectNoteEvent("a".repeat(900));
+  assert.equal(long?.summary.length, 500);
+  assert.match(long?.summary ?? "", /\.\.\.$/);
+  assert.equal(long?.body.length, 900);
 });

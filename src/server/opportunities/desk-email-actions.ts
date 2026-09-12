@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { readDeskEmailAttachments } from "@/lib/lions-den/desk-email-attachments";
 import { sendLeadEmail } from "@/server/leads/email";
 import { fillMissingOpportunityEmail } from "@/server/hunter/fill-website-email";
-import { deskContactStamp } from "@/lib/lions-den/prospect-stages";
+import { deskContactCheckIn, deskContactStamp } from "@/lib/lions-den/prospect-stages";
 import { readDeskQuotes, withDeskQuote } from "@/lib/lions-den/desk-quote";
 import { asOpportunityMetadata } from "@/server/opportunities/queries";
 import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
@@ -117,16 +117,21 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
     }
     const stamp = deskContactStamp("email", user.email);
     const actor = user.email ?? "Owner";
+    const closed = existing ? new Set(["won", "lost"]).has(String(existing.stage)) : false;
+    // Queue the dated check-in so the prospect stays on the Follow-up desk. Atlas never sends it.
+    const checkIn = deskContactCheckIn("email", { spanish: text(formData, "lang", 2) === "es", at: new Date(stamp.at) });
     await supabase.from("organization_opportunity_events").insert({
       opportunity_id: opportunityId,
       organization_id: organizationId,
       event_type: "contacted",
       actor_role: "client",
-      summary: sent.sent
-        ? `${actor} sent email from ${replyTo ?? "their login"} to ${to}${
-            attachmentNames.length ? ` with ${attachmentNames.join(", ")}` : ""
-          }.`
-        : `${actor} drafted email to ${to}. Delivery was not confirmed.`,
+      summary: `${
+        sent.sent
+          ? `${actor} sent email from ${replyTo ?? "their login"} to ${to}${
+              attachmentNames.length ? ` with ${attachmentNames.join(", ")}` : ""
+            }.`
+          : `${actor} drafted email to ${to}. Delivery was not confirmed.`
+      }${closed ? "" : ` Check-in queued for ${checkIn.nextActionDue}.`}`.slice(0, 500),
       body: `${subject}\n\n${body}`.slice(0, 3000),
     });
     const pastContacted = new Set(["contacted", "responded", "won", "lost"]);
@@ -136,10 +141,15 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
         metadata: {
           ...metadata,
           last_desk_contact: stamp,
+          owner_contacted_at: stamp.at,
         },
-        ...(existing && pastContacted.has(String(existing.stage))
+        ...(closed
           ? {}
-          : { stage: "contacted", next_action: "Wait for a reply, then follow up." }),
+          : {
+              next_action: checkIn.nextAction,
+              next_action_due: checkIn.nextActionDue,
+              ...(existing && pastContacted.has(String(existing.stage)) ? {} : { stage: "contacted" }),
+            }),
       })
       .eq("id", opportunityId)
       .eq("organization_id", organizationId);
