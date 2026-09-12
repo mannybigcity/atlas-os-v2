@@ -32,7 +32,7 @@ import {
   isTrialWorkspaceSetupError,
   trialWorkspaceSetupHref,
 } from "@/server/trials/workspace-redirect";
-import { shouldBlockExpiredTrial } from "@/server/stripe/billing-entitlement";
+import { decideExpiredTrialAccess } from "@/lib/trials/expired-desk";
 import { userHasActivePaidEntitlement } from "@/server/stripe/paid-entitlement-access";
 import { ensureAfeOperatorDeskAccess } from "@/server/organizations/afe-operator-desk";
 import { ensureSisWorkingOrgAccess } from "@/server/organizations/sis-working-org";
@@ -70,6 +70,8 @@ export type ClientWorkspaceContext = {
   selectedWorkspaceSlug: string;
   /** Present only for trial accounts that have not paid yet. */
   trial: DeskTrialStatus | null;
+  /** Expired AFE trial desk: readable, writes stay off. SIS is never read-only. */
+  readOnly: boolean;
 };
 
 export function clientWorkspaceHref(path: string, previewOrgSlug?: string) {
@@ -119,47 +121,54 @@ export async function getClientWorkspaceContext(
   }
 
   let trial: DeskTrialStatus | null = null;
+  let readOnly = false;
+  let sisMembershipOrganization: OrganizationSummary | null = null;
   if (trialProfile) {
+    const earlyMemberships = await getUserMemberships(user.id);
+    sisMembershipOrganization =
+      earlyMemberships.data.find((membership) => isSisOrganization(membership.organization))
+        ?.organization ?? null;
     const hasActivePaidEntitlement = await userHasActivePaidEntitlement(user.id);
-    if (
-      shouldBlockExpiredTrial({
-        trialEndsAt: trialProfile.trial_ends_at,
-        hasActivePaidEntitlement,
-      })
-    ) {
-      redirect("/pricing?trial=expired");
-    }
-    trial = describeDeskTrial({
+    const access = decideExpiredTrialAccess({
       trialEndsAt: trialProfile.trial_ends_at,
       hasActivePaidEntitlement,
+      organization: sisMembershipOrganization,
     });
 
-    if (!isTrialWorkspaceSetupError(searchParams?.error)) {
-      const workspace = await ensureTrialWorkspaceForUser({
-        userId: user.id,
-        businessName: trialProfile.business_name,
-        email: user.email ?? "",
-        businessType: trialProfile.business_type,
-        city: String(user.user_metadata?.city ?? "").trim(),
-        postalCode: String(user.user_metadata?.postal_code ?? user.user_metadata?.postalCode ?? "").trim(),
+    if (!sisMembershipOrganization) {
+      trial = describeDeskTrial({
+        trialEndsAt: trialProfile.trial_ends_at,
+        hasActivePaidEntitlement,
       });
+      readOnly = access === "readOnly";
 
-      if (!workspace.ok) {
-        redirect(trialWorkspaceSetupHref(workspace.error));
-      }
-
-      const userClient = await createClient();
-      await ensureTrialLionsDenSeed({
-        client: userClient,
-        organizationId: workspace.organizationId,
-        userId: user.id,
-        hasTrialProfile: true,
-        market: {
+      if (!isTrialWorkspaceSetupError(searchParams?.error)) {
+        const workspace = await ensureTrialWorkspaceForUser({
+          userId: user.id,
           businessName: trialProfile.business_name,
+          email: user.email ?? "",
           businessType: trialProfile.business_type,
-          metadata: user.user_metadata,
-        },
-      });
+          city: String(user.user_metadata?.city ?? "").trim(),
+          postalCode: String(user.user_metadata?.postal_code ?? user.user_metadata?.postalCode ?? "").trim(),
+        });
+
+        if (!workspace.ok) {
+          redirect(trialWorkspaceSetupHref(workspace.error));
+        }
+
+        const userClient = await createClient();
+        await ensureTrialLionsDenSeed({
+          client: userClient,
+          organizationId: workspace.organizationId,
+          userId: user.id,
+          hasTrialProfile: true,
+          market: {
+            businessName: trialProfile.business_name,
+            businessType: trialProfile.business_type,
+            metadata: user.user_metadata,
+          },
+        });
+      }
     }
   }
   const isSuperAdmin = isSuperAdminEmail(user.email);
@@ -266,6 +275,10 @@ export async function getClientWorkspaceContext(
   if (primaryOrganization && isAfeCrmDemoOrganization(primaryOrganization) && !seesSampleDesk) {
     primaryOrganization = undefined;
   }
+  if (isSisOrganization(primaryOrganization) || sisMembershipOrganization) {
+    trial = null;
+    readOnly = false;
+  }
   const resolvedPreviewOrgSlug =
     seesSampleDesk || isAfeCrmDemoOrganization(primaryOrganization)
       ? ""
@@ -308,6 +321,7 @@ export async function getClientWorkspaceContext(
   const canEditBusinessProfile =
     Boolean(primaryOrganization) &&
     !isClientPreview &&
+    !readOnly &&
     (primaryMembership?.role === "owner" ||
       primaryMembership?.role === "admin" ||
       isSuperAdmin ||
@@ -322,7 +336,7 @@ export async function getClientWorkspaceContext(
     primaryMembership: primaryOrganization ? primaryMembership : undefined,
     primaryOrganization,
     canEditBusinessProfile,
-    canCreateNotes: Boolean(primaryOrganization) && !isClientPreview,
+    canCreateNotes: Boolean(primaryOrganization) && !isClientPreview && !readOnly,
     previewOrganization:
       previewOrganization &&
       !previewOrganization.data &&
@@ -332,5 +346,6 @@ export async function getClientWorkspaceContext(
         : previewOrganization,
     selectedWorkspaceSlug: primaryOrganization?.slug ?? "",
     trial,
+    readOnly,
   };
 }

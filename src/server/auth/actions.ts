@@ -12,8 +12,8 @@ import {
   ensureTrialWorkspaceForUser,
 } from "@/server/trials/provision";
 import { trialWorkspaceSetupHref } from "@/server/trials/workspace-redirect";
-import { shouldBlockExpiredTrial } from "@/server/stripe/billing-entitlement";
-import { userHasActivePaidEntitlement } from "@/server/stripe/paid-entitlement-access";
+import { isSisOrganization } from "@/lib/client-portal/identity";
+import { getUserMemberships } from "@/server/organizations/queries";
 import { extractTrialMetadata, isTrialConfirmationRequest, isTrialSignupMetadata } from "@/server/trials/metadata";
 import {
   ensureSampleDeskAccess,
@@ -72,28 +72,26 @@ export async function signInWithPassword(formData: FormData) {
     }
 
     if (trialProfile) {
-      if (
-        shouldBlockExpiredTrial({
-          trialEndsAt: trialProfile.trial_ends_at,
-          hasActivePaidEntitlement: await userHasActivePaidEntitlement(data.user.id),
-        })
-      ) {
-        redirect("/pricing?trial=expired");
-      }
+      const memberships = await getUserMemberships(data.user.id);
+      const sisMembership = memberships.data.find((membership) =>
+        isSisOrganization(membership.organization),
+      );
 
-      const workspace = await ensureTrialWorkspaceForUser({
-        userId: data.user.id,
-        businessName: trialProfile.business_name,
-        email: data.user.email ?? email,
-        businessType: trialProfile.business_type,
-        city: String(data.user.user_metadata?.city ?? "").trim(),
-        postalCode: String(
-          data.user.user_metadata?.postal_code ?? data.user.user_metadata?.postalCode ?? "",
-        ).trim(),
-      });
+      if (!sisMembership) {
+        const workspace = await ensureTrialWorkspaceForUser({
+          userId: data.user.id,
+          businessName: trialProfile.business_name,
+          email: data.user.email ?? email,
+          businessType: trialProfile.business_type,
+          city: String(data.user.user_metadata?.city ?? "").trim(),
+          postalCode: String(
+            data.user.user_metadata?.postal_code ?? data.user.user_metadata?.postalCode ?? "",
+          ).trim(),
+        });
 
-      if (!workspace.ok) {
-        redirect(trialWorkspaceSetupHref(workspace.error));
+        if (!workspace.ok) {
+          redirect(trialWorkspaceSetupHref(workspace.error));
+        }
       }
     }
   }

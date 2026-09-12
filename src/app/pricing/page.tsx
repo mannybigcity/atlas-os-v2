@@ -216,6 +216,8 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Call summaries": "Resúmenes de llamadas",
   "CRM writeback": "Registro en el CRM",
   "Owner notifications": "Notificaciones al propietario",
+  "Your trial ended; your prospects are saved.":
+    "Tu prueba terminó; tus prospectos están guardados.",
 };
 
 function translate(text: string, language: SiteLanguage) {
@@ -230,7 +232,7 @@ function translate(text: string, language: SiteLanguage) {
 }
 
 type PricingPageProps = {
-  searchParams: Promise<{ lang?: string }>;
+  searchParams: Promise<{ lang?: string; trial?: string }>;
 };
 
 export default async function PricingPage({ searchParams }: PricingPageProps) {
@@ -238,6 +240,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   const language = await getSiteLanguage(params.lang);
   const t = (text: string) => translate(text, language);
   const planPaymentLinks = getAtlasPlanPaymentLinks();
+  const trialExpired = params.trial === "expired";
 
   return (
     <>
@@ -261,6 +264,11 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
               <p className="mt-7 max-w-2xl text-lg leading-8 text-blue-100/80 sm:text-xl sm:leading-9">
                 {t("Start with the tools your business needs today. Add more automation as you grow.")}
               </p>
+              {trialExpired ? (
+                <p className="mt-4 text-sm font-semibold text-[#ffd068]">
+                  {t("Your trial ended; your prospects are saved.")}
+                </p>
+              ) : null}
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   className="inline-flex items-center justify-center rounded-full bg-[#f5b932] px-7 py-4 text-sm font-black !text-[#071b42] shadow-[0_14px_34px_rgba(245,185,50,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ffd064] hover:!text-[#071b42]"
