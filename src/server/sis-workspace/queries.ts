@@ -1,4 +1,5 @@
 import { readSisCustomerPayPalFields } from "@/lib/lions-den/sis-customers";
+import { readLastDeskContact, type DeskContactStamp } from "@/lib/lions-den/prospect-stages";
 import { createClient } from "@/lib/supabase/server";
 import type { WorkspaceQueryResult } from "@/server/organizations/queries";
 
@@ -23,6 +24,7 @@ export type SisCustomer = {
   invoiceTotal: number | null;
   paymentTotal: number | null;
   createdAt: string;
+  lastContact?: DeskContactStamp | null;
 };
 
 export type SisDashboardData = {
@@ -92,6 +94,7 @@ type SisCustomerRow = {
 
 function normalizeCustomer(row: SisCustomerRow): SisCustomer {
   const paypal = readSisCustomerPayPalFields(row.metadata);
+  const lastContact = readLastDeskContact(asRecord(row.metadata));
   return {
     id: row.id,
     displayName: row.display_name,
@@ -104,7 +107,13 @@ function normalizeCustomer(row: SisCustomerRow): SisCustomer {
     invoiceTotal: paypal.invoiceTotal,
     paymentTotal: paypal.paymentTotal,
     createdAt: row.created_at,
+    ...(lastContact ? { lastContact } : {}),
   };
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
 }
 
 function normalizeLead(row: {

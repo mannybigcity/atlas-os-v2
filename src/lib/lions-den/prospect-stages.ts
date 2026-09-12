@@ -172,6 +172,74 @@ export function validateProspectEditor(values: ProspectEditorValues, spanish: bo
   return errors;
 }
 
+export type DeskContactChannel = "call" | "whatsapp" | "email";
+
+export type DeskContactStamp = {
+  channel: DeskContactChannel;
+  at: string;
+  by?: string;
+};
+
+export function deskContactStamp(channel: DeskContactChannel, by?: string | null): DeskContactStamp {
+  const actor = String(by ?? "").trim().slice(0, 320);
+  return {
+    channel,
+    at: new Date().toISOString(),
+    ...(actor ? { by: actor } : {}),
+  };
+}
+
+export function readLastDeskContact(metadata: Record<string, unknown> | null | undefined): DeskContactStamp | null {
+  const raw = metadata?.last_desk_contact;
+  if (!raw || typeof raw !== "object") return null;
+  const row = raw as { channel?: string; at?: string; by?: string };
+  if (row.channel !== "call" && row.channel !== "whatsapp" && row.channel !== "email") return null;
+  if (!row.at || Number.isNaN(new Date(row.at).getTime())) return null;
+  const by = typeof row.by === "string" && row.by.trim() ? row.by.trim().slice(0, 320) : undefined;
+  return { channel: row.channel, at: row.at, ...(by ? { by } : {}) };
+}
+
+export function lastDeskContactLabel(contact: DeskContactStamp, spanish: boolean) {
+  const when = new Date(contact.at);
+  const date = new Intl.DateTimeFormat(spanish ? "es-US" : "en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(when);
+  const channel =
+    contact.channel === "call"
+      ? spanish
+        ? "Llamada"
+        : "Call"
+      : contact.channel === "whatsapp"
+        ? "WhatsApp"
+        : spanish
+          ? "Correo"
+          : "Email";
+  return contact.by ? `${channel} · ${date} · ${contact.by}` : `${channel} · ${date}`;
+}
+
+export function deskContactSummary(
+  channel: Exclude<DeskContactChannel, "email">,
+  phone: string,
+  by?: string | null,
+) {
+  const actor = String(by ?? "").trim() || "Owner";
+  if (channel === "call") {
+    return `${actor} started a call to ${phone}. Atlas did not place the call.`;
+  }
+  return `${actor} opened WhatsApp to ${phone}. Atlas did not send the message.`;
+}
+
+/** SIS customer notes stamped when Call / WhatsApp / Email is used on that record. */
+export function sisDeskActivityLines(notes: string | null | undefined) {
+  return String(notes ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => / · (called|WhatsApp|emailed) /.test(line));
+}
+
 export function prospectNoticeCopy(status: string | undefined, spanish: boolean) {
   switch (status) {
     case "created":
@@ -212,6 +280,10 @@ export function prospectNoticeCopy(status: string | undefined, spanish: boolean)
       return spanish
         ? "Borrador guardado en el seguimiento. No pudimos confirmar el envío; ábrelo en tu correo si hace falta."
         : "Draft saved on the follow-up. We could not confirm delivery; open it in your mail app if needed.";
+    case "contact_logged":
+      return spanish
+        ? "Quedó en el historial. Atlas no hizo la llamada ni envió el WhatsApp; eso fue tuyo."
+        : "Saved on the history. Atlas did not place the call or send the WhatsApp; that was you.";
     default:
       return null;
   }

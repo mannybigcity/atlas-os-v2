@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { DeskClient } from "@/lib/lions-den/desk-clients";
-import { sumJobValues } from "@/lib/lions-den/prospect-stages";
+import { lastDeskContactLabel, sumJobValues } from "@/lib/lions-den/prospect-stages";
 import { trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import { SampleBadge } from "@/components/lions-den/sample-badge";
 import { ProspectContactActions } from "@/components/lions-den/prospect-controls";
@@ -133,6 +133,12 @@ export function LionsDenClientsBoard({
                       ) : null}
                       {customer.phone ? (
                         <p className="mt-0.5 text-[11px] text-[#5c6578]">{customer.phone}</p>
+                      ) : null}
+                      {customer.lastContact ? (
+                        <p className="mt-0.5 text-[11px] font-semibold text-[#1246a0]" data-last-contact>
+                          {spanish ? "Último: " : "Last: "}
+                          {lastDeskContactLabel(customer.lastContact, spanish)}
+                        </p>
                       ) : null}
                       {organizationId && href ? (
                         <div className="relative z-10 mt-2">

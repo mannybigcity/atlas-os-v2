@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
+import { lastDeskContactLabel, readLastDeskContact } from "@/lib/lions-den/prospect-stages";
 import { isTrialSampleOpportunity, trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import { SampleBadge } from "@/components/lions-den/sample-badge";
@@ -40,7 +41,8 @@ export function LionsDenProspectDetail({
   const scope = organizationId ? { organizationId, previewOrgSlug, workspaceSlug, clientRecord } : null;
   const recordPath = clientRecord ? `/client/clients/${prospect.id}` : `/client/prospects/${prospect.id}`;
   const ownerNotes = typeof prospect.metadata?.owner_notes === "string" ? prospect.metadata.owner_notes : null;
-  const history = [...prospect.events].reverse().slice(0, 8);
+  const history = [...prospect.events].reverse().slice(0, 20);
+  const lastContact = readLastDeskContact(prospect.metadata);
 
   return (
     <section className="rounded-[1.6rem] border border-[#d8c27a] bg-white p-5 sm:p-6">
@@ -64,9 +66,17 @@ export function LionsDenProspectDetail({
           </h2>
           {prospect.contactName ? <p className="mt-1 text-sm font-medium text-[#33415c]">{prospect.contactName}</p> : null}
         </div>
-        <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
-          {presentedProspectStageLabel(prospect, spanish)}
-        </span>
+        <div className="flex flex-col items-start gap-2">
+          <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
+            {presentedProspectStageLabel(prospect, spanish)}
+          </span>
+          {lastContact ? (
+            <p className="text-xs font-semibold text-[#1246a0]" data-last-contact>
+              {spanish ? "Último: " : "Last: "}
+              {lastDeskContactLabel(lastContact, spanish)}
+            </p>
+          ) : null}
+        </div>
       </div>
 
       <ProspectNotice spanish={spanish} status={notice} />
@@ -96,7 +106,7 @@ export function LionsDenProspectDetail({
           label={spanish ? "Teléfono" : "Phone"}
           value={
             places.phone ? (
-              places.phoneHref ? (
+              places.phoneHref && !organizationId ? (
                 <a className="font-semibold text-[#071b42] underline" href={places.phoneHref}>
                   {places.phone}
                 </a>
@@ -223,23 +233,37 @@ export function LionsDenProspectDetail({
         </details>
       ) : null}
 
-      {history.length > 0 ? (
-        <details className="mt-4 rounded-2xl border border-[#ece7d8] p-4" data-prospect-history>
-          <summary className="cursor-pointer text-sm font-semibold text-[#071b42]">
-            {spanish ? `Historial (${history.length})` : `History (${history.length})`}
-          </summary>
+      <div className="mt-4 rounded-2xl border border-[#ece7d8] p-4" data-prospect-history>
+        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5c6578]">
+          {spanish ? "Actividad" : "Activity"}
+        </p>
+        <p className="mt-1 text-xs text-[#5c6578]">
+          {spanish
+            ? "Llamadas, WhatsApp y correos que el vendedor tocó. Atlas no hace la llamada."
+            : "Calls, WhatsApp, and emails the salesman started. Atlas does not place the call."}
+        </p>
+        {history.length > 0 ? (
           <ol className="mt-3 space-y-2">
             {history.map((event) => (
               <li className="text-sm text-[#33415c]" key={event.id}>
                 <span className="text-xs text-[#8a93a3]">
-                  {new Date(event.createdAt).toLocaleDateString(spanish ? "es-US" : "en-US", { month: "short", day: "numeric" })}
+                  {new Date(event.createdAt).toLocaleString(spanish ? "es-US" : "en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
                 </span>{" "}
                 {event.summary}
               </li>
             ))}
           </ol>
-        </details>
-      ) : null}
+        ) : (
+          <p className="mt-3 text-sm text-[#5c6578]">
+            {spanish ? "Aún no hay actividad." : "No activity yet."}
+          </p>
+        )}
+      </div>
 
       {scope ? (
         <div className="mt-4">

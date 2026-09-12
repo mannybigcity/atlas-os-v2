@@ -39,6 +39,8 @@ test("desk Email and Text stay blue with white type and a pointer, and clients o
   assert.match(controls, /DeskEmailCompose/);
   assert.match(controls, /WhatsApp/);
   assert.match(controls, /prospectWhatsAppHref/);
+  assert.match(controls, /DeskContactButton/);
+  assert.match(controls, /Each tap is saved on Activity/);
   assert.match(clients, /data-client-row/);
   assert.match(clients, /cursor-pointer/);
   assert.match(clients, /clientHref/);
@@ -63,5 +65,25 @@ test("every desk opens a client record for edit, call, and Atlas email", () => {
   assert.doesNotMatch(page, /if \(!isSisOrganization\(organization\)\)/);
   assert.doesNotMatch(list, /\/client\/prospects\/\$\{customer\.id\}/);
   assert.match(detail, /variant === "client"/);
+  assert.match(detail, /data-prospect-history/);
+  assert.match(detail, /data-last-contact/);
+  assert.match(page, /sisDeskActivityLines/);
+  assert.match(page, /data-prospect-history/);
   assert.match(actions, /prospect", "updated"/);
+});
+
+test("Call and WhatsApp write a contacted event the salesman started", () => {
+  const contact = readFileSync(join(root, "server/opportunities/desk-contact-actions.ts"), "utf8");
+  const email = readFileSync(join(root, "server/opportunities/desk-email-actions.ts"), "utf8");
+  const button = readFileSync(join(root, "components/lions-den/desk-contact-button.tsx"), "utf8");
+  assert.match(contact, /event_type: "contacted"/);
+  assert.match(contact, /deskContactStamp/);
+  assert.match(contact, /last_desk_contact/);
+  assert.doesNotMatch(contact, /redirect\(href\)/);
+  assert.doesNotMatch(contact, /twilio/i);
+  assert.match(email, /event_type: "contacted"/);
+  assert.match(email, /last_desk_contact: stamp/);
+  assert.match(button, /^"use client";/);
+  assert.match(button, /window\.location\.assign\(href\)/);
+  assert.match(button, /window\.open\(href/);
 });

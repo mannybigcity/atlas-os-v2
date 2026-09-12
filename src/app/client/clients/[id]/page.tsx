@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenProspectDetail } from "@/components/lions-den/lions-den-prospect-detail";
 import { ProspectContactActions, ProspectNotice } from "@/components/lions-den/prospect-controls";
+import { lastDeskContactLabel, sisDeskActivityLines } from "@/lib/lions-den/prospect-stages";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
@@ -58,6 +59,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
     }
     if (!result.data) notFound();
     const customer = result.data;
+    const activity = sisDeskActivityLines(customer.notes);
     const fieldClass =
       "mt-1 block w-full rounded-md border border-[#d5d0c4] bg-white px-3 py-2 text-sm text-[#071b42]";
 
@@ -75,6 +77,12 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
           </h2>
           {customer.businessName ? (
             <p className="mt-1 text-sm font-medium text-[#33415c]">{customer.businessName}</p>
+          ) : null}
+          {customer.lastContact ? (
+            <p className="mt-2 text-xs font-semibold text-[#1246a0]" data-last-contact>
+              {spanish ? "Último: " : "Last: "}
+              {lastDeskContactLabel(customer.lastContact, spanish)}
+            </p>
           ) : null}
 
           <ProspectNotice spanish={spanish} status={query?.prospect} />
@@ -134,6 +142,34 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
               {spanish ? "Guardar cambios" : "Save changes"}
             </button>
           </form>
+
+          <div className="mt-4 rounded-2xl border border-[#ece7d8] p-4" data-prospect-history>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5c6578]">
+              {spanish ? "Actividad" : "Activity"}
+            </p>
+            <p className="mt-1 text-xs text-[#5c6578]">
+              {spanish
+                ? "Llamadas, WhatsApp y correos que el vendedor tocó. Atlas no hace la llamada."
+                : "Calls, WhatsApp, and emails the salesman started. Atlas does not place the call."}
+            </p>
+            {activity.length > 0 ? (
+              <ol className="mt-3 space-y-2">
+                {activity
+                  .slice()
+                  .reverse()
+                  .slice(0, 20)
+                  .map((line) => (
+                    <li className="text-sm text-[#33415c]" key={line}>
+                      {line}
+                    </li>
+                  ))}
+              </ol>
+            ) : (
+              <p className="mt-3 text-sm text-[#5c6578]">
+                {spanish ? "Aún no hay actividad." : "No activity yet."}
+              </p>
+            )}
+          </div>
         </section>
       </LionsDenBoardScreen>
     );
