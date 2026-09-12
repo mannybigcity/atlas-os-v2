@@ -6,6 +6,7 @@ import {
   readJobValue,
 } from "@/lib/lions-den/prospect-stages";
 import { prospectWhatsAppHref } from "@/lib/lions-den/prospect-places";
+import { DeskContactButton } from "@/components/lions-den/desk-contact-button";
 import { DeskEmailCompose } from "@/components/lions-den/desk-email-compose";
 import {
   createProspect,
@@ -80,30 +81,59 @@ export function ProspectContactActions({
   const base = compact
     ? "inline-flex cursor-pointer items-center rounded-full bg-[#1246a0] px-3 py-1 text-xs font-semibold !text-white transition hover:bg-[#0a2f78] hover:!text-white"
     : "inline-flex cursor-pointer items-center rounded-full bg-[#1246a0] px-4 py-2 text-sm font-semibold !text-white transition hover:bg-[#0a2f78] hover:!text-white";
+  const canLog = Boolean(compose?.organizationId && (compose.opportunityId || compose.customerId));
+  const whatsappHref =
+    prospectWhatsAppHref(
+      links.phone,
+      spanish
+        ? "Hola, te escribo para dar seguimiento. ¿Tienes un momento?"
+        : "Hi, I'm following up. Do you have a few minutes?",
+    ) ?? links.whatsapp;
   return (
     <div className="flex flex-wrap items-start gap-2" data-prospect-contact>
       {links.tel ? (
-        <a className={base} href={links.tel}>
-          {spanish ? "Llamar" : "Call"}
-          {compact ? null : <span className="ml-2 font-normal text-white/80">{links.phone}</span>}
-        </a>
+        canLog && compose ? (
+          <DeskContactButton
+            channel="call"
+            className={base}
+            extra={compact ? null : links.phone}
+            href={links.tel}
+            customerId={compose.customerId}
+            label={spanish ? "Llamar" : "Call"}
+            opportunityId={compose.opportunityId}
+            organizationId={compose.organizationId}
+            previewOrgSlug={compose.previewOrgSlug}
+            returnTo={compose.returnTo}
+            spanish={spanish}
+            workspaceSlug={compose.workspaceSlug}
+          />
+        ) : (
+          <a className={base} href={links.tel}>
+            {spanish ? "Llamar" : "Call"}
+            {compact ? null : <span className="ml-2 font-normal text-white/80">{links.phone}</span>}
+          </a>
+        )
       ) : null}
-      {links.whatsapp ? (
-        <a
-          className={base}
-          href={
-            prospectWhatsAppHref(
-              links.phone,
-              spanish
-                ? "Hola, te escribo para dar seguimiento. ¿Tienes un momento?"
-                : "Hi, I'm following up. Do you have a few minutes?",
-            ) ?? links.whatsapp
-          }
-          rel="noreferrer"
-          target="_blank"
-        >
-          WhatsApp
-        </a>
+      {whatsappHref ? (
+        canLog && compose ? (
+          <DeskContactButton
+            channel="whatsapp"
+            className={base}
+            href={whatsappHref}
+            customerId={compose.customerId}
+            label="WhatsApp"
+            opportunityId={compose.opportunityId}
+            organizationId={compose.organizationId}
+            previewOrgSlug={compose.previewOrgSlug}
+            returnTo={compose.returnTo}
+            spanish={spanish}
+            workspaceSlug={compose.workspaceSlug}
+          />
+        ) : (
+          <a className={base} href={whatsappHref} rel="noreferrer" target="_blank">
+            WhatsApp
+          </a>
+        )
       ) : null}
       {compose ? (
         <DeskEmailCompose
@@ -131,6 +161,13 @@ export function ProspectContactActions({
           {spanish ? "Correo" : "Email"}
         </span>
       )}
+      {compose && !compact ? (
+        <p className="basis-full text-xs text-[#5c6578]">
+          {spanish
+            ? "Llamar usa tu teléfono (Phone Link en la laptop). WhatsApp solo si ellos lo tienen. Cada toque queda en Actividad."
+            : "Call uses your phone (Phone Link on a laptop). WhatsApp only if they have WhatsApp. Each tap is saved on Activity."}
+        </p>
+      ) : null}
     </div>
   );
 }

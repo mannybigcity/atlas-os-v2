@@ -1,4 +1,4 @@
-import { readJobValue } from "./prospect-stages.ts";
+import { readJobValue, readLastDeskContact, type DeskContactStamp } from "./prospect-stages.ts";
 import { isTrialSampleOpportunity } from "./trial-samples.ts";
 
 export type DeskClient = {
@@ -18,6 +18,7 @@ export type DeskClient = {
   sample?: boolean;
   /** Dollar value the owner typed when marking the prospect won. */
   jobValue?: number | null;
+  lastContact?: DeskContactStamp | null;
 };
 
 export function wonOpportunityToDeskClient(row: {
@@ -34,6 +35,7 @@ export function wonOpportunityToDeskClient(row: {
 }): DeskClient {
   const notes = row.researchSummary.replace(/\s+/g, " ").trim();
   const jobValue = readJobValue(row.metadata);
+  const lastContact = readLastDeskContact(row.metadata);
   return {
     id: row.id,
     displayName: row.name,
@@ -49,6 +51,7 @@ export function wonOpportunityToDeskClient(row: {
     createdAt: row.createdAt,
     sample: isTrialSampleOpportunity(row),
     ...(jobValue != null ? { jobValue } : {}),
+    ...(lastContact ? { lastContact } : {}),
   };
 }
 

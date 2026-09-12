@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { prospectDetailPath, prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
+import { lastDeskContactLabel, readLastDeskContact } from "@/lib/lions-den/prospect-stages";
 import { isInboundOpportunity } from "@/lib/lions-den/inbound-leads";
 import { isTrialSampleOpportunity, trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import { SampleBadge } from "@/components/lions-den/sample-badge";
@@ -143,6 +144,7 @@ function ProspectList({
       {prospects.map((prospect) => {
         const places = prospectPlacesCard(prospect);
         const href = prospectDetailPath(prospect.id, listHref);
+        const lastContact = readLastDeskContact(prospect.metadata);
         return (
           <article className="py-4" data-prospect-row={prospect.id} key={prospect.id}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -171,6 +173,12 @@ function ProspectList({
                 <p className="mt-1 text-sm text-[#5c6578]">
                   {presentedProspectNextAction(prospect, spanish) || prospect.researchSummary}
                 </p>
+                {lastContact ? (
+                  <p className="mt-1 text-xs font-semibold text-[#1246a0]" data-last-contact>
+                    {spanish ? "Último: " : "Last: "}
+                    {lastDeskContactLabel(lastContact, spanish)}
+                  </p>
+                ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <ProspectContactActions
                     compact

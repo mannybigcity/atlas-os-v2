@@ -5,7 +5,14 @@ import { redirect } from "next/navigation";
 import { readDeskEmailAttachments } from "@/lib/lions-den/desk-email-attachments";
 import { sendLeadEmail } from "@/server/leads/email";
 import { fillMissingOpportunityEmail } from "@/server/hunter/fill-website-email";
+import { deskContactStamp } from "@/lib/lions-den/prospect-stages";
+import { asOpportunityMetadata } from "@/server/opportunities/queries";
 import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
@@ -94,23 +101,38 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
   });
 
   if (uuidPattern.test(opportunityId)) {
+    const { data: existing } = await supabase
+      .from("organization_opportunities")
+      .select("metadata, stage")
+      .eq("id", opportunityId)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+    const metadata = asOpportunityMetadata(existing?.metadata);
+    const stamp = deskContactStamp("email", user.email);
+    const actor = user.email ?? "Owner";
     await supabase.from("organization_opportunity_events").insert({
       opportunity_id: opportunityId,
       organization_id: organizationId,
-      event_type: "follow_up_sent",
+      event_type: "contacted",
       actor_role: "client",
       summary: sent.sent
-        ? `Owner sent email from ${replyTo ?? "their login"} to ${to}${
+        ? `${actor} sent email from ${replyTo ?? "their login"} to ${to}${
             attachmentNames.length ? ` with ${attachmentNames.join(", ")}` : ""
           }.`
-        : `Owner drafted email to ${to}. Delivery was not confirmed.`,
-      body: `${subject}\n\n${body}`.slice(0, 4000),
+        : `${actor} drafted email to ${to}. Delivery was not confirmed.`,
+      body: `${subject}\n\n${body}`.slice(0, 3000),
     });
+    const pastContacted = new Set(["contacted", "responded", "won", "lost"]);
     await supabase
       .from("organization_opportunities")
       .update({
-        stage: "contacted",
-        next_action: "Wait for a reply, then follow up.",
+        metadata: {
+          ...metadata,
+          last_desk_contact: stamp,
+        },
+        ...(existing && pastContacted.has(String(existing.stage))
+          ? {}
+          : { stage: "contacted", next_action: "Wait for a reply, then follow up." }),
       })
       .eq("id", opportunityId)
       .eq("organization_id", organizationId);
@@ -119,19 +141,24 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
   if (uuidPattern.test(customerId)) {
     const { data: customer } = await supabase
       .from("organization_sis_customers")
-      .select("id, notes")
+      .select("id, notes, metadata")
       .eq("id", customerId)
       .eq("organization_id", organizationId)
       .maybeSingle();
     if (customer) {
-      const stamp = new Date().toISOString().slice(0, 10);
-      const noteLine = `${stamp} · emailed ${to}: ${subject}${
+      const stamp = deskContactStamp("email", user.email);
+      const actor = user.email ?? "Owner";
+      const noteLine = `${stamp.at.slice(0, 10)} · emailed ${to}: ${subject}${
         attachmentNames.length ? ` · ${attachmentNames.join(", ")}` : ""
-      }`;
+      } · ${actor}`;
       await supabase
         .from("organization_sis_customers")
         .update({
           notes: [customer.notes, noteLine].filter(Boolean).join("\n").slice(0, 4000),
+          metadata: {
+            ...asRecord(customer.metadata),
+            last_desk_contact: stamp,
+          },
         })
         .eq("id", customerId)
         .eq("organization_id", organizationId);

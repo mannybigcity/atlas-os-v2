@@ -4,8 +4,13 @@ import {
   isOwnerProspectStage,
   normalizeWebsite,
   parseJobValue,
+  lastDeskContactLabel,
+  deskContactStamp,
+  deskContactSummary,
   prospectContactLinks,
   prospectNoticeCopy,
+  readLastDeskContact,
+  sisDeskActivityLines,
   prospectStageActions,
   prospectStageLabel,
   readJobValue,
@@ -76,6 +81,26 @@ test("contact links open the owner's own phone and email apps, never invent numb
   assert.equal(unpublished.mailto, null);
 });
 
+test("last desk contact is a call, WhatsApp, or email stamp for management", () => {
+  assert.equal(readLastDeskContact(null), null);
+  assert.equal(readLastDeskContact({ last_desk_contact: { channel: "fax", at: "2026-09-12T12:00:00.000Z" } }), null);
+  const contact = readLastDeskContact({
+    last_desk_contact: { channel: "call", at: "2026-09-12T20:05:00.000Z", by: "owner@example.com" },
+  });
+  assert.deepEqual(contact, { channel: "call", at: "2026-09-12T20:05:00.000Z", by: "owner@example.com" });
+  assert.match(lastDeskContactLabel(contact!, false), /Call · /);
+  assert.match(lastDeskContactLabel(contact!, false), /owner@example.com/);
+  assert.match(lastDeskContactLabel({ channel: "whatsapp", at: "2026-09-12T20:05:00.000Z" }, true), /WhatsApp · /);
+  const stamp = deskContactStamp("email", "boss@example.com");
+  assert.equal(stamp.channel, "email");
+  assert.equal(stamp.by, "boss@example.com");
+  assert.match(deskContactSummary("call", "7135550100", "owner@example.com"), /owner@example.com started a call/);
+  assert.deepEqual(
+    sisDeskActivityLines("Met at the expo.\n2026-09-12 · called 7135550100 · owner@example.com\n"),
+    ["2026-09-12 · called 7135550100 · owner@example.com"],
+  );
+});
+
 test("prospect editor validation mirrors the database constraints", () => {
   const good = validateProspectEditor(
     { name: "Cedar Ridge HOA", contactName: "Dana", phone: "713-555-0100", email: "dana@cedar.example", address: "", website: "cedarridge.example", notes: "Met at the expo." },
@@ -100,4 +125,5 @@ test("notices are plain and repeat that Atlas did not contact anyone when it mat
   assert.match(prospectNoticeCopy("won", true) ?? "", /Clientes/);
   assert.equal(prospectNoticeCopy(undefined, false), null);
   assert.equal(prospectNoticeCopy("something_else", false), null);
+  assert.match(prospectNoticeCopy("contact_logged", false) ?? "", /did not place the call/);
 });
