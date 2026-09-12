@@ -238,6 +238,29 @@ export async function getSisDashboardData(
   };
 }
 
+export async function getSisCustomer(
+  organizationId: string,
+  customerId: string,
+): Promise<WorkspaceQueryResult<SisCustomer | null>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organization_sis_customers")
+    .select("id, display_name, business_name, email, phone, notes, source_label, metadata, created_at")
+    .eq("organization_id", organizationId)
+    .eq("id", customerId)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, setupRequired: true, error: error.message };
+  }
+
+  return {
+    data: data ? normalizeCustomer(data as SisCustomerRow) : null,
+    setupRequired: false,
+    error: null,
+  };
+}
+
 export async function getSisCustomers(
   organizationId: string,
 ): Promise<WorkspaceQueryResult<SisCustomer[]>> {

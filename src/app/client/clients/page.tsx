@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenClientsBoard } from "@/components/lions-den/lions-den-clients";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
+import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { wonOpportunityToDeskClient, type DeskClient } from "@/lib/lions-den/desk-clients";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getWonOpportunities } from "@/server/opportunities/queries";
@@ -54,9 +55,21 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   return (
     <LionsDenBoardScreen board="clients" workspace={workspace}>
       <LionsDenClientsBoard
+        clientHref={(customer) =>
+          lionsDenHref(
+            `/client/clients/${customer.id}`,
+            workspace.previewOrgSlug || undefined,
+            workspace.selectedWorkspaceSlug || undefined,
+          )
+        }
         customers={customers}
+        fromEmail={workspace.user.email ?? ""}
+        organizationId={organization?.id}
+        previewOrgSlug={workspace.previewOrgSlug || undefined}
         setupRequired={setupRequired}
+        sisCustomers={sisDesk}
         spanish={language === "es"}
+        workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
     </LionsDenBoardScreen>
   );

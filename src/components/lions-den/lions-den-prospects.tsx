@@ -43,8 +43,8 @@ export function LionsDenProspectsBoard({
       </h2>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-[#33415c]">
         {spanish
-          ? "Llegan aquí cuando aceptas un hallazgo de HUNTER o los agregas tú. Atlas no llama, escribe ni envía SMS."
-          : "They land here when you accept a HUNTER find or add one yourself. Atlas does not call, email, or text anyone."}
+          ? "Llegan aquí cuando aceptas un hallazgo de HUNTER o los agregas tú. Atlas no llama ni envía SMS. El correo sale solo cuando tú lo escribes."
+          : "They land here when you accept a HUNTER find or add one yourself. Atlas does not call or text. Email goes out only when you write and send it."}
       </p>
 
       <ProspectNotice spanish={spanish} status={notice} />
@@ -87,13 +87,27 @@ export function LionsDenProspectsBoard({
         </div>
       ) : (
         <>
-          <ProspectList listHref={listHref} prospects={active} spanish={spanish} />
+          <ProspectList
+            listHref={listHref}
+            organizationId={organizationId}
+            previewOrgSlug={previewOrgSlug}
+            prospects={active}
+            spanish={spanish}
+            workspaceSlug={workspaceSlug}
+          />
           {closed.length > 0 ? (
             <details className="mt-6 rounded-2xl border border-[#ece7d8] p-4" data-closed-prospects>
               <summary className="cursor-pointer text-sm font-semibold text-[#071b42]">
                 {spanish ? `Ganados y perdidos (${closed.length})` : `Won and lost (${closed.length})`}
               </summary>
-              <ProspectList listHref={listHref} prospects={closed} spanish={spanish} />
+              <ProspectList
+                listHref={listHref}
+                organizationId={organizationId}
+                previewOrgSlug={previewOrgSlug}
+                prospects={closed}
+                spanish={spanish}
+                workspaceSlug={workspaceSlug}
+              />
             </details>
           ) : null}
         </>
@@ -105,10 +119,16 @@ export function LionsDenProspectsBoard({
 function ProspectList({
   prospects,
   listHref,
+  organizationId,
+  previewOrgSlug,
+  workspaceSlug,
   spanish,
 }: {
   prospects: OrganizationOpportunity[];
   listHref: string;
+  organizationId?: string;
+  previewOrgSlug?: string;
+  workspaceSlug?: string;
   spanish: boolean;
 }) {
   if (prospects.length === 0) {
@@ -152,7 +172,23 @@ function ProspectList({
                   {presentedProspectNextAction(prospect, spanish) || prospect.researchSummary}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <ProspectContactActions compact prospect={prospect} spanish={spanish} />
+                  <ProspectContactActions
+                    compact
+                    compose={
+                      organizationId
+                        ? {
+                            detailHref: href,
+                            fromEmail: "",
+                            organizationId,
+                            opportunityId: prospect.id,
+                            previewOrgSlug,
+                            workspaceSlug,
+                          }
+                        : undefined
+                    }
+                    prospect={prospect}
+                    spanish={spanish}
+                  />
                   <Link
                     className="inline-flex items-center rounded-full border border-[#d5d0c4] px-3 py-1 text-xs font-semibold text-[#5c6578] transition hover:border-[#071b42] hover:text-[#071b42]"
                     href={href}

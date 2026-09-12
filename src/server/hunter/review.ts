@@ -147,6 +147,7 @@ export type AcceptedHunterOpportunityInput = {
   formattedAddress: string | null;
   googleMapsUrl: string | null;
   websiteUrl: string | null;
+  contactEmail?: string | null;
   nationalPhoneNumber?: string | null;
   internationalPhoneNumber?: string | null;
   primaryType: string | null;
@@ -158,6 +159,7 @@ export function acceptedHunterOpportunityFields(input: AcceptedHunterOpportunity
   const mapsUrl =
     input.googleMapsUrl?.trim() || googleMapsUrlFromPlaceId(input.placeId);
   const websiteUrl = input.websiteUrl?.trim() || null;
+  const contactEmail = input.contactEmail?.trim().toLowerCase() || null;
   const formattedAddress = input.formattedAddress?.trim() || null;
   const researchSummary = acceptedProspectResearchSummary({
     name: input.name,
@@ -174,6 +176,7 @@ export function acceptedHunterOpportunityFields(input: AcceptedHunterOpportunity
     owner_role: "client" as const,
     source_label: "HUNTER Google Maps",
     source_url: mapsUrl?.slice(0, 2000) ?? null,
+    contact_email: contactEmail,
     contact_phone: phone,
     research_summary: researchSummary.slice(0, 3000),
     next_action: acceptedProspectNextAction(phone),

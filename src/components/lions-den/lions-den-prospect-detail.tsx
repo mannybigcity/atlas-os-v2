@@ -20,6 +20,8 @@ type LionsDenProspectDetailProps = {
   workspaceSlug?: string;
   notice?: string;
   spanish: boolean;
+  fromEmail?: string;
+  variant?: "prospect" | "client";
 };
 
 export function LionsDenProspectDetail({
@@ -30,21 +32,31 @@ export function LionsDenProspectDetail({
   workspaceSlug,
   notice,
   spanish,
+  fromEmail,
+  variant = "prospect",
 }: LionsDenProspectDetailProps) {
   const places = prospectPlacesCard(prospect);
-  const scope = organizationId ? { organizationId, previewOrgSlug, workspaceSlug } : null;
+  const clientRecord = variant === "client";
+  const scope = organizationId ? { organizationId, previewOrgSlug, workspaceSlug, clientRecord } : null;
+  const recordPath = clientRecord ? `/client/clients/${prospect.id}` : `/client/prospects/${prospect.id}`;
   const ownerNotes = typeof prospect.metadata?.owner_notes === "string" ? prospect.metadata.owner_notes : null;
   const history = [...prospect.events].reverse().slice(0, 8);
 
   return (
     <section className="rounded-[1.6rem] border border-[#d8c27a] bg-white p-5 sm:p-6">
       <Link className="text-sm font-semibold text-[#071b42] underline" href={backHref}>
-        {spanish ? "← Prospectos" : "← Prospects"}
+        {clientRecord
+          ? spanish
+            ? "← Clientes"
+            : "← Clients"
+          : spanish
+            ? "← Prospectos"
+            : "← Prospects"}
       </Link>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#f5b932]">
-            {spanish ? "Prospecto" : "Prospect"}
+            {clientRecord ? (spanish ? "Cliente" : "Client") : spanish ? "Prospecto" : "Prospect"}
           </p>
           <h2 className="mt-2 flex flex-wrap items-center gap-3 text-3xl font-semibold tracking-[-0.05em] text-[#071b42]">
             <span>{prospect.name}</span>
@@ -60,7 +72,23 @@ export function LionsDenProspectDetail({
       <ProspectNotice spanish={spanish} status={notice} />
 
       <div className="mt-5">
-        <ProspectContactActions prospect={prospect} spanish={spanish} />
+        <ProspectContactActions
+          compose={
+            organizationId
+              ? {
+                  fromEmail: fromEmail ?? "",
+                  organizationId,
+                  opportunityId: prospect.id,
+                  previewOrgSlug,
+                  returnTo: recordPath,
+                  workspaceSlug,
+                  initialOpen: notice === "email_found" || notice === "email_sent" || notice === "email_queued",
+                }
+              : undefined
+          }
+          prospect={prospect}
+          spanish={spanish}
+        />
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -181,7 +209,13 @@ export function LionsDenProspectDetail({
       {scope ? (
         <details className="mt-4 rounded-2xl border border-[#ece7d8] p-4" data-prospect-edit>
           <summary className="cursor-pointer text-sm font-semibold text-[#071b42]">
-            {spanish ? "Editar datos del prospecto" : "Edit prospect details"}
+            {clientRecord
+              ? spanish
+                ? "Editar datos del cliente"
+                : "Edit client details"
+              : spanish
+                ? "Editar datos del prospecto"
+                : "Edit prospect details"}
           </summary>
           <div className="mt-3">
             <ProspectEditorForm {...scope} prospect={prospect} spanish={spanish} />
@@ -215,8 +249,8 @@ export function LionsDenProspectDetail({
 
       <p className="mt-5 rounded-2xl border border-[#d8c27a] bg-[#fff8e6] px-4 py-3 text-sm font-semibold text-[#071b42]">
         {spanish
-          ? "Atlas no llamó, escribió ni envió SMS a nadie."
-          : "Atlas did not call, email, or text anyone."}
+          ? "Atlas no llama ni envía SMS. El correo sale solo cuando tú lo escribes y lo envías aquí."
+          : "Atlas does not call or text anyone. Email goes out only when you write and send it here."}
       </p>
     </section>
   );
