@@ -81,6 +81,7 @@ export function DeskEmailCompose({
             {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
             {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
             <input name="fromEmail" type="hidden" value={fromEmail} />
+            <input name="lang" type="hidden" value={spanish ? "es" : "en"} />
             <label className="block text-xs font-semibold text-[#5c6578]">
               {spanish ? "Para" : "To"}
               <input
