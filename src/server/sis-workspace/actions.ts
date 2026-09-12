@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getVerifiedUser } from "@/server/auth/guards";
 import { isSuperAdminEmail } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
@@ -57,6 +58,39 @@ export async function advanceSisPartyStage(formData: FormData) {
   const { error } = await supabase.from("organization_sis_party_events").update({ stage, next_action: nextAction, next_action_due: nextActionDue }).eq("organization_id", organizationId).eq("id", partyEventId);
   if (error) throw new Error(error.message);
   revalidatePath("/client"); revalidatePath(`/client/sis/party/${partyEventId}`);
+}
+
+export async function updateSisCustomer(formData: FormData) {
+  const { organizationId } = await getSisManager();
+  const customerId = text(formData, "customerId", 80);
+  const displayName = text(formData, "displayName", 220);
+  const businessName = text(formData, "businessName", 220);
+  const email = text(formData, "email", 320).toLowerCase();
+  const phone = text(formData, "phone", 80);
+  const notes = text(formData, "notes", 4000);
+  if (!customerId || displayName.length < 2) throw new Error("A client name is required.");
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organization_sis_customers")
+    .update({
+      display_name: displayName,
+      business_name: businessName || null,
+      email: email || null,
+      phone: phone || null,
+      notes: notes || null,
+    })
+    .eq("organization_id", organizationId)
+    .eq("id", customerId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/client/clients");
+  revalidatePath(`/client/clients/${customerId}`);
+  const params = new URLSearchParams();
+  const previewOrg = text(formData, "previewOrg", 80);
+  const workspace = text(formData, "workspace", 80);
+  if (previewOrg) params.set("previewOrg", previewOrg);
+  if (workspace) params.set("workspace", workspace);
+  params.set("prospect", "updated");
+  redirect(`/client/clients/${customerId}?${params.toString()}`);
 }
 
 export async function completeSisPartyTask(formData: FormData) {

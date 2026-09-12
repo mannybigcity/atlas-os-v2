@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { DeskClient } from "@/lib/lions-den/desk-clients";
 import { sumJobValues } from "@/lib/lions-den/prospect-stages";
 import { trialSampleCopy } from "@/lib/lions-den/trial-samples";
@@ -7,6 +8,7 @@ type LionsDenClientsBoardProps = {
   customers: DeskClient[];
   setupRequired?: boolean;
   spanish: boolean;
+  clientHref?: (customer: DeskClient) => string;
 };
 
 function formatMoney(value: number | null) {
@@ -40,6 +42,7 @@ export function LionsDenClientsBoard({
   customers,
   setupRequired,
   spanish,
+  clientHref,
 }: LionsDenClientsBoardProps) {
   const wonTotal = sumJobValues(customers.filter((customer) => !customer.sample));
   return (
@@ -52,8 +55,8 @@ export function LionsDenClientsBoard({
       </h2>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-[#33415c]">
         {spanish
-          ? "Prospectos que marcaste como ganados. Atlas no llama, escribe ni envía SMS."
-          : "Prospects you marked won. Atlas does not call, email, or text anyone."}
+          ? "Haz clic en un cliente para editar, llamar o escribir. Atlas no contacta a nadie hasta que tú lo hagas."
+          : "Click a client to edit, call, or email. Atlas does not contact anyone until you do."}
       </p>
       {wonTotal > 0 ? (
         <p className="mt-3 inline-flex items-baseline gap-2 rounded-full bg-[#fff8e6] px-3 py-1 text-sm text-[#071b42]" data-won-total>
@@ -100,11 +103,25 @@ export function LionsDenClientsBoard({
                   payment ? (spanish ? `Pagos ${payment}` : `Paid ${payment}`) : null,
                 ].filter(Boolean);
 
+                const href = clientHref?.(customer);
                 return (
-                  <tr key={customer.id}>
+                  <tr
+                    className={href ? "relative cursor-pointer hover:bg-[#fff8e6]" : undefined}
+                    data-client-row
+                    key={customer.id}
+                  >
                     <td className="py-3 pr-3 align-top">
                       <p className="flex flex-wrap items-center gap-2 font-semibold text-[#071b42]">
-                        <span>{customer.displayName}</span>
+                        {href ? (
+                          <Link
+                            className="cursor-pointer underline decoration-[#d8c27a] underline-offset-2 after:absolute after:inset-0 hover:text-[#1246a0]"
+                            href={href}
+                          >
+                            {customer.displayName}
+                          </Link>
+                        ) : (
+                          <span>{customer.displayName}</span>
+                        )}
                         {customer.sample ? <SampleBadge label={trialSampleCopy(spanish).badge} /> : null}
                       </p>
                       {customer.contactName ? (

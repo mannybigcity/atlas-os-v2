@@ -59,7 +59,7 @@ test("Clients board is on every Lion's Den desk, not SIS-only", () => {
   assert.equal(afe.some((board) => board.id === "trial-inbox"), false);
 });
 
-test("Clients page loads SIS customers or won opportunities and never adds send actions", () => {
+test("Clients page loads SIS customers or won opportunities and opens a client record", () => {
   const page = readFileSync(join(root, "src/app/client/clients/page.tsx"), "utf8");
   const board = readFileSync(join(root, "src/components/lions-den/lions-den-clients.tsx"), "utf8");
   const hub = readFileSync(join(root, "src/components/lions-den/lions-den-client-hub.tsx"), "utf8");
@@ -78,14 +78,13 @@ test("Clients page loads SIS customers or won opportunities and never adds send 
   assert.match(opportunityQueries, /getWonOpportunities/);
   assert.match(opportunityQueries, /\.eq\("stage", "won"\)/);
   assert.match(board, /No clients yet/);
-  assert.match(board, /does not call, email, or text/);
+  assert.match(board, /Click a client to edit, call, or email/);
+  assert.match(board, /data-client-row/);
   assert.match(hub, /visibleLionsDenBoards/);
   assert.match(overview, /countWonOpportunities/);
   assert.match(overview, /href\("\/client\/clients"\)/);
-  assert.doesNotMatch(board, /mailto:/);
-  assert.doesNotMatch(board, /tel:/);
-  assert.doesNotMatch(board, /sms:/);
-  assert.doesNotMatch(board, /type="submit"/);
+  assert.match(page, /clientHref/);
+  assert.match(page, /\/client\/clients\/\$\{customer\.id\}/);
 });
 
 test("won opportunities map to the interim Clients list without mixing SIS fields", () => {
