@@ -6,6 +6,7 @@ import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
+import { fillMissingOpportunityEmail } from "@/server/hunter/fill-website-email";
 import { getOrganizationOpportunity } from "@/server/opportunities/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
@@ -48,6 +49,12 @@ export default async function ProspectDetailPage({
   }
   if (!result.data) notFound();
 
+  const filled = await fillMissingOpportunityEmail(organization.id, result.data.id);
+  const prospect = presentLiveDeskOpportunity(organization, {
+    ...result.data,
+    contactEmail: filled.email ?? result.data.contactEmail,
+  });
+
   return (
     <LionsDenBoardScreen board="prospects" workspace={workspace}>
       <LionsDenProspectDetail
@@ -60,7 +67,7 @@ export default async function ProspectDetailPage({
         notice={query?.prospect}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
-        prospect={presentLiveDeskOpportunity(organization, result.data)}
+        prospect={prospect}
         spanish={language === "es"}
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />

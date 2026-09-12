@@ -8,6 +8,7 @@ import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/ide
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
+import { fillMissingOpportunityEmail } from "@/server/hunter/fill-website-email";
 import { getOrganizationOpportunity } from "@/server/opportunities/queries";
 import { getSisCustomer } from "@/server/sis-workspace/queries";
 import { updateSisCustomer } from "@/server/sis-workspace/actions";
@@ -149,6 +150,12 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
     );
   }
 
+  const filled = await fillMissingOpportunityEmail(organization.id, result.data.id);
+  const prospect = presentLiveDeskOpportunity(organization, {
+    ...result.data,
+    contactEmail: filled.email ?? result.data.contactEmail,
+  });
+
   return (
     <LionsDenBoardScreen board="clients" workspace={workspace}>
       <LionsDenProspectDetail
@@ -157,7 +164,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
         notice={query?.prospect}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
-        prospect={presentLiveDeskOpportunity(organization, result.data)}
+        prospect={prospect}
         spanish={spanish}
         variant="client"
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}

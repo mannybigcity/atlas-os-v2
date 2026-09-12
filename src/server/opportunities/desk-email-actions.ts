@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { readDeskEmailAttachments } from "@/lib/lions-den/desk-email-attachments";
 import { sendLeadEmail } from "@/server/leads/email";
-import { findEmailOnBusinessWebsite } from "@/server/hunter/website-email";
-import { asOpportunityMetadata } from "@/server/opportunities/queries";
+import { fillMissingOpportunityEmail } from "@/server/hunter/fill-website-email";
 import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -30,59 +30,19 @@ function scopedPath(base: string, formData: FormData, status?: string) {
 export async function findProspectWebsiteEmail(formData: FormData) {
   const organizationId = text(formData, "organizationId", 36);
   const opportunityId = text(formData, "opportunityId", 36);
-  const { supabase } = await requireProspectOwner(organizationId, formData);
+  await requireProspectOwner(organizationId, formData);
   if (!uuidPattern.test(opportunityId)) {
     redirect(scopedPath("/client/prospects", formData, "invalid"));
   }
 
-  const { data: existing } = await supabase
-    .from("organization_opportunities")
-    .select("id, contact_email, contact_social, metadata")
-    .eq("id", opportunityId)
-    .eq("organization_id", organizationId)
-    .maybeSingle();
-  if (!existing) {
-    redirect(scopedPath("/client/prospects", formData, "missing"));
-  }
-
-  const metadata = asOpportunityMetadata(existing.metadata);
-  const website =
-    (typeof metadata.website_url === "string" ? metadata.website_url : null) ||
-    existing.contact_social;
-  const found = await findEmailOnBusinessWebsite(website);
+  const filled = await fillMissingOpportunityEmail(organizationId, opportunityId);
   const returnTo = text(formData, "returnTo", 80);
   const detailBase = returnTo.startsWith("/client/clients/")
     ? returnTo
     : `/client/prospects/${opportunityId}`;
-  if (!found) {
+  if (!filled.email) {
     redirect(scopedPath(detailBase, formData, "email_not_found"));
   }
-
-  const { error } = await supabase
-    .from("organization_opportunities")
-    .update({
-      contact_email: found,
-      metadata: {
-        ...metadata,
-        hunter_website_email: found,
-        hunter_website_email_at: new Date().toISOString(),
-      },
-    })
-    .eq("id", opportunityId)
-    .eq("organization_id", organizationId);
-
-  if (error) {
-    redirect(scopedPath(detailBase, formData, "failed"));
-  }
-
-  await supabase.from("organization_opportunity_events").insert({
-    opportunity_id: opportunityId,
-    organization_id: organizationId,
-    event_type: "note_added",
-    actor_role: "hunter",
-    summary: `HUNTER found ${found} on the business website. Atlas did not email them.`,
-    body: website,
-  });
 
   revalidatePath(`/client/prospects/${opportunityId}`);
   revalidatePath(`/client/clients/${opportunityId}`);
@@ -111,9 +71,15 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
     redirect(scopedPath(detailBase, formData, "invalid"));
   }
 
+  const files = await readDeskEmailAttachments(formData);
+  if (!files.ok) {
+    redirect(scopedPath(detailBase, formData, "invalid"));
+  }
+
   const replyTo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromEmail)
     ? fromEmail
     : user.email ?? undefined;
+  const attachmentNames = files.attachments.map((file) => file.filename);
   const sent = await sendLeadEmail({
     to: [to],
     subject,
@@ -123,6 +89,7 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")}</pre>`,
     replyTo,
+    attachments: files.attachments,
     idempotencyKey: `desk-email:${opportunityId || customerId}:${Date.now()}`,
   });
 
@@ -133,7 +100,9 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
       event_type: "follow_up_sent",
       actor_role: "client",
       summary: sent.sent
-        ? `Owner sent email from ${replyTo ?? "their login"} to ${to}.`
+        ? `Owner sent email from ${replyTo ?? "their login"} to ${to}${
+            attachmentNames.length ? ` with ${attachmentNames.join(", ")}` : ""
+          }.`
         : `Owner drafted email to ${to}. Delivery was not confirmed.`,
       body: `${subject}\n\n${body}`.slice(0, 4000),
     });
@@ -156,7 +125,9 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
       .maybeSingle();
     if (customer) {
       const stamp = new Date().toISOString().slice(0, 10);
-      const noteLine = `${stamp} · emailed ${to}: ${subject}`;
+      const noteLine = `${stamp} · emailed ${to}: ${subject}${
+        attachmentNames.length ? ` · ${attachmentNames.join(", ")}` : ""
+      }`;
       await supabase
         .from("organization_sis_customers")
         .update({

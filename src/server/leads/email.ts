@@ -15,6 +15,7 @@ export async function sendLeadEmail(input: {
   text: string;
   replyTo?: string | null;
   idempotencyKey: string;
+  attachments?: Array<{ filename: string; content: string; contentType?: string }>;
 }) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.ATLAS_NOTIFICATION_FROM?.trim().replace(/^["']|["']$/g, "") || DEFAULT_FROM;
@@ -28,7 +29,7 @@ export async function sendLeadEmail(input: {
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      signal: AbortSignal.timeout(8_000),
+      signal: AbortSignal.timeout(input.attachments?.length ? 20_000 : 8_000),
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
@@ -41,6 +42,15 @@ export async function sendLeadEmail(input: {
         html: input.html,
         text: input.text,
         ...(input.replyTo ? { reply_to: input.replyTo } : {}),
+        ...(input.attachments?.length
+          ? {
+              attachments: input.attachments.map((file) => ({
+                filename: file.filename,
+                content: file.content,
+                ...(file.contentType ? { content_type: file.contentType } : {}),
+              })),
+            }
+          : {}),
       }),
     });
     if (!response.ok) {
