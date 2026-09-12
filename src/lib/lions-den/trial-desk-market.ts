@@ -145,12 +145,137 @@ export function inferTrialDeskMarket(input: TrialDeskMarketInput = {}): TrialDes
   };
 }
 
+/**
+ * A business that sends a trade steady work: what to type into Google Maps
+ * and why the owner should care. HUNTER searches for these, never for the
+ * owner's own trade; a plumber does not need a list of plumbers.
+ */
+export type ReferralTarget = { query: string; why: string; whyEs: string };
+
+const PROPERTY_MANAGER: ReferralTarget = {
+  query: "property management company",
+  why: "Manages dozens of units and signs one vendor for all of them.",
+  whyEs: "Administra docenas de unidades y firma con un solo proveedor para todas.",
+};
+const APARTMENTS: ReferralTarget = {
+  query: "apartment complex",
+  why: "Hundreds of doors, one maintenance manager, recurring work.",
+  whyEs: "Cientos de puertas, un gerente de mantenimiento, trabajo recurrente.",
+};
+const REALTOR: ReferralTarget = {
+  query: "real estate agency",
+  why: "Every closing needs repairs and inspections on a deadline.",
+  whyEs: "Cada cierre necesita reparaciones e inspecciones con fecha límite.",
+};
+const GENERAL_CONTRACTOR: ReferralTarget = {
+  query: "general contractor",
+  why: "Subs out the trades on every remodel and build.",
+  whyEs: "Subcontrata los oficios en cada remodelación y obra.",
+};
+const RESTAURANT: ReferralTarget = {
+  query: "restaurant",
+  why: "Kitchens break at the worst time and inspections are not optional.",
+  whyEs: "Las cocinas fallan en el peor momento y las inspecciones no son opcionales.",
+};
+const HOA: ReferralTarget = {
+  query: "homeowners association",
+  why: "Contracts common-area work for years at a time.",
+  whyEs: "Contrata el trabajo de áreas comunes por años.",
+};
+const CHURCH: ReferralTarget = {
+  query: "church",
+  why: "Big building, aging systems, a board that wants one trusted vendor.",
+  whyEs: "Edificio grande, sistemas viejos, una junta que quiere un solo proveedor de confianza.",
+};
+const DAYCARE: ReferralTarget = {
+  query: "daycare center",
+  why: "Licensing requires scheduled, documented service.",
+  whyEs: "La licencia exige servicio programado y documentado.",
+};
+const MEDICAL_OFFICE: ReferralTarget = {
+  query: "dental office",
+  why: "Daily standards to meet and the decision-maker is on site.",
+  whyEs: "Estándares diarios que cumplir y quien decide está en el local.",
+};
+const OFFICE_BUILDING: ReferralTarget = {
+  query: "office building",
+  why: "Facilities managers buy recurring service, not one-offs.",
+  whyEs: "Los gerentes de instalaciones compran servicio recurrente, no trabajos sueltos.",
+};
+const SELF_STORAGE: ReferralTarget = {
+  query: "self storage facility",
+  why: "Large grounds, small staff, everything is outsourced.",
+  whyEs: "Terreno grande, poco personal, todo se subcontrata.",
+};
+const HOME_BUILDER: ReferralTarget = {
+  query: "home builder",
+  why: "New houses need every trade, on a schedule, all year.",
+  whyEs: "Las casas nuevas necesitan todos los oficios, con calendario, todo el año.",
+};
+const RESTORATION: ReferralTarget = {
+  query: "water damage restoration company",
+  why: "Insurance jobs need a licensed trade fast; they pay on time.",
+  whyEs: "Los trabajos de seguro necesitan un oficio con licencia rápido; pagan a tiempo.",
+};
+const SMALL_BUSINESS: ReferralTarget = {
+  query: "auto repair shop",
+  why: "Owner-operated, busy, and no one in-house handles this.",
+  whyEs: "Dueño-operador, ocupado, y nadie interno se encarga de esto.",
+};
+const SALON: ReferralTarget = {
+  query: "hair salon",
+  why: "Cash-flow business with no back office.",
+  whyEs: "Negocio de flujo de efectivo sin oficina administrativa.",
+};
+const EVENT_VENUE: ReferralTarget = {
+  query: "event venue",
+  why: "Books events every week and needs branded goods and vendors.",
+  whyEs: "Agenda eventos cada semana y necesita productos y proveedores.",
+};
+const SCHOOL: ReferralTarget = {
+  query: "private school",
+  why: "Spirit wear, fundraisers, and facilities work on a yearly cycle.",
+  whyEs: "Uniformes, recaudaciones y mantenimiento en ciclo anual.",
+};
+
+const REFERRAL_TARGETS: Record<TrialDeskVertical, ReferralTarget[]> = {
+  pest: [PROPERTY_MANAGER, APARTMENTS, RESTAURANT, REALTOR, DAYCARE, SELF_STORAGE],
+  hvac: [PROPERTY_MANAGER, REALTOR, GENERAL_CONTRACTOR, APARTMENTS, CHURCH, HOME_BUILDER],
+  lawn: [PROPERTY_MANAGER, HOA, APARTMENTS, OFFICE_BUILDING, CHURCH, SELF_STORAGE],
+  cleaning: [PROPERTY_MANAGER, REALTOR, MEDICAL_OFFICE, OFFICE_BUILDING, DAYCARE, CHURCH],
+  maintenance: [PROPERTY_MANAGER, REALTOR, APARTMENTS, HOA, CHURCH, SELF_STORAGE],
+  contractor: [PROPERTY_MANAGER, APARTMENTS, REALTOR, GENERAL_CONTRACTOR, RESTAURANT, RESTORATION],
+  professional: [GENERAL_CONTRACTOR, RESTAURANT, MEDICAL_OFFICE, SMALL_BUSINESS, SALON, REALTOR],
+  retail: [EVENT_VENUE, SCHOOL, CHURCH, REALTOR, OFFICE_BUILDING, RESTAURANT],
+  other: [PROPERTY_MANAGER, REALTOR, GENERAL_CONTRACTOR, RESTAURANT, CHURCH, OFFICE_BUILDING],
+};
+
+export function referralTargetsForVertical(vertical: TrialDeskVertical): ReferralTarget[] {
+  return REFERRAL_TARGETS[vertical] ?? REFERRAL_TARGETS.other;
+}
+
+/** True when the owner typed their own trade into HUNTER (a plumber searching "plumber"). */
+export function isSelfSearch(service: string, market: Pick<TrialDeskMarket, "serviceQuery" | "vertical">) {
+  const typed = service.trim().toLowerCase();
+  if (!typed) return false;
+  if (typed === market.serviceQuery.toLowerCase()) return true;
+  const keywords = VERTICAL_KEYWORDS.find((entry) => entry.vertical === market.vertical);
+  if (!keywords) return false;
+  // Drop the trailing word boundary so "plumber" and "exterminators" still count as the trade.
+  return new RegExp(keywords.pattern.source.replace(/\\b$/, ""), "i").test(typed);
+}
+
 export function hunterSearchDefaultsFromMarket(market: TrialDeskMarket) {
+  const targets = referralTargetsForVertical(market.vertical);
   return {
-    service: market.serviceQuery,
+    service: targets[0].query,
     zipCode: market.zipCode,
     city: market.city,
     state: market.state,
+    /** The owner's own trade, so the form can warn when they search for competitors. */
+    ownService: market.serviceQuery,
+    vertical: market.vertical,
+    targets,
   };
 }
 

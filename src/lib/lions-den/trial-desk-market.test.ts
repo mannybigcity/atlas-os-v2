@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  TRIAL_DESK_VERTICALS,
   hunterSearchDefaultsFromMarket,
   inferTrialCityFromName,
   inferTrialDeskMarket,
   inferTrialVertical,
+  isSelfSearch,
+  referralTargetsForVertical,
 } from "./trial-desk-market.ts";
 
 test("Cypress Pest Pros infers pest control in Cypress, TX — not auto repair / 77065", () => {
@@ -19,12 +22,39 @@ test("Cypress Pest Pros infers pest control in Cypress, TX — not auto repair /
   assert.equal(market.zipCode, "");
 
   const defaults = hunterSearchDefaultsFromMarket(market);
-  assert.equal(defaults.service, "pest control");
+  assert.equal(defaults.service, "property management company");
+  assert.equal(defaults.ownService, "pest control");
   assert.equal(defaults.city, "Cypress");
   assert.equal(defaults.zipCode, "");
-  assert.doesNotMatch(defaults.service, /auto repair/i);
+  assert.doesNotMatch(defaults.service, /auto repair|pest/i);
   assert.notEqual(defaults.zipCode, "77065");
   assert.notEqual(defaults.city, "Katy");
+});
+
+test("HUNTER defaults to who sends the trade work, never the trade itself", () => {
+  const plumber = inferTrialDeskMarket({ businessName: "Cypress Plumbing Co", businessType: "Contractor or home service" });
+  assert.equal(plumber.vertical, "contractor");
+  const defaults = hunterSearchDefaultsFromMarket(plumber);
+  assert.equal(defaults.service, "property management company");
+  assert.ok(defaults.targets.length >= 5);
+  assert.ok(defaults.targets.some((target) => target.query === "real estate agency"));
+  assert.ok(defaults.targets.every((target) => target.why.length > 10 && target.whyEs.length > 10));
+  assert.ok(defaults.targets.every((target) => !/plumb|home service/i.test(target.query)));
+
+  for (const vertical of TRIAL_DESK_VERTICALS) {
+    const targets = referralTargetsForVertical(vertical);
+    assert.ok(targets.length >= 5, vertical);
+    assert.equal(new Set(targets.map((target) => target.query)).size, targets.length, vertical);
+  }
+
+  assert.equal(isSelfSearch("plumber", plumber), true);
+  assert.equal(isSelfSearch("Home Service", plumber), true);
+  assert.equal(isSelfSearch("property management company", plumber), false);
+  assert.equal(isSelfSearch("", plumber), false);
+  const pest = inferTrialDeskMarket({ businessName: "Cypress Pest Pros" });
+  assert.equal(isSelfSearch("pest control", pest), true);
+  assert.equal(isSelfSearch("termite exterminator", pest), true);
+  assert.equal(isSelfSearch("restaurant", pest), false);
 });
 
 test("Massive Action Maintenance infers maintenance and does not invent a ZIP", () => {

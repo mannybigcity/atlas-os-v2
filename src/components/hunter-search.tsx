@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { HunterFunnelStrip } from "@/components/lions-den/hunter-funnel-strip";
 import { acceptHunterReviewItem, dismissHunterReviewItem, searchHunterProspects } from "@/server/hunter/actions";
@@ -11,6 +11,7 @@ import {
   isMissingPlacePhone,
 } from "@/server/hunter/filters";
 import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
+import { isSelfSearch, type ReferralTarget, type TrialDeskVertical } from "@/lib/lions-den/trial-desk-market";
 import type { HunterSearchFind } from "@/server/hunter/review";
 import { initialHunterSearchState } from "@/server/hunter/types";
 
@@ -22,6 +23,9 @@ type HunterSearchProps = {
     zipCode?: string;
     city?: string;
     state?: string;
+    ownService?: string;
+    vertical?: TrialDeskVertical;
+    targets?: ReferralTarget[];
   };
 };
 
@@ -36,6 +40,12 @@ export function HunterSearch({
     searchHunterProspects,
     initialHunterSearchState,
   );
+  const [service, setService] = useState(defaults?.service ?? "");
+  const targets = defaults?.targets ?? [];
+  const selfSearch =
+    defaults?.ownService && defaults.vertical
+      ? isSelfSearch(service, { serviceQuery: defaults.ownService, vertical: defaults.vertical })
+      : false;
   const reviewCount = state.places.filter((place) => place.lane === "review").length;
   const prospectCount = state.places.filter((place) => place.lane === "prospect").length;
 
@@ -47,7 +57,7 @@ export function HunterSearch({
             HUNTER
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#071b42]">
-            {spanish ? "Busca negocios locales" : "Find local businesses"}
+            {spanish ? "Busca quien te mande trabajo" : "Find the businesses that send you work"}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#33415c]">
             {organizationId
@@ -66,16 +76,69 @@ export function HunterSearch({
 
       <HunterFunnelStrip spanish={spanish} />
 
+      {targets.length > 0 ? (
+        <div className="mt-5 rounded-2xl border border-[#ece7d8] bg-[#fbfaf4] p-4" data-hunter-targets>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#8a6a12]">
+            {spanish ? "Quién te manda clientes" : "Who sends you customers"}
+          </p>
+          <p className="mt-1 text-sm leading-6 text-[#33415c]">
+            {spanish
+              ? "No busques tu propio oficio; esos son tu competencia. Busca a los negocios que necesitan tu oficio todo el año. Toca uno para cargarlo."
+              : "Do not search for your own trade; those are your competitors. Search for the businesses that need your trade all year. Tap one to load it."}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {targets.map((target) => {
+              const active = target.query === service.trim().toLowerCase();
+              return (
+                <button
+                  className={`rounded-full border px-3 py-1.5 text-left text-sm font-semibold transition ${
+                    active
+                      ? "border-[#071b42] bg-[#071b42] text-white"
+                      : "border-[#d5d0c4] bg-white text-[#071b42] hover:border-[#071b42]"
+                  }`}
+                  data-hunter-target={target.query}
+                  key={target.query}
+                  onClick={() => setService(target.query)}
+                  title={spanish ? target.whyEs : target.why}
+                  type="button"
+                >
+                  {target.query}
+                </button>
+              );
+            })}
+          </div>
+          {targets.find((target) => target.query === service.trim().toLowerCase()) ? (
+            <p className="mt-3 text-sm font-semibold text-[#071b42]">
+              {spanish
+                ? targets.find((target) => target.query === service.trim().toLowerCase())?.whyEs
+                : targets.find((target) => target.query === service.trim().toLowerCase())?.why}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {selfSearch ? (
+        <p
+          className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900"
+          data-hunter-self-search
+        >
+          {spanish
+            ? `“${service.trim()}” es tu propio oficio. Esta búsqueda te dará competidores, no clientes. Elige uno de los tipos de arriba.`
+            : `“${service.trim()}” is your own trade. This search returns competitors, not customers. Pick one of the types above instead.`}
+        </p>
+      ) : null}
+
       <form action={action} className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.2fr_.8fr_.45fr_.45fr_.55fr_auto] sm:items-end">
         {organizationId ? <input name="organizationId" type="hidden" value={organizationId} /> : null}
         <label>
-          <span className="text-sm font-medium text-[#071b42]">{spanish ? "Tipo de negocio" : "Business type"}</span>
+          <span className="text-sm font-medium text-[#071b42]">{spanish ? "A quién buscar" : "Who to look for"}</span>
           <input
             className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
-            defaultValue={defaults?.service ?? ""}
             name="service"
-            placeholder={spanish ? "Tipo de negocio local" : "Local business type"}
+            onChange={(event) => setService(event.target.value)}
+            placeholder={spanish ? "Ej. administradora de propiedades" : "e.g. property management company"}
             required
+            value={service}
           />
         </label>
         <label>
