@@ -17,6 +17,7 @@ import { getLeadPageOrganization, leadPageBaseUrl } from "@/server/leads/queries
 import { sendLeadEmail } from "@/server/leads/email";
 import { inboundLeadOwnerSms } from "@/lib/notifications/owner-sms";
 import { sendOwnerSms } from "@/server/notifications/twilio";
+import { reportDeskError } from "@/server/observability/report-error";
 
 type OwnerContact = { emails: string[]; phone: string | null };
 
@@ -74,7 +75,7 @@ export async function submitInboundLead(formData: FormData) {
     .single();
 
   if (error || !inserted) {
-    console.error("Atlas inbound lead insert failed", { code: error?.code, slug });
+    await reportDeskError("leads.createInboundLead", error, { code: error?.code, slug });
     redirect(leadPageRedirect(slug, "failed", spanish));
   }
 

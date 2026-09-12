@@ -1,14 +1,16 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
-import { lastDeskContactLabel, readLastDeskContact } from "@/lib/lions-den/prospect-stages";
+import { lastDeskContactLabel, needsDeskContactOutcome, readLastDeskContact } from "@/lib/lions-den/prospect-stages";
 import { isTrialSampleOpportunity, trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import { SampleBadge } from "@/components/lions-den/sample-badge";
 import {
+  DeskContactOutcomeForm,
   ProspectContactActions,
   ProspectDeleteForm,
   ProspectEditorForm,
+  ProspectNoteForm,
   ProspectNotice,
   ProspectStageButtons,
 } from "@/components/lions-den/prospect-controls";
@@ -43,6 +45,12 @@ export function LionsDenProspectDetail({
   const ownerNotes = typeof prospect.metadata?.owner_notes === "string" ? prospect.metadata.owner_notes : null;
   const history = [...prospect.events].reverse().slice(0, 20);
   const lastContact = readLastDeskContact(prospect.metadata);
+  const askOutcome = Boolean(scope && lastContact && needsDeskContactOutcome(lastContact));
+  const dueLabel = prospect.nextActionDue
+    ? new Intl.DateTimeFormat(spanish ? "es-US" : "en-US", { weekday: "short", month: "short", day: "numeric" }).format(
+        new Date(`${prospect.nextActionDue}T12:00:00`),
+      )
+    : null;
 
   return (
     <section className="rounded-[1.6rem] border border-[#d8c27a] bg-white p-5 sm:p-6">
@@ -100,6 +108,18 @@ export function LionsDenProspectDetail({
           spanish={spanish}
         />
       </div>
+
+      {askOutcome && scope && lastContact ? (
+        <div className="mt-4">
+          <DeskContactOutcomeForm
+            {...scope}
+            lastContact={lastContact}
+            prospect={prospect}
+            returnTo={recordPath}
+            spanish={spanish}
+          />
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <DetailField
@@ -186,10 +206,22 @@ export function LionsDenProspectDetail({
         <div className="mt-6 rounded-2xl bg-[#fbfaf4] p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5c6578]">
             {spanish ? "Próxima acción" : "Next action"}
+            {dueLabel ? (
+              <span className="ml-2 normal-case tracking-normal text-[#1246a0]" data-next-action-due>
+                · {spanish ? "para el" : "due"} {dueLabel}
+              </span>
+            ) : null}
           </p>
           <p className="mt-2 text-sm font-semibold text-[#071b42]">
             {presentedProspectNextAction(prospect, spanish)}
           </p>
+          {dueLabel ? (
+            <p className="mt-1 text-xs text-[#5c6578]">
+              {spanish
+                ? "Aparece en Seguimiento ese día. Atlas no lo envía; tú lo mandas."
+                : "Shows on the Follow-up desk that day. Atlas does not send it; you do."}
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -239,9 +271,14 @@ export function LionsDenProspectDetail({
         </p>
         <p className="mt-1 text-xs text-[#5c6578]">
           {spanish
-            ? "Llamadas, WhatsApp y correos que el vendedor tocó. Atlas no hace la llamada."
-            : "Calls, WhatsApp, and emails the salesman started. Atlas does not place the call."}
+            ? "Llamadas, WhatsApp, correos y notas del vendedor. Atlas no hace la llamada."
+            : "Calls, WhatsApp, emails, and the salesman's notes. Atlas does not place the call."}
         </p>
+        {scope ? (
+          <div className="mt-3">
+            <ProspectNoteForm {...scope} prospect={prospect} returnTo={recordPath} spanish={spanish} />
+          </div>
+        ) : null}
         {history.length > 0 ? (
           <ol className="mt-3 space-y-2">
             {history.map((event) => (

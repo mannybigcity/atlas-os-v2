@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { prospectDetailPath, prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
-import { lastDeskContactLabel, readLastDeskContact } from "@/lib/lions-den/prospect-stages";
+import { lastDeskContactLabel, needsDeskContactOutcome, readLastDeskContact } from "@/lib/lions-den/prospect-stages";
 import { isInboundOpportunity } from "@/lib/lions-den/inbound-leads";
 import { isTrialSampleOpportunity, trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import { SampleBadge } from "@/components/lions-den/sample-badge";
@@ -177,6 +177,14 @@ function ProspectList({
                   <p className="mt-1 text-xs font-semibold text-[#1246a0]" data-last-contact>
                     {spanish ? "Último: " : "Last: "}
                     {lastDeskContactLabel(lastContact, spanish)}
+                    {organizationId && needsDeskContactOutcome(lastContact) ? (
+                      <>
+                        {" · "}
+                        <Link className="underline decoration-[#d8c27a] underline-offset-2 hover:decoration-[#1246a0]" data-contact-outcome-link href={href}>
+                          {spanish ? "¿Cómo fue la llamada?" : "How did the call go?"}
+                        </Link>
+                      </>
+                    ) : null}
                   </p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
