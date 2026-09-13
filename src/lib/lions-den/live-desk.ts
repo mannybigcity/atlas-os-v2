@@ -9,13 +9,13 @@ import {
 
 export const AFE_LIVE_DESK_COMPANIES = ["ABC Plumbing", "123 Catering", "XYZ Electric"] as const;
 
-export const ATLAS_STAFF_EMPTY_EN = "Ask about follow-up or what is due today.";
-export const ATLAS_STAFF_EMPTY_ES = "Pregunta por el seguimiento o lo que toca hoy en este escritorio.";
+export const ATLAS_STAFF_EMPTY_EN = "Ask about who to call today, what to say, or what is due.";
+export const ATLAS_STAFF_EMPTY_ES = "Pregunta a quién llamar hoy, qué decir o qué toca hoy.";
 
 export const ATLAS_STAFF_SAMPLE_EMPTY_EN =
-  "Ask about follow-up, ABC Plumbing, 123 Catering, XYZ Electric, or what is due today.";
+  "Ask about who to call today, ABC Plumbing, 123 Catering, XYZ Electric, or what is due.";
 export const ATLAS_STAFF_SAMPLE_EMPTY_ES =
-  "Pregunta por el seguimiento, ABC Plumbing, 123 Catering, XYZ Electric o lo que toca hoy en este escritorio.";
+  "Pregunta a quién llamar hoy, ABC Plumbing, 123 Catering, XYZ Electric o qué toca hoy.";
 
 export function isAfeLiveDesk(
   organization?: { name?: string | null; slug?: string | null } | null,

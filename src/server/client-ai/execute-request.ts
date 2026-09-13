@@ -17,6 +17,12 @@ import {
   isLionDenJobPrompt,
 } from "../../lib/lions-den/atlas-job-scope.ts";
 import {
+  PHONE_NOT_PUBLISHED_EN,
+  atlasPublishedPhone,
+  buildAskAtlasCrmSnapshot,
+  formatAskAtlasCrmSnapshot,
+} from "../../lib/lions-den/ask-atlas-crm-snapshot.ts";
+import {
   decideClientAiRoute,
   getClientAiRoleSpec,
   isClientAiRole,
@@ -283,6 +289,8 @@ function summarizeDashboard(organizationName: string, dashboard: DashboardLike) 
           nextActionDue: string | null;
           researchSummary: string;
           sourceLabel: string | null;
+          contactName?: string | null;
+          contactPhone?: string | null;
         }>;
       } | null);
   const activity = dashboard.activity.setupRequired
@@ -379,7 +387,15 @@ function summarizeDashboard(organizationName: string, dashboard: DashboardLike) 
       fitScore: opportunity.fitScore,
       nextAction: opportunity.nextAction,
       dueDate: opportunity.nextActionDue,
+      contactName: opportunity.contactName ?? null,
+      phone: atlasPublishedPhone(opportunity.contactPhone),
     }));
+
+  const crmSnapshot = buildAskAtlasCrmSnapshot({
+    opportunities: pipeline?.opportunities ?? [],
+    notes,
+  });
+  const callToday = formatAskAtlasCrmSnapshot(crmSnapshot);
 
   const weeklyActivity = activity.slice(0, 7).map((event) => ({
     title: event.title,
@@ -429,6 +445,8 @@ function summarizeDashboard(organizationName: string, dashboard: DashboardLike) 
     },
     approvalQueue,
     calendarItems,
+    crmSnapshot,
+    callToday,
     openPipeline,
     weeklyActivity,
     recentAiRequests,
@@ -448,32 +466,44 @@ function summarizeDashboard(organizationName: string, dashboard: DashboardLike) 
         fitScore: opportunity.fitScore,
         sourceLabel: opportunity.sourceLabel,
         nextAction: opportunity.nextAction,
+        contactName: opportunity.contactName ?? null,
+        phone: atlasPublishedPhone(opportunity.contactPhone),
       })),
     ),
     activitySummary: weeklyActivity,
   };
 }
 
+function formatDavidCallLine(item: {
+  name: string;
+  stage: string;
+  nextAction?: string | null;
+  phone?: string | null;
+}) {
+  const phone = item.phone?.trim() || PHONE_NOT_PUBLISHED_EN;
+  const next = item.nextAction ? ` Next: ${item.nextAction}` : "";
+  return `${item.name} (${item.stage}) ${phone}.${next}`;
+}
+
 function formatDavidWorkspaceAnswer(workspace: ReturnType<typeof summarizeDashboard>) {
   const parts: string[] = [];
-  const pipeline = workspace.openPipeline;
-  if (pipeline.length > 0) {
-    parts.push(
-      pipeline
-        .slice(0, 5)
-        .map((item) => {
-          const next = item.nextAction ? ` Next: ${item.nextAction}` : "";
-          return `${item.name} (${item.stage}).${next}`;
-        })
-        .join(" "),
-    );
+  const seen = new Set<string>();
+  const callItems = [
+    ...workspace.crmSnapshot.dueToday,
+    ...workspace.crmSnapshot.overdue,
+    ...workspace.crmSnapshot.toCall,
+  ].filter((item) => {
+    if (seen.has(item.name)) return false;
+    seen.add(item.name);
+    return true;
+  });
+
+  if (callItems.length > 0) {
+    parts.push(callItems.slice(0, 5).map(formatDavidCallLine).join(" "));
+  } else if (workspace.openPipeline.length > 0) {
+    parts.push(workspace.openPipeline.slice(0, 5).map(formatDavidCallLine).join(" "));
   } else if (workspace.opportunities.length > 0) {
-    parts.push(
-      workspace.opportunities
-        .slice(0, 5)
-        .map((item) => `${item.name} (${item.stage})`)
-        .join(" "),
-    );
+    parts.push(workspace.opportunities.slice(0, 5).map(formatDavidCallLine).join(" "));
   }
 
   if (workspace.approvalQueue.length > 0) {
@@ -1028,8 +1058,10 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
         maxOutputTokens: MAX_OPENAI_OUTPUT_TOKENS,
         instructions: [
           `You are ${roleSpec.title} inside a protected client dashboard.`,
-          `You only answer Lion's Den desk work for this client: pipeline, prospects, follow-up, notes, calendar, HUNTER pile, MICAH drafts, and their business on this desk.`,
-          `Refuse trivia and anything that is not their job in this CRM. Never send email, SMS, calls, or social posts.`,
+          `Answer desk questions from the supplied CRM snapshot. For "who do I call" and "what do I say", use workspace.crmSnapshot and workspace.callToday only.`,
+          `Never invent phone numbers, names, or notes. If a phone is missing, say exactly "${PHONE_NOT_PUBLISHED_EN}".`,
+          `Advise only. Never claim you called, emailed, or texted anyone. Never send email, SMS, calls, or social posts.`,
+          `Refuse trivia. Ask the owner about who to call today, what to say, what is due, or the next follow-up on this desk.`,
           resolvedRole === "david"
             ? `DAVID answers from this workspace only: pipeline, follow-up, notes, history, next step to a sale, and client satisfaction. Do not invent contacts. Do not call, email, or text.`
             : `Follow the guardrails below exactly.`,
