@@ -12,6 +12,7 @@ import {
 } from "@/server/client-workspace/context";
 import { defaultClientAiDailyUsage, getClientAiDailyUsage, getClientAiRequests } from "@/server/client-ai/queries";
 import { getPilotWorkspace } from "@/server/pilot/queries";
+import { getOrganizationNotes } from "@/server/notes/queries";
 import { getOpportunityPipeline } from "@/server/opportunities/queries";
 import { amandaBusinessFromWorkspace, getAmandaSequences } from "@/server/outreach/queries";
 import { getSisDashboardData } from "@/server/sis-workspace/queries";
@@ -58,16 +59,29 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
     ? await getSisDashboardData(primaryOrganization.id)
     : null;
   const allowDraftControls = canShowFollowUpDraftControls(primaryOrganization);
-  const amandaSequences = primaryOrganization && allowDraftControls
-    ? await getAmandaSequences(primaryOrganization.id)
+  const [amandaSequences, linkedNotes] = primaryOrganization && allowDraftControls
+    ? await Promise.all([
+        getAmandaSequences(primaryOrganization.id),
+        getOrganizationNotes(primaryOrganization.id, { limit: 200 }),
+      ])
+    : [null, null];
+  const engineBusiness = primaryOrganization && allowDraftControls
+    ? amandaBusinessFromWorkspace({
+        organizationName: primaryOrganization.name,
+        userMetadata: workspace.user.user_metadata as Record<string, unknown>,
+      })
     : null;
-  const amanda = primaryOrganization && amandaSequences && !amandaSequences.setupRequired
+  const amanda = primaryOrganization && amandaSequences && !amandaSequences.setupRequired && engineBusiness
     ? {
-        business: amandaBusinessFromWorkspace({
-          organizationName: primaryOrganization.name,
-          userMetadata: workspace.user.user_metadata as Record<string, unknown>,
-        }),
+        business: engineBusiness,
         sequences: amandaSequences.data,
+      }
+    : null;
+  const engineOwner = engineBusiness
+    ? {
+        ownerFirstName: String(engineBusiness.ownerName ?? "").trim().split(/\s+/)[0] ?? "",
+        businessName: engineBusiness.businessName,
+        ownerPhone: engineBusiness.ownerPhone,
       }
     : null;
 
@@ -77,14 +91,28 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
         <LionsDenFollowUpBoard
           allowDraftControls={allowDraftControls}
           amanda={amanda}
+          composeFromEmail={workspace.user.email ?? ""}
+          engineOwner={engineOwner}
           inboxTasks={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.inboxTasks : []}
+          linkedNotes={
+            linkedNotes && !linkedNotes.setupRequired
+              ? linkedNotes.data.map((note) => ({
+                  recordId: note.recordId,
+                  createdAt: note.createdAt,
+                  title: note.title,
+                  body: note.body,
+                }))
+              : []
+          }
           partyEvents={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.partyEvents : []}
+          previewOrgSlug={previewOrgSlug || undefined}
           prospects={(pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
             presentLiveDeskOpportunity(primaryOrganization, item),
           )}
           returnTo={clientWorkspaceHref("/client/david", previewOrgSlug)}
           followupStatus={params?.followup}
           spanish={spanish}
+          workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
         />
       </LionsDenBoardScreen>
     );
