@@ -20,7 +20,15 @@ import {
   followUpDraftSms,
   followUpDraftText,
 } from "@/lib/lions-den/follow-up-drafts";
+import { formatUsd, latestDeskQuote } from "@/lib/lions-den/desk-quote";
+import {
+  concatNotesText,
+  latestTimestamp,
+  nextMessage,
+  type NextMessageResult,
+} from "@/lib/lions-den/next-message-engine";
 import { prospectDetailPath, publishedPlacePhone } from "@/lib/lions-den/prospect-places";
+import { readLastDeskContact } from "@/lib/lions-den/prospect-stages";
 import {
   amandaSequenceSteps,
   canOfferAmandaSequence,
@@ -28,6 +36,7 @@ import {
   type AmandaDeskInfo,
   type AmandaSequenceRecord,
 } from "@/lib/lions-den/amanda-outreach";
+import { DeskEmailCompose } from "./desk-email-compose";
 import { AmandaSequenceCard } from "./amanda-sequence-card";
 import { FollowUpCopyButton } from "./follow-up-copy-button";
 
@@ -36,6 +45,19 @@ type FollowUpDraftControls = DeskFollowUpDraftControls;
 export type FollowUpAmandaContext = {
   business: AmandaBusiness;
   sequences: Record<string, AmandaSequenceRecord>;
+};
+
+export type FollowUpEngineOwner = {
+  ownerFirstName: string;
+  businessName: string;
+  ownerPhone: string | null;
+};
+
+export type FollowUpLinkedNote = {
+  recordId: string | null;
+  createdAt: string;
+  title: string;
+  body: string | null;
 };
 
 type LionsDenFollowUpBoardProps = {
@@ -48,6 +70,11 @@ type LionsDenFollowUpBoardProps = {
   followupStatus?: string;
   /** When set, prospects with a business email get Amanda's approve-to-send card. */
   amanda?: FollowUpAmandaContext | null;
+  composeFromEmail?: string;
+  previewOrgSlug?: string;
+  workspaceSlug?: string;
+  engineOwner?: FollowUpEngineOwner | null;
+  linkedNotes?: FollowUpLinkedNote[];
 };
 
 function amandaInfoFor(
@@ -85,6 +112,70 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(value));
 }
 
+function notesTextFor(item: OrganizationOpportunity, linkedNotes: FollowUpLinkedNote[]) {
+  const pieces = [
+    ...linkedNotes
+      .filter((note) => note.recordId === item.id)
+      .map((note) => ({
+        createdAt: note.createdAt,
+        text: [note.title, note.body].filter((part) => String(part ?? "").trim()).join(" — "),
+      })),
+  ];
+  const ownerNotes = typeof item.metadata?.owner_notes === "string" ? item.metadata.owner_notes : "";
+  if (ownerNotes.trim()) {
+    pieces.push({ createdAt: item.createdAt, text: ownerNotes });
+  }
+  for (const event of item.events) {
+    if (event.eventType !== "note_added") continue;
+    pieces.push({ createdAt: event.createdAt, text: event.body || event.summary });
+  }
+  return concatNotesText(pieces);
+}
+
+function lastTouchAtFor(item: OrganizationOpportunity) {
+  const contact = readLastDeskContact(item.metadata);
+  const ownerContacted =
+    typeof item.metadata?.owner_contacted_at === "string" ? item.metadata.owner_contacted_at : null;
+  return latestTimestamp([
+    contact?.at,
+    ownerContacted,
+    ...item.events
+      .filter((event) => event.eventType === "contacted" || event.eventType === "reply_received")
+      .map((event) => event.createdAt),
+  ]);
+}
+
+function quoteAmountFor(item: OrganizationOpportunity) {
+  const quote = latestDeskQuote(item.metadata);
+  if (!quote || quote.status === "declined") return null;
+  return formatUsd(quote.amountUsd);
+}
+
+function nextMessageFor(
+  item: OrganizationOpportunity,
+  input: {
+    spanish: boolean;
+    engineOwner: FollowUpEngineOwner;
+    linkedNotes: FollowUpLinkedNote[];
+    nowIso: string;
+  },
+): NextMessageResult {
+  return nextMessage({
+    spanish: input.spanish,
+    ownerFirstName: input.engineOwner.ownerFirstName,
+    businessName: input.engineOwner.businessName,
+    ownerPhone: input.engineOwner.ownerPhone,
+    prospectName: item.contactName || item.name,
+    prospectCompany: item.name,
+    stage: item.stage,
+    opportunityType: item.opportunityType,
+    lastTouchAt: lastTouchAtFor(item),
+    nowIso: input.nowIso,
+    notesText: notesTextFor(item, input.linkedNotes),
+    quoteAmount: quoteAmountFor(item),
+  });
+}
+
 export function LionsDenFollowUpBoard({
   prospects,
   inboxTasks,
@@ -94,7 +185,13 @@ export function LionsDenFollowUpBoard({
   returnTo = "/client/david",
   followupStatus,
   amanda,
+  composeFromEmail = "",
+  previewOrgSlug,
+  workspaceSlug,
+  engineOwner = null,
+  linkedNotes = [],
 }: LionsDenFollowUpBoardProps) {
+  const nowIso = new Date().toISOString();
   const items: DeskFollowUpItem[] = [
     ...prospects
       .filter((item) => item.nextActionDue)
@@ -118,6 +215,12 @@ export function LionsDenFollowUpBoard({
               contactName: item.contactName,
               draftBody: item.nextAction ?? "",
               amanda: amandaInfoFor(item, amanda, spanish),
+              engine: engineOwner
+                ? nextMessageFor(item, { spanish, engineOwner, linkedNotes, nowIso })
+                : null,
+              fromEmail: composeFromEmail,
+              previewOrgSlug,
+              workspaceSlug,
             }
           : undefined,
       })),
@@ -385,8 +488,23 @@ function FollowUpDraftActions({
 
   return (
     <div className="mt-3 space-y-2" data-followup-controls="draft">
-      <div className="flex flex-wrap gap-2">
-        {mailto ? (
+      <div className="flex flex-wrap items-start gap-2">
+        {controls.fromEmail != null && controls.fromEmail !== undefined ? (
+          <div data-followup-control="email">
+            <DeskEmailCompose
+              engine={controls.engine ?? null}
+              fromEmail={controls.fromEmail}
+              opportunityId={controls.opportunityId}
+              organizationId={controls.organizationId}
+              previewOrgSlug={controls.previewOrgSlug}
+              prospectName={prospectName}
+              returnTo={returnTo}
+              spanish={spanish}
+              toEmail={controls.contactEmail}
+              workspaceSlug={controls.workspaceSlug}
+            />
+          </div>
+        ) : mailto ? (
           <a className={primary} data-followup-control="email" href={mailto}>
             {spanish ? "Correo" : "Email"}
           </a>

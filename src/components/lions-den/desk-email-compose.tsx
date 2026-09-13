@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { NextMessageResult } from "@/lib/lions-den/next-message-engine";
 import { sendDeskFollowUpEmail } from "@/server/opportunities/desk-email-actions";
 
 type DeskEmailComposeProps = {
@@ -22,6 +23,7 @@ type DeskEmailComposeProps = {
   initialSubject?: string;
   initialBody?: string;
   quoteId?: string;
+  engine?: NextMessageResult | null;
 };
 
 const actionClass =
@@ -49,6 +51,7 @@ export function DeskEmailCompose({
   initialSubject,
   initialBody,
   quoteId,
+  engine = null,
 }: DeskEmailComposeProps) {
   const [open, setOpen] = useState(() => {
     if (initialOpen) return true;
@@ -56,7 +59,24 @@ export function DeskEmailCompose({
     return window.location.hash === "#desk-email";
   });
   const [fileNames, setFileNames] = useState<string[]>([]);
+  const fallbackBody = spanish
+    ? `Hola,\n\nTe escribo para dar seguimiento con ${prospectName}. ¿Tienes un momento esta semana?\n\nGracias.`
+    : `Hi,\n\nI am following up with ${prospectName}. Do you have a few minutes this week?\n\nThank you.`;
+  const seededBody = initialBody?.trim() ? initialBody : engine?.body || fallbackBody;
+  const [body, setBody] = useState(seededBody);
+  const [moreIndex, setMoreIndex] = useState(0);
   const label = spanish ? "Correo" : "Email";
+  const defaultSubject = initialSubject ?? engine?.subject ?? (spanish ? `Seguimiento: ${prospectName}` : `Follow-up: ${prospectName}`);
+
+  function applyChip(chip: "shorter" | "softer" | "askYes" | "more") {
+    if (!engine) return;
+    if (chip === "more") {
+      setBody(engine.variants.extra[moreIndex % 2] ?? engine.body);
+      setMoreIndex((value) => value + 1);
+      return;
+    }
+    setBody(engine.variants[chip]);
+  }
 
   if (compact) {
     return (
@@ -72,6 +92,47 @@ export function DeskEmailCompose({
         {label}
       </button>
       {open ? (
+        <>
+        {engine ? (
+          <div
+            className="mt-3 flex w-full max-w-xl flex-wrap items-center gap-1.5 rounded-lg border border-[#ece7d8] bg-[#fbfaf4] px-2.5 py-1.5"
+            data-next-message-engine
+          >
+            <p className="mr-1 text-[11px] font-semibold text-[#5c4a12]">{engine.jobLabel}</p>
+            <button
+              className="rounded-full border border-[#d5d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#071b42]"
+              data-engine-chip="shorter"
+              onClick={() => applyChip("shorter")}
+              type="button"
+            >
+              {spanish ? "Más corto" : "Shorter"}
+            </button>
+            <button
+              className="rounded-full border border-[#d5d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#071b42]"
+              data-engine-chip="softer"
+              onClick={() => applyChip("softer")}
+              type="button"
+            >
+              {spanish ? "Más suave" : "Softer"}
+            </button>
+            <button
+              className="rounded-full border border-[#d5d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#071b42]"
+              data-engine-chip="askYes"
+              onClick={() => applyChip("askYes")}
+              type="button"
+            >
+              {spanish ? "Pedir el sí" : "Ask for the yes"}
+            </button>
+            <button
+              className="rounded-full border border-[#d5d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#071b42]"
+              data-engine-chip="more"
+              onClick={() => applyChip("more")}
+              type="button"
+            >
+              {spanish ? "2 más" : "2 more"}
+            </button>
+          </div>
+        ) : null}
         <div className="mt-3 w-full max-w-xl rounded-2xl border border-[#d5d0c4] bg-white p-4 text-[#071b42]" id="desk-email">
           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1246a0]">
             {spanish ? "Escribir en Atlas" : "Write in Atlas"}
@@ -111,7 +172,7 @@ export function DeskEmailCompose({
               {spanish ? "Asunto" : "Subject"}
               <input
                 className={fieldClass}
-                defaultValue={initialSubject ?? (spanish ? `Seguimiento: ${prospectName}` : `Follow-up: ${prospectName}`)}
+                defaultValue={defaultSubject}
                 name="subject"
                 required
                 type="text"
@@ -121,15 +182,11 @@ export function DeskEmailCompose({
               {spanish ? "Mensaje" : "Message"}
               <textarea
                 className={fieldClass}
-                defaultValue={
-                  initialBody ??
-                  (spanish
-                    ? `Hola,\n\nTe escribo para dar seguimiento con ${prospectName}. ¿Tienes un momento esta semana?\n\nGracias.`
-                    : `Hi,\n\nI am following up with ${prospectName}. Do you have a few minutes this week?\n\nThank you.`)
-                }
                 name="body"
+                onChange={(event) => setBody(event.target.value)}
                 required
-                rows={initialBody ? 12 : 6}
+                rows={initialBody || engine ? 12 : 6}
+                value={body}
               />
             </label>
             {quoteId ? <input name="quoteId" type="hidden" value={quoteId} /> : null}
@@ -165,6 +222,7 @@ export function DeskEmailCompose({
             </p>
           </form>
         </div>
+        </>
       ) : null}
     </div>
   );

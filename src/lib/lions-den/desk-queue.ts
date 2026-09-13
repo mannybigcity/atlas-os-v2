@@ -1,4 +1,5 @@
 import type { AmandaDeskInfo } from "./amanda-outreach.ts";
+import type { NextMessageResult } from "./next-message-engine.ts";
 import { deskDateOnly, deskDayKey, deskTimeZone, shiftDateOnly } from "../desk-time.ts";
 
 export type DeskFollowUpDraftControls = {
@@ -10,6 +11,11 @@ export type DeskFollowUpDraftControls = {
   draftBody: string;
   /** Present when Amanda can write to this prospect (a business with an email, not an inbound homeowner). */
   amanda?: AmandaDeskInfo;
+  /** AFE-only recommended message for the in-desk compose box. */
+  engine?: NextMessageResult | null;
+  fromEmail?: string;
+  previewOrgSlug?: string;
+  workspaceSlug?: string;
 };
 
 export type DeskFollowUpItem = {
