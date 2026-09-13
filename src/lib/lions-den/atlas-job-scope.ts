@@ -38,6 +38,20 @@ const JOB_KEYWORDS = [
   "whats next",
   "check-in",
   "check in",
+  "call",
+  "phone",
+  "script",
+  "talk to",
+  "reach out",
+  "what do i say",
+  "what to say",
+  "who do i call",
+  "who should i call",
+  "who to call",
+  "call today",
+  "due today",
+  "follow up today",
+  "follow-up today",
   "content",
   "campaign",
   "post",
@@ -74,10 +88,10 @@ const TRIVIA_PATTERNS = [
 ];
 
 export const ATLAS_OFF_TOPIC_REPLY =
-  "I only work this desk. Ask about your pipeline, prospects, follow-up, notes, calendar, HUNTER pile, or MICAH drafts.";
+  "Ask me about who to call today, what to say, what's due, or the next follow-up on this desk.";
 
 export const ATLAS_OFF_TOPIC_REPLY_ES =
-  "Solo trabajo en este escritorio. Pregunta por tu pipeline, prospectos, seguimiento, notas, calendario, la pila de HUNTER o los borradores de MICAH.";
+  "Pregúntame a quién llamar hoy, qué decir, qué toca hoy o el siguiente seguimiento en este escritorio.";
 
 function includesAny(value: string, keywords: string[]) {
   return keywords.some((keyword) => value.includes(keyword));
