@@ -42,6 +42,12 @@ test("Talk to Atlas routes pipeline, follow-up, and client satisfaction to DAVID
     decideClientAiRoute({ role: "atlas", prompt: "How is client satisfaction on this desk?" }).routedTo,
     "david",
   );
+  assert.equal(detectSpecialistLane("Who do I call today?"), "david");
+  assert.equal(detectSpecialistLane("What do I say?"), "david");
+  assert.equal(
+    decideClientAiRoute({ role: "atlas", prompt: "Who do I call today?" }).routedTo,
+    "david",
+  );
 });
 
 test("desk CRM prospect questions route to DAVID, not HUNTER", () => {

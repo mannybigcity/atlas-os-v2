@@ -96,6 +96,13 @@ const roleKeywordSets: Record<ClientAiRole, string[]> = {
     "prospects",
     "lead",
     "leads",
+    "call today",
+    "who do i call",
+    "who should i call",
+    "who to call",
+    "what do i say",
+    "what to say",
+    "due today",
   ],
 };
 

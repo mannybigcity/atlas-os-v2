@@ -9,6 +9,7 @@ import {
   atlasAskUsageFromCounts,
 } from "../../lib/lions-den/atlas-quota.ts";
 import { ATLAS_OFF_TOPIC_REPLY } from "../../lib/lions-den/atlas-job-scope.ts";
+import { PHONE_NOT_PUBLISHED_EN } from "../../lib/lions-den/ask-atlas-crm-snapshot.ts";
 import {
   ATLAS_INCOMPLETE_RESPONSE_MESSAGE,
   clientAiUserFacingError,
@@ -58,6 +59,55 @@ function emptyDashboard() {
   };
 }
 
+function dashboardWithProspects() {
+  const empty = emptyDashboard();
+  return {
+    ...empty,
+    opportunityPipeline: {
+      setupRequired: false,
+      error: null,
+      data: {
+        opportunities: [
+          {
+            name: "ABC Plumbing",
+            stage: "ready_for_follow_up",
+            fitScore: 80,
+            nextAction: "Call Jordan about the referral.",
+            nextActionDue: "2026-09-13",
+            researchSummary: "Plumbing shop that asked about hats.",
+            sourceLabel: "HUNTER",
+            contactName: "Jordan Hale",
+            contactPhone: "(555) 010-0101",
+          },
+          {
+            name: "Bayou HVAC",
+            stage: "contacted",
+            fitScore: 70,
+            nextAction: "Check in after three days.",
+            nextActionDue: "2020-01-01",
+            researchSummary: "No public number on the listing.",
+            sourceLabel: "HUNTER",
+            contactName: "Casey Nguyen",
+            contactPhone: "Google did not publish a phone number.",
+          },
+        ],
+      },
+    },
+    notes: {
+      setupRequired: false,
+      error: null,
+      data: [
+        {
+          attentionRequested: false,
+          title: "ABC Plumbing",
+          body: "Jordan prefers a morning call.",
+          updatedAt: "2026-09-12T00:00:00.000Z",
+        },
+      ],
+    },
+  };
+}
+
 function askForm(prompt: string, organizationId = DEMO_ORG_ID) {
   const form = new FormData();
   form.set("organizationId", organizationId);
@@ -76,6 +126,7 @@ function createHarness(options: {
   memberships?: ClientAiRequestDeps["getUserMemberships"];
   generate?: ClientAiRequestDeps["generateStructuredText"];
   generateError?: unknown;
+  dashboard?: Awaited<ReturnType<ClientAiRequestDeps["getClientDashboardData"]>>;
   runHunterChatSearch?: ClientAiRequestDeps["runHunterChatSearch"];
   createMicahGalleryDraft?: ClientAiRequestDeps["createMicahGalleryDraft"];
   readMicahDemeanor?: ClientAiRequestDeps["readMicahDemeanor"];
@@ -87,6 +138,8 @@ function createHarness(options: {
   const tokenCaps: number[] = [];
   const schemaNames: string[] = [];
   const markdownRoles: string[] = [];
+  const generateInputs: string[] = [];
+  const generateInstructions: string[] = [];
   const plan = options.plan ?? "basic";
 
   const generate: ClientAiRequestDeps["generateStructuredText"] =
@@ -95,6 +148,8 @@ function createHarness(options: {
       generateCalls += 1;
       tokenCaps.push(request.maxOutputTokens ?? -1);
       schemaNames.push(request.schemaName);
+      generateInputs.push(request.input);
+      generateInstructions.push(request.instructions ?? "");
       if (options.generateError) throw options.generateError;
       return {
         value: request.parse({
@@ -141,7 +196,7 @@ function createHarness(options: {
       };
     },
     generateStructuredText: generate,
-    getClientDashboardData: async () => emptyDashboard(),
+    getClientDashboardData: async () => options.dashboard ?? emptyDashboard(),
     loadRoleMarkdown: async (role) => {
       markdownRoles.push(role);
       return `# ${role}\n`;
@@ -157,7 +212,16 @@ function createHarness(options: {
 
   return {
     submit: createSubmitClientAiRequest(deps),
-    stats: () => ({ used, generateCalls, reserveCalls, tokenCaps, schemaNames, markdownRoles }),
+    stats: () => ({
+      used,
+      generateCalls,
+      reserveCalls,
+      tokenCaps,
+      schemaNames,
+      markdownRoles,
+      generateInputs,
+      generateInstructions,
+    }),
   };
 }
 
@@ -226,6 +290,8 @@ test("founder DEMO desk asks: in-scope 0→1, off-topic stays 1, in-scope 1→2"
   assert.equal(offTopic.status, "blocked");
   assert.equal(offTopic.scopeStatus, "declined");
   assert.equal(offTopic.answer, ATLAS_OFF_TOPIC_REPLY);
+  assert.doesNotMatch(String(offTopic.answer), /I only work this desk/);
+  assert.match(String(offTopic.answer), /who to call today/);
   assert.equal(stats().generateCalls, 1);
   assert.equal(stats().reserveCalls, 1);
   assert.equal(stats().used, 1);
@@ -651,5 +717,44 @@ test("HUNTER chat search without a market asks for ZIP or city and does not coun
   assert.equal(result.scopeStatus, "needs_input");
   assert.equal(stats().used, 0);
   assert.equal(stats().generateCalls, 0);
+});
+
+test("Who do I call today stays in scope and workspace includes published phones", async () => {
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    dashboard: dashboardWithProspects(),
+  });
+  const result = await submit(initialClientAiActionState, askForm("Who do I call today?"));
+  assert.equal(result.status, "success");
+  assert.equal(result.routedTo, "david");
+  assert.doesNotMatch(String(result.answer), /I only work this desk/);
+  const payload = stats().generateInputs[0] ?? "";
+  assert.match(payload, /ABC Plumbing/);
+  assert.match(payload, /\(555\) 010-0101/);
+  assert.match(payload, /Bayou HVAC/);
+  assert.match(payload, new RegExp(PHONE_NOT_PUBLISHED_EN));
+  assert.match(payload, /crmSnapshot|callToday/);
+  assert.match(stats().generateInstructions[0] ?? "", /Never invent phone numbers/);
+  assert.match(stats().generateInstructions[0] ?? "", /Advise only/);
+  assert.doesNotMatch(stats().generateInstructions[0] ?? "", /I only work this desk/);
+  assert.doesNotMatch(payload, /713-555-9999/);
+});
+
+test("DAVID fallback lists published phones and never invents missing ones", async () => {
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    dashboard: dashboardWithProspects(),
+    generateError: new IntegrationRequestError("openai", "incomplete_response"),
+  });
+  const result = await submit(initialClientAiActionState, askForm("Who do I call today?"));
+  assert.equal(result.status, "success");
+  assert.equal(result.routedTo, "david");
+  assert.match(String(result.answer), /ABC Plumbing/);
+  assert.match(String(result.answer), /\(555\) 010-0101/);
+  assert.match(String(result.answer), /Bayou HVAC/);
+  assert.match(String(result.answer), new RegExp(PHONE_NOT_PUBLISHED_EN));
+  assert.match(String(result.answer), /did not call, email, or text anyone/i);
+  assert.doesNotMatch(String(result.answer), /I called|I emailed|I texted|sent SMS/i);
+  assert.equal(stats().used, 1);
 });
 
