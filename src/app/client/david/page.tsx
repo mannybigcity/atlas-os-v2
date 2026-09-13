@@ -81,7 +81,7 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
     ? {
         ownerFirstName: String(engineBusiness.ownerName ?? "").trim().split(/\s+/)[0] ?? "",
         businessName: engineBusiness.businessName,
-        ownerPhone: engineBusiness.ownerPhone,
+        ownerPhone: engineBusiness.ownerPhone ?? null,
       }
     : null;
 
