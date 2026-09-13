@@ -14,7 +14,11 @@ The blank-page problem is real. The wrong fix is a 75% template library + 25% ch
 
 Build a **Next Message Engine**: one recommended message on the compose surface, plus three rewrite chips. Owner still sends or approves. Nothing auto-sends.
 
-Amanda stays the outbound name on sequences. The engine on the compose bar can say **Ask Amanda**. Do not invent a new agent.
+**Name rule (2026-09-13):** Amanda is the future voice agent. Inside the CRM, the owner-facing chip can say Next message / Ask Amanda. Outbound copy the prospect sees must end with Amanda so the same person answers email today and the phone later. Use the existing PR #80 close, do not invent a fake job title or a fake life story:
+
+`Amanda, on behalf of {businessName}. {ownerFirstName} answers at {ownerPhone}.`
+
+If `ownerPhone` is missing, drop the phone clause. Do not write "I'm a real person" or hide that she writes for the business. The owner approved the send. That is the human.
 
 ---
 
@@ -46,6 +50,7 @@ SIS desks stay gated by `canShowFollowUpDraftControls`. Engine is AFE-only, same
 - Twilio / SMS / auto-send
 - SIS wiring
 - Invented facts when notes are empty
+- Copy that claims Amanda is a human employee or hides the business/owner
 
 ---
 
@@ -54,7 +59,7 @@ SIS desks stay gated by `canShowFollowUpDraftControls`. Engine is AFE-only, same
 | File | Why |
 |---|---|
 | `src/lib/lions-den/follow-up-drafts.ts` | Existing deterministic email/text drafts. Extend or wrap. |
-| `src/lib/lions-den/amanda-outreach.ts` | Sequence rules, offer gates, STOP, status copy. Do not break. |
+| `src/lib/lions-den/amanda-outreach.ts` | Sequence rules, offer gates, STOP, status copy, signature pattern. Do not break. |
 | `src/lib/lions-den/desk-queue.ts` | How follow-up rows are built. |
 | `src/lib/lions-den/prospect-stages.ts` | Stage enum mapping. |
 | `src/components/lions-den/desk-email-compose.tsx` | White compose box. Engine chips live here. |
@@ -127,11 +132,14 @@ Rules inside `nextMessage`:
 - Review/referral: stage is won (reuse tone of `won-review-card.tsx`, do not duplicate that card).
 - First touch: researching / new, has email, no last touch.
 - Book/close: contacted or responded, has a note that implies interest. If the note does not imply interest, stay on quiet_reopen or first_touch. Do not guess "they said yes."
-- Body: 3–6 short lines, plain text, no markdown, no emoji. Sign as the owner (`ownerFirstName` at `{businessName}`), not as Amanda, on this engine path. Amanda signature stays on the 3-step sequence only.
+- Body: 3–6 short lines, plain text, no markdown, no emoji.
+- Every outbound body ends with the Amanda close (EN/ES):
+  `Amanda, on behalf of {businessName}. {ownerFirstName} answers at {ownerPhone}.`
+  Omit the phone sentence when `ownerPhone` is null. Need-one-fact copy is owner-only (not sent) and does not need that close.
 - Never include a phone that was not passed in. Never invent a website.
-- Variants must be real rewrites of `body`, not the same paragraph three times.
+- Variants must be real rewrites of `body`, not the same paragraph three times. All sendable variants keep the Amanda close.
 
-Test file: `src/lib/lions-den/next-message-engine.test.ts` (`node:test`). Cover: empty notes → need_one_fact; quiet 11 days; quote present; won stage; Spanish jobLabel; no invented phone.
+Test file: `src/lib/lions-den/next-message-engine.test.ts` (`node:test`). Cover: empty notes → need_one_fact; quiet 11 days; quote present; won stage; Spanish jobLabel; no invented phone; sendable bodies include "Amanda, on behalf of".
 
 ### 2. Wire compose only
 
