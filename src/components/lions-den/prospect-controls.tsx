@@ -11,6 +11,7 @@ import {
 import { prospectWhatsAppHref } from "@/lib/lions-den/prospect-places";
 import { DeskContactButton } from "@/components/lions-den/desk-contact-button";
 import { DeskEmailCompose } from "@/components/lions-den/desk-email-compose";
+import type { NextMessageResult } from "@/lib/lions-den/next-message-engine";
 import { addProspectNote, logDeskContactOutcome } from "@/server/opportunities/desk-contact-actions";
 import {
   createProspect,
@@ -79,6 +80,7 @@ export function ProspectContactActions({
     initialSubject?: string;
     initialBody?: string;
     quoteId?: string;
+    engine?: NextMessageResult | null;
   };
 }) {
   const links = prospectContactLinks(prospect);
@@ -161,6 +163,7 @@ export function ProspectContactActions({
           initialSubject={compose.initialSubject}
           initialBody={compose.initialBody}
           quoteId={compose.quoteId}
+          engine={compose.engine ?? null}
         />
       ) : links.mailto ? (
         <a className={base} href={links.mailto}>

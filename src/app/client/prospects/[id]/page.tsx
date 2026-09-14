@@ -13,6 +13,9 @@ import { fillMissingOpportunityEmail } from "@/server/hunter/fill-website-email"
 import { getOrganizationOpportunity } from "@/server/opportunities/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import { getDeskPayLink } from "@/server/trials/desk-settings";
+import { getOrganizationNotes } from "@/server/notes/queries";
+import { amandaBusinessFromWorkspace } from "@/server/outreach/queries";
+import { nextMessageOwnerFromBusiness } from "@/lib/lions-den/next-message-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -54,10 +57,17 @@ export default async function ProspectDetailPage({
   }
   if (!result.data) notFound();
 
-  const [filled, payLink] = await Promise.all([
+  const [filled, payLink, linkedNotes] = await Promise.all([
     fillMissingOpportunityEmail(organization.id, result.data.id),
     getDeskPayLink(organization.id),
+    getOrganizationNotes(organization.id, { recordId: result.data.id, limit: 50 }),
   ]);
+  const engineOwner = nextMessageOwnerFromBusiness(
+    amandaBusinessFromWorkspace({
+      organizationName: organization.name,
+      userMetadata: workspace.user.user_metadata as Record<string, unknown>,
+    }),
+  );
   const prospect = presentLiveDeskOpportunity(organization, {
     ...result.data,
     contactEmail: filled.email ?? result.data.contactEmail,
@@ -79,6 +89,9 @@ export default async function ProspectDetailPage({
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospect={prospect}
+        readOnly={workspace.readOnly}
+        engineOwner={engineOwner}
+        linkedNotes={linkedNotes && !linkedNotes.setupRequired ? linkedNotes.data : []}
         spanish={language === "es"}
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />

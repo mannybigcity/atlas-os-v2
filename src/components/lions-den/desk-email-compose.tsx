@@ -98,7 +98,10 @@ export function DeskEmailCompose({
             className="mt-3 flex w-full max-w-xl flex-wrap items-center gap-1.5 rounded-lg border border-[#ece7d8] bg-[#fbfaf4] px-2.5 py-1.5"
             data-next-message-engine
           >
-            <p className="mr-1 text-[11px] font-semibold text-[#5c4a12]">{engine.jobLabel}</p>
+            <p className="mr-1 text-[11px] font-semibold text-[#5c4a12]" data-engine-label>
+              {spanish ? "Pregúntale a Amanda" : "Ask Amanda"}
+              <span className="font-medium text-[#8a6a12]"> · {engine.jobLabel}</span>
+            </p>
             <button
               className="rounded-full border border-[#d5d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#071b42]"
               data-engine-chip="shorter"

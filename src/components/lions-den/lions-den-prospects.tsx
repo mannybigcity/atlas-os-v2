@@ -19,6 +19,7 @@ type LionsDenProspectsBoardProps = {
   workspaceSlug?: string;
   notice?: string;
   spanish: boolean;
+  readOnly?: boolean;
 };
 
 export function LionsDenProspectsBoard({
@@ -28,9 +29,10 @@ export function LionsDenProspectsBoard({
   workspaceSlug,
   notice,
   spanish,
+  readOnly = false,
 }: LionsDenProspectsBoardProps) {
   const listHref = lionsDenHref("/client/prospects", previewOrgSlug, workspaceSlug);
-  const canEdit = Boolean(organizationId);
+  const canEdit = Boolean(organizationId) && !readOnly;
   const active = prospects.filter((item) => item.stage !== "won" && item.stage !== "lost");
   const closed = prospects.filter((item) => item.stage === "won" || item.stage === "lost");
 
@@ -93,6 +95,7 @@ export function LionsDenProspectsBoard({
             organizationId={organizationId}
             previewOrgSlug={previewOrgSlug}
             prospects={active}
+            readOnly={readOnly}
             spanish={spanish}
             workspaceSlug={workspaceSlug}
           />
@@ -106,6 +109,7 @@ export function LionsDenProspectsBoard({
                 organizationId={organizationId}
                 previewOrgSlug={previewOrgSlug}
                 prospects={closed}
+                readOnly={readOnly}
                 spanish={spanish}
                 workspaceSlug={workspaceSlug}
               />
@@ -124,6 +128,7 @@ function ProspectList({
   previewOrgSlug,
   workspaceSlug,
   spanish,
+  readOnly = false,
 }: {
   prospects: OrganizationOpportunity[];
   listHref: string;
@@ -131,6 +136,7 @@ function ProspectList({
   previewOrgSlug?: string;
   workspaceSlug?: string;
   spanish: boolean;
+  readOnly?: boolean;
 }) {
   if (prospects.length === 0) {
     return (
@@ -191,7 +197,7 @@ function ProspectList({
                   <ProspectContactActions
                     compact
                     compose={
-                      organizationId
+                      organizationId && !readOnly
                         ? {
                             detailHref: href,
                             fromEmail: "",
