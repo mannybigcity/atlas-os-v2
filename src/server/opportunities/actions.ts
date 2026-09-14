@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isSisOrganization } from "@/lib/client-portal/identity";
 import { followUpSentCheckIn } from "@/lib/lions-den/follow-up-drafts";
 import { isSuperAdminEmail } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
@@ -60,10 +59,6 @@ async function requireAfeFollowUpOperator(organizationId: string, formData: Form
 
   if (!organization) {
     redirect(followUpReturnPath(formData, "missing_organization"));
-  }
-
-  if (isSisOrganization(organization)) {
-    redirect(followUpReturnPath(formData, "sis_blocked"));
   }
 
   if (!isSuperAdminEmail(user.email)) {

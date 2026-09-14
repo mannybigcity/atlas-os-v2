@@ -10,6 +10,7 @@ import {
   nextMessage,
   type NextMessageInput,
 } from "./next-message-engine.ts";
+import { canShowFollowUpDraftControls } from "./follow-up-drafts.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const readRepo = (rel: string) => readFileSync(join(root, rel), "utf8");
@@ -221,6 +222,14 @@ test("compose strip has the four chips and chips never send", () => {
   assert.match(page, /canShowFollowUpDraftControls/);
   assert.match(page, /getOrganizationNotes/);
   assert.match(page, /nextMessage|notesByRecordId|linkedNotes/);
+  assert.match(page, /allowDraftControls/);
+  assert.equal(
+    canShowFollowUpDraftControls({
+      name: "SIS Custom Creations",
+      slug: "sis-diy-big-complete-showcase",
+    }),
+    true,
+  );
   assert.doesNotMatch(page, /atlas-staff-pane/);
 
   assert.doesNotMatch(staff, /data-next-message-engine|data-engine-chip/);

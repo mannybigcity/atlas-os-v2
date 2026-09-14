@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isSisOrganization } from "@/lib/client-portal/identity";
 import { amandaSequenceSteps, canOfferAmandaSequence } from "@/lib/lions-den/amanda-outreach";
 import { isSuperAdminEmail } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
@@ -43,7 +42,6 @@ async function requireAmandaOperator(organizationId: string, formData: FormData)
     .eq("id", organizationId)
     .maybeSingle();
   if (!organization) redirect(returnPath(formData, "missing_organization"));
-  if (isSisOrganization(organization)) redirect(returnPath(formData, "sis_blocked"));
 
   if (!isSuperAdminEmail(user.email)) {
     const memberships = await getUserMemberships(user.id);

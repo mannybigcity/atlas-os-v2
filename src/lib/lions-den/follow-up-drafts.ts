@@ -1,4 +1,3 @@
-import { isSisOrganization } from "../client-portal/identity.ts";
 import { isSampleLabeledSeedText } from "./live-desk.ts";
 import { prospectWhatsAppHref } from "./prospect-places.ts";
 import { deskDateInDays, deskWeekday } from "../desk-time.ts";
@@ -13,11 +12,11 @@ export const FOLLOW_UP_CHECK_IN_DAYS = 3;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Follow-up compose, Next Message Engine, and Amanda cards. Any signed-in org including SIS. */
 export function canShowFollowUpDraftControls(
   organization?: { name?: string | null; slug?: string | null } | null,
 ) {
-  if (!organization) return false;
-  return !isSisOrganization(organization);
+  return Boolean(organization);
 }
 
 export function followUpDraftHasVisibleSampleLabel(
