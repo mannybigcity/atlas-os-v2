@@ -434,6 +434,8 @@ export function prospectNoticeCopy(status: string | undefined, spanish: boolean)
       return spanish ? "Cambios guardados." : "Changes saved.";
     case "deleted":
       return spanish ? "Prospecto eliminado." : "Prospect deleted.";
+    case "client_deleted":
+      return spanish ? "Cliente eliminado." : "Client deleted.";
     case "won":
       return spanish
         ? "Ganado. Ahora aparece en Clientes. En tres días el escritorio te recuerda pedir la reseña."

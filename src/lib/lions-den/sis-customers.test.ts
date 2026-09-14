@@ -5,7 +5,14 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { readSisCustomerPayPalFields } from "./sis-customers.ts";
 import { visibleLionsDenBoards } from "./client-hub.ts";
-import { countWonOpportunities, wonOpportunityToDeskClient } from "./desk-clients.ts";
+import {
+  countWonOpportunities,
+  deskClientRowCopy,
+  isArchivedDeskClient,
+  withArchivedDeskClient,
+  wonOpportunityToDeskClient,
+} from "./desk-clients.ts";
+import { prospectNoticeCopy } from "./prospect-stages.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -80,6 +87,16 @@ test("Clients page loads SIS customers or won opportunities and opens a client r
   assert.match(board, /No clients yet/);
   assert.match(board, /Click a client to edit, call, or email/);
   assert.match(board, /data-client-row/);
+  assert.match(board, /data-client-edit/);
+  assert.match(board, /data-client-delete/);
+  assert.match(board, /data-client-row-actions/);
+  assert.match(board, /readOnly/);
+  assert.match(board, /deleteSisCustomer/);
+  assert.match(board, /deleteProspect/);
+  assert.doesNotMatch(board, /canShowFollowUpDraftControls/);
+  assert.doesNotMatch(board, /sis_blocked/);
+  assert.doesNotMatch(board, /isSisOrganization/);
+  assert.doesNotMatch(board, /twilio|Twilio|api\.resend\.com/i);
   assert.match(hub, /visibleLionsDenBoards/);
   assert.match(overview, /countWonOpportunities/);
   assert.match(overview, /href\("\/client\/clients"\)/);
@@ -131,4 +148,60 @@ test("won opportunities map to the interim Clients list without mixing SIS field
   );
   assert.equal(countWonOpportunities([{ stage: "won" }, { stage: "researching" }, { stage: "won" }]), 2);
   assert.equal(countWonOpportunities([]), 0);
+});
+
+test("Clients rows expose Edit and Delete for every desk, including SIS", () => {
+  const board = readFileSync(join(root, "src/components/lions-den/lions-den-clients.tsx"), "utf8");
+  const page = readFileSync(join(root, "src/app/client/clients/page.tsx"), "utf8");
+  const detail = readFileSync(join(root, "src/app/client/clients/[id]/page.tsx"), "utf8");
+  const confirm = readFileSync(join(root, "src/components/lions-den/confirm-submit-button.tsx"), "utf8");
+  const sisActions = readFileSync(join(root, "src/server/sis-workspace/actions.ts"), "utf8");
+  const sisQueries = readFileSync(join(root, "src/server/sis-workspace/queries.ts"), "utf8");
+  const prospectActions = readFileSync(join(root, "src/server/opportunities/prospect-actions.ts"), "utf8");
+
+  const en = deskClientRowCopy(false);
+  const es = deskClientRowCopy(true);
+  assert.equal(en.edit, "Edit");
+  assert.equal(en.delete, "Delete");
+  assert.match(en.deleteConfirm("Amanda White"), /Remove Amanda White from this desk/);
+  assert.match(en.deleteConfirm("Amanda White"), /does not contact anyone/);
+  assert.equal(es.edit, "Editar");
+  assert.equal(es.delete, "Eliminar");
+  assert.match(es.deleteConfirm("Amanda White"), /¿Eliminar a Amanda White/);
+  assert.match(es.deleteConfirm("Amanda White"), /no contacta a nadie/);
+  assert.equal(prospectNoticeCopy("client_deleted", false), "Client deleted.");
+  assert.equal(prospectNoticeCopy("client_deleted", true), "Cliente eliminado.");
+
+  assert.equal(isArchivedDeskClient({}), false);
+  assert.equal(isArchivedDeskClient({ archived_at: "  " }), false);
+  assert.equal(isArchivedDeskClient({ archived_at: "2026-09-14T00:00:00.000Z" }), true);
+  const archived = withArchivedDeskClient({ last_date: "2026-03-18" }, "2026-09-14T12:00:00.000Z");
+  assert.equal(archived.archived_at, "2026-09-14T12:00:00.000Z");
+  assert.equal(archived.last_date, "2026-03-18");
+  assert.equal(isArchivedDeskClient(archived), true);
+
+  assert.match(board, /data-client-edit/);
+  assert.match(board, /data-client-delete/);
+  assert.match(board, /ConfirmSubmitButton/);
+  assert.match(board, /!readOnly/);
+  assert.match(page, /readOnly=\{workspace\.readOnly\}/);
+  assert.match(page, /notice=\{params\?\.prospect\}/);
+  assert.doesNotMatch(board, /canShowFollowUpDraftControls/);
+  assert.doesNotMatch(board, /sis_blocked/);
+  assert.doesNotMatch(sisActions, /sis_blocked/);
+  assert.doesNotMatch(sisActions.slice(sisActions.indexOf("export async function deleteSisCustomer")), /isSisOrganization/);
+  assert.match(sisActions, /export async function deleteSisCustomer/);
+  assert.match(sisActions, /withArchivedDeskClient/);
+  assert.match(sisActions, /client_deleted/);
+  assert.match(sisQueries, /isArchivedDeskClient/);
+  assert.match(confirm, /window\.confirm/);
+  assert.match(detail, /deleteSisCustomer/);
+  assert.match(detail, /data-client-delete/);
+  assert.match(detail, /Sí, eliminar/);
+  assert.match(detail, /Yes, delete/);
+  assert.match(prospectActions, /client_deleted/);
+  assert.match(prospectActions, /export async function deleteProspect/);
+  assert.doesNotMatch(board, /twilio|Twilio/);
+  assert.doesNotMatch(sisActions, /twilio|Twilio|api\.resend\.com/);
+  assert.doesNotMatch(prospectActions, /twilio|Twilio|api\.resend\.com/);
 });

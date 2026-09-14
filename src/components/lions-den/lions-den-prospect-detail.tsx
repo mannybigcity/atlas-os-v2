@@ -33,6 +33,7 @@ type LionsDenProspectDetailProps = {
   payLink?: string | null;
   /** From ?quote=: the quote the owner just wrote, prefilled into the compose box. */
   openQuoteId?: string;
+  readOnly?: boolean;
 };
 
 export function LionsDenProspectDetail({
@@ -48,6 +49,7 @@ export function LionsDenProspectDetail({
   businessName,
   payLink,
   openQuoteId,
+  readOnly = false,
 }: LionsDenProspectDetailProps) {
   const places = prospectPlacesCard(prospect);
   const clientRecord = variant === "client";
@@ -283,7 +285,7 @@ export function LionsDenProspectDetail({
         <p className="mt-2 text-sm leading-6 text-[#33415c]">{ownerNotes || prospect.researchSummary}</p>
       </div>
 
-      {scope ? (
+      {scope && !readOnly ? (
         <details className="mt-4 rounded-2xl border border-[#ece7d8] p-4" data-prospect-edit>
           <summary className="cursor-pointer text-sm font-semibold text-[#071b42]">
             {clientRecord
@@ -337,7 +339,7 @@ export function LionsDenProspectDetail({
         )}
       </div>
 
-      {scope ? (
+      {scope && !readOnly ? (
         <div className="mt-4">
           <ProspectDeleteForm {...scope} prospect={prospect} spanish={spanish} />
         </div>

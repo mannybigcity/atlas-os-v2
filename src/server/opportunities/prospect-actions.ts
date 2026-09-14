@@ -51,7 +51,8 @@ function usesClientRecord(formData: FormData) {
 }
 
 function listPath(formData: FormData, status?: string) {
-  return scopedPath(usesClientRecord(formData) ? "/client/clients" : "/client/prospects", formData, status);
+  const resolved = status === "deleted" && usesClientRecord(formData) ? "client_deleted" : status;
+  return scopedPath(usesClientRecord(formData) ? "/client/clients" : "/client/prospects", formData, resolved);
 }
 
 function detailPath(opportunityId: string, formData: FormData, status?: string) {

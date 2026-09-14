@@ -1,9 +1,12 @@
 import Link from "next/link";
-import type { DeskClient } from "@/lib/lions-den/desk-clients";
+import { deskClientRowCopy, type DeskClient } from "@/lib/lions-den/desk-clients";
 import { lastDeskContactLabel, sumJobValues } from "@/lib/lions-den/prospect-stages";
 import { trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import { SampleBadge } from "@/components/lions-den/sample-badge";
-import { ProspectContactActions } from "@/components/lions-den/prospect-controls";
+import { ConfirmSubmitButton } from "@/components/lions-den/confirm-submit-button";
+import { ProspectContactActions, ProspectNotice } from "@/components/lions-den/prospect-controls";
+import { deleteProspect } from "@/server/opportunities/prospect-actions";
+import { deleteSisCustomer } from "@/server/sis-workspace/actions";
 
 type LionsDenClientsBoardProps = {
   customers: DeskClient[];
@@ -15,6 +18,8 @@ type LionsDenClientsBoardProps = {
   previewOrgSlug?: string;
   workspaceSlug?: string;
   sisCustomers?: boolean;
+  readOnly?: boolean;
+  notice?: string;
 };
 
 function formatMoney(value: number | null) {
@@ -54,8 +59,15 @@ export function LionsDenClientsBoard({
   previewOrgSlug,
   workspaceSlug,
   sisCustomers,
+  readOnly = false,
+  notice,
 }: LionsDenClientsBoardProps) {
   const wonTotal = sumJobValues(customers.filter((customer) => !customer.sample));
+  const rowCopy = deskClientRowCopy(spanish);
+  const pillClass =
+    "inline-flex cursor-pointer items-center rounded-full bg-[#071b42] px-3 py-1 text-xs font-semibold !text-white transition hover:bg-[#0a2a5c] hover:!text-white";
+  const deleteClass =
+    "inline-flex cursor-pointer items-center rounded-full bg-rose-700 px-3 py-1 text-xs font-semibold !text-white transition hover:bg-rose-800 hover:!text-white";
   return (
     <section className="rounded-[1.6rem] border border-[#d8c27a] bg-white p-5 sm:p-6">
       <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#f5b932]">
@@ -66,9 +78,10 @@ export function LionsDenClientsBoard({
       </h2>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-[#33415c]">
         {spanish
-          ? "Haz clic en un cliente para editar, llamar o escribir. Atlas no contacta a nadie hasta que tú lo hagas."
-          : "Click a client to edit, call, or email. Atlas does not contact anyone until you do."}
+          ? "Haz clic en un cliente para editar, llamar o escribir. Usa Editar o Eliminar en la fila. Atlas no contacta a nadie hasta que tú lo hagas."
+          : "Click a client to edit, call, or email. Use Edit or Delete on the row. Atlas does not contact anyone until you do."}
       </p>
+      <ProspectNotice spanish={spanish} status={notice} />
       {wonTotal > 0 ? (
         <p className="mt-3 inline-flex items-baseline gap-2 rounded-full bg-[#fff8e6] px-3 py-1 text-sm text-[#071b42]" data-won-total>
           <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#8a6a12]">
@@ -163,6 +176,39 @@ export function LionsDenClientsBoard({
                             }}
                             spanish={spanish}
                           />
+                          {!readOnly ? (
+                            <div className="mt-2 flex flex-wrap items-center gap-2" data-client-row-actions>
+                              <Link className={pillClass} data-client-edit href={href}>
+                                {rowCopy.edit}
+                              </Link>
+                              <form action={sisCustomers ? deleteSisCustomer : deleteProspect}>
+                                <input name="organizationId" type="hidden" value={organizationId} />
+                                {sisCustomers ? (
+                                  <input name="customerId" type="hidden" value={customer.id} />
+                                ) : (
+                                  <>
+                                    <input name="opportunityId" type="hidden" value={customer.id} />
+                                    <input name="clientRecord" type="hidden" value="1" />
+                                  </>
+                                )}
+                                {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+                                {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+                                <ConfirmSubmitButton
+                                  className={deleteClass}
+                                  confirmMessage={rowCopy.deleteConfirm(customer.displayName)}
+                                  data-client-delete
+                                >
+                                  {rowCopy.delete}
+                                </ConfirmSubmitButton>
+                              </form>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : href && !readOnly ? (
+                        <div className="relative z-10 mt-2 flex flex-wrap items-center gap-2" data-client-row-actions>
+                          <Link className={pillClass} data-client-edit href={href}>
+                            {rowCopy.edit}
+                          </Link>
                         </div>
                       ) : null}
                     </td>

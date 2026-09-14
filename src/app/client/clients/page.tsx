@@ -24,6 +24,7 @@ type ClientsPageProps = {
     lang?: string;
     previewOrg?: string;
     workspace?: string;
+    prospect?: string;
   }>;
 };
 
@@ -64,8 +65,10 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
         }
         customers={customers}
         fromEmail={workspace.user.email ?? ""}
+        notice={params?.prospect}
         organizationId={organization?.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
+        readOnly={workspace.readOnly}
         setupRequired={setupRequired}
         sisCustomers={sisDesk}
         spanish={language === "es"}

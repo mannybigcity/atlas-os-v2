@@ -128,6 +128,9 @@ test("prospect editor validation mirrors the database constraints", () => {
 });
 
 test("notices are plain and repeat that Atlas did not contact anyone when it matters", () => {
+  assert.equal(prospectNoticeCopy("deleted", false), "Prospect deleted.");
+  assert.equal(prospectNoticeCopy("client_deleted", false), "Client deleted.");
+  assert.equal(prospectNoticeCopy("client_deleted", true), "Cliente eliminado.");
   assert.match(prospectNoticeCopy("created", false) ?? "", /did not call/);
   assert.match(prospectNoticeCopy("won", true) ?? "", /Clientes/);
   assert.equal(prospectNoticeCopy(undefined, false), null);

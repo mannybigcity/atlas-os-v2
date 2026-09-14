@@ -7,6 +7,8 @@ import { getVerifiedUser } from "@/server/auth/guards";
 import { isSuperAdminEmail } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { isSisOrganization } from "@/lib/client-portal/identity";
+import { isArchivedDeskClient, withArchivedDeskClient } from "@/lib/lions-den/desk-clients";
+import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
 import { getOrganizationsForSuperAdmin, getUserMemberships } from "@/server/organizations/queries";
 
 const stages = ["new_inquiry", "contact_within_24_hours", "qualified", "quote_sent", "deposit_pending", "booked", "prep_in_progress", "party_complete", "diy_subscription_offered", "won_follow_up"] as const;
@@ -92,6 +94,52 @@ export async function updateSisCustomer(formData: FormData) {
   if (workspace) params.set("workspace", workspace);
   params.set("prospect", "updated");
   redirect(`/client/clients/${customerId}?${params.toString()}`);
+}
+
+function clientsListPath(formData: FormData, status: string) {
+  const params = new URLSearchParams();
+  const previewOrg = text(formData, "previewOrg", 80);
+  const workspace = text(formData, "workspace", 80);
+  if (previewOrg) params.set("previewOrg", previewOrg);
+  if (workspace) params.set("workspace", workspace);
+  params.set("prospect", status);
+  return `/client/clients?${params.toString()}`;
+}
+
+/**
+ * Hides a SIS client from the Clients board. Related party rows stay put.
+ * Available on every SIS sign-in.
+ */
+export async function deleteSisCustomer(formData: FormData) {
+  const organizationId = text(formData, "organizationId", 36);
+  const customerId = text(formData, "customerId", 80);
+  formData.set("clientRecord", "1");
+  const { supabase } = await requireProspectOwner(organizationId, formData);
+  if (!customerId) redirect(clientsListPath(formData, "invalid"));
+
+  const { data: existing } = await supabase
+    .from("organization_sis_customers")
+    .select("id, metadata")
+    .eq("id", customerId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  if (!existing || isArchivedDeskClient(existing.metadata)) {
+    redirect(clientsListPath(formData, "missing"));
+  }
+
+  const { error } = await supabase
+    .from("organization_sis_customers")
+    .update({ metadata: withArchivedDeskClient(existing.metadata) })
+    .eq("id", customerId)
+    .eq("organization_id", organizationId);
+  if (error) {
+    console.error("Atlas delete SIS client failed", error);
+    redirect(clientsListPath(formData, "failed"));
+  }
+
+  revalidatePath("/client/clients");
+  revalidatePath(`/client/clients/${customerId}`);
+  redirect(clientsListPath(formData, "client_deleted"));
 }
 
 export async function completeSisPartyTask(formData: FormData) {

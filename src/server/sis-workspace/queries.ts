@@ -1,3 +1,4 @@
+import { isArchivedDeskClient } from "@/lib/lions-den/desk-clients";
 import { readSisCustomerPayPalFields } from "@/lib/lions-den/sis-customers";
 import { readLastDeskContact, type DeskContactStamp } from "@/lib/lions-den/prospect-stages";
 import { createClient } from "@/lib/supabase/server";
@@ -265,8 +266,13 @@ export async function getSisCustomer(
     return { data: null, setupRequired: true, error: error.message };
   }
 
+  const customer = data ? normalizeCustomer(data as SisCustomerRow) : null;
+  if (customer && isArchivedDeskClient(customer.metadata)) {
+    return { data: null, setupRequired: false, error: null };
+  }
+
   return {
-    data: data ? normalizeCustomer(data as SisCustomerRow) : null,
+    data: customer,
     setupRequired: false,
     error: null,
   };
@@ -292,7 +298,9 @@ export async function getSisCustomers(
   }
 
   return {
-    data: ((data ?? []) as SisCustomerRow[]).map(normalizeCustomer),
+    data: ((data ?? []) as SisCustomerRow[])
+      .map(normalizeCustomer)
+      .filter((customer) => !isArchivedDeskClient(customer.metadata)),
     setupRequired: false,
     error: null,
   };
