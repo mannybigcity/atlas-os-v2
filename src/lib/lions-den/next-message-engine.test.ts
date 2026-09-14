@@ -5,11 +5,15 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
   amandaClose,
+  buildDeskNextMessage,
   concatNotesText,
+  deskNotesText,
   latestTimestamp,
   nextMessage,
+  nextMessageOwnerFromBusiness,
   type NextMessageInput,
 } from "./next-message-engine.ts";
+import { canOfferAmandaSequence } from "./amanda-outreach.ts";
 import { canShowFollowUpDraftControls } from "./follow-up-drafts.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -206,16 +210,18 @@ test("compose strip has the four chips and chips never send", () => {
   assert.match(compose, /\{spanish \? "Más suave" : "Softer"\}/);
   assert.match(compose, /\{spanish \? "Pedir el sí" : "Ask for the yes"\}/);
   assert.match(compose, /\{spanish \? "2 más" : "2 more"\}/);
+  assert.match(compose, /\{spanish \? "Pregúntale a Amanda" : "Ask Amanda"\}/);
   assert.match(compose, /engine\?: NextMessageResult/);
   assert.doesNotMatch(compose, /api\.resend\.com/);
   assert.doesNotMatch(compose, /twilio|sms:/i);
   assert.doesNotMatch(compose, /data-engine-chip[\s\S]{0,200}type="submit"/);
   assert.match(compose, /type="button"/);
 
-  assert.match(board, /nextMessage\(/);
+  assert.match(board, /buildDeskNextMessage\(/);
   assert.match(board, /DeskEmailCompose/);
   assert.match(board, /AmandaSequenceCard/);
   assert.match(board, /allowDraftControls/);
+  assert.match(board, /showDraftControls = allowDraftControls && !readOnly/);
   assert.doesNotMatch(board, /75\s*\/\s*25|template rail|atlas-staff-pane/);
   assert.doesNotMatch(board, /api\.resend\.com|twilio/i);
 
@@ -223,6 +229,7 @@ test("compose strip has the four chips and chips never send", () => {
   assert.match(page, /getOrganizationNotes/);
   assert.match(page, /nextMessage|notesByRecordId|linkedNotes/);
   assert.match(page, /allowDraftControls/);
+  assert.match(page, /readOnly=\{workspace\.readOnly\}/);
   assert.equal(
     canShowFollowUpDraftControls({
       name: "SIS Custom Creations",
@@ -233,4 +240,130 @@ test("compose strip has the four chips and chips never send", () => {
   assert.doesNotMatch(page, /atlas-staff-pane/);
 
   assert.doesNotMatch(staff, /data-next-message-engine|data-engine-chip/);
+});
+
+test("customer records get a client follow-up or deposit ask, never an invented first hello", () => {
+  const client = nextMessage(
+    base({
+      opportunityType: "customer",
+      stage: "contacted",
+      lastTouchAt: "2026-09-13T12:00:00.000Z",
+      notesText: "Birthday paint party on Saturday.",
+    }),
+  );
+  assert.equal(client.job, "client_follow");
+  assert.equal(client.jobLabel, "Client follow-up");
+  assert.match(client.body, /check in/);
+  assert.match(client.body, /Amanda, on behalf of Cypress Plumbing/);
+  assert.doesNotMatch(client.body, /introduce the work we do/);
+  assert.doesNotMatch(client.body, /kid|hijo|\$2,400/i);
+
+  const deposit = nextMessage(
+    base({
+      opportunityType: "customer",
+      stage: "contacted",
+      lastTouchAt: "2026-09-13T12:00:00.000Z",
+      notesText: "Party booked. Deposit still due.",
+    }),
+  );
+  assert.equal(deposit.job, "deposit_ask");
+  assert.equal(deposit.jobLabel, "Ask for the deposit");
+  assert.match(deposit.body, /deposit we need to hold the date/);
+  assert.doesNotMatch(deposit.body, /\$1,850|\$2,400/);
+
+  const spanishClient = nextMessage(
+    base({
+      spanish: true,
+      opportunityType: "customer",
+      stage: "contacted",
+      lastTouchAt: "2026-09-13T12:00:00.000Z",
+      notesText: "Fiesta el sábado.",
+    }),
+  );
+  assert.equal(spanishClient.jobLabel, "Seguimiento con el cliente");
+  assert.match(spanishClient.body, /Amanda, de parte de Cypress Plumbing/);
+
+  const emptyClient = nextMessage(base({ opportunityType: "customer" }));
+  assert.equal(emptyClient.job, "need_one_fact");
+  assert.match(emptyClient.body, /Add a note on this client/);
+  assert.doesNotMatch(emptyClient.body, /Hi Dana|Amanda, on behalf of/);
+});
+
+test("Approve-3 drip stays B2B-only while Clients compose gets the engine", () => {
+  const clientsPage = readRepo("src/app/client/clients/[id]/page.tsx");
+  const clientsBoard = readRepo("src/components/lions-den/lions-den-clients.tsx");
+  const prospectDetail = readRepo("src/components/lions-den/lions-den-prospect-detail.tsx");
+  const prospectControls = readRepo("src/components/lions-den/prospect-controls.tsx");
+  const followUp = readRepo("src/components/lions-den/lions-den-follow-up.tsx");
+  const party = readRepo("src/app/client/sis/party/[id]/page.tsx");
+
+  assert.match(clientsPage, /buildDeskNextMessage\(/);
+  assert.match(clientsPage, /opportunityType: "customer"/);
+  assert.match(clientsPage, /engine,/);
+  assert.match(clientsPage, /workspace\.readOnly/);
+  assert.doesNotMatch(clientsPage, /AmandaSequenceCard|canOfferAmandaSequence/);
+  assert.doesNotMatch(clientsPage, /api\.resend\.com|twilio/i);
+
+  assert.match(clientsBoard, /readOnly\s*\?\s*undefined/);
+  assert.doesNotMatch(clientsBoard, /AmandaSequenceCard|canOfferAmandaSequence/);
+
+  assert.match(prospectDetail, /buildDeskNextMessage\(/);
+  assert.match(prospectDetail, /engine,/);
+  assert.match(prospectDetail, /organizationId && !readOnly/);
+  assert.doesNotMatch(prospectDetail, /AmandaSequenceCard|canOfferAmandaSequence/);
+
+  assert.match(prospectControls, /engine=\{compose\.engine \?\? null\}/);
+  assert.doesNotMatch(prospectControls, /AmandaSequenceCard/);
+  assert.doesNotMatch(prospectControls, /api\.resend\.com|twilio/i);
+
+  assert.match(followUp, /canOfferAmandaSequence/);
+  assert.match(followUp, /AmandaSequenceCard/);
+  assert.doesNotMatch(party, /DeskEmailCompose|AmandaSequenceCard|nextMessage|buildDeskNextMessage/);
+
+  assert.equal(
+    canOfferAmandaSequence({
+      opportunityType: "customer",
+      contactEmail: "host@example.com",
+      stage: "contacted",
+      metadata: {},
+    }),
+    false,
+  );
+  assert.equal(
+    canOfferAmandaSequence({
+      opportunityType: "partner",
+      contactEmail: "office@cypresspm.com",
+      stage: "qualified",
+      metadata: {},
+    }),
+    true,
+  );
+
+  const owner = nextMessageOwnerFromBusiness({
+    ownerName: "Manny Reyes",
+    businessName: "SIS Custom Creations",
+    ownerPhone: null,
+  });
+  assert.deepEqual(owner, {
+    ownerFirstName: "Manny",
+    businessName: "SIS Custom Creations",
+    ownerPhone: null,
+  });
+  const fromNotes = deskNotesText({
+    recordNotes: "Wants a Saturday party.",
+    recordNotesAt: "2026-09-01T00:00:00.000Z",
+  });
+  const drafted = buildDeskNextMessage({
+    spanish: false,
+    owner,
+    nowIso: "2026-09-14T15:00:00.000Z",
+    prospectName: "Amanda White",
+    prospectCompany: null,
+    stage: "contacted",
+    opportunityType: "customer",
+    lastTouchAt: "2026-09-13T15:00:00.000Z",
+    notesText: fromNotes,
+  });
+  assert.equal(drafted.job, "client_follow");
+  assert.match(drafted.body, /Amanda, on behalf of SIS Custom Creations\.$/m);
 });

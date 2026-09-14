@@ -22,9 +22,11 @@ import {
 } from "@/lib/lions-den/follow-up-drafts";
 import { formatUsd, latestDeskQuote } from "@/lib/lions-den/desk-quote";
 import {
-  concatNotesText,
-  latestTimestamp,
-  nextMessage,
+  buildDeskNextMessage,
+  deskLastTouchAt,
+  deskNotesText,
+  type DeskLinkedNote,
+  type NextMessageOwner,
   type NextMessageResult,
 } from "@/lib/lions-den/next-message-engine";
 import { prospectDetailPath, publishedPlacePhone } from "@/lib/lions-den/prospect-places";
@@ -47,18 +49,9 @@ export type FollowUpAmandaContext = {
   sequences: Record<string, AmandaSequenceRecord>;
 };
 
-export type FollowUpEngineOwner = {
-  ownerFirstName: string;
-  businessName: string;
-  ownerPhone: string | null;
-};
+export type FollowUpEngineOwner = NextMessageOwner;
 
-export type FollowUpLinkedNote = {
-  recordId: string | null;
-  createdAt: string;
-  title: string;
-  body: string | null;
-};
+export type FollowUpLinkedNote = DeskLinkedNote;
 
 type LionsDenFollowUpBoardProps = {
   prospects: OrganizationOpportunity[];
@@ -75,6 +68,7 @@ type LionsDenFollowUpBoardProps = {
   workspaceSlug?: string;
   engineOwner?: FollowUpEngineOwner | null;
   linkedNotes?: FollowUpLinkedNote[];
+  readOnly?: boolean;
 };
 
 function amandaInfoFor(
@@ -112,39 +106,6 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(value));
 }
 
-function notesTextFor(item: OrganizationOpportunity, linkedNotes: FollowUpLinkedNote[]) {
-  const pieces = [
-    ...linkedNotes
-      .filter((note) => note.recordId === item.id)
-      .map((note) => ({
-        createdAt: note.createdAt,
-        text: [note.title, note.body].filter((part) => String(part ?? "").trim()).join(" — "),
-      })),
-  ];
-  const ownerNotes = typeof item.metadata?.owner_notes === "string" ? item.metadata.owner_notes : "";
-  if (ownerNotes.trim()) {
-    pieces.push({ createdAt: item.createdAt, text: ownerNotes });
-  }
-  for (const event of item.events) {
-    if (event.eventType !== "note_added") continue;
-    pieces.push({ createdAt: event.createdAt, text: event.body || event.summary });
-  }
-  return concatNotesText(pieces);
-}
-
-function lastTouchAtFor(item: OrganizationOpportunity) {
-  const contact = readLastDeskContact(item.metadata);
-  const ownerContacted =
-    typeof item.metadata?.owner_contacted_at === "string" ? item.metadata.owner_contacted_at : null;
-  return latestTimestamp([
-    contact?.at,
-    ownerContacted,
-    ...item.events
-      .filter((event) => event.eventType === "contacted" || event.eventType === "reply_received")
-      .map((event) => event.createdAt),
-  ]);
-}
-
 function quoteAmountFor(item: OrganizationOpportunity) {
   const quote = latestDeskQuote(item.metadata);
   if (!quote || quote.status === "declined") return null;
@@ -160,18 +121,27 @@ function nextMessageFor(
     nowIso: string;
   },
 ): NextMessageResult {
-  return nextMessage({
+  const contact = readLastDeskContact(item.metadata);
+  return buildDeskNextMessage({
     spanish: input.spanish,
-    ownerFirstName: input.engineOwner.ownerFirstName,
-    businessName: input.engineOwner.businessName,
-    ownerPhone: input.engineOwner.ownerPhone,
+    owner: input.engineOwner,
+    nowIso: input.nowIso,
     prospectName: item.contactName || item.name,
     prospectCompany: item.name,
     stage: item.stage,
     opportunityType: item.opportunityType,
-    lastTouchAt: lastTouchAtFor(item),
-    nowIso: input.nowIso,
-    notesText: notesTextFor(item, input.linkedNotes),
+    lastTouchAt: deskLastTouchAt({
+      lastContactAt: contact?.at,
+      ownerContactedAt:
+        typeof item.metadata?.owner_contacted_at === "string" ? item.metadata.owner_contacted_at : null,
+      events: item.events,
+    }),
+    notesText: deskNotesText({
+      linkedNotes: input.linkedNotes.filter((note) => note.recordId === item.id),
+      ownerNotes: typeof item.metadata?.owner_notes === "string" ? item.metadata.owner_notes : "",
+      ownerNotesAt: item.createdAt,
+      events: item.events,
+    }),
     quoteAmount: quoteAmountFor(item),
   });
 }
@@ -190,8 +160,10 @@ export function LionsDenFollowUpBoard({
   workspaceSlug,
   engineOwner = null,
   linkedNotes = [],
+  readOnly = false,
 }: LionsDenFollowUpBoardProps) {
   const nowIso = new Date().toISOString();
+  const showDraftControls = allowDraftControls && !readOnly;
   const items: DeskFollowUpItem[] = [
     ...prospects
       .filter((item) => item.nextActionDue)
@@ -201,7 +173,7 @@ export function LionsDenFollowUpBoard({
         detail: item.nextAction,
         dueAt: item.nextActionDue!,
         href: prospectDetailPath(item.id),
-        draftControls: allowDraftControls
+        draftControls: showDraftControls
           ? {
               opportunityId: item.id,
               organizationId: item.organizationId,

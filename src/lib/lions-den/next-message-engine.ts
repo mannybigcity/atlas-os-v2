@@ -9,6 +9,8 @@ export type NextMessageJob =
   | "quote_follow"
   | "book_or_close"
   | "review_referral"
+  | "client_follow"
+  | "deposit_ask"
   | "need_one_fact";
 
 export type NextMessageInput = {
@@ -44,6 +46,25 @@ const QUIET_AFTER_DAYS = 3;
 
 const INTEREST_PATTERN =
   /\b(yes|sí|interested|interesad[oa]s?|ready|list[oa]s?|book|agend|schedule|quote|cotiz|price|precio|when can|cu[aá]ndo|call me|ll[aá]mame|wants? to|quiere[ns]?|go ahead|adelante|let'?s do it|h[aá]ganlo)\b/i;
+
+const DEPOSIT_PATTERN = /\b(deposit|anticipo|down payment|seña|senia)\b/i;
+
+export type NextMessageOwner = {
+  ownerFirstName: string;
+  businessName: string;
+  ownerPhone: string | null;
+};
+
+export type DeskLinkedNote = {
+  recordId?: string | null;
+  createdAt: string;
+  title: string;
+  body: string | null;
+};
+
+export function isCustomerRecord(opportunityType: string | null | undefined) {
+  return String(opportunityType ?? "").trim() === "customer";
+}
 
 export function concatNotesText(
   notes: Array<{ createdAt: string; text: string }>,
@@ -85,6 +106,18 @@ function firstName(value: string | null | undefined) {
   const clean = String(value ?? "").trim();
   if (!clean) return "";
   return clean.split(/\s+/)[0] ?? "";
+}
+
+export function nextMessageOwnerFromBusiness(business: {
+  ownerName?: string | null;
+  businessName: string;
+  ownerPhone?: string | null;
+}): NextMessageOwner {
+  return {
+    ownerFirstName: firstName(business.ownerName),
+    businessName: business.businessName,
+    ownerPhone: String(business.ownerPhone ?? "").trim() || null,
+  };
 }
 
 function who(input: NextMessageInput) {
@@ -131,6 +164,17 @@ function noteImpliesInterest(notesText: string) {
   return INTEREST_PATTERN.test(String(notesText ?? ""));
 }
 
+function noteImpliesDeposit(notesText: string) {
+  return DEPOSIT_PATTERN.test(String(notesText ?? ""));
+}
+
+function recordNoun(input: NextMessageInput) {
+  if (isCustomerRecord(input.opportunityType)) {
+    return input.spanish ? "este cliente" : "this client";
+  }
+  return input.spanish ? "este prospecto" : "this prospect";
+}
+
 function pickJob(input: NextMessageInput): NextMessageJob {
   const stage = String(input.stage ?? "").trim();
   const quietDays = quietDaysSince(input.lastTouchAt, input.nowIso);
@@ -144,6 +188,10 @@ function pickJob(input: NextMessageInput): NextMessageJob {
     return "book_or_close";
   }
   if (quietDays != null && quietDays > QUIET_AFTER_DAYS) return "quiet_reopen";
+  if (isCustomerRecord(input.opportunityType) && noteImpliesDeposit(input.notesText)) {
+    return "deposit_ask";
+  }
+  if (isCustomerRecord(input.opportunityType)) return "client_follow";
   return "first_touch";
 }
 
@@ -159,6 +207,10 @@ function jobLabelFor(job: NextMessageJob, input: NextMessageInput): string {
       return es ? "Reseña y referencia" : "Review and referral";
     case "book_or_close":
       return es ? "Pedir que agenden" : "Ask to book";
+    case "deposit_ask":
+      return es ? "Pedir el depósito" : "Ask for the deposit";
+    case "client_follow":
+      return es ? "Seguimiento con el cliente" : "Client follow-up";
     case "quiet_reopen":
       return es
         ? `Retomar después de ${quietDays ?? 0} días en silencio`
@@ -183,6 +235,10 @@ function subjectFor(job: NextMessageJob, input: NextMessageInput): string {
       return es ? `Gracias de ${shop}` : `Thank you from ${shop}`;
     case "book_or_close":
       return es ? `¿Agendamos? · ${company}` : `Can we book it? · ${company}`;
+    case "deposit_ask":
+      return es ? `Depósito · ${company}` : `Deposit · ${company}`;
+    case "client_follow":
+      return es ? `Siguiendo el hilo · ${company}` : `Checking in · ${company}`;
     case "quiet_reopen":
       return es ? `Siguiendo el hilo · ${company}` : `Checking back in · ${company}`;
     default:
@@ -203,19 +259,20 @@ function draftsFor(job: NextMessageJob, input: NextMessageInput): DraftSet {
   const hello = es ? `Hola ${name},` : `Hi ${name},`;
 
   if (job === "need_one_fact") {
+    const whoRecord = recordNoun(input);
     return es
       ? {
           body: [
             "Falta un dato antes de escribir.",
             "",
-            "Agrega una nota en este prospecto: qué pidieron, una fecha o un precio.",
+            `Agrega una nota en ${whoRecord}: qué pidieron, una fecha o un precio.`,
             "No voy a inventar un trabajo, un nombre ni un teléfono.",
           ].join("\n"),
           shorter: "Agrega una nota (trabajo, fecha o precio) y escribo el mensaje. No invento datos.",
           softer: "Con una sola nota alcanza. No adivino el trabajo ni el teléfono.",
-          askYes: "¿Tienes un dato para anotar en este prospecto y poder escribir?",
+          askYes: `¿Tienes un dato para anotar en ${whoRecord} y poder escribir?`,
           extra: [
-            "Sin nota, fecha de contacto o cotización no escribo al prospecto. Anota un hecho.",
+            `Sin nota, fecha de contacto o cotización no escribo a ${whoRecord}. Anota un hecho.`,
             "Escribe qué pidieron. Yo no pongo nombres de hijos, precios ni teléfonos inventados.",
           ],
         }
@@ -223,14 +280,14 @@ function draftsFor(job: NextMessageJob, input: NextMessageInput): DraftSet {
           body: [
             "Need one fact before I write.",
             "",
-            "Add a note on this prospect — what they asked for, a date, or a price.",
+            `Add a note on ${whoRecord} — what they asked for, a date, or a price.`,
             "I will not invent a job, a name, or a phone.",
           ].join("\n"),
           shorter: "Add one note (job, date, or price) and I will write the message. I will not invent facts.",
           softer: "A single note is enough. I will not guess the job or a phone number.",
-          askYes: "Do you have one fact to pin on this prospect so I can write?",
+          askYes: `Do you have one fact to pin on ${whoRecord} so I can write?`,
           extra: [
-            "Without a note, a last touch, or a quote I will not write to the prospect. Pin one fact.",
+            `Without a note, a last touch, or a quote I will not write to ${whoRecord}. Pin one fact.`,
             "Write what they asked for. I will not add kids' names, prices, or phones that are not on the record.",
           ],
         };
@@ -339,6 +396,74 @@ function draftsFor(job: NextMessageJob, input: NextMessageInput): DraftSet {
         };
   }
 
+  if (job === "deposit_ask") {
+    return es
+      ? {
+          body: [
+            hello,
+            "",
+            "Te escribo por el depósito para reservar la fecha.",
+            `¿Lo enviamos esta semana para que ${owner} deje el día apartado?`,
+          ].join("\n"),
+          shorter: `${hello}\n\n¿Mandamos el depósito esta semana para apartar la fecha?`,
+          softer: `${hello}\n\nCuando puedas, el depósito reserva el día. ${owner} lo confirma al recibirlo.`,
+          askYes: `${hello}\n\n¿Enviamos el depósito esta semana, sí o no?`,
+          extra: [
+            `${hello}\n\nSin depósito no puedo apartar la fecha. Dime cómo lo mandas y ${owner} lo anota.`,
+            `${hello}\n\nSi ya lo enviaste, respóndeme y lo marco. Si no, ¿lo hacemos esta semana?`,
+          ],
+        }
+      : {
+          body: [
+            hello,
+            "",
+            "I am writing about the deposit we need to hold the date.",
+            `Can we get that deposit in this week so ${owner} can lock it in?`,
+          ].join("\n"),
+          shorter: `${hello}\n\nCan we get the deposit in this week to hold the date?`,
+          softer: `${hello}\n\nWhenever you are ready, the deposit holds the day. ${owner} will confirm it when it lands.`,
+          askYes: `${hello}\n\nCan we get the deposit in this week — yes or no?`,
+          extra: [
+            `${hello}\n\nI cannot hold the date without the deposit. Tell me how you will send it and ${owner} will mark it.`,
+            `${hello}\n\nIf you already sent it, reply and I will mark it. If not, can we do it this week?`,
+          ],
+        };
+  }
+
+  if (job === "client_follow") {
+    return es
+      ? {
+          body: [
+            hello,
+            "",
+            `Te escribo de ${shop} para seguir el hilo.`,
+            `¿Agendamos la próxima fecha con ${owner} esta semana?`,
+          ].join("\n"),
+          shorter: `${hello}\n\n¿Cerramos la próxima fecha esta semana?`,
+          softer: `${hello}\n\nSolo quería saludarte. Cuando quieras, ${owner} agenda el siguiente paso.`,
+          askYes: `${hello}\n\n¿Agendamos la próxima fecha, sí o no?`,
+          extra: [
+            `${hello}\n\nDime un día que te sirva y ${owner} lo aparta.`,
+            `${hello}\n\nSi ahora no es buen momento, respóndeme “más tarde” y no insisto esta semana.`,
+          ],
+        }
+      : {
+          body: [
+            hello,
+            "",
+            `Writing from ${shop} to check in.`,
+            `Want to book the next date with ${owner} this week?`,
+          ].join("\n"),
+          shorter: `${hello}\n\nCan we lock the next date this week?`,
+          softer: `${hello}\n\nJust checking in. Whenever you are ready, ${owner} can book the next step.`,
+          askYes: `${hello}\n\nAre we booking the next date — yes or no?`,
+          extra: [
+            `${hello}\n\nName a day that works and ${owner} will hold it.`,
+            `${hello}\n\nIf now is a bad time, reply “later” and I will not push this week.`,
+          ],
+        };
+  }
+
   if (job === "quiet_reopen") {
     return es
       ? {
@@ -422,4 +547,75 @@ export function nextMessage(input: NextMessageInput): NextMessageResult {
       extra: [wrap(drafts.extra[0]), wrap(drafts.extra[1])],
     },
   };
+}
+
+export function deskNotesText(input: {
+  linkedNotes?: DeskLinkedNote[];
+  ownerNotes?: string | null;
+  ownerNotesAt?: string | null;
+  recordNotes?: string | null;
+  recordNotesAt?: string | null;
+  events?: Array<{ eventType?: string; createdAt: string; body?: string | null; summary?: string | null }>;
+}): string {
+  const pieces: Array<{ createdAt: string; text: string }> = [];
+  for (const note of input.linkedNotes ?? []) {
+    const text = [note.title, note.body].filter((part) => String(part ?? "").trim()).join(" — ");
+    if (text.trim()) pieces.push({ createdAt: note.createdAt, text });
+  }
+  const ownerNotes = String(input.ownerNotes ?? "").trim();
+  if (ownerNotes) {
+    pieces.push({ createdAt: input.ownerNotesAt ?? "1970-01-01T00:00:00.000Z", text: ownerNotes });
+  }
+  const recordNotes = String(input.recordNotes ?? "").trim();
+  if (recordNotes) {
+    pieces.push({ createdAt: input.recordNotesAt ?? "1970-01-01T00:00:00.000Z", text: recordNotes });
+  }
+  for (const event of input.events ?? []) {
+    if (event.eventType && event.eventType !== "note_added") continue;
+    const text = String(event.body || event.summary || "").trim();
+    if (text) pieces.push({ createdAt: event.createdAt, text });
+  }
+  return concatNotesText(pieces);
+}
+
+export function deskLastTouchAt(input: {
+  lastContactAt?: string | null;
+  ownerContactedAt?: string | null;
+  events?: Array<{ eventType?: string; createdAt: string }>;
+}): string | null {
+  return latestTimestamp([
+    input.lastContactAt,
+    input.ownerContactedAt,
+    ...(input.events ?? [])
+      .filter((event) => event.eventType === "contacted" || event.eventType === "reply_received")
+      .map((event) => event.createdAt),
+  ]);
+}
+
+export function buildDeskNextMessage(input: {
+  spanish: boolean;
+  owner: NextMessageOwner;
+  nowIso?: string;
+  prospectName: string;
+  prospectCompany?: string | null;
+  stage: string;
+  opportunityType?: string | null;
+  lastTouchAt?: string | null;
+  notesText: string;
+  quoteAmount?: string | null;
+}): NextMessageResult {
+  return nextMessage({
+    spanish: input.spanish,
+    ownerFirstName: input.owner.ownerFirstName,
+    businessName: input.owner.businessName,
+    ownerPhone: input.owner.ownerPhone,
+    prospectName: input.prospectName,
+    prospectCompany: input.prospectCompany ?? null,
+    stage: input.stage,
+    opportunityType: input.opportunityType ?? null,
+    lastTouchAt: input.lastTouchAt ?? null,
+    nowIso: input.nowIso ?? new Date().toISOString(),
+    notesText: input.notesText,
+    quoteAmount: input.quoteAmount ?? null,
+  });
 }

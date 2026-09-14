@@ -8,6 +8,12 @@ import { ClientProfileForm } from "@/components/lions-den/client-profile-form";
 import { LinkedNotesPanel } from "@/components/lions-den/linked-notes-panel";
 import { WonReviewCard } from "@/components/lions-den/won-review-card";
 import { lastDeskContactLabel, sisDeskActivityLines } from "@/lib/lions-den/prospect-stages";
+import {
+  buildDeskNextMessage,
+  deskLastTouchAt,
+  deskNotesText,
+  nextMessageOwnerFromBusiness,
+} from "@/lib/lions-den/next-message-engine";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
@@ -18,6 +24,8 @@ import { getSisCustomer } from "@/server/sis-workspace/queries";
 import { deleteSisCustomer, updateSisCustomer } from "@/server/sis-workspace/actions";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import { getDeskPayLink } from "@/server/trials/desk-settings";
+import { getOrganizationNotes } from "@/server/notes/queries";
+import { amandaBusinessFromWorkspace } from "@/server/outreach/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +59,13 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
   }
   if (!organization) notFound();
 
+  const engineOwner = nextMessageOwnerFromBusiness(
+    amandaBusinessFromWorkspace({
+      organizationName: organization.name,
+      userMetadata: workspace.user.user_metadata as Record<string, unknown>,
+    }),
+  );
+
   const backHref = lionsDenHref(
     "/client/clients",
     workspace.previewOrgSlug || undefined,
@@ -65,6 +80,23 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
     if (!result.data) notFound();
     const customer = result.data;
     const activity = sisDeskActivityLines(customer.notes);
+    const linkedNotes = await getOrganizationNotes(organization.id, { recordId: customer.id, limit: 50 });
+    const engine = workspace.readOnly
+      ? null
+      : buildDeskNextMessage({
+          spanish,
+          owner: engineOwner,
+          prospectName: customer.displayName,
+          prospectCompany: customer.businessName,
+          stage: customer.lastContact ? "contacted" : "researching",
+          opportunityType: "customer",
+          lastTouchAt: deskLastTouchAt({ lastContactAt: customer.lastContact?.at }),
+          notesText: deskNotesText({
+            linkedNotes: linkedNotes && !linkedNotes.setupRequired ? linkedNotes.data : [],
+            recordNotes: customer.notes,
+            recordNotesAt: customer.createdAt,
+          }),
+        });
     const fieldClass =
       "mt-1 block w-full rounded-md border border-[#d5d0c4] bg-white px-3 py-2 text-sm text-[#071b42]";
 
@@ -94,15 +126,20 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
 
           <div className="mt-5">
             <ProspectContactActions
-              compose={{
-                customerId: customer.id,
-                fromEmail: workspace.user.email ?? "",
-                organizationId: organization.id,
-                previewOrgSlug: workspace.previewOrgSlug || undefined,
-                returnTo: `/client/clients/${customer.id}`,
-                workspaceSlug: workspace.selectedWorkspaceSlug || undefined,
-                initialOpen: query?.prospect === "email_sent" || query?.prospect === "email_queued",
-              }}
+              compose={
+                workspace.readOnly
+                  ? undefined
+                  : {
+                      customerId: customer.id,
+                      fromEmail: workspace.user.email ?? "",
+                      organizationId: organization.id,
+                      previewOrgSlug: workspace.previewOrgSlug || undefined,
+                      returnTo: `/client/clients/${customer.id}`,
+                      workspaceSlug: workspace.selectedWorkspaceSlug || undefined,
+                      initialOpen: query?.prospect === "email_sent" || query?.prospect === "email_queued",
+                      engine,
+                    }
+              }
               prospect={{
                 name: customer.displayName,
                 contactEmail: customer.email,
@@ -237,9 +274,10 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
     );
   }
 
-  const [filled, payLink] = await Promise.all([
+  const [filled, payLink, linkedNotes] = await Promise.all([
     fillMissingOpportunityEmail(organization.id, result.data.id),
     getDeskPayLink(organization.id),
+    getOrganizationNotes(organization.id, { recordId: result.data.id, limit: 50 }),
   ]);
   const prospect = presentLiveDeskOpportunity(organization, {
     ...result.data,
@@ -259,6 +297,8 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospect={prospect}
         readOnly={workspace.readOnly}
+        engineOwner={engineOwner}
+        linkedNotes={linkedNotes && !linkedNotes.setupRequired ? linkedNotes.data : []}
         spanish={spanish}
         variant="client"
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}

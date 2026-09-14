@@ -157,16 +157,20 @@ export function LionsDenClientsBoard({
                         <div className="relative z-10 mt-2">
                           <ProspectContactActions
                             compact
-                            compose={{
-                              customerId: sisCustomers ? customer.id : undefined,
-                              detailHref: href,
-                              fromEmail: fromEmail ?? "",
-                              opportunityId: sisCustomers ? undefined : customer.id,
-                              organizationId,
-                              previewOrgSlug,
-                              returnTo: `/client/clients/${customer.id}`,
-                              workspaceSlug,
-                            }}
+                            compose={
+                              readOnly
+                                ? undefined
+                                : {
+                                    customerId: sisCustomers ? customer.id : undefined,
+                                    detailHref: href,
+                                    fromEmail: fromEmail ?? "",
+                                    opportunityId: sisCustomers ? undefined : customer.id,
+                                    organizationId,
+                                    previewOrgSlug,
+                                    returnTo: `/client/clients/${customer.id}`,
+                                    workspaceSlug,
+                                  }
+                            }
                             prospect={{
                               name: customer.displayName,
                               contactEmail: customer.email,

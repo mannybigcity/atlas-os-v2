@@ -5,6 +5,7 @@ import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-scre
 import { LionsDenFollowUpBoard } from "@/components/lions-den/lions-den-follow-up";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
 import { canShowFollowUpDraftControls } from "@/lib/lions-den/follow-up-drafts";
+import { nextMessageOwnerFromBusiness } from "@/lib/lions-den/next-message-engine";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import {
   clientWorkspaceHref,
@@ -77,13 +78,7 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
         sequences: amandaSequences.data,
       }
     : null;
-  const engineOwner = engineBusiness
-    ? {
-        ownerFirstName: String(engineBusiness.ownerName ?? "").trim().split(/\s+/)[0] ?? "",
-        businessName: engineBusiness.businessName,
-        ownerPhone: engineBusiness.ownerPhone ?? null,
-      }
-    : null;
+  const engineOwner = engineBusiness ? nextMessageOwnerFromBusiness(engineBusiness) : null;
 
   if (!isQTimeWorkspaceSlug(primaryOrganization?.slug)) {
     return (
@@ -109,6 +104,7 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
           prospects={(pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
             presentLiveDeskOpportunity(primaryOrganization, item),
           )}
+          readOnly={workspace.readOnly}
           returnTo={clientWorkspaceHref("/client/david", previewOrgSlug)}
           followupStatus={params?.followup}
           spanish={spanish}

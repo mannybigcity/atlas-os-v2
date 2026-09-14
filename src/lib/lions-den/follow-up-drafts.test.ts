@@ -163,7 +163,7 @@ test("Follow-up desk offers Email/Text/Copy/Edit/Delete plus I sent this, and At
   assert.match(board, /FollowUpCopyButton/);
   assert.match(board, /allowDraftControls/);
   assert.match(board, /DeskEmailCompose/);
-  assert.match(board, /nextMessage\(/);
+  assert.match(board, /buildDeskNextMessage\(/);
   assert.match(board, /engineOwner/);
   assert.match(board, /updateFollowUpDraft/);
   assert.match(board, /deleteFollowUpDraft/);

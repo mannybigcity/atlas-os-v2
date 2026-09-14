@@ -59,6 +59,7 @@ export default async function ProspectsPage({ searchParams }: ProspectsPageProps
         prospects={prospects.map((item) =>
           presentLiveDeskOpportunity(workspace.primaryOrganization, item),
         )}
+        readOnly={workspace.readOnly}
         spanish={language === "es"}
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
