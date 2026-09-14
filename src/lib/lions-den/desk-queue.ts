@@ -11,7 +11,7 @@ export type DeskFollowUpDraftControls = {
   draftBody: string;
   /** Present when Amanda can write to this prospect (a business with an email, not an inbound homeowner). */
   amanda?: AmandaDeskInfo;
-  /** AFE-only recommended message for the in-desk compose box. */
+  /** Recommended message for the in-desk compose box (AFE and SIS). */
   engine?: NextMessageResult | null;
   fromEmail?: string;
   previewOrgSlug?: string;

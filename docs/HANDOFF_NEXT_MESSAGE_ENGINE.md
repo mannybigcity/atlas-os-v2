@@ -37,7 +37,7 @@ On `/client/david` (Follow-up), when the owner opens Email compose for a prospec
 
 Spanish copy required on every new string.
 
-SIS desks stay gated by `canShowFollowUpDraftControls`. Engine is AFE-only, same as Amanda sequences.
+SIS desks share Follow-up compose, Next Message Engine chips, and Amanda sequence cards via `canShowFollowUpDraftControls`. Other AFE chrome (HUNTER defaults, trial inbox, MICAH) stays hidden on SIS.
 
 ---
 
@@ -48,7 +48,6 @@ SIS desks stay gated by `canShowFollowUpDraftControls`. Engine is AFE-only, same
 - LLM calls in v1 if a deterministic draft from `follow-up-drafts.ts` + notes + stage is good enough
 - New npm dependencies
 - Twilio / SMS / auto-send
-- SIS wiring
 - Invented facts when notes are empty
 - Copy that claims Amanda is a human employee or hides the business/owner
 

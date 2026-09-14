@@ -21,7 +21,7 @@ function readRepo(rel: string) {
   return readFileSync(join(root, rel), "utf8");
 }
 
-test("AFE and SAMPLE desks get draft controls; SIS never does", () => {
+test("AFE, SAMPLE, and SIS desks get draft controls; missing org does not", () => {
   assert.equal(
     canShowFollowUpDraftControls({ name: "Cypress Pest Pros", slug: "cypress-pest-pros-trial" }),
     true,
@@ -39,7 +39,7 @@ test("AFE and SAMPLE desks get draft controls; SIS never does", () => {
       name: "SIS Custom Creations",
       slug: "sis-diy-big-complete-showcase",
     }),
-    false,
+    true,
   );
   assert.equal(canShowFollowUpDraftControls(null), false);
 });
@@ -191,9 +191,11 @@ test("Follow-up desk offers Email/Text/Copy/Edit/Delete plus I sent this, and At
   assert.match(page, /canShowFollowUpDraftControls/);
   assert.match(page, /const allowDraftControls = canShowFollowUpDraftControls\(primaryOrganization\)/);
   assert.match(page, /allowDraftControls=\{allowDraftControls\}/);
+  assert.match(page, /isSisOrganization\(primaryOrganization\)/);
+  assert.match(page, /getSisDashboardData/);
 
-  assert.match(actions, /isSisOrganization/);
-  assert.match(actions, /sis_blocked/);
+  assert.doesNotMatch(actions, /isSisOrganization/);
+  assert.doesNotMatch(actions, /sis_blocked/);
   assert.match(actions, /export async function markFollowUpSent/);
   assert.match(actions, /Owner sent the follow-up themselves\. Atlas did not email, call, or text anyone/);
   assert.match(actions, /Owner edited the follow-up draft/);

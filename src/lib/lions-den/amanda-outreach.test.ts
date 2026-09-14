@@ -15,6 +15,7 @@ import {
   isAmandaStopRequest,
   parseAmandaReplyToken,
 } from "./amanda-outreach.ts";
+import { canShowFollowUpDraftControls } from "./follow-up-drafts.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const readRepo = (rel: string) => readFileSync(join(root, rel), "utf8");
@@ -113,12 +114,21 @@ test("desk wiring: approve is the only way anything sends, and the sender only r
   assert.match(board, /amanda_approved/);
   assert.match(page, /getAmandaSequences/);
   assert.match(page, /amandaBusinessFromWorkspace/);
+  assert.match(page, /allowDraftControls/);
+  assert.equal(
+    canShowFollowUpDraftControls({
+      name: "SIS Custom Creations",
+      slug: "sis-diy-big-complete-showcase",
+    }),
+    true,
+  );
 
   assert.match(actions, /status: "approved"/);
   assert.match(actions, /stopped_reason === "stop_request"/);
   assert.match(card, /const closed = sequence\?\.stoppedReason === "stop_request"/);
   assert.match(board, /amanda_stop_requested/);
   assert.match(actions, /event_type: "follow_up_queued"/);
+  assert.doesNotMatch(actions, /isSisOrganization|sis_blocked/);
   assert.doesNotMatch(actions, /api\.resend\.com/);
   assert.doesNotMatch(actions, /twilio|sms:/i);
 

@@ -38,7 +38,9 @@ Not "is this architecturally nice." When you report, say what the owner can now 
 **The product in one breath.** AFE (Atlas for Entrepreneurs) is a trial desk that finds referral partners for a
 trade business (HUNTER), drafts the follow-up (David / Amanda), makes weekly marketing art (MICAH), and turns
 inbound leads into prospects. AFE is not SIS (a separate party/gift client on the same codebase) and not
-"Atlas OS" the platform. If a slug is an SIS org (`isSisOrganization`), the AFE features hide.
+"Atlas OS" the platform. If a slug is an SIS org (`isSisOrganization`), most AFE
+features hide. Follow-up draft controls, Amanda sequences, and the Next Message
+Engine stay on for SIS.
 
 **Decision habits, in priority order:**
 
@@ -112,7 +114,7 @@ edits), and do not open more than one PR at a time.
 | HUNTER | `src/components/hunter-search.tsx`, `src/server/hunter/*` | Search + review pile. Accept -> `organization_opportunities`. |
 | Prospects + stages | `src/app/client/prospects/page.tsx`, `src/lib/lions-den/prospect-stages.ts`, `src/server/opportunities/{queries,actions}.ts` | Owner labels map to DB enum (see LEADS handoff section 2). |
 | Public lead page | `src/app/go/[slug]/page.tsx`, `src/server/leads/actions.ts`, `src/lib/lions-den/inbound-leads.ts`, `src/server/leads/email.ts` | No auth, honeypot `company`, owner email + Amanda receipt via Resend. |
-| Follow-up desk | `src/app/client/david/page.tsx`, `src/components/lions-den/lions-den-follow-up.tsx`, `src/lib/lions-den/follow-up-drafts.ts`, `src/lib/lions-den/desk-queue.ts` | Email/Text/Copy open the owner's apps. "I sent this" -> `contacted` + 3-day check-in. `canShowFollowUpDraftControls` gates AFE vs SIS. |
+| Follow-up desk | `src/app/client/david/page.tsx`, `src/components/lions-den/lions-den-follow-up.tsx`, `src/lib/lions-den/follow-up-drafts.ts`, `src/lib/lions-den/desk-queue.ts` | Email/Text/Copy open the owner's apps. "I sent this" -> `contacted` + 3-day check-in. `canShowFollowUpDraftControls` is on for AFE and SIS (Amanda + Next Message Engine). Other AFE chrome stays hidden on SIS. |
 | Amanda outbound (Batch C) | `src/lib/lions-den/amanda-outreach.ts` (pure), `src/server/outreach/{queries,actions}.ts`, `src/components/lions-den/amanda-sequence-card.tsx`, `netlify/functions/amanda-outreach.mjs` (daily 15:00 UTC), `netlify/functions/amanda-inbound.mjs` (Resend webhook), migration `20260912150000_amanda_outreach_sequences.sql` | Approve -> `organization_outreach_sequences.status='approved'`; sender reads `approved,sending` only; reply -> stage `responded` + owner email; STOP/bounce closes for good. |
 | Trials | `src/server/trials/{profile,guards}.ts` (`atlas_trial_profiles.trial_ends_at`), `src/server/client-workspace/context.ts` (redirects expired -> `/pricing?trial=expired`), `src/app/pricing/page.tsx`, `src/server/stripe/billing-entitlement.ts` (`shouldBlockExpiredTrial`) | Batch 4 touches these. |
 | MICAH art | `src/server/content-studio/gallery-art.ts` (SVG drafts today), `src/server/content-studio/actions.ts`, `src/server/integrations/openai-gateway.ts` | Batch 5 touches these. |
