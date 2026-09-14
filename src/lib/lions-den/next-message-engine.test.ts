@@ -304,7 +304,7 @@ test("Approve-3 drip stays B2B-only while Clients compose gets the engine", () =
   assert.doesNotMatch(clientsPage, /AmandaSequenceCard|canOfferAmandaSequence/);
   assert.doesNotMatch(clientsPage, /api\.resend\.com|twilio/i);
 
-  assert.match(clientsBoard, /readOnly \? undefined/);
+  assert.match(clientsBoard, /readOnly\s*\?\s*undefined/);
   assert.doesNotMatch(clientsBoard, /AmandaSequenceCard|canOfferAmandaSequence/);
 
   assert.match(prospectDetail, /buildDeskNextMessage\(/);
