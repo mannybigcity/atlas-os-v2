@@ -60,3 +60,32 @@ export function countWonOpportunities(
 ) {
   return opportunities.filter((item) => item.stage === "won").length;
 }
+
+function asMetadataRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return { ...(value as Record<string, unknown>) };
+}
+
+/** SIS customers keep related party rows; hide them from Clients instead of hard-delete. */
+export function isArchivedDeskClient(metadata: unknown): boolean {
+  const archivedAt = asMetadataRecord(metadata).archived_at;
+  return typeof archivedAt === "string" && archivedAt.trim().length > 0;
+}
+
+export function withArchivedDeskClient(
+  metadata: unknown,
+  archivedAt = new Date().toISOString(),
+): Record<string, unknown> {
+  return { ...asMetadataRecord(metadata), archived_at: archivedAt };
+}
+
+export function deskClientRowCopy(spanish: boolean) {
+  return {
+    edit: spanish ? "Editar" : "Edit",
+    delete: spanish ? "Eliminar" : "Delete",
+    deleteConfirm: (name: string) =>
+      spanish
+        ? `¿Eliminar a ${name} de este escritorio? No se puede deshacer. Atlas no contacta a nadie.`
+        : `Remove ${name} from this desk? This cannot be undone. Atlas does not contact anyone.`,
+  };
+}

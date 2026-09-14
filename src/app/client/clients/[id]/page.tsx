@@ -15,7 +15,7 @@ import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { fillMissingOpportunityEmail } from "@/server/hunter/fill-website-email";
 import { getOrganizationOpportunity } from "@/server/opportunities/queries";
 import { getSisCustomer } from "@/server/sis-workspace/queries";
-import { updateSisCustomer } from "@/server/sis-workspace/actions";
+import { deleteSisCustomer, updateSisCustomer } from "@/server/sis-workspace/actions";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import { getDeskPayLink } from "@/server/trials/desk-settings";
 
@@ -114,39 +114,41 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
             />
           </div>
 
-          <form action={updateSisCustomer} className="mt-6 grid gap-3 sm:grid-cols-2" data-client-editor>
-            <input name="customerId" type="hidden" value={customer.id} />
-            {workspace.previewOrgSlug ? <input name="previewOrg" type="hidden" value={workspace.previewOrgSlug} /> : null}
-            {workspace.selectedWorkspaceSlug ? (
-              <input name="workspace" type="hidden" value={workspace.selectedWorkspaceSlug} />
-            ) : null}
-            <label className="block text-xs font-semibold text-[#5c6578] sm:col-span-2">
-              {spanish ? "Nombre" : "Name"}
-              <input className={fieldClass} defaultValue={customer.displayName} name="displayName" required type="text" />
-            </label>
-            <label className="block text-xs font-semibold text-[#5c6578]">
-              {spanish ? "Negocio" : "Business"}
-              <input className={fieldClass} defaultValue={customer.businessName ?? ""} name="businessName" type="text" />
-            </label>
-            <label className="block text-xs font-semibold text-[#5c6578]">
-              {spanish ? "Teléfono" : "Phone"}
-              <input className={fieldClass} defaultValue={customer.phone ?? ""} name="phone" type="tel" />
-            </label>
-            <label className="block text-xs font-semibold text-[#5c6578] sm:col-span-2">
-              Email
-              <input className={fieldClass} defaultValue={customer.email ?? ""} name="email" type="email" />
-            </label>
-            <label className="block text-xs font-semibold text-[#5c6578] sm:col-span-2">
-              {spanish ? "Notas" : "Notes"}
-              <textarea className={fieldClass} defaultValue={customer.notes ?? ""} name="notes" rows={4} />
-            </label>
-            <button
-              className="w-fit cursor-pointer rounded-full bg-[#1246a0] px-4 py-2 text-sm font-semibold !text-white"
-              type="submit"
-            >
-              {spanish ? "Guardar cambios" : "Save changes"}
-            </button>
-          </form>
+          {workspace.readOnly ? null : (
+            <form action={updateSisCustomer} className="mt-6 grid gap-3 sm:grid-cols-2" data-client-editor>
+              <input name="customerId" type="hidden" value={customer.id} />
+              {workspace.previewOrgSlug ? <input name="previewOrg" type="hidden" value={workspace.previewOrgSlug} /> : null}
+              {workspace.selectedWorkspaceSlug ? (
+                <input name="workspace" type="hidden" value={workspace.selectedWorkspaceSlug} />
+              ) : null}
+              <label className="block text-xs font-semibold text-[#5c6578] sm:col-span-2">
+                {spanish ? "Nombre" : "Name"}
+                <input className={fieldClass} defaultValue={customer.displayName} name="displayName" required type="text" />
+              </label>
+              <label className="block text-xs font-semibold text-[#5c6578]">
+                {spanish ? "Negocio" : "Business"}
+                <input className={fieldClass} defaultValue={customer.businessName ?? ""} name="businessName" type="text" />
+              </label>
+              <label className="block text-xs font-semibold text-[#5c6578]">
+                {spanish ? "Teléfono" : "Phone"}
+                <input className={fieldClass} defaultValue={customer.phone ?? ""} name="phone" type="tel" />
+              </label>
+              <label className="block text-xs font-semibold text-[#5c6578] sm:col-span-2">
+                Email
+                <input className={fieldClass} defaultValue={customer.email ?? ""} name="email" type="email" />
+              </label>
+              <label className="block text-xs font-semibold text-[#5c6578] sm:col-span-2">
+                {spanish ? "Notas" : "Notes"}
+                <textarea className={fieldClass} defaultValue={customer.notes ?? ""} name="notes" rows={4} />
+              </label>
+              <button
+                className="w-fit cursor-pointer rounded-full bg-[#1246a0] px-4 py-2 text-sm font-semibold !text-white"
+                type="submit"
+              >
+                {spanish ? "Guardar cambios" : "Save changes"}
+              </button>
+            </form>
+          )}
 
           <ClientProfileForm
             metadata={customer.metadata}
@@ -195,6 +197,30 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
               </p>
             )}
           </div>
+
+          {workspace.readOnly ? null : (
+            <details className="mt-4 rounded-2xl border border-rose-200 bg-rose-50/60 p-4" data-client-delete>
+              <summary className="cursor-pointer text-sm font-semibold text-rose-900">
+                {spanish ? "Eliminar este cliente" : "Delete this client"}
+              </summary>
+              <p className="mt-2 text-sm text-rose-900">
+                {spanish
+                  ? `Se quita ${customer.displayName} de este escritorio. No se puede deshacer.`
+                  : `This removes ${customer.displayName} from this desk. It cannot be undone.`}
+              </p>
+              <form action={deleteSisCustomer} className="mt-3">
+                <input name="organizationId" type="hidden" value={organization.id} />
+                <input name="customerId" type="hidden" value={customer.id} />
+                {workspace.previewOrgSlug ? <input name="previewOrg" type="hidden" value={workspace.previewOrgSlug} /> : null}
+                {workspace.selectedWorkspaceSlug ? (
+                  <input name="workspace" type="hidden" value={workspace.selectedWorkspaceSlug} />
+                ) : null}
+                <button className="rounded-full bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-800" type="submit">
+                  {spanish ? "Sí, eliminar" : "Yes, delete"}
+                </button>
+              </form>
+            </details>
+          )}
         </section>
       </LionsDenBoardScreen>
     );
@@ -232,6 +258,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospect={prospect}
+        readOnly={workspace.readOnly}
         spanish={spanish}
         variant="client"
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
