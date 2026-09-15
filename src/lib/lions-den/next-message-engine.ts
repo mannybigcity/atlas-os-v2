@@ -593,14 +593,14 @@ function draftsFor(job: NextMessageJob, input: NextMessageInput): DraftSet {
         ? `Ayudamos a equipos como ${company} cuando necesitan ${need} y un proveedor que sí contesta.`
         : kind
           ? `Ayudamos a ${kind} cuando necesitan ${need} y un proveedor que sí contesta.`
-          : `Queremos presentarnos y dejar a ${owner} a un correo de distancia.`
+          : `Queremos presentarnos.`
     : kind && company
       ? `We help ${kind} teams like ${company} when they need ${need} and a vendor who actually picks up.`
       : company
         ? `We help teams like ${company} when they need ${need} and a vendor who actually picks up.`
         : kind
           ? `We help ${kind} teams when they need ${need} and a vendor who actually picks up.`
-          : `We would like to introduce the work we do and leave ${owner} one email away.`;
+          : `We would like to introduce the work we do.`;
 
   return es
     ? {
