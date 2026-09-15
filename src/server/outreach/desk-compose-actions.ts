@@ -295,7 +295,7 @@ export async function requestMicahFlyerDraft(facts: ComposeFacts): Promise<DeskM
       organizationId: facts.organizationId,
       userId: auth.user.id,
       prompt,
-      demeanor: afeHouse && demeanor === "faith" ? "friendly_local" : demeanor,
+      demeanor,
       demoDesk: afeHouse,
       focusDay: 1,
     });
