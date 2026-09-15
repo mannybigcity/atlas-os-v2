@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import type { NextMessageResult } from "@/lib/lions-den/next-message-engine";
+import { micahFlyerButtonLabel } from "@/lib/lions-den/micah-flyer-request";
 import { sendDeskFollowUpEmail } from "@/server/opportunities/desk-email-actions";
+import {
+  requestAmandaFirstTouchDraft,
+  requestMicahFlyerDraft,
+} from "@/server/outreach/desk-compose-actions";
 
 type DeskEmailComposeProps = {
   spanish: boolean;
@@ -32,6 +37,8 @@ const compactActionClass =
   "inline-flex cursor-pointer items-center rounded-full bg-[#1246a0] px-3 py-1 text-xs font-semibold !text-white transition hover:bg-[#0a2f78] hover:!text-white";
 const fieldClass =
   "mt-1 block w-full rounded-md border border-[#d5d0c4] bg-white px-3 py-2 text-sm text-[#071b42] placeholder:text-[#8a93a3]";
+const chipClass =
+  "cursor-pointer rounded-full border border-[#d5d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#071b42]";
 
 export function DeskEmailCompose({
   spanish,
@@ -59,23 +66,92 @@ export function DeskEmailCompose({
     return window.location.hash === "#desk-email";
   });
   const [fileNames, setFileNames] = useState<string[]>([]);
+  const [liveEngine, setLiveEngine] = useState(engine);
   const fallbackBody = spanish
     ? `Hola,\n\nTe escribo para dar seguimiento con ${prospectName}. ¿Tienes un momento esta semana?\n\nGracias.`
     : `Hi,\n\nI am following up with ${prospectName}. Do you have a few minutes this week?\n\nThank you.`;
-  const seededBody = initialBody?.trim() ? initialBody : engine?.body || fallbackBody;
+  const seededBody = initialBody?.trim() ? initialBody : liveEngine?.body || engine?.body || fallbackBody;
   const [body, setBody] = useState(seededBody);
+  const [subject, setSubject] = useState(
+    initialSubject ?? liveEngine?.subject ?? engine?.subject ?? (spanish ? `Seguimiento: ${prospectName}` : `Follow-up: ${prospectName}`),
+  );
   const [moreIndex, setMoreIndex] = useState(0);
+  const [busy, setBusy] = useState<"amanda" | "micah" | null>(null);
+  const [deskNote, setDeskNote] = useState<string | null>(null);
   const label = spanish ? "Correo" : "Email";
-  const defaultSubject = initialSubject ?? engine?.subject ?? (spanish ? `Seguimiento: ${prospectName}` : `Follow-up: ${prospectName}`);
+  const activeEngine = liveEngine ?? engine;
 
   function applyChip(chip: "shorter" | "softer" | "askYes" | "more") {
-    if (!engine) return;
+    if (!activeEngine) return;
     if (chip === "more") {
-      setBody(engine.variants.extra[moreIndex % 2] ?? engine.body);
+      setBody(activeEngine.variants.extra[moreIndex % 2] ?? activeEngine.body);
       setMoreIndex((value) => value + 1);
       return;
     }
-    setBody(engine.variants[chip]);
+    setBody(activeEngine.variants[chip]);
+  }
+
+  function composeFacts() {
+    const profile = activeEngine?.profile;
+    return {
+      organizationId,
+      spanish,
+      ownerFirstName: profile?.ownerFirstName ?? "",
+      businessName: profile?.businessName ?? "",
+      ownerPhone: profile?.ownerPhone ?? null,
+      trade: profile?.trade || null,
+      city: profile?.city || null,
+      prospectName,
+      prospectCompany: profile?.prospectCompany || null,
+      prospectType: profile?.prospectType || null,
+      notesText: profile?.notesThin ? "" : "note",
+      previewOrgSlug,
+      workspaceSlug,
+    };
+  }
+
+  async function onAskAmanda() {
+    if (!activeEngine || busy) return;
+    if (!activeEngine.aiEligible) {
+      setBody(activeEngine.body);
+      setSubject(activeEngine.subject);
+      return;
+    }
+    setBusy("amanda");
+    setDeskNote(spanish ? "Amanda está redactando…" : "Amanda is drafting…");
+    try {
+      const result = await requestAmandaFirstTouchDraft(composeFacts());
+      setLiveEngine(result.engine);
+      setBody(result.engine.body);
+      setSubject(result.engine.subject);
+      setDeskNote(result.message);
+    } catch {
+      setDeskNote(
+        spanish
+          ? "Amanda usó el primer saludo fijo. Léelo y envíalo tú."
+          : "Amanda kept the first-hello draft. Read it and send it yourself.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function onAskMicah() {
+    if (busy) return;
+    setBusy("micah");
+    setDeskNote(spanish ? "Micah está armando el pedido de galería…" : "Micah is queuing the gallery request…");
+    try {
+      const result = await requestMicahFlyerDraft(composeFacts());
+      setDeskNote(result.message);
+    } catch {
+      setDeskNote(
+        spanish
+          ? "Micah tiene el pedido de flyer. Abre MICAH para el borrador de galería. No se publicó nada."
+          : "Micah has the flyer request. Open MICAH for the gallery draft. Nothing was posted.",
+      );
+    } finally {
+      setBusy(null);
+    }
   }
 
   if (compact) {
@@ -93,47 +169,73 @@ export function DeskEmailCompose({
       </button>
       {open ? (
         <>
-        {engine ? (
+        {activeEngine ? (
           <div
             className="mt-3 flex w-full max-w-xl flex-wrap items-center gap-1.5 rounded-lg border border-[#ece7d8] bg-[#fbfaf4] px-2.5 py-1.5"
             data-next-message-engine
           >
-            <p className="mr-1 text-[11px] font-semibold text-[#5c4a12]" data-engine-label>
-              {spanish ? "Pregúntale a Amanda" : "Ask Amanda"}
-              <span className="font-medium text-[#8a6a12]"> · {engine.jobLabel}</span>
-            </p>
             <button
-              className="rounded-full border border-[#d5d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#071b42]"
+              className={`${chipClass} border-[#f5b932] bg-[#fff8e6]`}
+              data-ask-amanda
+              disabled={busy !== null}
+              onClick={() => void onAskAmanda()}
+              type="button"
+            >
+              {spanish ? "Pregúntale a Amanda" : "Ask Amanda"}
+            </button>
+            <span className="mr-1 text-[11px] font-medium text-[#8a6a12]" data-engine-label>
+              {activeEngine.jobLabel}
+            </span>
+            <button
+              className={chipClass}
               data-engine-chip="shorter"
+              disabled={busy !== null}
               onClick={() => applyChip("shorter")}
               type="button"
             >
               {spanish ? "Más corto" : "Shorter"}
             </button>
             <button
-              className="rounded-full border border-[#d5d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#071b42]"
+              className={chipClass}
               data-engine-chip="softer"
+              disabled={busy !== null}
               onClick={() => applyChip("softer")}
               type="button"
             >
               {spanish ? "Más suave" : "Softer"}
             </button>
             <button
-              className="rounded-full border border-[#d5d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#071b42]"
+              className={chipClass}
               data-engine-chip="askYes"
+              disabled={busy !== null}
               onClick={() => applyChip("askYes")}
               type="button"
             >
               {spanish ? "Pedir el sí" : "Ask for the yes"}
             </button>
             <button
-              className="rounded-full border border-[#d5d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#071b42]"
+              className={chipClass}
               data-engine-chip="more"
+              disabled={busy !== null}
               onClick={() => applyChip("more")}
               type="button"
             >
               {spanish ? "2 más" : "2 more"}
             </button>
+            <button
+              className={chipClass}
+              data-ask-micah-flyer
+              disabled={busy !== null}
+              onClick={() => void onAskMicah()}
+              type="button"
+            >
+              {micahFlyerButtonLabel(spanish)}
+            </button>
+            {deskNote ? (
+              <p className="basis-full text-[11px] font-medium text-[#5c4a12]" data-desk-compose-note>
+                {deskNote}
+              </p>
+            ) : null}
           </div>
         ) : null}
         <div className="mt-3 w-full max-w-xl rounded-2xl border border-[#d5d0c4] bg-white p-4 text-[#071b42]" id="desk-email">
@@ -175,10 +277,11 @@ export function DeskEmailCompose({
               {spanish ? "Asunto" : "Subject"}
               <input
                 className={fieldClass}
-                defaultValue={defaultSubject}
                 name="subject"
+                onChange={(event) => setSubject(event.target.value)}
                 required
                 type="text"
+                value={subject}
               />
             </label>
             <label className="block text-xs font-semibold text-[#5c6578]">
@@ -188,7 +291,7 @@ export function DeskEmailCompose({
                 name="body"
                 onChange={(event) => setBody(event.target.value)}
                 required
-                rows={initialBody || engine ? 12 : 6}
+                rows={initialBody || activeEngine ? 12 : 6}
                 value={body}
               />
             </label>
