@@ -18,14 +18,30 @@ export type NextMessageInput = {
   ownerFirstName: string;
   businessName: string;
   ownerPhone: string | null;
+  /** Owner's trade in plain words: "plumbing", "party setups". Never invented. */
+  trade?: string | null;
+  city?: string | null;
   prospectName: string;
   prospectCompany: string | null;
+  /** What the prospect is, e.g. "property management company". Never a personal story. */
+  prospectType?: string | null;
   stage: string;
   opportunityType: string | null;
   lastTouchAt: string | null;
   nowIso: string;
   notesText: string; // concatenated linked notes, oldest last, cap 800 chars
   quoteAmount: string | null; // only if a real quote exists on the record
+};
+
+export type NextMessageProfile = {
+  ownerFirstName: string;
+  businessName: string;
+  ownerPhone: string | null;
+  trade: string;
+  city: string;
+  prospectCompany: string;
+  prospectType: string;
+  notesThin: boolean;
 };
 
 export type NextMessageResult = {
@@ -39,6 +55,9 @@ export type NextMessageResult = {
     askYes: string;
     extra: [string, string];
   };
+  /** Thin/empty notes + enough business profile to try the cost-controlled desk AI path. */
+  aiEligible: boolean;
+  profile: NextMessageProfile;
 };
 
 const NOTES_CAP = 800;
@@ -53,7 +72,14 @@ export type NextMessageOwner = {
   ownerFirstName: string;
   businessName: string;
   ownerPhone: string | null;
+  trade?: string | null;
+  city?: string | null;
 };
+
+const PLACEHOLDER_BUSINESS =
+  /^(our company|the business|el negocio|your company|la empresa)$/i;
+const GENERIC_TRADE = /^(local business|servicio|service|negocio local)$/i;
+const THIN_NOTES_CHARS = 12;
 
 export type DeskLinkedNote = {
   recordId?: string | null;
@@ -64,6 +90,13 @@ export type DeskLinkedNote = {
 
 export function isCustomerRecord(opportunityType: string | null | undefined) {
   return String(opportunityType ?? "").trim() === "customer";
+}
+
+export function prospectTypeFromRecord(metadata: Record<string, unknown> | null | undefined) {
+  const raw = metadata?.primary_type;
+  if (typeof raw !== "string") return null;
+  const cleaned = raw.replaceAll("_", " ").trim();
+  return cleaned || null;
 }
 
 export function concatNotesText(
@@ -112,12 +145,35 @@ export function nextMessageOwnerFromBusiness(business: {
   ownerName?: string | null;
   businessName: string;
   ownerPhone?: string | null;
+  trade?: string | null;
+  city?: string | null;
 }): NextMessageOwner {
   return {
     ownerFirstName: firstName(business.ownerName),
     businessName: business.businessName,
     ownerPhone: String(business.ownerPhone ?? "").trim() || null,
+    trade: String(business.trade ?? "").trim() || null,
+    city: String(business.city ?? "").trim() || null,
   };
+}
+
+export function usableTrade(value: string | null | undefined) {
+  const trade = String(value ?? "").trim();
+  if (!trade || GENERIC_TRADE.test(trade)) return "";
+  return trade;
+}
+
+export function notesAreThin(notesText: string | null | undefined) {
+  return String(notesText ?? "").trim().length < THIN_NOTES_CHARS;
+}
+
+/** Enough of the owner's business to write a first hello without inventing facts. */
+export function hasSafeBusinessProfile(
+  input: Pick<NextMessageInput, "businessName" | "trade" | "city" | "ownerFirstName">,
+) {
+  const name = String(input.businessName ?? "").trim();
+  if (name && !PLACEHOLDER_BUSINESS.test(name)) return true;
+  return Boolean(usableTrade(input.trade) && firstName(input.ownerFirstName));
 }
 
 function who(input: NextMessageInput) {
@@ -133,6 +189,26 @@ function ownerName(input: NextMessageInput, spanish: boolean) {
 
 function business(input: NextMessageInput) {
   return input.businessName.trim() || (input.spanish ? "el negocio" : "the business");
+}
+
+function shopPhrase(input: NextMessageInput) {
+  const shop = business(input);
+  const trade = usableTrade(input.trade);
+  const city = String(input.city ?? "").trim();
+  if (input.spanish) {
+    if (trade && city) return `${shop}, una empresa de ${trade} en ${city}`;
+    if (trade) return `${shop}, una empresa de ${trade}`;
+    if (city) return `${shop} en ${city}`;
+    return shop;
+  }
+  if (trade && city) return `${shop}, a ${trade} company in ${city}`;
+  if (trade) return `${shop}, a ${trade} company`;
+  if (city) return `${shop} in ${city}`;
+  return shop;
+}
+
+function prospectWhat(input: NextMessageInput) {
+  return String(input.prospectType ?? "").replaceAll("_", " ").trim();
 }
 
 /** Outbound close. Omit the phone sentence when no phone was passed in. */
@@ -179,7 +255,8 @@ function pickJob(input: NextMessageInput): NextMessageJob {
   const stage = String(input.stage ?? "").trim();
   const quietDays = quietDaysSince(input.lastTouchAt, input.nowIso);
   const noTouch = quietDays == null;
-  if (notesBlank(input.notesText) && noTouch && !hasQuote(input.quoteAmount)) {
+  const coldEmpty = notesBlank(input.notesText) && noTouch && !hasQuote(input.quoteAmount);
+  if (coldEmpty && !hasSafeBusinessProfile(input)) {
     return "need_one_fact";
   }
   if (stage === "won") return "review_referral";
@@ -498,16 +575,44 @@ function draftsFor(job: NextMessageJob, input: NextMessageInput): DraftSet {
         };
   }
 
+  const shopLine = shopPhrase(input);
+  const kind = prospectWhat(input);
+  const company = String(input.prospectCompany ?? "").trim();
+  const trade = usableTrade(input.trade);
+  const need = trade
+    ? es
+      ? `${trade} con poco aviso`
+      : `${trade} on short notice`
+    : es
+      ? "ayuda con poco aviso"
+      : "help on short notice";
+  const help = es
+    ? kind && company
+      ? `Ayudamos a ${kind} como ${company} cuando necesitan ${need} y un proveedor que sí contesta.`
+      : company
+        ? `Ayudamos a equipos como ${company} cuando necesitan ${need} y un proveedor que sí contesta.`
+        : kind
+          ? `Ayudamos a ${kind} cuando necesitan ${need} y un proveedor que sí contesta.`
+          : `Queremos presentarnos y dejar a ${owner} a un correo de distancia.`
+    : kind && company
+      ? `We help ${kind} teams like ${company} when they need ${need} and a vendor who actually picks up.`
+      : company
+        ? `We help teams like ${company} when they need ${need} and a vendor who actually picks up.`
+        : kind
+          ? `We help ${kind} teams when they need ${need} and a vendor who actually picks up.`
+          : `We would like to introduce the work we do and leave ${owner} one email away.`;
+
   return es
     ? {
         body: [
           hello,
           "",
-          `${owner} de ${shop} me pidió escribirte. Queremos presentarnos.`,
-          "¿Hay un hueco esta semana para una llamada corta?",
+          `Soy Amanda y escribo de parte de ${shopLine}.`,
+          help,
+          `¿Hay un hueco esta semana para una llamada corta con ${owner}?`,
         ].join("\n"),
         shorter: `${hello}\n\n${owner} de ${shop} quiere saludarte. ¿Hablamos esta semana?`,
-        softer: `${hello}\n\nTe escribimos de ${shop}. Cuando te acomode, ${owner} te explica el trabajo.`,
+        softer: `${hello}\n\nTe escribimos de ${shopLine}. Cuando te acomode, ${owner} te explica el trabajo.`,
         askYes: `${hello}\n\n¿Agendamos 10 minutos esta semana, sí o no?`,
         extra: [
           `${hello}\n\nResponde con un horario y ${owner} te llama.`,
@@ -518,11 +623,12 @@ function draftsFor(job: NextMessageJob, input: NextMessageInput): DraftSet {
         body: [
           hello,
           "",
-          `${owner} at ${shop} asked me to reach out. We would like to introduce the work we do.`,
-          "Is there a good time this week for a short call?",
+          `I'm Amanda, writing for ${shopLine}.`,
+          help,
+          `Is there a good time this week for a short call with ${owner}?`,
         ].join("\n"),
         shorter: `${hello}\n\n${owner} at ${shop} wanted to say hello. Can we talk this week?`,
-        softer: `${hello}\n\nWriting from ${shop}. ${owner} can walk you through the work whenever it is easy.`,
+        softer: `${hello}\n\nWriting from ${shopLine}. ${owner} can walk you through the work whenever it is easy.`,
         askYes: `${hello}\n\nCan we book 10 minutes this week — yes or no?`,
         extra: [
           `${hello}\n\nReply with a time and ${owner} will call.`,
@@ -535,6 +641,9 @@ export function nextMessage(input: NextMessageInput): NextMessageResult {
   const job = pickJob(input);
   const drafts = draftsFor(job, input);
   const wrap = (text: string) => (job === "need_one_fact" ? text.trim() : withClose(text, input));
+  const sendableCold =
+    (job === "first_touch" || job === "client_follow") && hasSafeBusinessProfile(input);
+  const notesThin = notesAreThin(input.notesText);
   return {
     job,
     jobLabel: jobLabelFor(job, input),
@@ -545,6 +654,17 @@ export function nextMessage(input: NextMessageInput): NextMessageResult {
       softer: wrap(drafts.softer),
       askYes: wrap(drafts.askYes),
       extra: [wrap(drafts.extra[0]), wrap(drafts.extra[1])],
+    },
+    aiEligible: sendableCold && notesThin,
+    profile: {
+      ownerFirstName: firstName(input.ownerFirstName),
+      businessName: input.businessName.trim(),
+      ownerPhone: String(input.ownerPhone ?? "").trim() || null,
+      trade: usableTrade(input.trade),
+      city: String(input.city ?? "").trim(),
+      prospectCompany: String(input.prospectCompany ?? "").trim(),
+      prospectType: String(input.prospectType ?? "").replaceAll("_", " ").trim(),
+      notesThin,
     },
   };
 }
@@ -598,6 +718,7 @@ export function buildDeskNextMessage(input: {
   nowIso?: string;
   prospectName: string;
   prospectCompany?: string | null;
+  prospectType?: string | null;
   stage: string;
   opportunityType?: string | null;
   lastTouchAt?: string | null;
@@ -609,8 +730,11 @@ export function buildDeskNextMessage(input: {
     ownerFirstName: input.owner.ownerFirstName,
     businessName: input.owner.businessName,
     ownerPhone: input.owner.ownerPhone,
+    trade: input.owner.trade ?? null,
+    city: input.owner.city ?? null,
     prospectName: input.prospectName,
     prospectCompany: input.prospectCompany ?? null,
+    prospectType: input.prospectType ?? null,
     stage: input.stage,
     opportunityType: input.opportunityType ?? null,
     lastTouchAt: input.lastTouchAt ?? null,

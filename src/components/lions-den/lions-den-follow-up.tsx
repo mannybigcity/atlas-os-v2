@@ -25,6 +25,7 @@ import {
   buildDeskNextMessage,
   deskLastTouchAt,
   deskNotesText,
+  prospectTypeFromRecord,
   type DeskLinkedNote,
   type NextMessageOwner,
   type NextMessageResult,
@@ -142,6 +143,7 @@ function nextMessageFor(
       ownerNotesAt: item.createdAt,
       events: item.events,
     }),
+    prospectType: prospectTypeFromRecord(item.metadata),
     quoteAmount: quoteAmountFor(item),
   });
 }

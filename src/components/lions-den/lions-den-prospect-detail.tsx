@@ -7,6 +7,7 @@ import {
   buildDeskNextMessage,
   deskLastTouchAt,
   deskNotesText,
+  prospectTypeFromRecord,
   type DeskLinkedNote,
   type NextMessageOwner,
 } from "@/lib/lions-den/next-message-engine";
@@ -98,6 +99,7 @@ export function LionsDenProspectDetail({
             ownerNotesAt: prospect.createdAt,
             events: prospect.events,
           }),
+          prospectType: prospectTypeFromRecord(prospect.metadata),
           quoteAmount: quote && quote.status !== "declined" ? formatUsd(quote.amountUsd) : null,
         })
       : null;

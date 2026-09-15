@@ -31,7 +31,7 @@ On `/client/david` (Follow-up), when the owner opens Email compose for a prospec
    - The recommended body already sitting in the compose textarea (subject filled too)
    - Chips: **Shorter** · **Softer** · **Ask for the yes** · **2 more**
 2. Tapping a chip rewrites the textarea only. It does not send.
-3. If notes are empty and stage has no last-touch fact, the strip says they need one note. It does not invent a job, a kid's name, a price, or a phone.
+3. If notes are empty on a **cold Prospect**, Ask Amanda still fills a sendable first-hello from the owner's business profile (name, trade/about, city, owner phone) plus what the prospect is (type/name/company). It does not invent a kid, a job history, a quote, or a phone that is not on the record. `need_one_fact` is only when both AI and the deterministic draft lack enough business profile to write safely. An **Ask Micah for a flyer** control sits next to Ask Amanda and queues a gallery draft only — no live post.
 4. Existing Amanda sequence card stays under the Email / WhatsApp / Copy row for **business** prospects only. Do not merge the sequence card into the chips. Two jobs: sequence = scheduled 3-email B2B drip after Approve; engine = this-message-right-now for any prospect the owner is composing to.
 5. Ask Atlas right-rail chat (`atlas-staff-pane.tsx`) does not grow. Leave it.
 
@@ -45,7 +45,7 @@ SIS desks share Follow-up compose, Next Message Engine chips, and Amanda sequenc
 
 - A 75/25 layout or a templates catalog occupying the right rail
 - A persistent Amanda chat column on Follow-up
-- LLM calls in v1 if a deterministic draft from `follow-up-drafts.ts` + notes + stage is good enough
+- LLM calls from the browser, or a second AI stack. Thin-note first-touch may use the existing cost-controlled desk AI path and must fall back to deterministic first_touch.
 - New npm dependencies
 - Twilio / SMS / auto-send
 - Invented facts when notes are empty
@@ -125,7 +125,7 @@ export function nextMessage(input: NextMessageInput): NextMessageResult;
 
 Rules inside `nextMessage`:
 
-- If `notesText` is blank AND there is no `lastTouchAt` AND no `quoteAmount`, return `job: "need_one_fact"` with a body that asks the owner to add one note. Do not write a fake personal email.
+- If `notesText` is blank AND there is no `lastTouchAt` AND no `quoteAmount`, return `job: "first_touch"` (or `client_follow` for customer records) when the business profile is safe to write from. Return `job: "need_one_fact"` only when the shop name/trade/city are too thin to write without inventing facts.
 - Quiet reopen: `lastTouchAt` older than 3 days.
 - Quote follow: `quoteAmount` present and stage not won/lost.
 - Review/referral: stage is won (reuse tone of `won-review-card.tsx`, do not duplicate that card).
@@ -138,7 +138,7 @@ Rules inside `nextMessage`:
 - Never include a phone that was not passed in. Never invent a website.
 - Variants must be real rewrites of `body`, not the same paragraph three times. All sendable variants keep the Amanda close.
 
-Test file: `src/lib/lions-den/next-message-engine.test.ts` (`node:test`). Cover: empty notes → need_one_fact; quiet 11 days; quote present; won stage; Spanish jobLabel; no invented phone; sendable bodies include "Amanda, on behalf of".
+Test file: `src/lib/lions-den/next-message-engine.test.ts` (`node:test`). Cover: empty notes + business profile → sendable first_touch (not need_one_fact coach copy); missing shop → need_one_fact; quiet 11 days; quote present; won stage; Spanish jobLabel; no invented phone; sendable bodies include "Amanda, on behalf of".
 
 ### 2. Wire compose only
 
