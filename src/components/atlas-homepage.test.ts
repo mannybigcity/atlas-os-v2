@@ -165,6 +165,7 @@ test("AFE header keeps the official pasted logo and trial as the gold nav CTA", 
   assert.match(header, /href: "\/assessment"/);
   assert.match(header, /AFE_CALL_TODAY_EN/);
   assert.match(header, /tel:\$\{AFE_MANNY_PHONE_TEL\}/);
+  assert.match(header, /whitespace-nowrap[\s\S]*AFE_CALL_TODAY_EN/);
   assert.doesNotMatch(header, /Deleana|346-544-8697|SIS Custom Creations/);
 });
 

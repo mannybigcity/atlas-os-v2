@@ -81,7 +81,7 @@ button { font: inherit; }
 }
 .atlas-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem 1.15rem; }
 .atlas-hero-call { margin: .85rem 0 0; }
-.atlas-hero-call a { color: var(--navy); font-size: .82rem; font-weight: 750; letter-spacing: .01em; text-decoration: none; border-bottom: 1px solid rgba(6, 38, 109, .28); }
+.atlas-hero-call a { color: var(--navy); font-size: .82rem; font-weight: 750; letter-spacing: .01em; text-decoration: none; border-bottom: 1px solid rgba(6, 38, 109, .28); white-space: nowrap; }
 .atlas-hero-call a:hover { color: #0a2f78; border-bottom-color: currentColor; }
 .atlas-hero-link { color: var(--navy); font-size: .7rem; font-weight: 700; letter-spacing: .02em; text-decoration: underline; text-decoration-color: rgba(6, 38, 109, .32); text-underline-offset: .18em; }
 .atlas-hero-link:hover { color: #0a2f78; text-decoration-color: currentColor; }

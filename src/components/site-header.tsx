@@ -63,7 +63,7 @@ export function SiteHeader({ active, initialLanguage = "en" }: SiteHeaderProps) 
             </Link>
           ))}
           <a
-            className="rounded-full px-3 py-2 text-sm font-semibold text-[#1246a0] transition hover:bg-[#eef4ff] hover:text-[#0a2f78]"
+            className="shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-sm font-semibold text-[#1246a0] transition hover:bg-[#eef4ff] hover:text-[#0a2f78]"
             href={`tel:${AFE_MANNY_PHONE_TEL}`}
           >
             {spanish ? AFE_CALL_TODAY_ES : AFE_CALL_TODAY_EN}
