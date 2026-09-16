@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  HUNTER_BULK_ACCEPT_CONFIRM_COUNT,
   HUNTER_DAILY_SEARCH_CAP,
+  HUNTER_REVIEW_PILE_LIMIT,
   HUNTER_REVIEW_PILE_MIGRATION,
   HUNTER_SEARCH_RESULT_CAP,
+  parseHunterReviewItemIds,
+  pendingHunterReviewItemsForOrg,
+  blockedHunterAcceptReason,
   acceptedHunterOpportunityFields,
   acceptedProspectNextAction,
   acceptedProspectResearchSummary,
@@ -22,8 +27,40 @@ import {
 test("HUNTER keeps the documented 10-result / 20-search UTC-day caps", () => {
   assert.equal(HUNTER_SEARCH_RESULT_CAP, 10);
   assert.equal(HUNTER_DAILY_SEARCH_CAP, 20);
+  assert.equal(HUNTER_REVIEW_PILE_LIMIT, 80);
+  assert.equal(HUNTER_BULK_ACCEPT_CONFIRM_COUNT, 8);
   assert.equal(hunterDailyCapReached(19), false);
   assert.equal(hunterDailyCapReached(20), true);
+});
+
+test("bulk Accept ids drop junk and never mix another org's pending rows", () => {
+  const sis = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+  const afe = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
+  const other = "not-a-uuid";
+  assert.deepEqual(parseHunterReviewItemIds([sis, ` ${sis} `, other, afe, sis]), [sis, afe]);
+
+  const rows = [
+    { id: sis, status: "pending", organization_id: "org-sis" },
+    { id: afe, status: "pending", organization_id: "org-afe" },
+    { id: "6ba7b812-9dad-11d1-80b4-00c04fd430c8", status: "accepted", organization_id: "org-sis" },
+  ];
+  const sisOnly = pendingHunterReviewItemsForOrg(rows, "org-sis");
+  assert.equal(sisOnly.length, 1);
+  assert.equal(sisOnly[0]?.id, sis);
+  assert.equal(pendingHunterReviewItemsForOrg(rows, "org-afe").length, 1);
+  assert.equal(pendingHunterReviewItemsForOrg(rows, "org-other").length, 0);
+  assert.equal(
+    blockedHunterAcceptReason({ organization_id: "org-afe", status: "pending" }, "org-sis"),
+    "missing",
+  );
+  assert.equal(
+    blockedHunterAcceptReason({ organization_id: "org-sis", status: "accepted" }, "org-sis"),
+    "already_accepted",
+  );
+  assert.equal(
+    blockedHunterAcceptReason({ organization_id: "org-sis", status: "pending" }, "org-sis"),
+    null,
+  );
 });
 
 test("HUNTER search requires a business type and a market", () => {

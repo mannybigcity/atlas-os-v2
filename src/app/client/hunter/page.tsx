@@ -33,15 +33,37 @@ export async function generateMetadata(): Promise<Metadata> {
 type HunterPageProps = {
   searchParams?: Promise<{
     hunter?: string;
+    count?: string;
+    failed?: string;
     lang?: string;
     previewOrg?: string;
     workspace?: string;
   }>;
 };
 
-function hunterStatusCopy(code: string | undefined, spanish: boolean) {
+function hunterStatusCopy(
+  code: string | undefined,
+  spanish: boolean,
+  counts: { accepted: number; failed: number } = { accepted: 0, failed: 0 },
+) {
+  const acceptedLabel = counts.accepted === 1 ? "listing is" : "listings are";
+  const acceptedEs = counts.accepted === 1 ? "ficha ahora es un prospecto" : "fichas ahora son prospectos";
   const messages: Record<string, { en: string; es: string; tone: "ok" | "warn" }> = {
     accepted: { en: "That listing is now a Prospect. Atlas did not contact anyone.", es: "Esa ficha ahora es un prospecto. Atlas no contactó a nadie.", tone: "ok" },
+    accepted_bulk: {
+      en: counts.accepted
+        ? `${counts.accepted} ${acceptedLabel} now Prospects. Atlas did not contact anyone.`
+        : "Those listings are now Prospects. Atlas did not contact anyone.",
+      es: counts.accepted
+        ? `${counts.accepted} ${acceptedEs}. Atlas no contactó a nadie.`
+        : "Esas fichas ahora son prospectos. Atlas no contactó a nadie.",
+      tone: "ok",
+    },
+    accepted_partial: {
+      en: `Accepted ${counts.accepted} listing${counts.accepted === 1 ? "" : "s"}. ${counts.failed} could not be accepted. Atlas did not contact anyone.`,
+      es: `Se aceptaron ${counts.accepted} ficha${counts.accepted === 1 ? "" : "s"}. ${counts.failed} no se pudieron aceptar. Atlas no contactó a nadie.`,
+      tone: "warn",
+    },
     already_accepted: { en: "That listing was already accepted into Prospects. Open Prospects to call.", es: "Esa ficha ya estaba aceptada en Prospectos. Abre Prospectos para llamar.", tone: "ok" },
     dismissed: { en: "That listing was removed from the review pile.", es: "Esa ficha se quitó de la pila de revisión.", tone: "ok" },
     duplicate: { en: "A Prospect with that business name already exists. Open Prospects to work that call.", es: "Ya existe un prospecto con ese nombre. Abre Prospectos para esa llamada.", tone: "warn" },
@@ -49,6 +71,7 @@ function hunterStatusCopy(code: string | undefined, spanish: boolean) {
     dismiss_failed: { en: "The listing could not be dismissed.", es: "No se pudo descartar la ficha.", tone: "warn" },
     missing: { en: "That review item was not found.", es: "No se encontró ese hallazgo.", tone: "warn" },
     invalid: { en: "That review action was not valid.", es: "Esa acción de revisión no fue válida.", tone: "warn" },
+    none_selected: { en: "Select at least one listing, or use Accept all.", es: "Selecciona al menos una ficha, o usa Aceptar todos.", tone: "warn" },
     protected: { en: "SIS Custom Creations is protected. HUNTER cannot change the company name, slug, or identity.", es: "SIS Custom Creations está protegida. HUNTER no puede cambiar el nombre, identificador ni la identidad de la empresa.", tone: "warn" },
   };
   return code ? messages[code] ?? null : null;
@@ -72,7 +95,12 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
   const reviewPile = primaryOrganization
     ? await getHunterReviewPile(primaryOrganization.id)
     : null;
-  const status = hunterStatusCopy(params?.hunter, spanish);
+  const acceptedCountParam = Number.parseInt(String(params?.count ?? ""), 10);
+  const failedCountParam = Number.parseInt(String(params?.failed ?? ""), 10);
+  const status = hunterStatusCopy(params?.hunter, spanish, {
+    accepted: Number.isFinite(acceptedCountParam) ? acceptedCountParam : 0,
+    failed: Number.isFinite(failedCountParam) ? failedCountParam : 0,
+  });
   const prospectsHref = clientWorkspaceHref("/client/prospects", previewOrgSlug);
   const hunterDefaults = hunterSearchDefaultsFromMarket(
     inferTrialDeskMarket({
@@ -81,7 +109,12 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
     }),
   );
   const acceptedCount = reviewPile?.acceptedCount ?? 0;
-  const showProspectsLink = params?.hunter === "accepted" || params?.hunter === "already_accepted" || params?.hunter === "duplicate";
+  const showProspectsLink =
+    params?.hunter === "accepted" ||
+    params?.hunter === "accepted_bulk" ||
+    params?.hunter === "accepted_partial" ||
+    params?.hunter === "already_accepted" ||
+    params?.hunter === "duplicate";
 
   const board = (
     <div className="space-y-5">

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { WorkspaceQueryResult } from "@/server/organizations/queries";
 import {
+  HUNTER_REVIEW_PILE_LIMIT,
   isMissingHunterReviewTable,
   type HunterReviewItem,
   type HunterReviewStatus,
@@ -54,7 +55,7 @@ export async function getHunterReviewPile(
     .eq("organization_id", organizationId)
     .eq("status", "pending")
     .order("created_at", { ascending: false })
-    .limit(80);
+    .limit(HUNTER_REVIEW_PILE_LIMIT);
 
   if (error) {
     if (isMissingHunterReviewTable(error)) {

@@ -10,13 +10,13 @@ import { requireUser } from "@/server/auth/guards";
 import { getUserMemberships } from "@/server/organizations/queries";
 import { executeHunterPlacesSearch } from "@/server/hunter/search";
 import { parseHunterSearchFilters } from "@/server/hunter/filters";
+import { buildHunterSearchQuery, parseHunterReviewItemIds } from "@/server/hunter/review";
 import {
-  buildHunterSearchQuery,
-  acceptedHunterOpportunityFields,
-  mergeHunterPlaceDetails,
-} from "@/server/hunter/review";
-import { getGooglePlaceDetails } from "@/server/integrations/google-places";
-import { findEmailOnBusinessWebsite } from "@/server/hunter/website-email";
+  acceptHunterReviewItemsForOrg,
+  acceptPendingHunterReviewItem,
+  loadPendingHunterReviewItemsForOrg,
+  type HunterAcceptOneResult,
+} from "@/server/hunter/accept-item";
 import type { HunterSearchState } from "@/server/hunter/types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -110,12 +110,11 @@ export async function searchHunterProspects(
   });
 }
 
-export async function acceptHunterReviewItem(formData: FormData) {
+async function requireHunterAcceptContext(formData: FormData) {
   const organizationId = String(formData.get("organizationId") ?? "").trim();
-  const reviewItemId = String(formData.get("reviewItemId") ?? "").trim();
   await requireHunterOperator(organizationId);
 
-  if (!uuidPattern.test(reviewItemId) || !organizationId) {
+  if (!organizationId || !uuidPattern.test(organizationId)) {
     redirect("/client/hunter?hunter=invalid");
   }
 
@@ -139,10 +138,21 @@ export async function acceptHunterReviewItem(formData: FormData) {
     redirect("/client/hunter?hunter=protected");
   }
 
+  return { organizationId, supabase };
+}
+
+export async function acceptHunterReviewItem(formData: FormData) {
+  const { organizationId, supabase } = await requireHunterAcceptContext(formData);
+  const reviewItemId = String(formData.get("reviewItemId") ?? "").trim();
+
+  if (!uuidPattern.test(reviewItemId)) {
+    redirect("/client/hunter?hunter=invalid");
+  }
+
   const { data: item, error: itemError } = await supabase
     .from("organization_hunter_review_items")
     .select(
-      "id, organization_id, place_id, name, formatted_address, google_maps_url, website_url, primary_type, business_status, status, accepted_opportunity_id",
+      "id, organization_id, place_id, name, formatted_address, google_maps_url, website_url, phone, primary_type, business_status, status, accepted_opportunity_id",
     )
     .eq("id", reviewItemId)
     .eq("organization_id", organizationId)
@@ -152,67 +162,78 @@ export async function acceptHunterReviewItem(formData: FormData) {
     redirect("/client/hunter?hunter=missing");
   }
 
-  if (item.status === "accepted") {
-    redirect("/client/hunter?hunter=already_accepted");
-  }
-
-  let placeDetails = null;
-  try {
-    placeDetails = await getGooglePlaceDetails(item.place_id);
-  } catch {
-    placeDetails = null;
-  }
-
-  const merged = mergeHunterPlaceDetails(item, placeDetails);
-  const websiteEmail = merged.websiteUrl ? await findEmailOnBusinessWebsite(merged.websiteUrl) : null;
-  const opportunityFields = acceptedHunterOpportunityFields({
-    ...merged,
-    contactEmail: websiteEmail,
-  });
-  const researchSummary = opportunityFields.research_summary;
-  const { data: opportunity, error: opportunityError } = await supabase
-    .from("organization_opportunities")
-    .insert({
-      organization_id: organizationId,
-      ...opportunityFields,
-    })
-    .select("id")
-    .single();
-
-  if (opportunityError || !opportunity) {
-    if (opportunityError?.code === "23505") {
+  const result = await acceptPendingHunterReviewItem(supabase, organizationId, item);
+  if (!result.ok) {
+    if (result.reason === "already_accepted") {
+      redirect("/client/hunter?hunter=already_accepted");
+    }
+    if (result.reason === "duplicate") {
       redirect("/client/hunter?hunter=duplicate");
     }
-    redirect("/client/hunter?hunter=accept_failed");
-  }
-
-  await supabase.from("organization_opportunity_events").insert({
-    opportunity_id: opportunity.id,
-    organization_id: organizationId,
-    event_type: "created",
-    actor_role: "hunter",
-    summary: "Owner accepted this HUNTER find into Prospects. No contact was sent.",
-    body: researchSummary,
-  });
-
-  const { error: updateError } = await supabase
-    .from("organization_hunter_review_items")
-    .update({
-      status: "accepted",
-      accepted_opportunity_id: opportunity.id,
-    })
-    .eq("id", item.id)
-    .eq("organization_id", organizationId);
-
-  if (updateError) {
+    if (result.reason === "missing") {
+      redirect("/client/hunter?hunter=missing");
+    }
     redirect("/client/hunter?hunter=accept_failed");
   }
 
   revalidatePath("/client");
   revalidatePath("/client/hunter");
   revalidatePath("/client/prospects");
-  revalidatePath(`/client/prospects/${opportunity.id}`);
+  revalidatePath(`/client/prospects/${result.opportunityId}`);
   redirect("/client/hunter?hunter=accepted");
+}
+
+function hunterBulkRedirect(results: HunterAcceptOneResult[]) {
+  const accepted = results.filter((result) => result.ok).length;
+  const failed = results.filter(
+    (result) => !result.ok && result.reason !== "already_accepted",
+  ).length;
+  const params = new URLSearchParams();
+  if (accepted > 0 && failed > 0) {
+    params.set("hunter", "accepted_partial");
+    params.set("count", String(accepted));
+    params.set("failed", String(failed));
+  } else if (accepted > 0) {
+    params.set("hunter", "accepted_bulk");
+    params.set("count", String(accepted));
+  } else if (results.some((result) => !result.ok && result.reason === "duplicate")) {
+    params.set("hunter", "duplicate");
+  } else if (results.some((result) => !result.ok && result.reason === "already_accepted")) {
+    params.set("hunter", "already_accepted");
+  } else {
+    params.set("hunter", "accept_failed");
+  }
+  revalidatePath("/client");
+  revalidatePath("/client/hunter");
+  revalidatePath("/client/prospects");
+  redirect(`/client/hunter?${params.toString()}`);
+}
+
+export async function acceptSelectedHunterReviewItems(formData: FormData) {
+  const { organizationId, supabase } = await requireHunterAcceptContext(formData);
+  const reviewItemIds = parseHunterReviewItemIds(formData.getAll("reviewItemId"));
+  if (reviewItemIds.length === 0) {
+    redirect("/client/hunter?hunter=none_selected");
+  }
+
+  const items = await loadPendingHunterReviewItemsForOrg(supabase, organizationId, reviewItemIds);
+  const results = await acceptHunterReviewItemsForOrg(supabase, organizationId, items);
+  hunterBulkRedirect(results);
+}
+
+export async function acceptAllHunterReviewItems(formData: FormData) {
+  const { organizationId, supabase } = await requireHunterAcceptContext(formData);
+  const visibleIds = parseHunterReviewItemIds(formData.getAll("reviewItemId"));
+  const items = await loadPendingHunterReviewItemsForOrg(
+    supabase,
+    organizationId,
+    visibleIds.length > 0 ? visibleIds : undefined,
+  );
+  if (items.length === 0) {
+    redirect("/client/hunter?hunter=none_selected");
+  }
+  const results = await acceptHunterReviewItemsForOrg(supabase, organizationId, items);
+  hunterBulkRedirect(results);
 }
 
 export async function dismissHunterReviewItem(formData: FormData) {
