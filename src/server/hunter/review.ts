@@ -8,6 +8,49 @@ import type { GooglePlaceProspect } from "@/server/integrations/google-places";
 
 export const HUNTER_DAILY_SEARCH_CAP = 20;
 export const HUNTER_SEARCH_RESULT_CAP = 10;
+/** Pending rows rendered on the review pile. Accept all still loads every pending row for this org. */
+export const HUNTER_REVIEW_PILE_LIMIT = 500;
+export const HUNTER_BULK_ACCEPT_CONCURRENCY = 8;
+export const HUNTER_BULK_ACCEPT_CONFIRM_COUNT = 8;
+/** One Accept-all request; leftover pending rows stay on this desk for another click. */
+export const HUNTER_BULK_ACCEPT_MAX = 100;
+const HUNTER_REVIEW_ITEM_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Unique valid review-item ids from a form. Drops junk; does not imply org ownership. */
+export function parseHunterReviewItemIds(values: Iterable<unknown>): string[] {
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const value of values) {
+    const id = String(value ?? "").trim();
+    const key = id.toLowerCase();
+    if (!HUNTER_REVIEW_ITEM_ID.test(id) || seen.has(key)) continue;
+    seen.add(key);
+    ids.push(id);
+  }
+  return ids;
+}
+
+/** In-memory org fence: never treat another desk's row as pending for this org. */
+export function pendingHunterReviewItemsForOrg<
+  T extends { id: string; status: string; organizationId?: string; organization_id?: string },
+>(items: T[], organizationId: string): T[] {
+  return items.filter((item) => {
+    const org = item.organizationId ?? item.organization_id;
+    return org === organizationId && item.status === "pending";
+  });
+}
+
+/** Refuse another desk's row, or a row that is no longer pending, before any write. */
+export function blockedHunterAcceptReason(
+  item: { organization_id: string; status: string },
+  organizationId: string,
+): "missing" | "already_accepted" | null {
+  if (item.organization_id !== organizationId) return "missing";
+  if (item.status === "accepted") return "already_accepted";
+  if (item.status !== "pending") return "missing";
+  return null;
+}
 
 export type HunterReviewStatus = "pending" | "accepted" | "dismissed";
 

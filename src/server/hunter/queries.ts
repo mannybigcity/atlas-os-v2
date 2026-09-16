@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { WorkspaceQueryResult } from "@/server/organizations/queries";
 import {
+  HUNTER_REVIEW_PILE_LIMIT,
   isMissingHunterReviewTable,
   type HunterReviewItem,
   type HunterReviewStatus,
@@ -44,7 +45,13 @@ function mapReviewItem(row: HunterReviewRow): HunterReviewItem {
 
 export async function getHunterReviewPile(
   organizationId: string,
-): Promise<WorkspaceQueryResult<HunterReviewItem[]> & { acceptedCount: number; foundCount: number }> {
+): Promise<
+  WorkspaceQueryResult<HunterReviewItem[]> & {
+    acceptedCount: number;
+    foundCount: number;
+    pendingCount: number;
+  }
+> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("organization_hunter_review_items")
@@ -54,7 +61,7 @@ export async function getHunterReviewPile(
     .eq("organization_id", organizationId)
     .eq("status", "pending")
     .order("created_at", { ascending: false })
-    .limit(80);
+    .limit(HUNTER_REVIEW_PILE_LIMIT);
 
   if (error) {
     if (isMissingHunterReviewTable(error)) {
@@ -64,6 +71,7 @@ export async function getHunterReviewPile(
         error: error.message,
         acceptedCount: 0,
         foundCount: 0,
+        pendingCount: 0,
       };
     }
     return {
@@ -72,6 +80,7 @@ export async function getHunterReviewPile(
       error: null,
       acceptedCount: 0,
       foundCount: 0,
+      pendingCount: 0,
     };
   }
 
@@ -80,6 +89,11 @@ export async function getHunterReviewPile(
     .select("id", { count: "exact", head: true })
     .eq("organization_id", organizationId)
     .eq("status", "accepted");
+  const pending = await supabase
+    .from("organization_hunter_review_items")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .eq("status", "pending");
   const found = await supabase
     .from("organization_hunter_review_items")
     .select("id", { count: "exact", head: true })
@@ -91,5 +105,6 @@ export async function getHunterReviewPile(
     error: null,
     acceptedCount: accepted.count ?? 0,
     foundCount: found.count ?? 0,
+    pendingCount: pending.count ?? ((data ?? []) as HunterReviewRow[]).length,
   };
 }

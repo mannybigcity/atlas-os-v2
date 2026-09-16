@@ -51,12 +51,22 @@ test("HUNTER desk shows the growth funnel and Accept, not a Maps-only dead end",
   assert.match(hunterPage, /inferTrialDeskMarket/);
   assert.match(hunterPage, /defaults=\{hunterDefaults\}/);
 
-  const pile = readRepo("src/components/lions-den/hunter-review-pile.tsx");
+  const pile = [
+    readRepo("src/components/lions-den/hunter-review-pile.tsx"),
+    readRepo("src/components/lions-den/hunter-review-pile-board.tsx"),
+  ].join("\n");
   assert.match(pile, /Accept into Prospects/);
   assert.match(pile, /Skip/);
   assert.match(pile, /Open Prospects/);
   assert.match(pile, /will not invent a number/);
   assert.match(pile, /will not become a Call prospect/);
+  assert.match(pile, /Accept selected/);
+  assert.match(pile, /Accept all/);
+  assert.match(pile, /Select all visible/);
+  assert.match(pile, /disabled=\{selectedVisible\.length === 0\}/);
+  assert.match(pile, /acceptSelectedHunterReviewItems/);
+  assert.match(pile, /acceptAllHunterReviewItems/);
+  assert.match(pile, /type="checkbox"/);
   assert.doesNotMatch(pile, /Apply the HUNTER review pile migration/);
   assert.match(pile, /HUNTER_REVIEW_PILE_MIGRATION/);
   assert.match(pile, /setupRequired/);
@@ -66,7 +76,10 @@ test("Prospect rows on Summary and Prospects open a Google Places detail view", 
   const overview = readRepo("src/components/lions-den/lions-den-overview.tsx");
   const list = readRepo("src/components/lions-den/lions-den-prospects.tsx");
   const detail = readRepo("src/components/lions-den/lions-den-prospect-detail.tsx");
-  const accept = readRepo("src/server/hunter/actions.ts");
+  const accept = [
+    readRepo("src/server/hunter/actions.ts"),
+    readRepo("src/server/hunter/accept-item.ts"),
+  ].join("\n");
 
   assert.match(overview, /prospectDetailPath/);
   assert.match(overview, /presentedProspectNextAction/);
@@ -82,4 +95,33 @@ test("Prospect rows on Summary and Prospects open a Google Places detail view", 
   assert.match(accept, /getGooglePlaceDetails/);
   assert.match(accept, /acceptedHunterOpportunityFields/);
   assert.match(accept, /findEmailOnBusinessWebsite/);
+});
+
+test("HUNTER bulk Accept stays on the current desk and keeps per-row Accept", () => {
+  const accept = [
+    readRepo("src/server/hunter/actions.ts"),
+    readRepo("src/server/hunter/accept-item.ts"),
+    readRepo("src/server/hunter/queries.ts"),
+    readRepo("src/server/hunter/review.ts"),
+  ].join("\n");
+  const pile = readRepo("src/components/lions-den/hunter-review-pile.tsx");
+  const hunterPage = readRepo("src/app/client/hunter/page.tsx");
+  const board = readRepo("src/components/lions-den/hunter-review-pile-board.tsx");
+
+  assert.match(accept, /acceptSelectedHunterReviewItems/);
+  assert.match(accept, /acceptAllHunterReviewItems/);
+  assert.match(accept, /loadPendingHunterReviewItemsForOrg/);
+  assert.match(accept, /\.eq\("organization_id", organizationId\)/);
+  assert.match(accept, /blockedHunterAcceptReason/);
+  assert.match(accept, /HUNTER_BULK_ACCEPT_MAX/);
+  assert.match(accept, /loadPendingHunterReviewItemsForOrg\(supabase, organizationId\)/);
+  assert.doesNotMatch(readRepo("src/server/hunter/review.ts"), /HUNTER_REVIEW_PILE_LIMIT = 20/);
+  assert.match(pile, /Showing \$\{items\.length\} of \$\{pending\}/);
+  assert.match(pile, /Accept all still takes every pending listing on this desk/);
+  assert.match(hunterPage, /accepted_bulk/);
+  assert.match(hunterPage, /none_selected/);
+  assert.match(board, /acceptHunterReviewItem/);
+  assert.match(board, /dismissHunterReviewItem/);
+  assert.match(board, /ConfirmSubmitButton/);
+  assert.match(board, /will not invent a number/);
 });

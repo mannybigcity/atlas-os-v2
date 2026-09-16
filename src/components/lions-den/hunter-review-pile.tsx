@@ -1,16 +1,13 @@
-import { acceptHunterReviewItem, dismissHunterReviewItem } from "@/server/hunter/actions";
-import { formatHunterGapLabel, hunterGapLabels } from "@/server/hunter/filters";
 import { HUNTER_REVIEW_PILE_MIGRATION } from "@/server/hunter/review";
 import type { HunterReviewItem } from "@/server/hunter/review";
-import { prospectTelHref } from "@/lib/lions-den/prospect-places";
-import { isTrialSampleHunterItem, trialSampleCopy } from "@/lib/lions-den/trial-samples";
-import { SampleBadge } from "@/components/lions-den/sample-badge";
+import { HunterReviewPileBoard } from "@/components/lions-den/hunter-review-pile-board";
 
 type HunterReviewPileProps = {
   organizationId: string;
   items: HunterReviewItem[];
   setupRequired?: boolean;
   acceptedCount?: number;
+  pendingCount?: number;
   prospectsHref?: string;
   spanish: boolean;
 };
@@ -20,9 +17,12 @@ export function HunterReviewPile({
   items,
   setupRequired = false,
   acceptedCount = 0,
+  pendingCount,
   prospectsHref = "/client/prospects",
   spanish,
 }: HunterReviewPileProps) {
+  const pending = Math.max(pendingCount ?? items.length, items.length);
+  const truncated = pending > items.length;
   return (
     <section className="mt-6 rounded-[1.6rem] border border-[#d8c27a] bg-white p-5" id="hunter-review-pile">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -38,9 +38,16 @@ export function HunterReviewPile({
               ? "Acepta un resultado para moverlo a Prospectos. Si Google no publicó teléfono, no será un prospecto para llamar. Atlas no inventa números ni envía correos, llamadas ni SMS."
               : "Accept a listing to make it a Prospect. If Google published no phone, this will not become a Call prospect. Atlas does not invent numbers, and it does not email, call, or text anyone."}
           </p>
+          {truncated ? (
+            <p className="mt-2 max-w-2xl text-sm font-medium text-[#8a6a12]">
+              {spanish
+                ? `Mostrando ${items.length} de ${pending}. Aceptar todos toma cada hallazgo pendiente de este escritorio.`
+                : `Showing ${items.length} of ${pending}. Accept all still takes every pending listing on this desk.`}
+            </p>
+          ) : null}
         </div>
         <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
-          {items.length} {spanish ? "en revisión" : "in review"}
+          {pending} {spanish ? "en revisión" : "in review"}
         </span>
       </div>
 
@@ -96,84 +103,12 @@ export function HunterReviewPile({
       ) : null}
 
       {!setupRequired && items.length > 0 ? (
-        <div className="mt-5 divide-y divide-[#ece7d8]">
-          {items.map((item) => (
-            <article className="py-4" key={item.id}>
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <h3 className="flex flex-wrap items-center gap-2 font-semibold text-[#071b42]">
-                    <span>{item.name}</span>
-                    {isTrialSampleHunterItem(item) ? <SampleBadge label={trialSampleCopy(spanish).badge} /> : null}
-                  </h3>
-                  {prospectTelHref(item.phone) ? (
-                    <p className="mt-1 text-sm font-medium text-[#071b42]">
-                      <a className="underline decoration-[#d8c27a] underline-offset-4" href={prospectTelHref(item.phone) ?? undefined}>
-                        {item.phone}
-                      </a>
-                    </p>
-                  ) : null}
-                  {item.formattedAddress ? (
-                    <p className="mt-1 text-sm text-[#5c6578]">{item.formattedAddress}</p>
-                  ) : null}
-                  <p className="mt-1 text-xs uppercase tracking-[0.1em] text-[#8a93a3]">
-                    {(item.primaryType ?? (spanish ? "Negocio" : "Business")).replaceAll("_", " ")}
-                    {item.businessStatus ? ` · ${item.businessStatus.replaceAll("_", " ")}` : ""}
-                  </p>
-                  {hunterGapLabels(item).length ? (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {hunterGapLabels(item).map((label) => (
-                        <span
-                          className="rounded-full bg-[#fff8e6] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#071b42]"
-                          key={label}
-                        >
-                          {formatHunterGapLabel(label, spanish)}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-                  <p className="mt-2 text-xs font-medium text-[#8a6a12]">
-                    {prospectTelHref(item.phone)
-                      ? spanish
-                        ? "Teléfono publicado por Google. Acepta para ponerlo en tu lista de llamadas."
-                        : "Phone published by Google. Accept to put it on your call list."
-                      : spanish
-                        ? "Google no publicó teléfono aquí. Atlas no inventa números; puedes agregar uno después de aceptar."
-                        : "Google published no phone for this listing. Atlas will not invent a number; you can add one after accepting."}
-                  </p>
-                  <p className="mt-2 text-xs text-[#8a93a3]" translate="no">
-                    Google Maps · {item.searchQuery}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <form action={acceptHunterReviewItem}>
-                    <input name="organizationId" type="hidden" value={organizationId} />
-                    <input name="reviewItemId" type="hidden" value={item.id} />
-                    <button className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white" type="submit">
-                      {spanish ? "Aceptar a Prospectos" : "Accept into Prospects"}
-                    </button>
-                  </form>
-                  <form action={dismissHunterReviewItem}>
-                    <input name="organizationId" type="hidden" value={organizationId} />
-                    <input name="reviewItemId" type="hidden" value={item.id} />
-                    <button className="rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#5c6578]" type="submit">
-                      {spanish ? "Omitir" : "Skip"}
-                    </button>
-                  </form>
-                  {item.googleMapsUrl ? (
-                    <a
-                      className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42]"
-                      href={item.googleMapsUrl}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      {spanish ? "Verificar" : "Verify"}
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+        <HunterReviewPileBoard
+          items={items}
+          organizationId={organizationId}
+          pendingCount={pending}
+          spanish={spanish}
+        />
       ) : null}
     </section>
   );
