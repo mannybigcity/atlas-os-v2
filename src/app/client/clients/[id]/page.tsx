@@ -62,6 +62,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
   const engineOwner = nextMessageOwnerFromBusiness(
     amandaBusinessFromWorkspace({
       organizationName: organization.name,
+      organizationSlug: organization.slug,
       userMetadata: workspace.user.user_metadata as Record<string, unknown>,
     }),
   );

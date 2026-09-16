@@ -78,6 +78,19 @@ test("owner email leads with the phone number; Amanda's receipt promises a call 
   const es = inboundLeadAutoReply({ businessName: "Cypress Plumbing", ownerPhone: null, values, spanish: true });
   assert.match(es.text, /^Hola Maria,/);
   assert.doesNotMatch(es.text, /llama directo/);
+
+  const sis = inboundLeadAutoReply({
+    businessName: "SIS Custom Creations",
+    ownerPhone: "(832) 555-0100",
+    contactLines: [
+      { name: "Manny", phone: "346-544-8621" },
+      { name: "Deleana", phone: "346-544-8697" },
+    ],
+    values,
+    spanish: false,
+  });
+  assert.match(sis.text, /call Manny at 346-544-8621 or Deleana at 346-544-8697/);
+  assert.doesNotMatch(sis.text, /832-555-0100|Delina/);
 });
 
 test("lead page is public, honeypotted, and never authenticates the visitor", () => {
@@ -103,6 +116,8 @@ test("lead page is public, honeypotted, and never authenticates the visitor", ()
   assert.doesNotMatch(actions, /sms:/i);
   assert.doesNotMatch(actions, /sendOwnerSms\(\{\s*to: values\.phone/);
   assert.match(actions, /sendOwnerSms\(\{\s*to: owners\.phone/);
+  assert.match(actions, /inboundLeadAutoReply/);
+  assert.match(actions, /founderContactLinesFor\(organization\)/);
 
   assert.match(prospects, /InboundLeadLinkCard/);
   assert.match(prospects, /isSisOrganization/);

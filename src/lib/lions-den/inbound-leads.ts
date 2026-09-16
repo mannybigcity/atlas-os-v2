@@ -1,9 +1,4 @@
-/**
- * Inbound leads: a customer of the client's business (a homeowner with a leak,
- * a manager with a pest problem) asking for help through the client's public
- * lead page. These are the hottest records in the desk. Atlas never sends
- * marketing to them; the one email that goes out is a reply to their request.
- */
+import { founderUrgentCallCopy, type FounderContactLine } from "./founder-contact-kit.ts";
 
 export const INBOUND_LEAD_SOURCE_LABEL = "Inbound · lead page";
 export const INBOUND_NEXT_ACTION_EN = "They asked for help. Call them now, before they call the next company.";
@@ -159,15 +154,18 @@ export function inboundLeadOwnerEmail(input: {
 export function inboundLeadAutoReply(input: {
   businessName: string;
   ownerPhone?: string | null;
+  contactLines?: FounderContactLine[] | null;
   values: InboundLeadValues;
   spanish: boolean;
 }) {
   const first = input.values.name.split(" ")[0] || input.values.name;
-  const phoneLine = input.ownerPhone
-    ? input.spanish
-      ? `Si es urgente, llama directo al ${input.ownerPhone}.`
-      : `If it is urgent, call us directly at ${input.ownerPhone}.`
-    : null;
+  const phoneLine =
+    founderUrgentCallCopy(input.contactLines, input.spanish) ||
+    (input.ownerPhone
+      ? input.spanish
+        ? `Si es urgente, llama directo al ${input.ownerPhone}.`
+        : `If it is urgent, call us directly at ${input.ownerPhone}.`
+      : null);
   const subject = input.spanish
     ? `Recibimos tu mensaje — ${input.businessName}`
     : `We got your request — ${input.businessName}`;

@@ -7,6 +7,7 @@ import { useSiteLanguage } from "@/components/language-switcher";
 import { SiteHeader } from "@/components/site-header";
 import { atlasPricingPlans } from "@/lib/pricing";
 import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
+import { AFE_CALL_TODAY_EN, AFE_CALL_TODAY_ES, AFE_MANNY_PHONE_TEL } from "@/lib/afe-public-contact";
 
 type WorkflowStep = {
   title: string;
@@ -22,6 +23,7 @@ type LandingCopy = {
   trial: string;
   primary: string;
   secondary: string;
+  callToday: string;
   nav: { how: string; who: string; dashboard: string; pricing: string; resources: string; login: string; action: string };
   principles: string[];
   peopleTitle: string;
@@ -74,6 +76,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     trial: "Start 7-day free trial",
     primary: "See how the desk works →",
     secondary: "Business assessment",
+    callToday: AFE_CALL_TODAY_EN,
     nav: {
       how: "How ATLAS Works",
       who: "Who It's For",
@@ -170,6 +173,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     trial: "Iniciar prueba gratuita de 7 días",
     primary: "Mira cómo funciona el escritorio →",
     secondary: "Evaluación del negocio",
+    callToday: AFE_CALL_TODAY_ES,
     nav: {
       how: "Cómo funciona ATLAS",
       who: "Para quién es",
@@ -315,6 +319,9 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
                 <Link className="atlas-hero-link" href={withSiteLanguage("/#den", language)}>{t.primary}</Link>
                 <Link className="atlas-hero-link" href={withSiteLanguage("/assessment", language)}>{t.secondary}</Link>
               </div>
+              <p className="atlas-hero-call">
+                <a href={`tel:${AFE_MANNY_PHONE_TEL}`}>{t.callToday}</a>
+              </p>
             </div>
             <div className="atlas-hero-art" aria-label={language === "es" ? "Atlas carga con el negocio" : "Atlas carries the business"}>
               <div className="atlas-sun" />

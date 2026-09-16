@@ -5,6 +5,8 @@
  * Pure functions; the scheduled sender and the desk both read from here.
  */
 
+import { contactAnswerLines, type FounderContactLine } from "./founder-contact-kit.ts";
+
 export const AMANDA_SEQUENCE_STATUSES = ["draft", "approved", "sending", "paused", "done"] as const;
 export type AmandaSequenceStatus = (typeof AMANDA_SEQUENCE_STATUSES)[number];
 
@@ -21,6 +23,8 @@ export type AmandaBusiness = {
   city?: string | null;
   ownerName?: string | null;
   ownerPhone?: string | null;
+  /** Locked SIS/AFE founder lines. Trial desks leave this empty and use ownerPhone. */
+  contactLines?: FounderContactLine[] | null;
 };
 
 export type AmandaProspect = {
@@ -72,14 +76,13 @@ export function amandaSignature(business: AmandaBusiness, spanish: boolean) {
   const lines = [
     "Amanda",
     spanish ? `en nombre de ${business.businessName}` : `on behalf of ${business.businessName}`,
+    ...contactAnswerLines({
+      spanish,
+      ownerName: business.ownerName,
+      ownerPhone: business.ownerPhone,
+      contactLines: business.contactLines,
+    }),
   ];
-  if (business.ownerPhone?.trim()) {
-    lines.push(
-      spanish
-        ? `${business.ownerName?.trim() || "El dueño"} contesta al ${business.ownerPhone.trim()}`
-        : `${business.ownerName?.trim() || "The owner"} answers at ${business.ownerPhone.trim()}`,
-    );
-  }
   return lines.join("\n");
 }
 

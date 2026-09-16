@@ -114,6 +114,7 @@ test("desk wiring: approve is the only way anything sends, and the sender only r
   assert.match(board, /amanda_approved/);
   assert.match(page, /getAmandaSequences/);
   assert.match(page, /amandaBusinessFromWorkspace/);
+  assert.match(page, /organizationSlug/);
   assert.match(page, /allowDraftControls/);
   assert.equal(
     canShowFollowUpDraftControls({

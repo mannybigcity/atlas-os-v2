@@ -3,6 +3,8 @@
  * Pure — zero Next or Supabase imports. Nothing here sends.
  */
 
+import { contactAnswerLines, type FounderContactLine } from "./founder-contact-kit.ts";
+
 export type NextMessageJob =
   | "first_touch"
   | "quiet_reopen"
@@ -18,6 +20,7 @@ export type NextMessageInput = {
   ownerFirstName: string;
   businessName: string;
   ownerPhone: string | null;
+  contactLines?: FounderContactLine[] | null;
   /** Owner's trade in plain words: "plumbing", "party setups". Never invented. */
   trade?: string | null;
   city?: string | null;
@@ -37,6 +40,7 @@ export type NextMessageProfile = {
   ownerFirstName: string;
   businessName: string;
   ownerPhone: string | null;
+  contactLines?: FounderContactLine[] | null;
   trade: string;
   city: string;
   prospectCompany: string;
@@ -72,6 +76,7 @@ export type NextMessageOwner = {
   ownerFirstName: string;
   businessName: string;
   ownerPhone: string | null;
+  contactLines?: FounderContactLine[] | null;
   trade?: string | null;
   city?: string | null;
 };
@@ -141,17 +146,25 @@ function firstName(value: string | null | undefined) {
   return clean.split(/\s+/)[0] ?? "";
 }
 
+function cleanContactLines(lines: FounderContactLine[] | null | undefined) {
+  const contacts = (lines ?? []).filter((line) => String(line.phone ?? "").trim());
+  return contacts.length ? contacts : undefined;
+}
+
 export function nextMessageOwnerFromBusiness(business: {
   ownerName?: string | null;
   businessName: string;
   ownerPhone?: string | null;
+  contactLines?: FounderContactLine[] | null;
   trade?: string | null;
   city?: string | null;
 }): NextMessageOwner {
+  const contactLines = cleanContactLines(business.contactLines);
   return {
     ownerFirstName: firstName(business.ownerName),
     businessName: business.businessName,
     ownerPhone: String(business.ownerPhone ?? "").trim() || null,
+    ...(contactLines ? { contactLines } : {}),
     trade: String(business.trade ?? "").trim() || null,
     city: String(business.city ?? "").trim() || null,
   };
@@ -212,16 +225,18 @@ function prospectWhat(input: NextMessageInput) {
 }
 
 /** Outbound close. Omit the phone sentence when no phone was passed in. */
-export function amandaClose(input: Pick<NextMessageInput, "spanish" | "ownerFirstName" | "businessName" | "ownerPhone">) {
+export function amandaClose(
+  input: Pick<NextMessageInput, "spanish" | "ownerFirstName" | "businessName" | "ownerPhone" | "contactLines">,
+) {
   const company = input.businessName.trim() || (input.spanish ? "el negocio" : "the business");
-  const phone = String(input.ownerPhone ?? "").trim();
-  const owner = firstName(input.ownerFirstName) || (input.spanish ? "El dueño" : "The owner");
-  if (input.spanish) {
-    const head = `Amanda, de parte de ${company}.`;
-    return phone ? `${head} ${owner} contesta al ${phone}.` : head;
-  }
-  const head = `Amanda, on behalf of ${company}.`;
-  return phone ? `${head} ${owner} answers at ${phone}.` : head;
+  const answers = contactAnswerLines({
+    spanish: input.spanish,
+    ownerName: input.ownerFirstName,
+    ownerPhone: input.ownerPhone,
+    contactLines: input.contactLines,
+  });
+  const head = input.spanish ? `Amanda, de parte de ${company}.` : `Amanda, on behalf of ${company}.`;
+  return answers.length ? `${head} ${answers.join(". ")}.` : head;
 }
 
 function withClose(body: string, input: NextMessageInput) {
@@ -644,6 +659,7 @@ export function nextMessage(input: NextMessageInput): NextMessageResult {
   const sendableCold =
     (job === "first_touch" || job === "client_follow") && hasSafeBusinessProfile(input);
   const notesThin = notesAreThin(input.notesText);
+  const contactLines = cleanContactLines(input.contactLines);
   return {
     job,
     jobLabel: jobLabelFor(job, input),
@@ -660,6 +676,7 @@ export function nextMessage(input: NextMessageInput): NextMessageResult {
       ownerFirstName: firstName(input.ownerFirstName),
       businessName: input.businessName.trim(),
       ownerPhone: String(input.ownerPhone ?? "").trim() || null,
+      ...(contactLines ? { contactLines } : {}),
       trade: usableTrade(input.trade),
       city: String(input.city ?? "").trim(),
       prospectCompany: String(input.prospectCompany ?? "").trim(),
@@ -730,6 +747,7 @@ export function buildDeskNextMessage(input: {
     ownerFirstName: input.owner.ownerFirstName,
     businessName: input.owner.businessName,
     ownerPhone: input.owner.ownerPhone,
+    contactLines: input.owner.contactLines,
     trade: input.owner.trade ?? null,
     city: input.owner.city ?? null,
     prospectName: input.prospectName,
