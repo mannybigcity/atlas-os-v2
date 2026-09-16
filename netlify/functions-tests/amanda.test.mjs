@@ -90,6 +90,8 @@ test("send pass sends exactly the due step, records it, schedules the next, mark
 
   const stage = calls.find((call) => call.method === "PATCH" && call.path.startsWith("organization_opportunities"));
   assert.equal(stage.body.stage, "contacted");
+  assert.equal(stage.body.next_action, "Email sent — follow up if no reply");
+  assert.equal(stage.body.next_action_due, "2026-09-15");
   const event = calls.find((call) => call.path === "organization_opportunity_events");
   assert.equal(event.body.event_type, "contacted");
   assert.match(event.body.summary, /approved by the owner/);

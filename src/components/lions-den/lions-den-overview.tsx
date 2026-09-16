@@ -10,6 +10,11 @@ import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { prospectDetailPath, prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
 import { countWonOpportunities } from "@/lib/lions-den/desk-clients";
 import { bucketFollowUpQueues, type DeskFollowUpItem } from "@/lib/lions-den/desk-queue";
+import {
+  belongsOnFollowUpDesk,
+  followUpQueueDueAt,
+  presentedFollowUpNextAction,
+} from "@/lib/lions-den/follow-up-queue";
 import { LionsDenCalendarBoard } from "@/components/lions-den/lions-den-calendar";
 import { LionsDenNotesBoard } from "@/components/lions-den/lions-den-notes";
 import { LionsDenActivationChecklist } from "@/components/lions-den/lions-den-activation-checklist";
@@ -38,6 +43,8 @@ type LionsDenOverviewProps = {
   canCreateNotes: boolean;
   sisDashboard?: SisDashboardData | null;
   prospects: OrganizationOpportunity[];
+  /** Dedicated Follow-up fetch (contacted + dated). Falls back to `prospects`. */
+  followUpProspects?: OrganizationOpportunity[];
   reviewPile: HunterReviewItem[];
   acceptedCount?: number;
   foundCount?: number;
@@ -55,6 +62,7 @@ export function LionsDenOverview({
   canCreateNotes,
   sisDashboard,
   prospects,
+  followUpProspects,
   reviewPile,
   acceptedCount = 0,
   foundCount,
@@ -81,14 +89,15 @@ export function LionsDenOverview({
   const sampleWalkthrough = isActivationSampleWalkthrough(deskOrganization);
   const partyEvents = sisDashboard?.partyEvents ?? [];
   const inboxTasks = sisDashboard?.inboxTasks ?? [];
+  const followUpSource = followUpProspects ?? prospects;
   const followUpItems: DeskFollowUpItem[] = [
-    ...prospects
-      .filter((item) => item.nextActionDue)
+    ...followUpSource
+      .filter((item) => belongsOnFollowUpDesk(item))
       .map((item) => ({
         id: `prospect-${item.id}`,
         title: item.name,
-        detail: item.nextAction,
-        dueAt: item.nextActionDue!,
+        detail: presentedFollowUpNextAction(item, spanish) || item.nextAction,
+        dueAt: followUpQueueDueAt(item),
         href: prospectDetailPath(item.id, href("/client/prospects")),
         sample: isTrialSampleOpportunity(item),
       })),

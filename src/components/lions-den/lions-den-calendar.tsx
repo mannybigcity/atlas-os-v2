@@ -1,5 +1,10 @@
 import { ClientCalendar } from "@/components/clients-calendar";
 import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
+import {
+  belongsOnFollowUpDesk,
+  followUpQueueDueAt,
+  presentedFollowUpNextAction,
+} from "@/lib/lions-den/follow-up-queue";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import type { SisPartyEventSummary } from "@/server/sis-workspace/queries";
 
@@ -32,12 +37,12 @@ export function LionsDenCalendarBoard({
   ];
   const followUpItems = [
     ...prospects
-      .filter((item) => item.nextActionDue)
+      .filter((item) => belongsOnFollowUpDesk(item))
       .map((item) => ({
         id: `prospect-${item.id}`,
         title: item.name,
-        notes: item.nextAction ?? "",
-        dateTime: `${item.nextActionDue}T17:00:00`,
+        notes: presentedFollowUpNextAction(item, spanish) || item.nextAction || "",
+        dateTime: `${followUpQueueDueAt(item)}T17:00:00`,
         reminderOffsetMinutes: 120,
         kind: "task" as const,
         contextId: item.id,

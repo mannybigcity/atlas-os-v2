@@ -19,7 +19,7 @@ import { getClientDashboardData } from "@/server/client-dashboard/queries";
 import { getOrganizationsForSuperAdmin } from "@/server/organizations/queries";
 import { getSisDashboardData } from "@/server/sis-workspace/queries";
 import { getSalesEvents, getSalesProspects } from "@/server/sales/queries";
-import { getOpportunityPipeline } from "@/server/opportunities/queries";
+import { getFollowUpOpportunities, getOpportunityPipeline } from "@/server/opportunities/queries";
 import { getHunterReviewPile } from "@/server/hunter/queries";
 import { getContentStudio } from "@/server/content-studio/queries";
 import { getOrganizationNotes } from "@/server/notes/queries";
@@ -111,14 +111,15 @@ export default async function ClientDashboardPage({
   const sisDashboard = primaryOrganization && isSisWorkspace
     ? await getSisDashboardData(primaryOrganization.id)
     : null;
-  const [pipeline, reviewPile, studio, notes] = useLionsDen && primaryOrganization
+  const [pipeline, followUpPipeline, reviewPile, studio, notes] = useLionsDen && primaryOrganization
     ? await Promise.all([
         getOpportunityPipeline(primaryOrganization.id),
+        getFollowUpOpportunities(primaryOrganization.id),
         getHunterReviewPile(primaryOrganization.id),
         getContentStudio(primaryOrganization.id),
         getOrganizationNotes(primaryOrganization.id),
       ])
-    : [null, null, null, null];
+    : [null, null, null, null, null];
 
   const alerts = (
     <div className="mb-2 space-y-2 empty:hidden">
@@ -246,6 +247,10 @@ export default async function ClientDashboardPage({
     const prospects = (pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
       presentLiveDeskOpportunity(primaryOrganization, item),
     );
+    const followUpProspects = (followUpPipeline && !followUpPipeline.setupRequired
+      ? followUpPipeline.data.opportunities
+      : prospects
+    ).map((item) => presentLiveDeskOpportunity(primaryOrganization, item));
     const reviewItems = (reviewPile && !reviewPile.setupRequired ? reviewPile.data : []).map((item) =>
       presentLiveDeskReviewItem(primaryOrganization, item),
     );
@@ -281,6 +286,7 @@ export default async function ClientDashboardPage({
             acceptedCount={reviewPile?.acceptedCount ?? 0}
             foundCount={reviewPile?.foundCount ?? 0}
             prospects={prospects}
+            followUpProspects={followUpProspects}
             reviewPile={reviewItems}
             sisDashboard={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data : null}
             spanish={spanish}
