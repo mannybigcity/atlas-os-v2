@@ -6,23 +6,28 @@ import type {
   AmandaSequenceStatus,
   AmandaStep,
 } from "@/lib/lions-den/amanda-outreach";
+import { applyFounderContactKit } from "@/lib/lions-den/founder-contact-kit";
 import { inferTrialDeskMarket } from "@/lib/lions-den/trial-desk-market";
 import { createClient } from "@/lib/supabase/server";
 
 /** What Amanda says about the owner's business, from signup data. Never invented. */
 export function amandaBusinessFromWorkspace(input: {
   organizationName: string | null | undefined;
+  organizationSlug?: string | null;
   userMetadata: Record<string, unknown> | null | undefined;
 }): AmandaBusiness {
   const meta = input.userMetadata ?? {};
   const market = inferTrialDeskMarket({ businessName: input.organizationName, metadata: meta });
-  return {
-    businessName: market.businessName || String(input.organizationName ?? "").trim() || "our company",
-    trade: market.serviceQuery,
-    city: market.city || null,
-    ownerName: String(meta.full_name ?? meta.name ?? "").trim() || null,
-    ownerPhone: String(meta.phone ?? "").trim() || null,
-  };
+  return applyFounderContactKit(
+    {
+      businessName: market.businessName || String(input.organizationName ?? "").trim() || "our company",
+      trade: market.serviceQuery,
+      city: market.city || null,
+      ownerName: String(meta.full_name ?? meta.name ?? "").trim() || null,
+      ownerPhone: String(meta.phone ?? "").trim() || null,
+    },
+    { name: input.organizationName, slug: input.organizationSlug },
+  );
 }
 
 type SequenceRow = {

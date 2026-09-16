@@ -99,6 +99,7 @@ export function DeskEmailCompose({
       ownerFirstName: profile?.ownerFirstName ?? "",
       businessName: profile?.businessName ?? "",
       ownerPhone: profile?.ownerPhone ?? null,
+      contactLines: profile?.contactLines ?? null,
       trade: profile?.trade || null,
       city: profile?.city || null,
       prospectName,

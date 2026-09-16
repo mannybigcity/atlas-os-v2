@@ -96,6 +96,7 @@ export async function approveAmandaSequence(formData: FormData) {
 
   const business = amandaBusinessFromWorkspace({
     organizationName: organization.name,
+    organizationSlug: organization.slug,
     userMetadata: user.user_metadata as Record<string, unknown>,
   });
   const steps = amandaSequenceSteps({

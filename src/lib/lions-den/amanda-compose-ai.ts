@@ -3,6 +3,7 @@
  * Pure — zero Next or Supabase. Nothing here sends.
  */
 
+import { allowedFounderPhoneDigits } from "./founder-contact-kit.ts";
 import {
   amandaClose,
   hasSafeBusinessProfile,
@@ -79,8 +80,8 @@ export function amandaComposeAiInstructions(spanish: boolean) {
   return [
     "You draft one first-touch email the owner will read and send. Atlas never sends it.",
     "Write as Amanda, outreach for the owner's business. The prospect is the reader.",
-    "Use only facts in the JSON: owner name, business name, trade, city, owner phone, prospect name/company/type.",
-    "Never invent a kid, job history, quote, website, or a phone that is not in ownerPhone.",
+    "Use only facts in the JSON: owner name, business name, trade, city, owner phone, extra founder phones, prospect name/company/type.",
+    "Never invent a kid, job history, quote, website, or a phone that is not in ownerPhone or extraPhones.",
     "3 to 6 short plain-text lines. No markdown. No emoji. No opt-out lecture.",
     "Every sendable body must end with the exact close string provided.",
     "Variants must be real rewrites, not the same paragraph.",
@@ -98,6 +99,7 @@ export function amandaComposeAiInput(input: NextMessageInput, close: string) {
     trade: String(input.trade ?? "").trim() || null,
     city: String(input.city ?? "").trim() || null,
     ownerPhone: input.ownerPhone,
+    extraPhones: (input.contactLines ?? []).map((line) => line.phone).filter(Boolean),
     prospectName: input.prospectName,
     prospectCompany: input.prospectCompany,
     prospectType: String(input.prospectType ?? "").replaceAll("_", " ").trim() || null,
@@ -110,7 +112,7 @@ function textIsSafe(text: string, input: NextMessageInput, close: string) {
   if (MARKDOWN_OR_EMOJI.test(text)) return false;
   if (PERSONAL_INVENTION.test(text) && !PERSONAL_INVENTION.test(input.notesText)) return false;
   if (!text.includes(close.split(".")[0] ?? "Amanda")) return false;
-  const allowed = digits(input.ownerPhone);
+  const allowed = allowedFounderPhoneDigits(input).join("");
   for (const phone of phonesIn(text)) {
     if (!allowed || !allowed.includes(phone.slice(-7))) return false;
   }
@@ -147,6 +149,7 @@ export function nextMessageFromAiDraft(
       ownerFirstName: String(input.ownerFirstName ?? "").trim().split(/\s+/)[0] ?? "",
       businessName: input.businessName.trim(),
       ownerPhone: String(input.ownerPhone ?? "").trim() || null,
+      contactLines: input.contactLines,
       trade: usableTrade(input.trade),
       city: String(input.city ?? "").trim(),
       prospectCompany: String(input.prospectCompany ?? "").trim(),

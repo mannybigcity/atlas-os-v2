@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LanguageSwitcher, useSiteLanguage } from "@/components/language-switcher";
+import { AFE_CALL_TODAY_EN, AFE_CALL_TODAY_ES, AFE_MANNY_PHONE_TEL } from "@/lib/afe-public-contact";
 import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
 
 type SiteHeaderProps = {
@@ -61,6 +62,12 @@ export function SiteHeader({ active, initialLanguage = "en" }: SiteHeaderProps) 
               {item.label}
             </Link>
           ))}
+          <a
+            className="shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-sm font-semibold text-[#1246a0] transition hover:bg-[#eef4ff] hover:text-[#0a2f78]"
+            href={`tel:${AFE_MANNY_PHONE_TEL}`}
+          >
+            {spanish ? AFE_CALL_TODAY_ES : AFE_CALL_TODAY_EN}
+          </a>
           <LanguageSwitcher initialLanguage={initialLanguage} />
           <Link
             className="rounded-full bg-[#f5b932] px-4 py-2 text-sm font-black !text-[#071b42] shadow-[0_8px_20px_rgba(245,185,50,0.2)] transition hover:bg-[#ffd064] hover:!text-[#071b42]"
@@ -70,6 +77,13 @@ export function SiteHeader({ active, initialLanguage = "en" }: SiteHeaderProps) 
           </Link>
         </nav>
         <nav aria-label={spanish ? "Navegación móvil" : "Mobile navigation"} className="flex shrink-0 items-center gap-2 lg:hidden">
+          <a
+            aria-label={spanish ? AFE_CALL_TODAY_ES : AFE_CALL_TODAY_EN}
+            className="rounded-full border border-[#1246a0] px-3 py-2 text-xs font-semibold text-[#1246a0] transition hover:bg-[#eef4ff]"
+            href={`tel:${AFE_MANNY_PHONE_TEL}`}
+          >
+            {spanish ? "Llama hoy" : "Call today"}
+          </a>
           <LanguageSwitcher initialLanguage={initialLanguage} />
           <Link
             aria-label={spanish ? "Crear una cuenta. Comenzar prueba gratis de 7 días" : "Create an account. Start 7-day free trial"}

@@ -11,6 +11,7 @@ import {
   readInboundLeadValues,
   validateInboundLead,
 } from "@/lib/lions-den/inbound-leads";
+import { founderContactLinesFor } from "@/lib/lions-den/founder-contact-kit";
 import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getLeadPageOrganization, leadPageBaseUrl } from "@/server/leads/queries";
@@ -119,6 +120,7 @@ export async function submitInboundLead(formData: FormData) {
     const reply = inboundLeadAutoReply({
       businessName: organization.name,
       ownerPhone: owners.phone,
+      contactLines: founderContactLinesFor(organization),
       values,
       spanish,
     });

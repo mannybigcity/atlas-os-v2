@@ -69,6 +69,7 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
   const engineBusiness = primaryOrganization && allowDraftControls
     ? amandaBusinessFromWorkspace({
         organizationName: primaryOrganization.name,
+        organizationSlug: primaryOrganization.slug,
         userMetadata: workspace.user.user_metadata as Record<string, unknown>,
       })
     : null;

@@ -16,6 +16,7 @@ import {
   parseAmandaComposeAiDraft,
 } from "@/lib/lions-den/amanda-compose-ai";
 import { isAtlasAskCapped } from "@/lib/lions-den/atlas-quota";
+import { applyFounderContactKit, type FounderContactLine } from "@/lib/lions-den/founder-contact-kit";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import {
   amandaClose,
@@ -57,6 +58,7 @@ type ComposeFacts = {
   ownerFirstName: string;
   businessName: string;
   ownerPhone: string | null;
+  contactLines?: FounderContactLine[] | null;
   trade: string | null;
   city: string | null;
   prospectName: string;
@@ -101,11 +103,21 @@ async function requireDeskMember(organizationId: string) {
 }
 
 function composeInput(facts: ComposeFacts): NextMessageInput {
+  const locked = applyFounderContactKit(
+    {
+      ownerName: facts.ownerFirstName,
+      businessName: facts.businessName,
+      ownerPhone: facts.ownerPhone,
+      contactLines: facts.contactLines,
+    },
+    { name: facts.businessName, slug: facts.workspaceSlug || facts.previewOrgSlug },
+  );
   return {
     spanish: facts.spanish,
-    ownerFirstName: facts.ownerFirstName,
+    ownerFirstName: String(locked.ownerName ?? facts.ownerFirstName).trim(),
     businessName: facts.businessName,
-    ownerPhone: facts.ownerPhone,
+    ownerPhone: locked.ownerPhone ?? null,
+    contactLines: locked.contactLines,
     trade: facts.trade,
     city: facts.city,
     prospectName: facts.prospectName,

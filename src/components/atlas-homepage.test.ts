@@ -33,7 +33,12 @@ test("AFE homepage hero has one gold trial button and quiet secondary links", ()
   assert.match(hero, /atlas-hero-link[\s\S]*\/#den/);
   assert.match(homepage, /See how the desk works →/);
   assert.match(hero, /atlas-hero-link[\s\S]*\/assessment/);
+  assert.match(hero, /atlas-hero-call/);
+  assert.match(hero, /\{t\.callToday\}/);
+  assert.match(hero, /tel:\$\{AFE_MANNY_PHONE_TEL\}/);
+  assert.match(homepage, /callToday:\s*AFE_CALL_TODAY_EN/);
   assert.doesNotMatch(hero, /atlas-button outline/);
+  assert.doesNotMatch(hero, /Deleana|346-544-8697|SIS Custom Creations/);
 });
 
 test("AFE homepage hero shows live BASIC GROW UNLIMITED prices from the pricing source", () => {
@@ -158,6 +163,10 @@ test("AFE header keeps the official pasted logo and trial as the gold nav CTA", 
   assert.match(header, /Start 7-day free trial/);
   assert.match(header, /href=\{withSiteLanguage\("\/start-trial", language\)\}/);
   assert.match(header, /href: "\/assessment"/);
+  assert.match(header, /AFE_CALL_TODAY_EN/);
+  assert.match(header, /tel:\$\{AFE_MANNY_PHONE_TEL\}/);
+  assert.match(header, /whitespace-nowrap[\s\S]*AFE_CALL_TODAY_EN/);
+  assert.doesNotMatch(header, /Deleana|346-544-8697|SIS Custom Creations/);
 });
 
 test("AFE footer strip CTA matches the hero trial door and keeps trust legal contact", () => {

@@ -254,6 +254,7 @@ test("compose strip has the four chips and chips never send", () => {
   assert.match(compose, /data-ask-micah-flyer/);
   assert.match(compose, /micahFlyerButtonLabel/);
   assert.match(compose, /requestAmandaFirstTouchDraft/);
+  assert.match(compose, /contactLines: profile\?\.contactLines/);
   assert.match(compose, /requestMicahFlyerDraft/);
   assert.match(compose, /cursor-pointer/);
   assert.match(compose, /chipClass/);
