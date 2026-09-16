@@ -140,6 +140,7 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
       {primaryOrganization ? (
         <HunterReviewPile
           acceptedCount={acceptedCount}
+          pendingCount={reviewPile?.pendingCount ?? 0}
           items={(reviewPile && !reviewPile.setupRequired ? reviewPile.data : []).map((item) =>
             presentLiveDeskReviewItem(primaryOrganization, item),
           )}

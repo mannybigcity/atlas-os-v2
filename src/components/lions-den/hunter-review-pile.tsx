@@ -7,6 +7,7 @@ type HunterReviewPileProps = {
   items: HunterReviewItem[];
   setupRequired?: boolean;
   acceptedCount?: number;
+  pendingCount?: number;
   prospectsHref?: string;
   spanish: boolean;
 };
@@ -16,9 +17,12 @@ export function HunterReviewPile({
   items,
   setupRequired = false,
   acceptedCount = 0,
+  pendingCount,
   prospectsHref = "/client/prospects",
   spanish,
 }: HunterReviewPileProps) {
+  const pending = Math.max(pendingCount ?? items.length, items.length);
+  const truncated = pending > items.length;
   return (
     <section className="mt-6 rounded-[1.6rem] border border-[#d8c27a] bg-white p-5" id="hunter-review-pile">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -34,9 +38,16 @@ export function HunterReviewPile({
               ? "Acepta un resultado para moverlo a Prospectos. Si Google no publicó teléfono, no será un prospecto para llamar. Atlas no inventa números ni envía correos, llamadas ni SMS."
               : "Accept a listing to make it a Prospect. If Google published no phone, this will not become a Call prospect. Atlas does not invent numbers, and it does not email, call, or text anyone."}
           </p>
+          {truncated ? (
+            <p className="mt-2 max-w-2xl text-sm font-medium text-[#8a6a12]">
+              {spanish
+                ? `Mostrando ${items.length} de ${pending}. Aceptar todos toma cada hallazgo pendiente de este escritorio.`
+                : `Showing ${items.length} of ${pending}. Accept all still takes every pending listing on this desk.`}
+            </p>
+          ) : null}
         </div>
         <span className="w-fit rounded-full bg-[#fff8e6] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#071b42]">
-          {items.length} {spanish ? "en revisión" : "in review"}
+          {pending} {spanish ? "en revisión" : "in review"}
         </span>
       </div>
 
@@ -92,7 +103,12 @@ export function HunterReviewPile({
       ) : null}
 
       {!setupRequired && items.length > 0 ? (
-        <HunterReviewPileBoard items={items} organizationId={organizationId} spanish={spanish} />
+        <HunterReviewPileBoard
+          items={items}
+          organizationId={organizationId}
+          pendingCount={pending}
+          spanish={spanish}
+        />
       ) : null}
     </section>
   );

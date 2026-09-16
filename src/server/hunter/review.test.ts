@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   HUNTER_BULK_ACCEPT_CONFIRM_COUNT,
+  HUNTER_BULK_ACCEPT_MAX,
   HUNTER_DAILY_SEARCH_CAP,
   HUNTER_REVIEW_PILE_LIMIT,
   HUNTER_REVIEW_PILE_MIGRATION,
@@ -27,7 +28,9 @@ import {
 test("HUNTER keeps the documented 10-result / 20-search UTC-day caps", () => {
   assert.equal(HUNTER_SEARCH_RESULT_CAP, 10);
   assert.equal(HUNTER_DAILY_SEARCH_CAP, 20);
-  assert.equal(HUNTER_REVIEW_PILE_LIMIT, 80);
+  assert.equal(HUNTER_REVIEW_PILE_LIMIT, 500);
+  assert.equal(HUNTER_BULK_ACCEPT_MAX, 100);
+  assert.notEqual(HUNTER_REVIEW_PILE_LIMIT, 20);
   assert.equal(HUNTER_BULK_ACCEPT_CONFIRM_COUNT, 8);
   assert.equal(hunterDailyCapReached(19), false);
   assert.equal(hunterDailyCapReached(20), true);

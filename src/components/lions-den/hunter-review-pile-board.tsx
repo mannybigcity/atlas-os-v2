@@ -19,6 +19,7 @@ const BULK_ACCEPT_CONFIRM_COUNT = 8;
 type HunterReviewPileBoardProps = {
   organizationId: string;
   items: HunterReviewItem[];
+  pendingCount?: number;
   spanish: boolean;
 };
 
@@ -34,8 +35,8 @@ function bulkConfirmMessage(input: {
 }) {
   const who = input.all
     ? input.spanish
-      ? `¿Aceptar los ${input.count} hallazgos visibles en Prospectos para este escritorio?`
-      : `Accept all ${input.count} visible listings into Prospects for this desk?`
+      ? `¿Aceptar los ${input.count} hallazgos pendientes en Prospectos para este escritorio?`
+      : `Accept all ${input.count} pending listings into Prospects for this desk?`
     : input.spanish
       ? `¿Aceptar ${input.count} hallazgos seleccionados en Prospectos para este escritorio?`
       : `Accept ${input.count} selected listings into Prospects for this desk?`;
@@ -53,6 +54,7 @@ function bulkConfirmMessage(input: {
 export function HunterReviewPileBoard({
   organizationId,
   items,
+  pendingCount,
   spanish,
 }: HunterReviewPileBoardProps) {
   const [selected, setSelected] = useState<string[]>([]);
@@ -66,6 +68,7 @@ export function HunterReviewPileBoard({
   const selectedItems = items.filter((item) => selectedSet.has(item.id));
   const selectedNoPhone = selectedItems.filter((item) => !itemHasPublishedPhone(item)).length;
   const allNoPhone = items.filter((item) => !itemHasPublishedPhone(item)).length;
+  const acceptAllCount = Math.max(pendingCount ?? items.length, items.length);
 
   useEffect(() => {
     if (selectAllRef.current) {
@@ -133,13 +136,10 @@ export function HunterReviewPileBoard({
           </form>
           <form action={acceptAllHunterReviewItems}>
             <input name="organizationId" type="hidden" value={organizationId} />
-            {visibleIds.map((id) => (
-              <input key={id} name="reviewItemId" type="hidden" value={id} />
-            ))}
             <ConfirmSubmitButton
               className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42]"
               confirmMessage={bulkConfirmMessage({
-                count: items.length,
+                count: acceptAllCount,
                 noPhoneCount: allNoPhone,
                 spanish,
                 all: true,

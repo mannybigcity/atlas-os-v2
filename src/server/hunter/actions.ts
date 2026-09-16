@@ -223,12 +223,7 @@ export async function acceptSelectedHunterReviewItems(formData: FormData) {
 
 export async function acceptAllHunterReviewItems(formData: FormData) {
   const { organizationId, supabase } = await requireHunterAcceptContext(formData);
-  const visibleIds = parseHunterReviewItemIds(formData.getAll("reviewItemId"));
-  const items = await loadPendingHunterReviewItemsForOrg(
-    supabase,
-    organizationId,
-    visibleIds.length > 0 ? visibleIds : undefined,
-  );
+  const items = await loadPendingHunterReviewItemsForOrg(supabase, organizationId);
   if (items.length === 0) {
     redirect("/client/hunter?hunter=none_selected");
   }

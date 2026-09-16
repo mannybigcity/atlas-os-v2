@@ -2,7 +2,7 @@ import { getGooglePlaceDetails } from "@/server/integrations/google-places";
 import { findEmailOnBusinessWebsite } from "@/server/hunter/website-email";
 import {
   HUNTER_BULK_ACCEPT_CONCURRENCY,
-  HUNTER_REVIEW_PILE_LIMIT,
+  HUNTER_BULK_ACCEPT_MAX,
   acceptedHunterOpportunityFields,
   mergeHunterPlaceDetails,
   parseHunterReviewItemIds,
@@ -134,25 +134,41 @@ export async function loadPendingHunterReviewItemsForOrg(
   organizationId: string,
   ids?: string[],
 ): Promise<HunterAcceptRow[]> {
-  const selectedIds = ids ? parseHunterReviewItemIds(ids).slice(0, HUNTER_REVIEW_PILE_LIMIT) : null;
+  const selectedIds = ids ? parseHunterReviewItemIds(ids).slice(0, HUNTER_BULK_ACCEPT_MAX) : null;
   if (selectedIds && selectedIds.length === 0) return [];
 
-  let query = supabase
-    .from("organization_hunter_review_items")
-    .select(HUNTER_REVIEW_ITEM_SELECT)
-    .eq("organization_id", organizationId)
-    .eq("status", "pending");
-
   if (selectedIds) {
-    query = query.in("id", selectedIds);
+    const { data, error } = await supabase
+      .from("organization_hunter_review_items")
+      .select(HUNTER_REVIEW_ITEM_SELECT)
+      .eq("organization_id", organizationId)
+      .eq("status", "pending")
+      .in("id", selectedIds)
+      .order("created_at", { ascending: false })
+      .limit(HUNTER_BULK_ACCEPT_MAX);
+    if (error || !data) return [];
+    return pendingHunterReviewItemsForOrg(data as HunterAcceptRow[], organizationId);
   }
 
-  const { data, error } = await query
-    .order("created_at", { ascending: false })
-    .limit(HUNTER_REVIEW_PILE_LIMIT);
+  const pageSize = 100;
+  const rows: HunterAcceptRow[] = [];
+  let from = 0;
+  while (rows.length < HUNTER_BULK_ACCEPT_MAX) {
+    const to = from + pageSize - 1;
+    const { data, error } = await supabase
+      .from("organization_hunter_review_items")
+      .select(HUNTER_REVIEW_ITEM_SELECT)
+      .eq("organization_id", organizationId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error || !data?.length) break;
+    rows.push(...(data as HunterAcceptRow[]));
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
 
-  if (error || !data) return [];
-  return pendingHunterReviewItemsForOrg(data as HunterAcceptRow[], organizationId);
+  return pendingHunterReviewItemsForOrg(rows, organizationId).slice(0, HUNTER_BULK_ACCEPT_MAX);
 }
 
 export async function acceptHunterReviewItemsForOrg(
@@ -162,7 +178,7 @@ export async function acceptHunterReviewItemsForOrg(
 ): Promise<HunterAcceptOneResult[]> {
   const scoped = pendingHunterReviewItemsForOrg(items, organizationId).slice(
     0,
-    HUNTER_REVIEW_PILE_LIMIT,
+    HUNTER_BULK_ACCEPT_MAX,
   );
   return mapPool(scoped, HUNTER_BULK_ACCEPT_CONCURRENCY, (item) =>
     acceptPendingHunterReviewItem(supabase, organizationId, item),

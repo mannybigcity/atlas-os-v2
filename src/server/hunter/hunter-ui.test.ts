@@ -104,6 +104,7 @@ test("HUNTER bulk Accept stays on the current desk and keeps per-row Accept", ()
     readRepo("src/server/hunter/queries.ts"),
     readRepo("src/server/hunter/review.ts"),
   ].join("\n");
+  const pile = readRepo("src/components/lions-den/hunter-review-pile.tsx");
   const hunterPage = readRepo("src/app/client/hunter/page.tsx");
   const board = readRepo("src/components/lions-den/hunter-review-pile-board.tsx");
 
@@ -112,7 +113,11 @@ test("HUNTER bulk Accept stays on the current desk and keeps per-row Accept", ()
   assert.match(accept, /loadPendingHunterReviewItemsForOrg/);
   assert.match(accept, /\.eq\("organization_id", organizationId\)/);
   assert.match(accept, /blockedHunterAcceptReason/);
-  assert.match(accept, /HUNTER_REVIEW_PILE_LIMIT/);
+  assert.match(accept, /HUNTER_BULK_ACCEPT_MAX/);
+  assert.match(accept, /loadPendingHunterReviewItemsForOrg\(supabase, organizationId\)/);
+  assert.doesNotMatch(readRepo("src/server/hunter/review.ts"), /HUNTER_REVIEW_PILE_LIMIT = 20/);
+  assert.match(pile, /Showing \$\{items\.length\} of \$\{pending\}/);
+  assert.match(pile, /Accept all still takes every pending listing on this desk/);
   assert.match(hunterPage, /accepted_bulk/);
   assert.match(hunterPage, /none_selected/);
   assert.match(board, /acceptHunterReviewItem/);
