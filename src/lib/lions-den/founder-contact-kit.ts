@@ -48,7 +48,7 @@ export function applyFounderContactKit<
   const org = organization ?? (business.businessName ? { name: business.businessName } : null);
   const lines = founderContactLinesFor(org);
   if (!lines) {
-    return { ...business, ownerName };
+    return { ...business, ownerName, contactLines: undefined };
   }
   return {
     ...business,
