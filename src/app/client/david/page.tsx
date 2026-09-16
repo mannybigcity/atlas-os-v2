@@ -14,7 +14,7 @@ import {
 import { defaultClientAiDailyUsage, getClientAiDailyUsage, getClientAiRequests } from "@/server/client-ai/queries";
 import { getPilotWorkspace } from "@/server/pilot/queries";
 import { getOrganizationNotes } from "@/server/notes/queries";
-import { getOpportunityPipeline } from "@/server/opportunities/queries";
+import { getFollowUpOpportunities } from "@/server/opportunities/queries";
 import { amandaBusinessFromWorkspace, getAmandaSequences } from "@/server/outreach/queries";
 import { getSisDashboardData } from "@/server/sis-workspace/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
@@ -54,7 +54,7 @@ export default async function FollowUpPage({ searchParams }: FollowUpPageProps) 
     ? await getPilotWorkspace(primaryOrganization.id)
     : null;
   const pipeline = primaryOrganization
-    ? await getOpportunityPipeline(primaryOrganization.id)
+    ? await getFollowUpOpportunities(primaryOrganization.id)
     : null;
   const sisDashboard = primaryOrganization && isSisOrganization(primaryOrganization)
     ? await getSisDashboardData(primaryOrganization.id)

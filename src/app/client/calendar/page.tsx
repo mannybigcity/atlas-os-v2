@@ -5,7 +5,7 @@ import { LionsDenCalendarBoard } from "@/components/lions-den/lions-den-calendar
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
-import { getOpportunityPipeline } from "@/server/opportunities/queries";
+import { getFollowUpOpportunities } from "@/server/opportunities/queries";
 import { getSisDashboardData } from "@/server/sis-workspace/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
@@ -34,7 +34,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
     redirect("/client");
   }
   const organization = workspace.primaryOrganization;
-  const pipeline = organization ? await getOpportunityPipeline(organization.id) : null;
+  const pipeline = organization ? await getFollowUpOpportunities(organization.id) : null;
   const sisDashboard = organization && isSisOrganization(organization)
     ? await getSisDashboardData(organization.id)
     : null;

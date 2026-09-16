@@ -9,10 +9,13 @@ const read = (path: string) => readFileSync(join(root, path), "utf8");
 test("every Call, WhatsApp, and Email from the record queues a dated check-in instead of a dead end", () => {
   const contact = read("server/opportunities/desk-contact-actions.ts");
   const email = read("server/opportunities/desk-email-actions.ts");
+  assert.match(contact, /deskContactCheckIn\(/);
+  assert.match(contact, /next_action_due: checkIn\.nextActionDue/);
+  assert.match(contact, /next_action: checkIn\.nextAction/);
+  assert.match(email, /emailSentFollowUp\(/);
+  assert.match(email, /next_action_due: checkIn\.nextActionDue/);
+  assert.match(email, /next_action: checkIn\.nextAction/);
   for (const [name, source] of [["contact", contact], ["email", email]] as const) {
-    assert.match(source, /deskContactCheckIn\(/, name);
-    assert.match(source, /next_action_due: checkIn\.nextActionDue/, name);
-    assert.match(source, /next_action: checkIn\.nextAction/, name);
     assert.doesNotMatch(source, /Wait for a reply, then follow up/, name);
     assert.doesNotMatch(source, /api\.resend\.com|twilio|sms:/i, `${name} must not send anything`);
   }
@@ -25,8 +28,9 @@ test("every Call, WhatsApp, and Email from the record queues a dated check-in in
 
 test("stage buttons that promise a follow-up in a few days put a date on it", () => {
   const actions = read("server/opportunities/prospect-actions.ts");
-  assert.match(actions, /FOLLOW_UP_CHECK_IN_DAYS/);
-  assert.match(actions, /stage === "contacted"\s*\?\s*localDateInDays\(FOLLOW_UP_CHECK_IN_DAYS\)/);
+  assert.match(actions, /reachedOutFollowUp/);
+  assert.match(actions, /stage === "contacted"/);
+  assert.match(actions, /reachedOutFollowUp\(\{ spanish \}\)\.nextActionDue/);
   assert.match(actions, /stage === "responded"\s*\?\s*localDateInDays\(1\)/);
   assert.match(actions, /next_action_due: nextActionDue/);
 });

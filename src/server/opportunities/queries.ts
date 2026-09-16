@@ -170,14 +170,7 @@ function mapOpportunityRow(
   };
 }
 
-export async function getOpportunityPipeline(
-  organizationId: string,
-): Promise<WorkspaceQueryResult<OrganizationOpportunityPipeline>> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("organization_opportunities")
-    .select(
-      `
+const OPPORTUNITY_SELECT = `
         id,
         organization_id,
         name,
@@ -206,13 +199,57 @@ export async function getOpportunityPipeline(
           body,
           created_at
         )
-      `,
-    )
+      `;
+
+export async function getOpportunityPipeline(
+  organizationId: string,
+): Promise<WorkspaceQueryResult<OrganizationOpportunityPipeline>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organization_opportunities")
+    .select(OPPORTUNITY_SELECT)
     .eq("organization_id", organizationId)
     .neq("stage", "archived")
     .order("fit_score", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(40);
+
+  if (error) {
+    return {
+      data: { opportunities: [] },
+      setupRequired: true,
+      error: error.message,
+    };
+  }
+
+  const opportunities = ((data ?? []) as OpportunityRow[]).map(mapOpportunityRow);
+
+  return {
+    data: { opportunities },
+    setupRequired: false,
+    error: null,
+  };
+}
+
+/**
+ * Follow-up desk list. Org-scoped like the pipeline, but not capped at the
+ * 40 highest fit scores — emailed Kids' Sign Party batches must still appear.
+ * Includes contacted / queued / replied even when next_action_due was never set.
+ */
+export async function getFollowUpOpportunities(
+  organizationId: string,
+): Promise<WorkspaceQueryResult<OrganizationOpportunityPipeline>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("organization_opportunities")
+    .select(OPPORTUNITY_SELECT)
+    .eq("organization_id", organizationId)
+    .neq("stage", "archived")
+    .neq("stage", "lost")
+    .or("next_action_due.not.is.null,stage.in.(contacted,follow_up_queued,responded)")
+    .order("next_action_due", { ascending: true, nullsFirst: true })
+    .order("updated_at", { ascending: false })
+    .limit(200);
 
   if (error) {
     return {

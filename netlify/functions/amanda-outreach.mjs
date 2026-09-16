@@ -200,9 +200,26 @@ export async function runAmandaSendPass(now = new Date()) {
     });
 
     if (PRE_CONTACT_STAGES.has(opportunity.stage)) {
+      const due = new Date(now.getTime());
+      due.setUTCDate(due.getUTCDate() + 3);
+      const nextActionDue = due.toISOString().slice(0, 10);
       await rest(`organization_opportunities?id=eq.${opportunity.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ stage: "contacted" }),
+        body: JSON.stringify({
+          stage: "contacted",
+          next_action: "Email sent — follow up if no reply",
+          next_action_due: nextActionDue,
+        }),
+      });
+    } else if (opportunity.stage === "contacted") {
+      const due = new Date(now.getTime());
+      due.setUTCDate(due.getUTCDate() + 3);
+      await rest(`organization_opportunities?id=eq.${opportunity.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          next_action: "Email sent — follow up if no reply",
+          next_action_due: due.toISOString().slice(0, 10),
+        }),
       });
     }
     await rest("organization_opportunity_events", {

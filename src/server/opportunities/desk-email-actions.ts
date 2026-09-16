@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { readDeskEmailAttachments } from "@/lib/lions-den/desk-email-attachments";
 import { sendLeadEmail } from "@/server/leads/email";
 import { fillMissingOpportunityEmail } from "@/server/hunter/fill-website-email";
-import { deskContactCheckIn, deskContactStamp } from "@/lib/lions-den/prospect-stages";
+import { deskContactStamp } from "@/lib/lions-den/prospect-stages";
+import { emailSentFollowUp } from "@/lib/lions-den/follow-up-queue";
 import { readDeskQuotes, withDeskQuote } from "@/lib/lions-den/desk-quote";
 import { asOpportunityMetadata } from "@/server/opportunities/queries";
 import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
@@ -119,7 +120,7 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
     const actor = user.email ?? "Owner";
     const closed = existing ? new Set(["won", "lost"]).has(String(existing.stage)) : false;
     // Queue the dated check-in so the prospect stays on the Follow-up desk. Atlas never sends it.
-    const checkIn = deskContactCheckIn("email", { spanish: text(formData, "lang", 2) === "es", at: new Date(stamp.at) });
+    const checkIn = emailSentFollowUp({ spanish: text(formData, "lang", 2) === "es", sentAt: new Date(stamp.at) });
     await supabase.from("organization_opportunity_events").insert({
       opportunity_id: opportunityId,
       organization_id: organizationId,
@@ -182,6 +183,8 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
     }
   }
 
+  revalidatePath("/client");
+  revalidatePath("/client/david");
   revalidatePath("/client/prospects");
   revalidatePath("/client/clients");
   if (opportunityId) revalidatePath(`/client/prospects/${opportunityId}`);

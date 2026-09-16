@@ -12,6 +12,11 @@ import {
   type DeskFollowUpItem,
 } from "@/lib/lions-den/desk-queue";
 import {
+  belongsOnFollowUpDesk,
+  followUpQueueDueAt,
+  presentedFollowUpNextAction,
+} from "@/lib/lions-den/follow-up-queue";
+import {
   FOLLOW_UP_CHECK_IN_DAYS,
   FOLLOW_UP_OWNER_SEND_HINT_EN,
   FOLLOW_UP_OWNER_SEND_HINT_ES,
@@ -168,36 +173,40 @@ export function LionsDenFollowUpBoard({
   const showDraftControls = allowDraftControls && !readOnly;
   const items: DeskFollowUpItem[] = [
     ...prospects
-      .filter((item) => item.nextActionDue)
-      .map((item) => ({
-        id: `prospect-${item.id}`,
-        title: item.name,
-        detail: item.nextAction,
-        dueAt: item.nextActionDue!,
-        href: prospectDetailPath(item.id),
-        draftControls: showDraftControls
-          ? {
-              opportunityId: item.id,
-              organizationId: item.organizationId,
-              contactEmail: item.contactEmail,
-              contactPhone: publishedPlacePhone(
-                item.contactPhone ||
-                  (typeof item.metadata?.national_phone_number === "string"
-                    ? item.metadata.national_phone_number
-                    : null),
-              ),
-              contactName: item.contactName,
-              draftBody: item.nextAction ?? "",
-              amanda: amandaInfoFor(item, amanda, spanish),
-              engine: engineOwner
-                ? nextMessageFor(item, { spanish, engineOwner, linkedNotes, nowIso })
-                : null,
-              fromEmail: composeFromEmail,
-              previewOrgSlug,
-              workspaceSlug,
-            }
-          : undefined,
-      })),
+      .filter((item) => belongsOnFollowUpDesk(item))
+      .map((item) => {
+        const engine = engineOwner
+          ? nextMessageFor(item, { spanish, engineOwner, linkedNotes, nowIso })
+          : null;
+        const detail = presentedFollowUpNextAction(item, spanish);
+        return {
+          id: `prospect-${item.id}`,
+          title: item.name,
+          detail: detail || item.nextAction,
+          dueAt: followUpQueueDueAt(item),
+          href: prospectDetailPath(item.id),
+          draftControls: showDraftControls
+            ? {
+                opportunityId: item.id,
+                organizationId: item.organizationId,
+                contactEmail: item.contactEmail,
+                contactPhone: publishedPlacePhone(
+                  item.contactPhone ||
+                    (typeof item.metadata?.national_phone_number === "string"
+                      ? item.metadata.national_phone_number
+                      : null),
+                ),
+                contactName: item.contactName,
+                draftBody: engine?.body || detail || item.nextAction || "",
+                amanda: amandaInfoFor(item, amanda, spanish),
+                engine,
+                fromEmail: composeFromEmail,
+                previewOrgSlug,
+                workspaceSlug,
+              }
+            : undefined,
+        };
+      }),
     ...partyEvents
       .filter((item) => item.nextActionDue)
       .map((item) => ({
@@ -243,8 +252,8 @@ export function LionsDenFollowUpBoard({
           <p className="font-semibold">{spanish ? "Cola despejada." : "Queue clear."}</p>
           <p className="mt-2">
             {spanish
-              ? "Acepta un prospecto o agrega una consulta de fiesta y la próxima acción aparecerá aquí."
-              : "Accept a prospect or add a party inquiry and the next action will show here."}
+              ? "Después de enviar un correo aparecen aquí para dar seguimiento si no hay respuesta. Acepta un prospecto o agrega una consulta de fiesta."
+              : "After you email someone they land here so you can follow up if they do not reply. Accept a prospect or add a party inquiry."}
           </p>
         </div>
       ) : (
