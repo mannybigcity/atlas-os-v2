@@ -1,4 +1,4 @@
-import { env } from "node:process";
+import { readRuntimeEnv } from "../../lib/env.ts";
 
 import {
   IntegrationConfigurationError,
@@ -29,14 +29,14 @@ export function hasServerIntegrationSecret(
   name: ServerIntegrationSecretName,
 ) {
   assertServerRuntime();
-  return Boolean(env[name]?.trim());
+  return Boolean(readRuntimeEnv(name));
 }
 
 export function requireServerIntegrationSecret(
   name: ServerIntegrationSecretName,
 ) {
   assertServerRuntime();
-  const value = env[name]?.trim();
+  const value = readRuntimeEnv(name);
 
   if (!value) {
     throw new IntegrationConfigurationError(PROVIDERS_BY_SECRET[name], name);
@@ -47,7 +47,7 @@ export function requireServerIntegrationSecret(
 
 export function getOpenAIModel() {
   assertServerRuntime();
-  const configuredModel = env.OPENAI_MODEL?.trim();
+  const configuredModel = readRuntimeEnv("OPENAI_MODEL");
 
   if (!configuredModel) {
     return DEFAULT_OPENAI_MODEL;

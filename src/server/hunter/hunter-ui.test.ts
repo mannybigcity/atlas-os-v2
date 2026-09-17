@@ -36,6 +36,10 @@ test("HUNTER desk shows the growth funnel and Accept, not a Maps-only dead end",
   assert.match(search, /data-hunter-self-search/);
   assert.match(search, /isSelfSearch/);
   assert.match(search, /returns competitors, not customers/);
+  assert.match(search, /value=\{zipCode\}/);
+  assert.match(search, /value=\{city\}/);
+  assert.match(search, /value=\{state\}/);
+  assert.match(search, /value=\{radiusMiles\}/);
   assert.doesNotMatch(search, /Local business type/);
   assert.doesNotMatch(search, /Auto repair shop or daycare/);
   assert.doesNotMatch(search, /placeholder="77065"/);

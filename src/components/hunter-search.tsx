@@ -41,6 +41,10 @@ export function HunterSearch({
     initialHunterSearchState,
   );
   const [service, setService] = useState(defaults?.service ?? "");
+  const [zipCode, setZipCode] = useState(defaults?.zipCode ?? "");
+  const [city, setCity] = useState(defaults?.city ?? "");
+  const [state, setState] = useState(defaults?.state ?? "");
+  const [radiusMiles, setRadiusMiles] = useState("");
   const targets = defaults?.targets ?? [];
   const selfSearch =
     defaults?.ownService && defaults.vertical
@@ -145,27 +149,30 @@ export function HunterSearch({
           <span className="text-sm font-medium text-[#071b42]">{spanish ? "Código postal" : "ZIP code"}</span>
           <input
             className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
-            defaultValue={defaults?.zipCode ?? ""}
             name="zipCode"
+            onChange={(event) => setZipCode(event.target.value)}
             placeholder={spanish ? "Código postal" : "ZIP"}
+            value={zipCode}
           />
         </label>
         <label>
           <span className="text-sm font-medium text-[#071b42]">{spanish ? "Ciudad" : "City"}</span>
           <input
             className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
-            defaultValue={defaults?.city ?? ""}
             name="city"
+            onChange={(event) => setCity(event.target.value)}
             placeholder={spanish ? "Ciudad" : "City"}
+            value={city}
           />
         </label>
         <label>
           <span className="text-sm font-medium text-[#071b42]">{spanish ? "Estado" : "State"}</span>
           <input
             className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
-            defaultValue={defaults?.state ?? ""}
             name="state"
+            onChange={(event) => setState(event.target.value)}
             placeholder={spanish ? "Estado" : "State"}
+            value={state}
           />
         </label>
         <label>
@@ -174,8 +181,10 @@ export function HunterSearch({
             className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
             min="1"
             name="radiusMiles"
+            onChange={(event) => setRadiusMiles(event.target.value)}
             placeholder="10"
             type="number"
+            value={radiusMiles}
           />
         </label>
         <button
@@ -459,6 +468,13 @@ function localizeHunterMessage(message: string, language: "en" | "es") {
     return `${transientMatch[1]} resultados temporales de Google Maps. Abre la ficha oficial, verifica los datos en el sitio del negocio y luego agrega el prospecto.`;
   }
 
+  const httpMatch = message.match(
+    /^Google Places could not complete this search \(HTTP (\d+)\)\. The failed request was recorded\.$/,
+  );
+  if (httpMatch) {
+    return `Google Places no pudo completar la búsqueda (HTTP ${httpMatch[1]}). La solicitud fallida quedó registrada.`;
+  }
+
   return ({
     "Enter a business type plus a ZIP code or city/state.": "Escribe un tipo de negocio y un código postal o ciudad/estado.",
     "Radius must be a whole number between 1 and 250 miles.": "El radio debe ser un número entero entre 1 y 250 millas.",
@@ -466,6 +482,16 @@ function localizeHunterMessage(message: string, language: "en" | "es") {
     "HUNTER reached the 20-search daily safety cap. Review today's results before spending more.": "HUNTER alcanzó el límite diario de 20 búsquedas. Revisa los resultados de hoy antes de gastar más.",
     "The provider returned results, but Atlas could not record API usage. Run the search again only after checking the ledger.": "El proveedor devolvió resultados, pero Atlas no pudo registrar el uso de la API. Repite la búsqueda solo después de revisar el registro.",
     "GOOGLE_PLACES_API_KEY is not configured in the server deployment environment.": "GOOGLE_PLACES_API_KEY no está configurada en el entorno del servidor.",
+    "Atlas could not reach Google Places (places.googleapis.com). Check Netlify outbound access, then retry.": "Atlas no pudo contactar Google Places (places.googleapis.com). Revisa el acceso de salida de Netlify e inténtalo de nuevo.",
+    "That search request was not valid. Enter a business type plus a ZIP code or city/state.": "Esa búsqueda no es válida. Escribe un tipo de negocio y un código postal o ciudad/estado.",
+    "Google Places returned a response Atlas could not read. The failed request was recorded.": "Google Places devolvió una respuesta que Atlas no pudo leer. La solicitud fallida quedó registrada.",
+    "GOOGLE_PLACES_API_KEY was rejected by Google. In Netlify, set GOOGLE_PLACES_API_KEY (Builds and Functions scopes) to a valid Places API (New) server key, then redeploy.": "Google rechazó GOOGLE_PLACES_API_KEY. En Netlify, configura GOOGLE_PLACES_API_KEY (ámbitos Builds y Functions) con una clave de servidor válida de Places API (New) y vuelve a desplegar.",
+    "GOOGLE_PLACES_API_KEY is restricted to HTTP referrers. Places API (New) server calls from Netlify cannot use a browser referrer key. Set Application restriction to None or IP addresses, and API restriction to Places API (New) only.": "GOOGLE_PLACES_API_KEY está restringida a referentes HTTP. Las llamadas de servidor de Places API (New) desde Netlify no pueden usar una clave de navegador. Pon la restricción de aplicación en Ninguna o direcciones IP, y la restricción de API solo en Places API (New).",
+    "Places API (New) is not enabled on the Google Cloud project for GOOGLE_PLACES_API_KEY. Enable Places API (New) and confirm billing is active.": "Places API (New) no está habilitada en el proyecto de Google Cloud de GOOGLE_PLACES_API_KEY. Habilítala y confirma que la facturación está activa.",
+    "Google Cloud billing blocked this Places request. Check billing and budgets on the project that owns GOOGLE_PLACES_API_KEY.": "La facturación de Google Cloud bloqueó esta solicitud de Places. Revisa facturación y presupuestos en el proyecto de GOOGLE_PLACES_API_KEY.",
+    "Google Places denied the requested contact fields. Enable Places API (New) Pro/Enterprise SKUs for phone and website, then retry.": "Google Places denegó los campos de contacto. Habilita los SKU Pro/Enterprise de Places API (New) para teléfono y sitio web, luego reintenta.",
+    "Google Places quota was exceeded. Check Places API (New) quotas in Google Cloud, then retry. Atlas still caps HUNTER at 20 searches/day.": "Se agotó la cuota de Google Places. Revisa las cuotas de Places API (New) en Google Cloud y reintenta. Atlas sigue limitando HUNTER a 20 búsquedas/día.",
+    "Google Places rejected this search request. Try a simpler query (business type plus city or ZIP). The failed request was recorded.": "Google Places rechazó esta búsqueda. Prueba una consulta más simple (tipo de negocio más ciudad o código postal). La solicitud fallida quedó registrada.",
     "Google Places could not complete this search. The failed request was recorded.": "Google Places no pudo completar la búsqueda. La solicitud fallida quedó registrada.",
   } as Record<string, string>)[message] ?? message;
 }

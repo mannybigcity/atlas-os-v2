@@ -1,4 +1,8 @@
 import { IntegrationRequestError } from "./errors.ts";
+import {
+  classifyGooglePlacesHttpError,
+  type GooglePlacesHttpClassification,
+} from "./google-places-error.ts";
 import { requireServerIntegrationSecret } from "./server-env.ts";
 
 const GOOGLE_PLACES_TEXT_SEARCH_URL =
@@ -16,6 +20,16 @@ export const GOOGLE_PLACES_TEXT_SEARCH_FIELD_MASK = [
   "places.businessStatus",
 ] as const;
 
+/** Pro SKU fields only — used when Enterprise phone/website fields are denied. */
+export const GOOGLE_PLACES_PRO_TEXT_SEARCH_FIELD_MASK = [
+  "places.id",
+  "places.displayName",
+  "places.formattedAddress",
+  "places.googleMapsUri",
+  "places.primaryType",
+  "places.businessStatus",
+] as const;
+
 export const GOOGLE_PLACE_DETAILS_FIELD_MASK = [
   "id",
   "displayName",
@@ -24,6 +38,15 @@ export const GOOGLE_PLACE_DETAILS_FIELD_MASK = [
   "websiteUri",
   "nationalPhoneNumber",
   "internationalPhoneNumber",
+  "primaryType",
+  "businessStatus",
+] as const;
+
+export const GOOGLE_PLACE_DETAILS_PRO_FIELD_MASK = [
+  "id",
+  "displayName",
+  "formattedAddress",
+  "googleMapsUri",
   "primaryType",
   "businessStatus",
 ] as const;
@@ -88,7 +111,11 @@ type GooglePlacePayload = {
 };
 
 function invalidRequest(): never {
-  throw new IntegrationRequestError("google_places", "invalid_request");
+  throw new IntegrationRequestError("google_places", "invalid_request", {
+    status: null,
+    retryable: false,
+    operatorCode: "invalid_request",
+  });
 }
 
 function normalizeInput(input: GooglePlacesTextSearchInput) {
@@ -198,81 +225,175 @@ export function googlePlaceResourceName(placeId: string) {
   return trimmed.startsWith("places/") ? trimmed : `places/${trimmed}`;
 }
 
+function networkError(): never {
+  throw new IntegrationRequestError("google_places", "network_error", {
+    status: null,
+    retryable: true,
+    operatorCode: "network_error",
+  });
+}
+
+function invalidResponse(): never {
+  throw new IntegrationRequestError("google_places", "invalid_response", {
+    status: null,
+    retryable: false,
+    operatorCode: "invalid_response",
+  });
+}
+
+function throwClassifiedProviderError(
+  status: number,
+  classified: GooglePlacesHttpClassification,
+): never {
+  console.error("[hunter.google_places]", classified.operatorCode, status);
+  throw new IntegrationRequestError("google_places", "provider_error", {
+    status,
+    retryable: classified.retryable,
+    operatorCode: classified.operatorCode,
+  });
+}
+
+async function placesRequest(
+  url: string,
+  init: {
+    method: "GET" | "POST";
+    apiKey: string;
+    fieldMask: string;
+    body?: string;
+    signal?: AbortSignal;
+    fetchImplementation?: typeof fetch;
+  },
+) {
+  try {
+    return await (init.fetchImplementation ?? fetch)(url, {
+      method: init.method,
+      headers: {
+        Accept: "application/json",
+        "X-Goog-Api-Key": init.apiKey,
+        "X-Goog-FieldMask": init.fieldMask,
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
+      },
+      body: init.body,
+      cache: "no-store",
+      redirect: "error",
+      referrerPolicy: "no-referrer",
+      signal: init.signal,
+    });
+  } catch {
+    networkError();
+  }
+}
+
+function parsePlacesPayload(payload: unknown, maxResults: number) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    invalidResponse();
+  }
+
+  const rawPlaces = (payload as { places?: unknown }).places;
+  if (rawPlaces !== undefined && !Array.isArray(rawPlaces)) {
+    invalidResponse();
+  }
+
+  return (rawPlaces ?? [])
+    .slice(0, maxResults)
+    .map(normalizePlace)
+    .filter((place): place is GooglePlaceProspect => place !== null);
+}
+
+async function readJsonPayload(response: Response) {
+  try {
+    return await response.json();
+  } catch {
+    invalidResponse();
+  }
+}
+
 export async function searchGooglePlacesText(
   input: GooglePlacesTextSearchInput,
   options: GooglePlacesRequestOptions = {},
 ): Promise<GooglePlacesSearchResult> {
   const normalized = normalizeInput(input);
   const apiKey = requireServerIntegrationSecret("GOOGLE_PLACES_API_KEY");
-  const fieldMask = [...GOOGLE_PLACES_TEXT_SEARCH_FIELD_MASK].join(",");
-  const requestBody = {
-    textQuery: normalized.textQuery,
-    pageSize: normalized.maxResults,
-    ...(normalized.languageCode
-      ? { languageCode: normalized.languageCode }
-      : {}),
-    ...(normalized.regionCode ? { regionCode: normalized.regionCode } : {}),
-    includePureServiceAreaBusinesses:
-      normalized.includePureServiceAreaBusinesses,
-  };
+  const fullMask = [...GOOGLE_PLACES_TEXT_SEARCH_FIELD_MASK].join(",");
+  const proMask = [...GOOGLE_PLACES_PRO_TEXT_SEARCH_FIELD_MASK].join(",");
 
-  let response: Response;
+  const attempts: Array<{ fieldMask: string; includePureServiceAreaBusinesses: boolean }> = [
+    {
+      fieldMask: fullMask,
+      includePureServiceAreaBusinesses: normalized.includePureServiceAreaBusinesses,
+    },
+  ];
+  const tried = new Set<string>();
+  let lastStatus = 0;
+  let lastClassification: GooglePlacesHttpClassification | null = null;
 
-  try {
-    response = await (options.fetchImplementation ?? fetch)(
-      GOOGLE_PLACES_TEXT_SEARCH_URL,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": fieldMask,
-        },
-        body: JSON.stringify(requestBody),
-        cache: "no-store",
-        signal: options.signal,
-      },
-    );
-  } catch {
-    throw new IntegrationRequestError("google_places", "network_error", {
-      status: null,
-      retryable: true,
+  while (attempts.length > 0 && tried.size < 3) {
+    const attempt = attempts.shift();
+    if (!attempt) break;
+    const attemptKey = `${attempt.fieldMask}|${attempt.includePureServiceAreaBusinesses}`;
+    if (tried.has(attemptKey)) continue;
+    tried.add(attemptKey);
+
+    const requestBody = {
+      textQuery: normalized.textQuery,
+      pageSize: normalized.maxResults,
+      ...(normalized.languageCode
+        ? { languageCode: normalized.languageCode }
+        : {}),
+      ...(normalized.regionCode ? { regionCode: normalized.regionCode } : {}),
+      ...(attempt.includePureServiceAreaBusinesses
+        ? { includePureServiceAreaBusinesses: true }
+        : {}),
+    };
+
+    const response = await placesRequest(GOOGLE_PLACES_TEXT_SEARCH_URL, {
+      method: "POST",
+      apiKey,
+      fieldMask: attempt.fieldMask,
+      body: JSON.stringify(requestBody),
+      signal: options.signal,
+      fetchImplementation: options.fetchImplementation,
     });
+
+    if (response.ok) {
+      const payload = await readJsonPayload(response);
+      return {
+        textQuery: normalized.textQuery,
+        maxResults: normalized.maxResults,
+        places: parsePlacesPayload(payload, normalized.maxResults),
+      };
+    }
+
+    lastStatus = response.status;
+    const raw = await response.text().catch(() => "");
+    lastClassification = classifyGooglePlacesHttpError(response.status, raw);
+
+    if (
+      lastClassification.retryWithoutServiceArea &&
+      attempt.includePureServiceAreaBusinesses
+    ) {
+      attempts.push({
+        fieldMask: attempt.fieldMask,
+        includePureServiceAreaBusinesses: false,
+      });
+    }
+    if (lastClassification.retryWithProFields && attempt.fieldMask !== proMask) {
+      attempts.push({
+        fieldMask: proMask,
+        includePureServiceAreaBusinesses: attempt.includePureServiceAreaBusinesses,
+      });
+    }
   }
 
-  if (!response.ok) {
-    throw new IntegrationRequestError("google_places", "provider_error", {
-      status: response.status,
-      retryable: response.status === 429 || response.status >= 500,
-    });
-  }
-
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    throw new IntegrationRequestError("google_places", "invalid_response");
-  }
-
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    throw new IntegrationRequestError("google_places", "invalid_response");
-  }
-
-  const rawPlaces = (payload as { places?: unknown }).places;
-  if (rawPlaces !== undefined && !Array.isArray(rawPlaces)) {
-    throw new IntegrationRequestError("google_places", "invalid_response");
-  }
-
-  const places = (rawPlaces ?? [])
-    .slice(0, normalized.maxResults)
-    .map(normalizePlace)
-    .filter((place): place is GooglePlaceProspect => place !== null);
-
-  return {
-    textQuery: normalized.textQuery,
-    maxResults: normalized.maxResults,
-    places,
-  };
+  throwClassifiedProviderError(
+    lastStatus,
+    lastClassification ?? {
+      operatorCode: lastStatus ? `provider_error_${lastStatus}` : "provider_error",
+      retryable: false,
+      retryWithoutServiceArea: false,
+      retryWithProFields: false,
+    },
+  );
 }
 
 export async function getGooglePlaceDetails(
@@ -281,45 +402,49 @@ export async function getGooglePlaceDetails(
 ): Promise<GooglePlaceProspect | null> {
   const resourceName = googlePlaceResourceName(placeId);
   const apiKey = requireServerIntegrationSecret("GOOGLE_PLACES_API_KEY");
-  let response: Response;
+  const masks = [
+    [...GOOGLE_PLACE_DETAILS_FIELD_MASK].join(","),
+    [...GOOGLE_PLACE_DETAILS_PRO_FIELD_MASK].join(","),
+  ];
+  let lastStatus = 0;
+  let lastClassification: GooglePlacesHttpClassification | null = null;
 
-  try {
-    response = await (options.fetchImplementation ?? fetch)(
+  for (const fieldMask of masks) {
+    const response = await placesRequest(
       `${GOOGLE_PLACE_DETAILS_URL}/${resourceName}`,
       {
         method: "GET",
-        headers: {
-          "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": [...GOOGLE_PLACE_DETAILS_FIELD_MASK].join(","),
-        },
-        cache: "no-store",
+        apiKey,
+        fieldMask,
         signal: options.signal,
+        fetchImplementation: options.fetchImplementation,
       },
     );
-  } catch {
-    throw new IntegrationRequestError("google_places", "network_error", {
-      status: null,
-      retryable: true,
-    });
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (response.ok) {
+      const payload = await readJsonPayload(response);
+      return normalizePlace(payload);
+    }
+
+    lastStatus = response.status;
+    const raw = await response.text().catch(() => "");
+    lastClassification = classifyGooglePlacesHttpError(response.status, raw);
+    if (!lastClassification.retryWithProFields) {
+      break;
+    }
   }
 
-  if (response.status === 404) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new IntegrationRequestError("google_places", "provider_error", {
-      status: response.status,
-      retryable: response.status === 429 || response.status >= 500,
-    });
-  }
-
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    throw new IntegrationRequestError("google_places", "invalid_response");
-  }
-
-  return normalizePlace(payload);
+  throwClassifiedProviderError(
+    lastStatus,
+    lastClassification ?? {
+      operatorCode: lastStatus ? `provider_error_${lastStatus}` : "provider_error",
+      retryable: false,
+      retryWithoutServiceArea: false,
+      retryWithProFields: false,
+    },
+  );
 }

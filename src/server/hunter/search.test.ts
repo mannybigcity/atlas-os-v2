@@ -14,6 +14,9 @@ test("HUNTER Places hunts write the review pile, never Prospects", () => {
   assert.match(source, /buildHunterSearchPersistNote/);
   assert.match(source, /existingError/);
   assert.doesNotMatch(source, /were not added because they were already accepted/);
+  assert.match(source, /hunterPlacesErrorCopy/);
+  assert.match(source, /error\.options\.operatorCode/);
+  assert.match(source, /hunterDailyCapReached/);
   assert.doesNotMatch(source, /\.from\(\s*["']organization_opportunities["']\s*\)/);
 
   const rows = placesToReviewInserts(

@@ -32,21 +32,22 @@ export class IntegrationConfigurationError extends Error {
   }
 }
 
+export type IntegrationRequestErrorOptions = {
+  status: number | null;
+  retryable: boolean;
+  /** Ledger-safe classifier. Never put secrets, raw provider bodies, or API keys here. */
+  operatorCode?: string;
+};
+
 export class IntegrationRequestError extends Error {
   readonly provider: IntegrationProvider;
   readonly code: IntegrationErrorCode;
-  readonly options: {
-    status: number | null;
-    retryable: boolean;
-  };
+  readonly options: IntegrationRequestErrorOptions;
 
   constructor(
     provider: IntegrationProvider,
     code: IntegrationErrorCode,
-    options: {
-      status: number | null;
-      retryable: boolean;
-    } = { status: null, retryable: false },
+    options: IntegrationRequestErrorOptions = { status: null, retryable: false },
   ) {
     super(SAFE_ERROR_MESSAGES[code]);
     this.name = "IntegrationRequestError";
