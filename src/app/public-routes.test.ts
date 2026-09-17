@@ -73,8 +73,8 @@ test("Atlas contact page exists, is bilingual, and is listed in the sitemap and 
   assert.match(contact, /Contacto/);
   assert.match(contact, /\/start-trial/);
 
-  const sitemap = readFileSync(join(root, "src/app/sitemap.ts"), "utf8");
-  assert.match(sitemap, /\/contact`/);
+  const sitemap = readFileSync(join(root, "src/lib/public-marketing-site.ts"), "utf8");
+  assert.match(sitemap, /path: "\/contact"/);
 
   const footer = readFileSync(join(root, "src/components/site-footer.tsx"), "utf8");
   assert.match(footer, /"\/contact"/);

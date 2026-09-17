@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Fraunces, Inter, Manrope } from "next/font/google";
 import { RouteFooter } from "@/components/route-footer";
+import { CANONICAL_SITE_ORIGIN } from "@/lib/public-marketing-site";
 import { normalizeSiteLanguage, SITE_LANGUAGE_COOKIE } from "@/lib/site-language";
 import "./globals.css";
 
@@ -21,7 +22,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://atlasforentrepreneurs.com"),
+  metadataBase: new URL(CANONICAL_SITE_ORIGIN),
   title: "Atlas For Entrepreneurs | Client Workspace",
   description:
     "Atlas For Entrepreneurs gives business owners a secure workspace to follow up, manage clients, and move work forward.",
