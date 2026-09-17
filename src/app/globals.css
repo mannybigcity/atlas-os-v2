@@ -42,6 +42,8 @@ button { font: inherit; }
 .atlas-language { display: inline-flex; padding: .18rem; gap: .12rem; border: 1px solid #d8dfeb; border-radius: 99px; }
 .atlas-language button { width: 2.15rem; height: 2.15rem; border: 0; border-radius: 50%; background: transparent; color: var(--navy); font-size: .63rem; font-weight: 900; cursor: pointer; }
 .atlas-language button.active { background: var(--navy); color: #fff; box-shadow: 0 4px 12px rgba(6,38,109,.2); }
+.atlas-language.compact { padding: .08rem; gap: .04rem; }
+.atlas-language.compact button { width: 1.7rem; height: 1.7rem; font-size: .58rem; box-shadow: none; }
 .atlas-login, .atlas-top-cta { display: inline-flex; min-height: 2.65rem; align-items: center; justify-content: center; border-radius: .5rem; padding: 0 1rem; font-size: .76rem; font-weight: 850; white-space: nowrap; }
 .atlas-login { border: 1px solid #2a5abd; color: var(--navy); }
 .atlas-top-cta { background: linear-gradient(135deg, #f2bc43, #da920f); color: #16130a; box-shadow: 0 .5rem 1.2rem rgba(218,146,15,.18); }

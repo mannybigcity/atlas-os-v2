@@ -169,6 +169,20 @@ test("AFE header keeps the official pasted logo and trial as the gold nav CTA", 
   assert.doesNotMatch(header, /Deleana|346-544-8697|SIS Custom Creations/);
 });
 
+test("AFE public header is one desktop row with quiet equal-weight nav", () => {
+  assert.match(header, /whitespace-nowrap px-1\.5 py-1 text-sm font-medium/);
+  assert.match(header, /Client Login/);
+  assert.match(header, /whitespace-nowrap[\s\S]*bg-\[#f5b932\][\s\S]*Start 7-day free trial/);
+  assert.match(header, /max-w-\[1250px\][\s\S]*items-center justify-between/);
+  assert.match(header, /hidden shrink-0 items-center gap-x-2\.5 xl:flex/);
+  assert.match(header, /hidden shrink-0 items-center gap-2\.5 xl:flex/);
+  assert.match(header, /LanguageSwitcher compact/);
+  assert.match(header, /underline decoration-\[#f5b932\]/);
+  assert.match(header, /Open menu/);
+  assert.doesNotMatch(header, /bg-\[#1246a0\] !text-white/);
+  assert.doesNotMatch(header, /SIS Custom Creations|sis-homepage|SisHeader/);
+});
+
 test("AFE footer strip CTA matches the hero trial door and keeps trust legal contact", () => {
   assert.match(bottomBar, /atlas-bottom-bar/);
   assert.match(bottomBar, /\/start-trial/);
