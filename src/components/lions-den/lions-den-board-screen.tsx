@@ -5,6 +5,7 @@ import { getClientPortalOrgLabel } from "@/lib/client-portal/identity";
 import { presentLiveDeskAiRequest } from "@/lib/lions-den/live-desk";
 import { freshDeskChatRequests } from "@/lib/lions-den/desk-chat";
 import type { LionsDenBoard } from "@/lib/lions-den/client-hub";
+import { canSeeSignScoutNav, getSignScoutUrl } from "@/lib/lions-den/signscout";
 import { canSeeTrialInboxNav } from "@/lib/lions-den/trial-inbox";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import {
@@ -33,11 +34,13 @@ export async function LionsDenBoardScreen({
         getClientAiDailyUsage(organization.id),
       ])
     : [null, null];
-  const showTrialInbox = canSeeTrialInboxNav({
+  const operatorChrome = {
     isSuperAdmin: workspace.isSuperAdmin,
     isClientPreview: workspace.isClientPreview,
     organization,
-  });
+  };
+  const showTrialInbox = canSeeTrialInboxNav(operatorChrome);
+  const showSignScout = canSeeSignScoutNav(operatorChrome);
   const resolvedTrialInboxCount = showTrialInbox
     ? trialInboxCount ?? (await getAfeTrialInboxCount())
     : 0;
@@ -60,7 +63,9 @@ export async function LionsDenBoardScreen({
       organizationName={organization?.name}
       organizationSlug={organization?.slug}
       previewOrgSlug={workspace.previewOrgSlug || undefined}
+      showSignScout={showSignScout}
       showTrialInbox={showTrialInbox}
+      signScoutUrl={showSignScout ? getSignScoutUrl() : null}
       trial={workspace.trial}
       trialInboxCount={resolvedTrialInboxCount}
       workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
