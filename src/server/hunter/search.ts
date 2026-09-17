@@ -4,6 +4,7 @@ import {
   IntegrationConfigurationError,
   IntegrationRequestError,
 } from "@/server/integrations/errors";
+import { hunterPlacesErrorCopy } from "@/server/integrations/google-places-error";
 import { searchGooglePlacesText } from "@/server/integrations/google-places";
 import type { GooglePlaceProspect } from "@/server/integrations/google-places";
 import {
@@ -295,11 +296,15 @@ export async function executeHunterPlacesSearch(input: {
       filters,
     };
   } catch (error) {
-    const errorCode =
-      error instanceof IntegrationConfigurationError ||
-      error instanceof IntegrationRequestError
+    const operatorCode =
+      error instanceof IntegrationConfigurationError
         ? error.code
-        : "unknown_error";
+        : error instanceof IntegrationRequestError
+          ? error.options.operatorCode || error.code
+          : "unknown_error";
+    const errorCode = String(operatorCode).slice(0, 150);
+    const httpStatus =
+      error instanceof IntegrationRequestError ? error.options.status : null;
 
     await recordHunterSearch({
       supabase,
@@ -315,10 +320,7 @@ export async function executeHunterPlacesSearch(input: {
 
     return emptyHunterSearch({
       status: "error",
-      message:
-        error instanceof IntegrationConfigurationError
-          ? "GOOGLE_PLACES_API_KEY is not configured in the server deployment environment."
-          : "Google Places could not complete this search. The failed request was recorded.",
+      message: hunterPlacesErrorCopy(errorCode, httpStatus),
       query: input.textQuery,
       filters,
     });
