@@ -43,7 +43,7 @@ export function HunterSearch({
   const [service, setService] = useState(defaults?.service ?? "");
   const [zipCode, setZipCode] = useState(defaults?.zipCode ?? "");
   const [city, setCity] = useState(defaults?.city ?? "");
-  const [state, setState] = useState(defaults?.state ?? "");
+  const [region, setRegion] = useState(defaults?.state ?? "");
   const [radiusMiles, setRadiusMiles] = useState("");
   const targets = defaults?.targets ?? [];
   const selfSearch =
@@ -170,9 +170,9 @@ export function HunterSearch({
           <input
             className="mt-2 w-full rounded-xl border border-[#d5d0c4] bg-white px-4 py-3 text-sm text-[#071b42]"
             name="state"
-            onChange={(event) => setState(event.target.value)}
+            onChange={(event) => setRegion(event.target.value)}
             placeholder={spanish ? "Estado" : "State"}
-            value={state}
+            value={region}
           />
         </label>
         <label>
