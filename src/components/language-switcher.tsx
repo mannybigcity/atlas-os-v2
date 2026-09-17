@@ -67,7 +67,13 @@ export function useSiteLanguage(initialLanguage: SiteLanguage = "en") {
   return language;
 }
 
-export function LanguageSwitcher({ initialLanguage = "en" }: { initialLanguage?: SiteLanguage }) {
+export function LanguageSwitcher({
+  initialLanguage = "en",
+  compact = false,
+}: {
+  initialLanguage?: SiteLanguage;
+  compact?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const language = useSiteLanguage(initialLanguage);
@@ -88,7 +94,7 @@ export function LanguageSwitcher({ initialLanguage = "en" }: { initialLanguage?:
   return (
     <div
       aria-label={spanish ? "Selección de idioma" : "Language selection"}
-      className="atlas-language"
+      className={compact ? "atlas-language compact" : "atlas-language"}
       role="group"
     >
       <button
