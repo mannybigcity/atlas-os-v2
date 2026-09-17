@@ -1,6 +1,6 @@
 import { buildPublicSitemapXml } from "@/lib/public-marketing-site";
 
-/** Metadata `app/sitemap.ts` 500s on Netlify when the root layout reads cookies(). */
+/** Metadata sitemap.ts 500s on Netlify when the root layout is dynamic. */
 export const dynamic = "force-static";
 
 export function GET() {

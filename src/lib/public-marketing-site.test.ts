@@ -73,5 +73,7 @@ test("sitemap is served by a static XML route, not metadata sitemap.ts", () => {
   const route = readFileSync(join(root, "src/app/sitemap.xml/route.ts"), "utf8");
   assert.match(route, /buildPublicSitemapXml/);
   assert.match(route, /force-static/);
-  assert.doesNotMatch(route, /cookies\(|getSiteUrl\(|NEXT_PUBLIC_SITE_URL/);
+  assert.doesNotMatch(route, /from ["']next\/headers["']/);
+  assert.doesNotMatch(route, /getSiteUrl\(/);
+  assert.doesNotMatch(route, /NEXT_PUBLIC_SITE_URL/);
 });
