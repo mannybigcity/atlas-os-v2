@@ -43,11 +43,11 @@ export function SiteHeader({ active, initialLanguage = "en" }: SiteHeaderProps) 
             src="/brand/atlas-logo.png"
             width={720}
           />
-          <span className="min-w-0">
+          <span className="hidden min-w-0 sm:block">
             <span className="block truncate text-sm font-bold tracking-tight sm:text-base">
               Atlas For Entrepreneurs
             </span>
-            <span className="hidden text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[#1246a0] sm:block">
+            <span className="hidden whitespace-nowrap text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[#1246a0] sm:block">
               {spanish ? "Espacio de crecimiento para clientes" : "Client Growth Workspace"}
             </span>
           </span>
