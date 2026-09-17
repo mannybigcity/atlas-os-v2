@@ -10,6 +10,7 @@ import {
   visibleLionsDenBoards,
   type LionsDenBoard,
 } from "@/lib/lions-den/client-hub";
+import { signScoutNavLabel, signScoutUnsetHint } from "@/lib/lions-den/signscout";
 import { trialInboxNavLabel } from "@/lib/lions-den/trial-inbox";
 import { TRIAL_UPGRADE_HREF, trialPillCopy, type DeskTrialStatus } from "@/lib/lions-den/trial-status";
 import { getSiteLanguage } from "@/lib/site-language-server";
@@ -26,7 +27,9 @@ type LionsDenClientHubProps = {
   workspaces?: Array<{ name: string; slug: string }>;
   aiRequests?: ClientAiRequest[];
   aiUsage?: ClientAiDailyUsage | null;
+  showSignScout?: boolean;
   showTrialInbox?: boolean;
+  signScoutUrl?: string | null;
   trialInboxCount?: number;
   trial?: DeskTrialStatus | null;
   children: ReactNode;
@@ -42,7 +45,9 @@ export async function LionsDenClientHub({
   workspaces = [],
   aiRequests = [],
   aiUsage = null,
+  showSignScout = false,
   showTrialInbox = false,
+  signScoutUrl = null,
   trialInboxCount = 0,
   trial = null,
   children,
@@ -106,6 +111,13 @@ export async function LionsDenClientHub({
                 <span className="rounded-full bg-[#f5b932] px-2 py-0.5 text-[#071b42]">{trialPill.action}</span>
               </Link>
             ) : null}
+            {showSignScout ? (
+              <SignScoutNavLink
+                spanish={spanish}
+                url={signScoutUrl}
+                variant="corner"
+              />
+            ) : null}
             <LanguageSwitcher />
             <form action={signOut}>
               <button
@@ -164,6 +176,13 @@ export async function LionsDenClientHub({
                   );
                 })
               : null}
+            {showSignScout ? (
+              <SignScoutNavLink
+                spanish={spanish}
+                url={signScoutUrl}
+                variant="rail"
+              />
+            ) : null}
             <span aria-hidden className="hidden xl:block xl:h-px xl:my-2 xl:bg-white/15" />
             {utilityLinks.map((item) => {
               const active = item.id === board;
@@ -200,5 +219,59 @@ export async function LionsDenClientHub({
         </aside>
       </div>
     </div>
+  );
+}
+
+function SignScoutNavLink({
+  spanish,
+  url,
+  variant,
+}: {
+  spanish: boolean;
+  url: string | null;
+  variant: "corner" | "rail";
+}) {
+  const label = signScoutNavLabel();
+  const hint = signScoutUnsetHint(spanish);
+  const ready = Boolean(url);
+  const className =
+    variant === "corner"
+      ? `inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+          ready
+            ? "border-[#f5b932] bg-[#f5b932] text-[#071b42] hover:bg-[#ffd266]"
+            : "cursor-not-allowed border-white/25 bg-transparent text-white/55"
+        }`
+      : `block shrink-0 rounded-md px-2.5 py-1.5 text-sm font-semibold transition ${
+          ready
+            ? "text-white/85 hover:bg-white/10 hover:text-white"
+            : "cursor-not-allowed text-white/45"
+        }`;
+
+  if (!url) {
+    return (
+      <span
+        aria-disabled="true"
+        className={className}
+        data-signscout-corner={variant === "corner" ? "unset" : undefined}
+        data-signscout-nav="unset"
+        title={hint}
+      >
+        {label}
+        <span className="ml-1 font-medium opacity-80">· {hint}</span>
+      </span>
+    );
+  }
+
+  return (
+    <a
+      className={className}
+      data-signscout-corner={variant === "corner" ? "ready" : undefined}
+      data-signscout-nav="ready"
+      href={url}
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      {label}
+    </a>
   );
 }
