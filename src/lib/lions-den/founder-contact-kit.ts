@@ -1,12 +1,14 @@
 /**
- * Locked founder phones for Amanda / email / inbound copy on Manny's desks.
- * SIS Custom Creations uses both numbers. AFE operator desk uses Manny only.
- * Trial customers keep their own ownerPhone — this kit is never invented for them.
+ * Locked founder phones for Amanda / email / inbound copy and Settings HELP chips
+ * on Manny's desks. SIS Custom Creations uses both numbers. AFE operator desk
+ * uses Manny only. Trial customers keep their own ownerPhone — this kit is never
+ * invented for them.
  */
 import { AFE_MANNY_PHONE_DISPLAY } from "../afe-public-contact.ts";
 import { isAfeOperatorDeskOrganization, isSisOrganization } from "../client-portal/identity.ts";
 
 export const DELEANA_PHONE_DISPLAY = "346-544-8697";
+export const DELEANA_PHONE_TEL = "3465448697";
 export const DELEANA_NAME = "Deleana";
 
 export type FounderContactLine = {
@@ -16,6 +18,12 @@ export type FounderContactLine = {
 
 export function correctDeleanaSpelling(value: string | null | undefined) {
   return String(value ?? "").replace(/\bDelina\b/gi, DELEANA_NAME);
+}
+
+export function founderPhoneTelHref(phone: string | null | undefined) {
+  const digits = String(phone ?? "").replace(/\D/g, "");
+  if (digits.length < 7) return null;
+  return `tel:${digits}`;
 }
 
 export function founderContactLinesFor(

@@ -33,6 +33,7 @@ test("desk action chips default to navy fill and white type", () => {
   assert.match(settings, /id="help"/);
   assert.match(settings, /Book a kickoff call/);
   assert.match(settings, /SUPPORT_EMAIL/);
+  assert.match(settings, /founderContactLinesFor\(primaryOrganization\)/);
   assert.doesNotMatch(
     settings,
     /rounded-full border border-\[#071b42\] px-4 py-2 text-sm font-semibold text-\[#071b42\] transition hover:bg-\[#071b42\] hover:text-white/,

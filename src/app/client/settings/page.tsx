@@ -11,6 +11,7 @@ import { getDeskBillingSummary } from "@/server/stripe/billing-summary";
 import { openBillingPortal } from "@/server/stripe/portal-actions";
 import { getTrialProfile } from "@/server/trials/profile";
 import { LD_CHIP } from "@/lib/lions-den/desk-chips";
+import { founderContactLinesFor, founderPhoneTelHref } from "@/lib/lions-den/founder-contact-kit";
 
 export const dynamic = "force-dynamic";
 
@@ -67,12 +68,13 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           : "We could not open the billing portal. Email us and we will sort it out."
         : null;
 
+  const helpContacts = founderContactLinesFor(primaryOrganization) ?? [];
   const rows: Array<[string, string]> = [
     [spanish ? "Negocio" : "Business", businessName || "—"],
     [spanish ? "Tipo de negocio" : "Business type", profile?.business_type || "—"],
     [spanish ? "Nombre" : "Your name", profile?.full_name || String(metadata.full_name ?? "") || "—"],
     [spanish ? "Correo de acceso" : "Login email", user.email ?? "—"],
-    [spanish ? "Teléfono" : "Phone", phone || "—"],
+    [spanish ? "Teléfono del negocio" : "Business phone", phone || "—"],
     [spanish ? "Zona de servicio" : "Service area", [city, postalCode].filter(Boolean).join(" ") || "—"],
   ];
 
@@ -228,6 +230,15 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 : "Tell us what you are trying to get done and we reply during Texas business hours."}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
+              {helpContacts.map((line) => {
+                const tel = founderPhoneTelHref(line.phone);
+                if (!tel) return null;
+                return (
+                  <a className={LD_CHIP} href={tel} key={`${line.name}-${line.phone}`}>
+                    {line.name} {line.phone}
+                  </a>
+                );
+              })}
               <a
                 className={LD_CHIP}
                 href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Atlas desk help: ${businessName || user.email || ""}`)}`}
