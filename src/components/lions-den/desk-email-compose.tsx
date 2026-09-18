@@ -8,6 +8,7 @@ import {
   requestAmandaFirstTouchDraft,
   requestMicahFlyerDraft,
 } from "@/server/outreach/desk-compose-actions";
+import { LD_CHIP_XS } from "@/lib/lions-den/desk-chips";
 
 type DeskEmailComposeProps = {
   spanish: boolean;
@@ -37,8 +38,9 @@ const compactActionClass =
   "inline-flex cursor-pointer items-center rounded-full bg-[#1246a0] px-3 py-1 text-xs font-semibold !text-white transition hover:bg-[#0a2f78] hover:!text-white";
 const fieldClass =
   "mt-1 block w-full rounded-md border border-[#d5d0c4] bg-white px-3 py-2 text-sm text-[#071b42] placeholder:text-[#8a93a3]";
-const chipClass =
-  "cursor-pointer rounded-full border border-[#d5d0c4] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#071b42]";
+const chipClass = LD_CHIP_XS;
+const goldChipClass =
+  "cursor-pointer rounded-full border border-[#f5b932] bg-[#fff8e6] px-2 py-0.5 text-[11px] font-semibold text-[#071b42]";
 
 export function DeskEmailCompose({
   spanish,
@@ -176,7 +178,7 @@ export function DeskEmailCompose({
             data-next-message-engine
           >
             <button
-              className={`${chipClass} border-[#f5b932] bg-[#fff8e6]`}
+              className={goldChipClass}
               data-ask-amanda
               disabled={busy !== null}
               onClick={() => void onAskAmanda()}

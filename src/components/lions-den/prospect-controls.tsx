@@ -13,6 +13,7 @@ import { DeskContactButton } from "@/components/lions-den/desk-contact-button";
 import { DeskEmailCompose } from "@/components/lions-den/desk-email-compose";
 import type { NextMessageResult } from "@/lib/lions-den/next-message-engine";
 import { addProspectNote, logDeskContactOutcome } from "@/server/opportunities/desk-contact-actions";
+import { LD_CHIP } from "@/lib/lions-den/desk-chips";
 import {
   createProspect,
   deleteProspect,
@@ -234,11 +235,7 @@ export function DeskContactOutcomeForm({
       <div className="mt-3 flex flex-wrap gap-2">
         {deskContactOutcomeOptions(spanish).map((option) => (
           <button
-            className={
-              option.outcome === "wrong_number"
-                ? "rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#5c6578] transition hover:border-[#071b42] hover:text-[#071b42]"
-                : "rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:border-[#071b42]"
-            }
+            className={LD_CHIP}
             key={option.outcome}
             name="outcome"
             type="submit"
@@ -281,7 +278,7 @@ export function ProspectNoteForm({
         />
       </label>
       <button
-        className="w-fit rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:border-[#071b42] sm:mt-1"
+        className={`w-fit ${LD_CHIP} sm:mt-1`}
         type="submit"
       >
         {spanish ? "Guardar nota" : "Save note"}
@@ -314,7 +311,7 @@ export function ProspectStageButtons({
               <input name="stage" type="hidden" value={action.stage} />
               <input name="returnTo" type="hidden" value={returnTo} />
               <button
-                className="rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:border-[#071b42]"
+                className={LD_CHIP}
                 type="submit"
               >
                 {action.label}

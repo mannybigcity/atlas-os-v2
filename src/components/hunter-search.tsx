@@ -14,6 +14,7 @@ import { prospectDetailPath } from "@/lib/lions-den/prospect-places";
 import { isSelfSearch, type ReferralTarget, type TrialDeskVertical } from "@/lib/lions-den/trial-desk-market";
 import type { HunterSearchFind } from "@/server/hunter/review";
 import { initialHunterSearchState } from "@/server/hunter/types";
+import { LD_CHIP } from "@/lib/lions-den/desk-chips";
 
 type HunterSearchProps = {
   organizationId?: string;
@@ -362,7 +363,7 @@ function HunterSearchFindRow({
               <form action={dismissHunterReviewItem}>
                 <input name="organizationId" type="hidden" value={organizationId} />
                 <input name="reviewItemId" type="hidden" value={place.reviewItemId} />
-                <button className="rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#5c6578]" type="submit">
+                <button className={LD_CHIP} type="submit">
                   {spanish ? "Omitir" : "Skip"}
                 </button>
               </form>
@@ -383,7 +384,7 @@ function HunterSearchFindRow({
           ) : null}
           {place.googleMapsUrl ? (
             <a
-              className="shrink-0 rounded-full border border-[#071b42] px-4 py-2 text-center text-sm font-semibold text-[#071b42] hover:bg-white"
+              className={`shrink-0 ${LD_CHIP}`}
               href={place.googleMapsUrl}
               rel="noreferrer"
               target="_blank"

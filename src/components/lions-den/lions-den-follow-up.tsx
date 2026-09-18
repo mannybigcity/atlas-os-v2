@@ -11,6 +11,7 @@ import {
   type DeskFollowUpDraftControls,
   type DeskFollowUpItem,
 } from "@/lib/lions-den/desk-queue";
+import { LD_CHIP_SM } from "@/lib/lions-den/desk-chips";
 import {
   belongsOnFollowUpDesk,
   followUpQueueDueAt,
@@ -519,7 +520,7 @@ function FollowUpDraftActions({
 
         <details className="group">
           <summary
-            className="inline-flex cursor-pointer list-none rounded-full border border-[#071b42] bg-white px-3 py-1.5 text-sm font-semibold text-[#071b42] [&::-webkit-details-marker]:hidden"
+            className={`${LD_CHIP_SM} list-none [&::-webkit-details-marker]:hidden`}
             data-followup-control="edit"
           >
             {spanish ? "Editar" : "Edit"}
@@ -547,7 +548,7 @@ function FollowUpDraftActions({
         <form action={deleteFollowUpDraft}>
           {hiddenScope}
           <button
-            className="inline-flex rounded-full border border-[#d5d0c4] bg-white px-3 py-1.5 text-sm font-semibold text-[#5c6578]"
+            className={LD_CHIP_SM}
             data-followup-control="delete"
             type="submit"
           >

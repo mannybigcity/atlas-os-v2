@@ -10,6 +10,7 @@ import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getDeskBillingSummary } from "@/server/stripe/billing-summary";
 import { openBillingPortal } from "@/server/stripe/portal-actions";
 import { getTrialProfile } from "@/server/trials/profile";
+import { LD_CHIP } from "@/lib/lions-den/desk-chips";
 
 export const dynamic = "force-dynamic";
 
@@ -129,7 +130,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 </p>
                 <form action={openBillingPortal} className="mt-4">
                   <button
-                    className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0a2a5c]"
+                    className={LD_CHIP}
                     type="submit"
                   >
                     {spanish ? "Administrar facturación" : "Manage billing"}
@@ -184,7 +185,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                             className={`mt-3 inline-flex w-full items-center justify-center rounded-full px-3 py-2 text-sm font-semibold transition ${
                               plan.featured
                                 ? "bg-[#f5b932] text-[#071b42] hover:bg-[#ffd266]"
-                                : "border border-[#071b42] text-[#071b42] hover:bg-[#071b42] hover:text-white"
+                                : LD_CHIP
                             }`}
                             href={link}
                             rel="noopener"
@@ -193,7 +194,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                           </a>
                         ) : (
                           <Link
-                            className="mt-3 inline-flex w-full items-center justify-center rounded-full border border-[#071b42] px-3 py-2 text-sm font-semibold text-[#071b42]"
+                            className={`mt-3 w-full ${LD_CHIP}`}
                             href={TRIAL_UPGRADE_HREF}
                           >
                             {spanish ? "Ver planes" : "See plans"}
@@ -228,15 +229,12 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <a
-                className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0a2a5c]"
+                className={LD_CHIP}
                 href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Atlas desk help: ${businessName || user.email || ""}`)}`}
               >
                 {SUPPORT_EMAIL}
               </a>
-              <Link
-                className="rounded-full border border-[#071b42] px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#071b42] hover:text-white"
-                href="/assessment"
-              >
+              <Link className={LD_CHIP} href="/assessment">
                 {spanish ? "Pedir una llamada de arranque" : "Book a kickoff call"}
               </Link>
             </div>
