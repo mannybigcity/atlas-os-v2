@@ -144,7 +144,7 @@ test("I sent this queues a sendable check-in a few days out and never a same-day
 test("Follow-up desk offers Email/Text/Copy/Edit/Delete plus I sent this, and Atlas never transmits", () => {
   const board = readRepo("src/components/lions-den/lions-den-follow-up.tsx");
   const copyButton = readRepo("src/components/lions-den/follow-up-copy-button.tsx");
-  const page = readRepo("src/app/client/david/page.tsx");
+  const page = readRepo("src/components/lions-den/follow-up-desk-screen.tsx");
   const actions = readRepo("src/server/opportunities/actions.ts");
 
   assert.match(board, /data-followup-control="edit"/);
@@ -210,4 +210,26 @@ test("Follow-up desk offers Email/Text/Copy/Edit/Delete plus I sent this, and At
   assert.doesNotMatch(actions, /resend|sendgrid|postmark|twilio/i);
   assert.doesNotMatch(actions, /organization_sis_/);
   assert.doesNotMatch(actions, /from\("atlas_sales_prospects"\)/);
+});
+
+test("AMANDA sidebar desk opens the inbound draft queue, not a phone UI", () => {
+  const hub = readRepo("src/lib/lions-den/client-hub.ts");
+  const nav = readRepo("src/components/lions-den/lions-den-client-hub.tsx");
+  const page = readRepo("src/app/client/amanda/page.tsx");
+  const screen = readRepo("src/components/lions-den/follow-up-desk-screen.tsx");
+  const actions = readRepo("src/server/opportunities/actions.ts");
+
+  assert.match(hub, /id: "amanda", href: "\/client\/amanda", label: "AMANDA", labelEs: "AMANDA"/);
+  assert.ok(hub.indexOf('id: "amanda"') < hub.indexOf('id: "hunter"'), "AMANDA sits with HUNTER / MICAH");
+  assert.match(nav, /visibleLionsDenBoards/);
+  assert.match(page, /board="amanda"/);
+  assert.match(page, /workspacePath="\/client\/amanda"/);
+  assert.match(screen, /LionsDenFollowUpBoard/);
+  assert.match(screen, /allowDraftControls=\{allowDraftControls\}/);
+  assert.match(screen, /getAmandaSequences/);
+  assert.match(actions, /isFollowUpDeskPath/);
+  assert.match(actions, /revalidatePath\("\/client\/amanda"\)/);
+  assert.doesNotMatch(page, /twilio|Twilio|Front Desk|dialer/i);
+  assert.doesNotMatch(screen, /twilio|Twilio|Front Desk|dialer/i);
+  assert.doesNotMatch(hub, /Front Desk|phone dialer/i);
 });

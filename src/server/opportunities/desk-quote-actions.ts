@@ -46,7 +46,7 @@ function recordPath(opportunityId: string, formData: FormData) {
 }
 
 function revalidateRecord(opportunityId: string) {
-  for (const path of ["/client", "/client/prospects", "/client/clients", "/client/david"]) {
+  for (const path of ["/client", "/client/prospects", "/client/clients", "/client/david", "/client/amanda"]) {
     revalidatePath(path);
   }
   revalidatePath(`/client/prospects/${opportunityId}`);

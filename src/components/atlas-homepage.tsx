@@ -43,6 +43,11 @@ type LandingCopy = {
   perMonth: string;
   stillsLabel: string;
   stillsTitle: string;
+  stillsLede: string;
+  stillsWorkflow: string[];
+  stillsCards: { title: string; body: string }[];
+  stillsOwner: string;
+  stillsFooter: string;
   stills: Array<{ src: string; name: string; label: string; caption: string; alt: string }>;
   denStillAlt: string;
 };
@@ -63,6 +68,19 @@ function IndustryGlyph({ index }: { index: number }) {
     <><path {...common} d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" /></>,
   ];
   const glyph = <svg aria-hidden="true" className="atlas-audience-svg" viewBox="0 0 24 24">{glyphs[index % glyphs.length]}</svg>;
+  /* eslint-enable react/jsx-key */
+  return glyph;
+}
+
+function DeskGlyph({ index }: { index: number }) {
+  /* eslint-disable react/jsx-key -- glyphs are selected as a single SVG child, not mapped directly. */
+  const common = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, strokeWidth: 2.2 };
+  const glyphs = [
+    <><path {...common} d="M4 6h16v12H4z" /><path {...common} d="m4 7 8 6 8-6" /></>,
+    <><circle {...common} cx="11" cy="11" r="6" /><path {...common} d="m20 20-3.5-3.5" /></>,
+    <><rect {...common} x="4" y="5" width="16" height="15" rx="2" /><path {...common} d="M8 3v4M16 3v4M4 10h16" /></>,
+  ];
+  const glyph = <svg aria-hidden="true" className="atlas-desks-svg" viewBox="0 0 24 24">{glyphs[index % glyphs.length]}</svg>;
   /* eslint-enable react/jsx-key */
   return glyph;
 }
@@ -137,28 +155,46 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     bottomCta: "Start 7-day free trial",
     mostPopular: "Most popular",
     perMonth: "per month",
-    stillsLabel: "THE DESK",
-    stillsTitle: "See the desk before the trial.",
+    stillsLabel: "THE DESKS",
+    stillsTitle: "One workflow. Specialized desks.",
+    stillsLede: "Amanda receives. Hunter finds. Micah turns ideas into weekly content.",
+    stillsWorkflow: ["Receive", "Find", "Review", "Accept", "Follow-up"],
+    stillsCards: [
+      {
+        title: "Amanda receives",
+        body: "Inbound email (and text when live) lands on the desk. She drafts the reply. You approve before anything sends.",
+      },
+      {
+        title: "Hunter finds businesses that can send work",
+        body: "Surface real opportunities in your market. They stay in the review pile until you accept them into Prospects.",
+      },
+      {
+        title: "Micah turns ideas into weekly content",
+        body: "Done-for-you day-cards and gallery drafts, ready to copy or download. Never a live post.",
+      },
+    ],
+    stillsOwner: "Every desk keeps the owner in control. You decide. Nothing sends or posts without you.",
+    stillsFooter: "Small business · Bigger opportunities · With Atlas",
     stills: [
+      {
+        src: "/marketing/desk-stills/follow-up-drafts.webp",
+        name: "AMANDA",
+        label: "inbound drafts you approve",
+        caption: "Approve · Edit · Delete. Nothing sends without you.",
+        alt: "Amanda follow-up drafts with Approve, Edit, and Delete on the Atlas desk",
+      },
       {
         src: "/marketing/desk-stills/hunter-review-pile.webp",
         name: "HUNTER",
-        label: "leads to review",
-        caption: "Review pile",
+        label: "businesses that can send work",
+        caption: "Review pile before Prospects",
         alt: "HUNTER review pile on the Atlas desk",
-      },
-      {
-        src: "/marketing/desk-stills/follow-up-drafts.webp",
-        name: "Follow-up",
-        label: "you approve then send",
-        caption: "Follow-up drafts you approve",
-        alt: "Follow-up drafts with Edit and Send on the Atlas desk",
       },
       {
         src: "/marketing/desk-stills/micah-gallery.webp",
         name: "MICAH",
-        label: "social flyers only",
-        caption: "social flyers · Copy/Download",
+        label: "weekly content drafts",
+        caption: "Day-cards · Copy/Download — never a live post",
         alt: "MICAH social gallery flyers with captions and Copy caption / Download — Instagram and Facebook drafts for a local owner",
       },
     ],
@@ -231,28 +267,46 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     bottomCta: "Iniciar prueba gratuita de 7 días",
     mostPopular: "Más popular",
     perMonth: "al mes",
-    stillsLabel: "EL ESCRITORIO",
-    stillsTitle: "Mira el escritorio antes de la prueba.",
+    stillsLabel: "LOS ESCRITORIOS",
+    stillsTitle: "Un flujo. Escritorios especializados.",
+    stillsLede: "Amanda recibe. Hunter encuentra. Micah convierte las ideas en contenido semanal.",
+    stillsWorkflow: ["Recibe", "Busca", "Revisa", "Acepta", "Seguimiento"],
+    stillsCards: [
+      {
+        title: "Amanda recibe",
+        body: "El correo de entrada (y el texto cuando esté en vivo) llega al escritorio. Ella redacta la respuesta. Tú apruebas antes de enviar.",
+      },
+      {
+        title: "Hunter encuentra negocios que te pueden mandar trabajo",
+        body: "Oportunidades reales en tu mercado. Quedan en la pila de revisión hasta que las aceptas en Prospectos.",
+      },
+      {
+        title: "Micah convierte ideas en contenido semanal",
+        body: "Tarjetas del día y borradores de galería, listos para copiar o descargar. Nunca una publicación en vivo.",
+      },
+    ],
+    stillsOwner: "Cada escritorio te deja el control. Tú decides. Nada se envía ni se publica sin ti.",
+    stillsFooter: "Pequeño negocio · Mayores oportunidades · Con Atlas",
     stills: [
+      {
+        src: "/marketing/desk-stills/follow-up-drafts.webp",
+        name: "AMANDA",
+        label: "borradores de entrada que tú apruebas",
+        caption: "Aprobar · Editar · Eliminar. Nada se envía sin ti.",
+        alt: "Borradores de seguimiento de Amanda con Aprobar, Editar y Eliminar en el escritorio de Atlas",
+      },
       {
         src: "/marketing/desk-stills/hunter-review-pile.webp",
         name: "HUNTER",
-        label: "prospectos a revisar",
-        caption: "Pila de revisión",
+        label: "negocios que te pueden mandar trabajo",
+        caption: "Pila de revisión antes de Prospectos",
         alt: "Pila de revisión de HUNTER en el escritorio de Atlas",
-      },
-      {
-        src: "/marketing/desk-stills/follow-up-drafts.webp",
-        name: "Follow-up",
-        label: "tú apruebas y envías",
-        caption: "Borradores de seguimiento que tú apruebas",
-        alt: "Borradores de seguimiento con Editar y Enviar en el escritorio de Atlas",
       },
       {
         src: "/marketing/desk-stills/micah-gallery.webp",
         name: "MICAH",
-        label: "solo flyers sociales",
-        caption: "flyers sociales · Copiar/Descargar",
+        label: "borradores de contenido semanal",
+        caption: "Tarjetas del día · Copiar/Descargar — nunca una publicación en vivo",
         alt: "Galería social MICAH con flyers, pies de foto y Copiar / Descargar — borradores de Instagram y Facebook para un dueño local",
       },
     ],
@@ -374,13 +428,12 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
           <DeskSummaryStill alt={t.denStillAlt} />
         </section>
 
-        <section className="atlas-stills-section" id="desk-stills" aria-labelledby="stills-title">
+        <section className="atlas-desks-section atlas-stills-section" id="desk-stills" aria-labelledby="stills-title">
           <div className="atlas-wrap">
-            <div className="atlas-stills-head">
-              <div>
-                <p className="atlas-section-label">{t.stillsLabel}</p>
-                <h2 id="stills-title">{t.stillsTitle}</h2>
-              </div>
+            <div className="atlas-desks-head">
+              <p className="atlas-section-label">{t.stillsLabel}</p>
+              <h2 id="stills-title">{t.stillsTitle}</h2>
+              <p className="atlas-desks-lede">{t.stillsLede}</p>
             </div>
             <div className="atlas-stills-grid">
               {t.stills.map((still) => (
@@ -401,6 +454,25 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
                 </figure>
               ))}
             </div>
+            <ol className="atlas-desks-workflow" aria-label={language === "es" ? "Flujo del escritorio" : "Desk workflow"}>
+              {t.stillsWorkflow.map((step, index) => (
+                <li key={step}>
+                  {index > 0 ? <span aria-hidden="true" className="atlas-desks-arrow">→</span> : null}
+                  <span className="atlas-desks-chip">{step}</span>
+                </li>
+              ))}
+            </ol>
+            <div className="atlas-desks-cards">
+              {t.stillsCards.map((card, index) => (
+                <article key={card.title}>
+                  <span className="atlas-desks-icon"><DeskGlyph index={index} /></span>
+                  <strong>{card.title}</strong>
+                  <p>{card.body}</p>
+                </article>
+              ))}
+            </div>
+            <p className="atlas-desks-owner">{t.stillsOwner}</p>
+            <p className="atlas-desks-footer">{t.stillsFooter}</p>
           </div>
         </section>
 

@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { followUpSentCheckIn } from "@/lib/lions-den/follow-up-drafts";
 import { isSuperAdminEmail } from "@/lib/env";
+import { isFollowUpDeskPath } from "@/lib/lions-den/client-hub";
+import { followUpSentCheckIn } from "@/lib/lions-den/follow-up-drafts";
 import { safeRedirectPath } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/server/auth/guards";
@@ -22,10 +23,7 @@ function followUpReturnPath(formData: FormData, status: string) {
   const requested = String(formData.get("returnTo") ?? "").trim();
   const [pathname, query = ""] = requested.split("?");
   const safePath = pathname ? safeRedirectPath(pathname) : "/client/david";
-  const destination =
-    safePath === "/client/david" || safePath.startsWith("/client/david")
-      ? safePath
-      : "/client/david";
+  const destination = isFollowUpDeskPath(safePath) ? safePath : "/client/david";
   const params = new URLSearchParams(query);
   const next = new URLSearchParams();
   const previewOrg = params.get("previewOrg");
@@ -93,6 +91,7 @@ async function loadFollowUpDraft(
 function revalidateFollowUpDesk() {
   revalidatePath("/client");
   revalidatePath("/client/david");
+  revalidatePath("/client/amanda");
   revalidatePath("/client/prospects");
 }
 

@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { readSisCustomerPayPalFields } from "./sis-customers.ts";
-import { visibleLionsDenBoards } from "./client-hub.ts";
+import { isFollowUpDeskPath, visibleLionsDenBoards } from "./client-hub.ts";
 import {
   countWonOpportunities,
   deskClientRowCopy,
@@ -56,14 +56,29 @@ test("Clients board is on every Lion's Den desk, not SIS-only", () => {
 
   assert.equal(sis.some((board) => board.id === "clients"), true);
   assert.equal(sis.find((board) => board.id === "clients")?.href, "/client/clients");
+  assert.equal(sis.some((board) => board.id === "amanda"), true);
+  assert.equal(sis.find((board) => board.id === "amanda")?.href, "/client/amanda");
+  assert.equal(sis.find((board) => board.id === "amanda")?.label, "AMANDA");
+  assert.equal(sis.find((board) => board.id === "amanda")?.labelEs, "AMANDA");
   assert.equal(afe.some((board) => board.id === "clients"), true);
+  assert.equal(afe.some((board) => board.id === "amanda"), true);
   assert.equal(sample.some((board) => board.id === "clients"), true);
+  assert.equal(sample.some((board) => board.id === "amanda"), true);
   assert.equal(trial.some((board) => board.id === "clients"), true);
+  assert.equal(trial.some((board) => board.id === "amanda"), true);
   assert.equal(qtime.some((board) => board.id === "clients"), false);
+  assert.equal(qtime.some((board) => board.id === "amanda"), true);
   assert.equal(sis.some((board) => board.id === "trial-inbox"), false);
   assert.equal(sample.some((board) => board.id === "trial-inbox"), false);
   assert.equal(trial.some((board) => board.id === "trial-inbox"), false);
   assert.equal(afe.some((board) => board.id === "trial-inbox"), false);
+});
+
+test("Follow-up and Amanda share the inbound/draft desk path", () => {
+  assert.equal(isFollowUpDeskPath("/client/david"), true);
+  assert.equal(isFollowUpDeskPath("/client/amanda"), true);
+  assert.equal(isFollowUpDeskPath("/client/hunter"), false);
+  assert.equal(isFollowUpDeskPath("/client"), false);
 });
 
 test("Clients page loads SIS customers or won opportunities and opens a client record", () => {

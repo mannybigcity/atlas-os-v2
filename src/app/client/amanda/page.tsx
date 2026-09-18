@@ -7,12 +7,12 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const language = await getSiteLanguage();
   return {
-    title: language === "es" ? "Seguimiento | The Lion’s Den" : "Follow-up | The Lion’s Den",
+    title: language === "es" ? "AMANDA | The Lion’s Den" : "AMANDA | The Lion’s Den",
     robots: { index: false, follow: false },
   };
 }
 
-type FollowUpPageProps = {
+type AmandaPageProps = {
   searchParams?: Promise<{
     lang?: string;
     previewOrg?: string;
@@ -21,13 +21,13 @@ type FollowUpPageProps = {
   }>;
 };
 
-export default async function FollowUpPage({ searchParams }: FollowUpPageProps) {
+export default async function AmandaPage({ searchParams }: AmandaPageProps) {
   const params = await searchParams;
   return (
     <FollowUpDeskScreen
-      board="follow-up"
+      board="amanda"
       searchParams={params}
-      workspacePath="/client/david"
+      workspacePath="/client/amanda"
     />
   );
 }

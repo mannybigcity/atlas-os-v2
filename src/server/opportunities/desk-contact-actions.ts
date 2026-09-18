@@ -23,7 +23,7 @@ const STAGES_PAST_CONTACTED = new Set(["contacted", "responded", "won", "lost"])
 const STAGES_CLOSED = new Set(["won", "lost"]);
 
 function revalidateRecord(opportunityId: string) {
-  for (const path of ["/client", "/client/prospects", "/client/clients", "/client/david"]) {
+  for (const path of ["/client", "/client/prospects", "/client/clients", "/client/david", "/client/amanda"]) {
     revalidatePath(path);
   }
   revalidatePath(`/client/prospects/${opportunityId}`);

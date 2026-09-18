@@ -12,6 +12,7 @@ export type LionsDenBoard =
   | "follow-up"
   | "calendar"
   | "notes"
+  | "amanda"
   | "hunter"
   | "micah"
   | "settings"
@@ -32,9 +33,23 @@ export const lionsDenBoards: Array<{
   { id: "follow-up", href: "/client/david", label: "Follow-up", labelEs: "Seguimiento" },
   { id: "calendar", href: "/client/calendar", label: "Calendar", labelEs: "Calendario" },
   { id: "notes", href: "/client/notes", label: "Notes", labelEs: "Notas" },
+  { id: "amanda", href: "/client/amanda", label: "AMANDA", labelEs: "AMANDA" },
   { id: "hunter", href: "/client/hunter", label: "HUNTER", labelEs: "HUNTER" },
   { id: "micah", href: "/client/micah", label: "MICAH", labelEs: "MICAH" },
 ];
+
+export const FOLLOW_UP_DESK_PATH = "/client/david";
+export const AMANDA_DESK_PATH = "/client/amanda";
+
+/** Follow-up queue and Amanda's inbound/draft workplace share the same desk surface. */
+export function isFollowUpDeskPath(path: string) {
+  return (
+    path === FOLLOW_UP_DESK_PATH ||
+    path.startsWith(`${FOLLOW_UP_DESK_PATH}/`) ||
+    path === AMANDA_DESK_PATH ||
+    path.startsWith(`${AMANDA_DESK_PATH}/`)
+  );
+}
 
 export const lionsDenOperatorBoards: Array<{
   id: Extract<LionsDenBoard, "trial-inbox">;

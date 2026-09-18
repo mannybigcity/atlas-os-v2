@@ -143,6 +143,7 @@ export async function approveAmandaSequence(formData: FormData) {
   });
 
   revalidatePath("/client/david");
+  revalidatePath("/client/amanda");
   revalidatePath(`/client/prospects/${opportunityId}`);
   redirect(returnPath(formData, "amanda_approved"));
 }
@@ -174,6 +175,7 @@ export async function stopAmandaSequence(formData: FormData) {
   });
 
   revalidatePath("/client/david");
+  revalidatePath("/client/amanda");
   revalidatePath(`/client/prospects/${opportunityId}`);
   redirect(returnPath(formData, "amanda_stopped"));
 }

@@ -237,7 +237,7 @@ test("notes concat keeps newest inside 800 chars; latestTimestamp ignores junk",
 test("compose strip has the four chips and chips never send", () => {
   const compose = readRepo("src/components/lions-den/desk-email-compose.tsx");
   const board = readRepo("src/components/lions-den/lions-den-follow-up.tsx");
-  const page = readRepo("src/app/client/david/page.tsx");
+  const page = readRepo("src/components/lions-den/follow-up-desk-screen.tsx");
   const staff = readRepo("src/components/lions-den/atlas-staff-pane.tsx");
 
   assert.match(compose, /data-next-message-engine/);
