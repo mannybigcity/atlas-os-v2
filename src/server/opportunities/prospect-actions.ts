@@ -85,7 +85,7 @@ export async function requireProspectOwner(organizationId: string, formData: For
 }
 
 function revalidateProspectDesk(opportunityId?: string) {
-  for (const path of ["/client", "/client/prospects", "/client/clients", "/client/david", "/client/hunter"]) {
+  for (const path of ["/client", "/client/prospects", "/client/clients", "/client/david", "/client/amanda", "/client/hunter"]) {
     revalidatePath(path);
   }
   if (opportunityId) revalidatePath(`/client/prospects/${opportunityId}`);

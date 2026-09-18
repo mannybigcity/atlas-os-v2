@@ -135,5 +135,6 @@ export async function submitInboundLead(formData: FormData) {
   revalidatePath("/client");
   revalidatePath("/client/prospects");
   revalidatePath("/client/david");
+  revalidatePath("/client/amanda");
   redirect(leadPageRedirect(slug, "sent", spanish));
 }

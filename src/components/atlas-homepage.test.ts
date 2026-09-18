@@ -61,9 +61,9 @@ test("AFE homepage does not publish Phone AI / Front Desk later-and-not-live dis
   assert.doesNotMatch(homepage, /La IA telefónica \/ Front Desk llega después y no está activa/);
   assert.doesNotMatch(homepage, /honestDesk|atlas-hero-honest/);
   assert.doesNotMatch(homepage, /later and not live|llega después y no está activa/i);
-  assert.match(homepage, /HUNTER[\s\S]*leads to review/);
-  assert.match(homepage, /you approve then send/);
-  assert.match(homepage, /social flyers only/);
+  assert.match(homepage, /AMANDA[\s\S]*inbound drafts you approve/);
+  assert.match(homepage, /HUNTER[\s\S]*businesses that can send work/);
+  assert.match(homepage, /weekly content drafts/);
   assert.doesNotMatch(homepage, /Phone AI is live|live Phone AI|Front Desk is live/i);
   assert.doesNotMatch(homepage, /\bFloor\b/);
 });
@@ -114,7 +114,7 @@ test("AFE homepage #den shows a real Lion’s Den Summary still, not the empty w
   assert.ok(statSync(summaryStill).size > 8_000, "lions-den-summary.webp should be a real still, not an empty placeholder");
 });
 
-test("AFE homepage shows three desk proof stills near #den without selling live send", () => {
+test("AFE homepage specialized desks show Amanda, Hunter, and Micah without live phone or live send", () => {
   const stills = homepage.slice(homepage.indexOf("atlas-stills-section"), homepage.indexOf("atlas-family-section"));
   const stillFiles = [
     "public/marketing/desk-stills/hunter-review-pile.webp",
@@ -124,23 +124,43 @@ test("AFE homepage shows three desk proof stills near #den without selling live 
   const micahStill = join(root, "public/marketing/desk-stills/micah-gallery.webp");
 
   assert.match(homepage, /id="desk-stills"/);
-  assert.match(homepage, /See the desk before the trial/);
-  assert.doesNotMatch(homepage, /Teasers only\. The working sample stays behind the 7-day trial/);
-  assert.doesNotMatch(homepage, /Solo adelantos\. La muestra real queda detrás de la prueba de 7 días/);
-  assert.doesNotMatch(homepage, /stillsCopy|atlas-stills-lede/);
-  assert.doesNotMatch(homepage, /Teasers only|working sample stays behind|Solo adelantos/i);
+  assert.match(homepage, /One workflow\. Specialized desks\./);
+  assert.match(homepage, /Amanda receives\. Hunter finds\. Micah turns ideas into weekly content\./);
+  assert.match(homepage, /Un flujo\. Escritorios especializados\./);
+  assert.match(homepage, /Amanda recibe\. Hunter encuentra\. Micah convierte las ideas en contenido semanal\./);
+  assert.match(homepage, /stillsWorkflow: \["Receive", "Find", "Review", "Accept", "Follow-up"\]/);
+  assert.match(homepage, /Amanda receives/);
+  assert.match(homepage, /Inbound email \(and text when live\) lands on the desk/);
+  assert.match(homepage, /Hunter finds businesses that can send work/);
+  assert.match(homepage, /review pile until you accept them into Prospects/);
+  assert.match(homepage, /Micah turns ideas into weekly content/);
+  assert.match(homepage, /Never a live post/);
+  assert.match(homepage, /Nothing sends or posts without you/);
   assert.match(stills, /\{still\.name\} — \{still\.label\}/);
-  assert.match(homepage, /HUNTER[\s\S]*leads to review/);
-  assert.match(homepage, /you approve then send/);
-  assert.match(homepage, /social flyers only/);
-  assert.match(homepage, /Review pile/);
-  assert.match(homepage, /Follow-up drafts you approve/);
-  assert.match(homepage, /social flyers · Copy\/Download/);
+  assert.match(stills, /atlas-desks-chip/);
+  assert.match(stills, /atlas-desks-lede/);
+  assert.match(homepage, /AMANDA[\s\S]*inbound drafts you approve/);
+  assert.match(homepage, /Approve · Edit · Delete\. Nothing sends without you/);
+  assert.match(homepage, /HUNTER[\s\S]*businesses that can send work/);
+  assert.match(homepage, /Review pile before Prospects/);
+  assert.match(homepage, /weekly content drafts/);
+  assert.match(homepage, /Day-cards · Copy\/Download — never a live post/);
   assert.match(homepage, /social gallery flyers with captions and Copy caption \/ Download/);
   assert.match(homepage, /hunter-review-pile\.webp/);
   assert.match(homepage, /follow-up-drafts\.webp/);
   assert.match(homepage, /micah-gallery\.webp/);
-  assert.doesNotMatch(stills, /auto-send|auto-call|live Front Desk|live social/i);
+  assert.ok(
+    homepage.indexOf("follow-up-drafts.webp") < homepage.indexOf("hunter-review-pile.webp"),
+    "Amanda still should lead the specialized desks trio",
+  );
+  assert.doesNotMatch(homepage, /See the desk before the trial/);
+  assert.doesNotMatch(homepage, /Teasers only\. The working sample stays behind the 7-day trial/);
+  assert.doesNotMatch(homepage, /Solo adelantos\. La muestra real queda detrás de la prueba de 7 días/);
+  assert.doesNotMatch(homepage, /stillsCopy|atlas-stills-lede/);
+  assert.doesNotMatch(homepage, /Teasers only|working sample stays behind|Solo adelantos/i);
+  assert.doesNotMatch(homepage, /answers phone|picks up the phone|Amanda answers/i);
+  assert.doesNotMatch(homepage, /Phone AI is live|live Phone AI|Front Desk is live/i);
+  assert.doesNotMatch(stills, /auto-send|auto-call|live Front Desk|live social|Twilio|dialer/i);
   assert.doesNotMatch(stills, /SAMPLE|#SampleDraft|sis-real|SIS Custom Creations|Floor/);
   assert.doesNotMatch(stills, /HUNTER 7|7 leads|ten finds/i);
   assert.doesNotMatch(stills, /atlas-button gold/);

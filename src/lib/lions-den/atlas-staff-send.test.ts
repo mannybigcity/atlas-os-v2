@@ -59,6 +59,7 @@ test("every founder Lion's Den board mounts LionsDenBoardScreen and the live Atl
     "src/app/client/page.tsx",
     "src/app/client/prospects/page.tsx",
     "src/app/client/david/page.tsx",
+    "src/app/client/amanda/page.tsx",
     "src/app/client/calendar/page.tsx",
     "src/app/client/notes/page.tsx",
     "src/app/client/hunter/page.tsx",
@@ -68,10 +69,25 @@ test("every founder Lion's Den board mounts LionsDenBoardScreen and the live Atl
 
   for (const file of boards) {
     const src = readRepo(file);
-    assert.match(src, /LionsDenBoardScreen/, `${file} must mount LionsDenBoardScreen`);
+    if (file.endsWith("david/page.tsx") || file.endsWith("amanda/page.tsx")) {
+      assert.match(src, /FollowUpDeskScreen/, `${file} must mount FollowUpDeskScreen`);
+    } else {
+      assert.match(src, /LionsDenBoardScreen/, `${file} must mount LionsDenBoardScreen`);
+    }
     assert.doesNotMatch(src, /staff chat does not send/, `${file} still has leftover preview staff copy`);
     assert.doesNotMatch(src, /ATLAS staff/, `${file} still has leftover ATLAS STAFF copy`);
   }
+
+  const followUpDesk = readRepo("src/components/lions-den/follow-up-desk-screen.tsx");
+  assert.match(followUpDesk, /LionsDenBoardScreen board=\{board\}/);
+  assert.match(followUpDesk, /LionsDenFollowUpBoard/);
+  assert.match(followUpDesk, /getAmandaSequences/);
+  assert.doesNotMatch(followUpDesk, /Twilio|Front Desk|dialer/i);
+
+  const amanda = readRepo("src/app/client/amanda/page.tsx");
+  assert.match(amanda, /board="amanda"/);
+  assert.match(amanda, /workspacePath="\/client\/amanda"/);
+  assert.doesNotMatch(amanda, /Twilio|Front Desk|dialer/i);
 
   const micah = readRepo("src/app/client/micah/page.tsx");
   assert.match(micah, /board="micah"/);

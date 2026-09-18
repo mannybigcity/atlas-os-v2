@@ -90,7 +90,7 @@ test("Follow-up copy replaces a leftover Call next-action after email/contacted"
 test("Follow-up UI and writes use contacted membership, not ready_for_follow_up-only", () => {
   const board = readRepo("src/components/lions-den/lions-den-follow-up.tsx");
   const overview = readRepo("src/components/lions-den/lions-den-overview.tsx");
-  const page = readRepo("src/app/client/david/page.tsx");
+  const page = readRepo("src/components/lions-den/follow-up-desk-screen.tsx");
   const queries = readRepo("src/server/opportunities/queries.ts");
   const email = readRepo("src/server/opportunities/desk-email-actions.ts");
   const stages = readRepo("src/server/opportunities/prospect-actions.ts");

@@ -185,6 +185,7 @@ export async function sendDeskFollowUpEmail(formData: FormData) {
 
   revalidatePath("/client");
   revalidatePath("/client/david");
+  revalidatePath("/client/amanda");
   revalidatePath("/client/prospects");
   revalidatePath("/client/clients");
   if (opportunityId) revalidatePath(`/client/prospects/${opportunityId}`);

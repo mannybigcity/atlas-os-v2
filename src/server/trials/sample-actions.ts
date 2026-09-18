@@ -114,7 +114,7 @@ export async function clearTrialSamples(formData: FormData) {
     }
   }
 
-  for (const path of ["/client", "/client/prospects", "/client/clients", "/client/david", "/client/hunter", "/client/micah", "/client/calendar"]) {
+  for (const path of ["/client", "/client/prospects", "/client/clients", "/client/david", "/client/amanda", "/client/hunter", "/client/micah", "/client/calendar"]) {
     revalidatePath(path);
   }
   redirect(returnPath(formData, "cleared"));
