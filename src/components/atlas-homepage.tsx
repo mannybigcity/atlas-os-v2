@@ -73,16 +73,13 @@ function IndustryGlyph({ index }: { index: number }) {
 }
 
 function DeskGlyph({ index }: { index: number }) {
-  /* eslint-disable react/jsx-key -- glyphs are selected as a single SVG child, not mapped directly. */
   const common = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, strokeWidth: 2.2 };
   const glyphs = [
     <><path {...common} d="M4 6h16v12H4z" /><path {...common} d="m4 7 8 6 8-6" /></>,
     <><circle {...common} cx="11" cy="11" r="6" /><path {...common} d="m20 20-3.5-3.5" /></>,
     <><rect {...common} x="4" y="5" width="16" height="15" rx="2" /><path {...common} d="M8 3v4M16 3v4M4 10h16" /></>,
   ];
-  const glyph = <svg aria-hidden="true" className="atlas-desks-svg" viewBox="0 0 24 24">{glyphs[index % glyphs.length]}</svg>;
-  /* eslint-enable react/jsx-key */
-  return glyph;
+  return <svg aria-hidden="true" className="atlas-desks-svg" viewBox="0 0 24 24">{glyphs[index % glyphs.length]}</svg>;
 }
 
 const copy: Record<SiteLanguage, LandingCopy> = {
