@@ -1,5 +1,6 @@
 import { amandaSequenceStatusCopy, type AmandaDeskInfo } from "@/lib/lions-den/amanda-outreach";
 import { approveAmandaSequence, stopAmandaSequence } from "@/server/outreach/actions";
+import { LD_CHIP_SM } from "@/lib/lions-den/desk-chips";
 
 const DAY_LABEL_EN = ["Today", "Day 3", "Day 7"];
 const DAY_LABEL_ES = ["Hoy", "Día 3", "Día 7"];
@@ -85,7 +86,7 @@ export function AmandaSequenceCard({
           <form action={stopAmandaSequence}>
             {hidden}
             <button
-              className="inline-flex rounded-full border border-[#d5d0c4] bg-white px-3 py-1.5 text-sm font-semibold text-[#5c6578]"
+              className={LD_CHIP_SM}
               data-amanda-control="stop"
               type="submit"
             >

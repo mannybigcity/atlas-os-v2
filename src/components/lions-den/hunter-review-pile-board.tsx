@@ -13,6 +13,7 @@ import { prospectTelHref } from "@/lib/lions-den/prospect-places";
 import { isTrialSampleHunterItem, trialSampleCopy } from "@/lib/lions-den/trial-samples";
 import { SampleBadge } from "@/components/lions-den/sample-badge";
 import { ConfirmSubmitButton } from "@/components/lions-den/confirm-submit-button";
+import { LD_CHIP } from "@/lib/lions-den/desk-chips";
 
 const BULK_ACCEPT_CONFIRM_COUNT = 8;
 
@@ -137,7 +138,7 @@ export function HunterReviewPileBoard({
           <form action={acceptAllHunterReviewItems}>
             <input name="organizationId" type="hidden" value={organizationId} />
             <ConfirmSubmitButton
-              className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42]"
+              className={LD_CHIP}
               confirmMessage={bulkConfirmMessage({
                 count: acceptAllCount,
                 noPhoneCount: allNoPhone,
@@ -218,13 +219,13 @@ export function HunterReviewPileBoard({
                   <form action={dismissHunterReviewItem}>
                     <input name="organizationId" type="hidden" value={organizationId} />
                     <input name="reviewItemId" type="hidden" value={item.id} />
-                    <button className="rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#5c6578]" type="submit">
+                    <button className={LD_CHIP} type="submit">
                       {spanish ? "Omitir" : "Skip"}
                     </button>
                   </form>
                   {item.googleMapsUrl ? (
                     <a
-                      className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42]"
+                      className={LD_CHIP}
                       href={item.googleMapsUrl}
                       rel="noreferrer"
                       target="_blank"

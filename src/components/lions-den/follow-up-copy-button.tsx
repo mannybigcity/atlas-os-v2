@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { LD_CHIP_SM } from "@/lib/lions-den/desk-chips";
 
 async function writeClipboard(text: string) {
   try {
@@ -53,8 +54,7 @@ export function FollowUpCopyButton({ text, spanish, className }: FollowUpCopyBut
     <button
       aria-live="polite"
       className={
-        className ??
-        "inline-flex rounded-full border border-[#071b42] bg-white px-3 py-1.5 text-sm font-semibold text-[#071b42]"
+        className ?? LD_CHIP_SM
       }
       data-followup-control="copy"
       onClick={async () => {

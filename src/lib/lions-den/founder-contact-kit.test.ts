@@ -9,9 +9,11 @@ import { amandaClose, nextMessage, nextMessageOwnerFromBusiness } from "./next-m
 import {
   DELEANA_NAME,
   DELEANA_PHONE_DISPLAY,
+  DELEANA_PHONE_TEL,
   applyFounderContactKit,
   correctDeleanaSpelling,
   founderContactLinesFor,
+  founderPhoneTelHref,
   founderUrgentCallCopy,
 } from "./founder-contact-kit.ts";
 
@@ -24,6 +26,9 @@ const afeOrg = { name: "Atlas For Entrepreneurs", slug: "atlas-for-entrepreneurs
 test("locked founder numbers: SIS uses both, AFE uses Manny only, tenants keep their own phone", () => {
   assert.equal(AFE_MANNY_PHONE_DISPLAY, "346-544-8621");
   assert.equal(DELEANA_PHONE_DISPLAY, "346-544-8697");
+  assert.equal(DELEANA_PHONE_TEL, "3465448697");
+  assert.equal(founderPhoneTelHref(DELEANA_PHONE_DISPLAY), "tel:3465448697");
+  assert.equal(founderPhoneTelHref(AFE_MANNY_PHONE_DISPLAY), "tel:3465448621");
   assert.equal(correctDeleanaSpelling("Call Delina today"), "Call Deleana today");
 
   const sis = founderContactLinesFor(sisOrg);
@@ -134,6 +139,23 @@ test("SIS inbound receipt uses both locked numbers; AFE uses Manny only", () => 
     /llama directo al 346-544-8621/,
   );
   assert.doesNotMatch(founderUrgentCallCopy(founderContactLinesFor(afeOrg), false) ?? "", /Deleana|8697/);
+});
+
+test("Settings HELP chips use locked kit phones, not signup metadata", () => {
+  const settings = readRepo("src/app/client/settings/page.tsx");
+  const kit = readRepo("src/lib/lions-den/founder-contact-kit.ts");
+  assert.match(settings, /founderContactLinesFor\(primaryOrganization\)/);
+  assert.match(settings, /founderPhoneTelHref/);
+  assert.match(settings, /LD_CHIP/);
+  assert.match(settings, /helpContacts/);
+  assert.match(settings, /Business phone/);
+  assert.match(settings, /Teléfono del negocio/);
+  assert.match(settings, /metadata\.phone/);
+  assert.doesNotMatch(settings, /8325550100|832-555-0100/);
+  assert.doesNotMatch(settings, /346-544-8698|346-544-8620/);
+  assert.match(kit, /DELEANA_PHONE_DISPLAY = "346-544-8697"/);
+  assert.match(kit, /AFE_MANNY_PHONE_DISPLAY/);
+  assert.doesNotMatch(kit, /346-544-8698|8325550100/);
 });
 
 test("AFE public homepage Call today is Manny only and Amanda templates never spell Delina", () => {

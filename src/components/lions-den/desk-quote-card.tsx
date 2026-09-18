@@ -10,6 +10,7 @@ import { prospectContactLinks } from "@/lib/lions-den/prospect-stages";
 import { prospectWhatsAppHref } from "@/lib/lions-den/prospect-places";
 import type { OrganizationOpportunity } from "@/server/opportunities/queries";
 import { createDeskQuote, saveDeskPayLink, setDeskQuoteStatus } from "@/server/opportunities/desk-quote-actions";
+import { LD_CHIP } from "@/lib/lions-den/desk-chips";
 
 type DeskQuoteCardProps = {
   prospect: Pick<OrganizationOpportunity, "id" | "name" | "contactName" | "contactPhone" | "contactEmail" | "metadata" | "stage">;
@@ -27,8 +28,7 @@ type DeskQuoteCardProps = {
 
 const fieldClass =
   "mt-1 block w-full rounded-md border border-[#d5d0c4] bg-white px-3 py-2 text-sm text-[#071b42] placeholder:text-[#8a93a3] focus:border-[#071b42] focus:outline-none";
-const pillClass =
-  "rounded-full border border-[#d5d0c4] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:border-[#071b42]";
+const pillClass = LD_CHIP;
 
 function Scope({ organizationId, previewOrgSlug, workspaceSlug, clientRecord, returnTo, spanish, prospectId }: {
   organizationId: string;

@@ -6,6 +6,7 @@ import {
   initialMicahDeskActionState,
   type MicahDeskActionState,
 } from "@/server/content-studio/desk-save";
+import { LD_CHIP } from "@/lib/lions-den/desk-chips";
 
 export type MicahWeekGalleryCard = {
   id: string | null;
@@ -162,7 +163,7 @@ function MicahDayCard({
       </button>
       {card.instagramCaption ? (
         <button
-          className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+          className={LD_CHIP}
           onClick={() => void copyVariant(card.instagramCaption ?? "", "instagram")}
           type="button"
         >
@@ -177,7 +178,7 @@ function MicahDayCard({
       ) : null}
       {card.linkedinCaption ? (
         <button
-          className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+          className={LD_CHIP}
           onClick={() => void copyVariant(card.linkedinCaption ?? "", "linkedin")}
           type="button"
         >
@@ -191,7 +192,7 @@ function MicahDayCard({
         </button>
       ) : null}
       <a
-        className="inline-flex rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+        className={`inline-flex ${LD_CHIP}`}
         download={fileName}
         href={source}
       >
@@ -280,7 +281,7 @@ function MicahDayCard({
                 </>
               ) : (
                 <button
-                  className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42] transition hover:bg-[#fff8e6]"
+                  className={LD_CHIP}
                   data-micah-control="edit"
                   onClick={() => setEditing(true)}
                   type="button"

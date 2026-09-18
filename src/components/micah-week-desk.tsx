@@ -18,6 +18,7 @@ import {
   initialMicahDeskActionState,
   type MicahDeskActionState,
 } from "@/server/content-studio/desk-save";
+import { LD_CHIP, LD_CHIP_SM } from "@/lib/lions-den/desk-chips";
 
 export type MicahWeekStripCard = {
   day: number;
@@ -199,7 +200,7 @@ export function MicahWeekDesk({
               <p className="mt-1 text-sm leading-6 text-[#33415c]">{selected.ask}</p>
             </div>
             <button
-              className="rounded-full border border-[#071b42] bg-white px-3 py-1.5 text-xs font-semibold text-[#071b42]"
+              className={LD_CHIP_SM}
               onClick={() => setOpenDay(null)}
               type="button"
             >
@@ -316,7 +317,7 @@ export function MicahWeekDesk({
           </div>
           {onboardingDone ? (
             <button
-              className="rounded-full border border-[#071b42] bg-white px-3 py-1.5 text-xs font-semibold text-[#071b42]"
+              className={LD_CHIP_SM}
               onClick={() => setStep(0)}
               type="button"
             >
@@ -342,7 +343,7 @@ export function MicahWeekDesk({
         <div className="mt-4 flex flex-wrap gap-2">
           {step > 0 && step < steps.length ? (
             <button
-              className="rounded-full border border-[#071b42] bg-white px-4 py-2 text-sm font-semibold text-[#071b42]"
+              className={LD_CHIP}
               onClick={() => setStep((currentStep) => currentStep - 1)}
               type="button"
             >
@@ -373,7 +374,7 @@ export function MicahWeekDesk({
             {pending ? "Working…" : empty ? "Build my 7-day week" : "Rebuild this week's cards"}
           </button>
           <button
-            className="rounded-full border border-[#071b42] bg-white px-5 py-3 text-sm font-semibold text-[#071b42] disabled:opacity-50"
+            className={`${LD_CHIP} px-5 py-3 disabled:opacity-50`}
             data-micah-desk-control="save"
             disabled={!canEdit || pending}
             onClick={() => void postDesk("save")}
