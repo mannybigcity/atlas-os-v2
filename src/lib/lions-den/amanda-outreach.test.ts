@@ -29,6 +29,48 @@ const business = {
 };
 const prospect = { prospectName: "Cypress Property Management", contactName: "Dana Reyes", prospectType: "property management company" };
 
+test("SIS sequence is Sign Party voice and never Atlas sell copy", () => {
+  const steps = amandaSequenceSteps({
+    business: {
+      businessName: "SIS Custom Creations",
+      trade: "local business",
+      city: "Katy",
+      ownerName: "Deleana",
+      ownerPhone: "346-544-8621",
+      contactLines: [
+        { name: "Manny", phone: "346-544-8621" },
+        { name: "Deleana", phone: "346-544-8697" },
+      ],
+    },
+    prospect: { prospectName: "Little Stars", prospectType: "daycare center" },
+    spanish: false,
+  });
+  assert.equal(steps[0]!.subject, "Sign party for Little Stars kids");
+  assert.match(steps[0]!.body, /^Little Stars in Katy,/);
+  assert.match(steps[0]!.body, /We bring the supplies on-site for a kids sign party at your center\. Kids paint\./);
+  assert.match(steps[0]!.body, /siscustomcreationstx@gmail.com/);
+  assert.doesNotMatch(steps[0]!.body, /Hi there|I'm Amanda|rate sheet|Atlas|Front Desk|BASIC \$99/i);
+  assert.doesNotMatch(steps[1]!.body, /rate sheet|plumbing/);
+});
+
+test("AFE sequence sells desk follow-up and never SIS sign-party copy", () => {
+  const steps = amandaSequenceSteps({
+    business: {
+      businessName: "Atlas For Entrepreneurs",
+      trade: "business systems",
+      city: "Cypress",
+      ownerName: "Manny",
+      ownerPhone: "346-544-8621",
+    },
+    prospect: { prospectName: "Cypress Property Management", contactName: "Dana Reyes", prospectType: "property management company" },
+    spanish: false,
+  });
+  assert.match(steps[0]!.subject, /Follow-up on your desk for Cypress Property Management/);
+  assert.match(steps[0]!.body, /Leads die between the first call and the follow-up/);
+  assert.match(steps[0]!.body, /you Approve before anything goes out/);
+  assert.doesNotMatch(steps[0]!.body, /SIS Custom|sign party|Deleana|8697|Front Desk|auto-call|BASIC \$99/i);
+});
+
 test("Amanda writes three short B2B emails, each with a plain opt-out and her signature", () => {
   const steps = amandaSequenceSteps({ business, prospect, spanish: false });
   assert.equal(steps.length, 3);

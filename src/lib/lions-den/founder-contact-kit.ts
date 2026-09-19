@@ -10,6 +10,7 @@ import { isAfeOperatorDeskOrganization, isSisOrganization } from "../client-port
 export const DELEANA_PHONE_DISPLAY = "346-544-8697";
 export const DELEANA_PHONE_TEL = "3465448697";
 export const DELEANA_NAME = "Deleana";
+export const SIS_OUTREACH_EMAIL = "siscustomcreationstx@gmail.com";
 
 export type FounderContactLine = {
   name: string;

@@ -437,15 +437,65 @@ test("first hello uses trade, city, and prospect type and never invents a person
       ownerFirstName: "Amanda",
       ownerPhone: null,
       trade: "local business",
-      city: null,
+      city: "Katy",
       prospectName: "Jordan Host",
-      prospectCompany: null,
-      prospectType: null,
+      prospectCompany: "Little Stars",
+      prospectType: "daycare center",
     }),
   );
   assert.equal(sis.job, "first_touch");
-  assert.match(sis.body, /I'm Amanda, writing for SIS Custom Creations/);
-  assert.doesNotMatch(sis.body, /local business company/);
-  assert.doesNotMatch(sis.body, /Need one fact|A single note is enough/);
-  assert.match(sis.body, /Amanda, on behalf of SIS Custom Creations\.$/m);
+  assert.match(sis.subject, /Sign party for Little Stars kids/);
+  assert.match(sis.body, /^Little Stars in Katy,/);
+  assert.match(sis.body, /We bring the supplies on-site for a kids sign party at your center\. Kids paint\./);
+  assert.match(sis.body, /ages, headcount, and a date window/);
+  assert.match(
+    sis.body,
+    /Deleana & Manny · SIS Custom Creations · Manny 346-544-8621 · Deleana 346-544-8697 · siscustomcreationstx@gmail.com/,
+  );
+  assert.doesNotMatch(sis.body, /Hi there|Hello from|I'm Amanda|local business company|Need one fact/);
+  assert.doesNotMatch(sis.body, /Atlas|Front Desk|BASIC \$99|GROW \$249|UNLIMITED \$499|auto-call/i);
+  assert.doesNotMatch(sis.body, /—|!!!|[\u{1F300}-\u{1FAFF}]/u);
+});
+
+test("SIS writes a sign-party first hello from a named childcare row even if the shop profile is thin", () => {
+  const result = nextMessage(
+    base({
+      ownerFirstName: "",
+      businessName: "our company",
+      organizationSlug: "sis-diy-big-complete-showcase",
+      trade: null,
+      city: null,
+      prospectName: "",
+      prospectCompany: "Bright Beginnings",
+      prospectType: "daycare center",
+    }),
+  );
+  assert.equal(result.job, "first_touch");
+  assert.match(result.body, /^Bright Beginnings,/);
+  assert.match(result.body, /Kids paint/);
+  assert.doesNotMatch(result.body, /Need one fact|Add a note on this prospect/);
+});
+
+test("AFE first hello sells desk follow-up, not SIS sign party or live Front Desk", () => {
+  const result = nextMessage(
+    base({
+      businessName: "Atlas For Entrepreneurs",
+      ownerFirstName: "Manny",
+      ownerPhone: "346-544-8621",
+      trade: "local business",
+      city: "Cypress",
+      prospectName: "Dana Reyes",
+      prospectCompany: "Cypress Property Management",
+      prospectType: "property management company",
+    }),
+  );
+  assert.equal(result.job, "first_touch");
+  assert.match(result.subject, /Follow-up on your desk for Cypress Property Management/);
+  assert.match(result.body, /^Cypress Property Management,/);
+  assert.match(result.body, /Leads die between the first call and the follow-up/);
+  assert.match(result.body, /you Approve before anything goes out/);
+  assert.match(result.body, /Tuesday or Wednesday for 15 minutes/);
+  assert.match(result.body, /Amanda, on behalf of Atlas For Entrepreneurs/);
+  assert.doesNotMatch(result.body, /SIS Custom|sign party|Deleana|8697|Front Desk|auto-call|BASIC \$99|GROW \$249|UNLIMITED \$499/i);
+  assert.doesNotMatch(result.body, /Hi there|I'm Amanda, writing for|—|!!!/ );
 });

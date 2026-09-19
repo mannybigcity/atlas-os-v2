@@ -5,7 +5,14 @@
  * Pure functions; the scheduled sender and the desk both read from here.
  */
 
-import { contactAnswerLines, type FounderContactLine } from "./founder-contact-kit.ts";
+import { outreachDeskLane } from "../client-portal/identity.ts";
+import { AFE_MANNY_PHONE_DISPLAY } from "../afe-public-contact.ts";
+import {
+  DELEANA_PHONE_DISPLAY,
+  SIS_OUTREACH_EMAIL,
+  contactAnswerLines,
+  type FounderContactLine,
+} from "./founder-contact-kit.ts";
 
 export const AMANDA_SEQUENCE_STATUSES = ["draft", "approved", "sending", "paused", "done"] as const;
 export type AmandaSequenceStatus = (typeof AMANDA_SEQUENCE_STATUSES)[number];
@@ -73,6 +80,9 @@ function greeting(prospect: AmandaProspect, spanish: boolean) {
 }
 
 export function amandaSignature(business: AmandaBusiness, spanish: boolean) {
+  if (outreachDeskLane({ name: business.businessName }) === "sis") {
+    return `Deleana & Manny · SIS Custom Creations · Manny ${AFE_MANNY_PHONE_DISPLAY} · Deleana ${DELEANA_PHONE_DISPLAY} · ${SIS_OUTREACH_EMAIL}`;
+  }
   const lines = [
     "Amanda",
     spanish ? `en nombre de ${business.businessName}` : `on behalf of ${business.businessName}`,
@@ -92,6 +102,195 @@ function where(business: AmandaBusiness, spanish: boolean) {
   return spanish ? ` en ${city}` : ` in ${city}`;
 }
 
+function themOpen(prospect: AmandaProspect, city: string | null | undefined, spanish: boolean) {
+  const company = String(prospect.prospectName ?? "").trim();
+  const kind = String(prospect.prospectType ?? "").trim();
+  const place = String(city ?? "").trim();
+  if (company && place && !company.toLowerCase().includes(place.toLowerCase())) {
+    return spanish ? `${company} en ${place},` : `${company} in ${place},`;
+  }
+  if (company) return `${company},`;
+  if (kind && place) return spanish ? `${kind} en ${place},` : `${kind} in ${place},`;
+  if (kind) return `${kind},`;
+  return greeting(prospect, spanish);
+}
+
+function sisSignPartySequence(input: {
+  business: AmandaBusiness;
+  prospect: AmandaProspect;
+  spanish: boolean;
+}): AmandaStep[] {
+  const { business, prospect, spanish } = input;
+  const open = themOpen(prospect, business.city, spanish);
+  const sign = amandaSignature(business, spanish);
+  const optOut = spanish ? AMANDA_OPT_OUT_ES : AMANDA_OPT_OUT_EN;
+  const center = prospect.prospectName.trim() || (spanish ? "su programa" : "your program");
+  const intro = spanish
+    ? [
+        open,
+        "",
+        "Llevamos los materiales al sitio. Los niños pintan. Cada uno se lleva el proyecto a casa.",
+        "Si les sirve un sábado por la mañana o una tarde entre semana, respondan con edades, número de niños y una ventana de fecha.",
+        "",
+        optOut,
+        "",
+        sign,
+      ]
+    : [
+        open,
+        "",
+        "We bring the supplies on-site for a kids sign party at your center. Kids paint. Each one takes a project home.",
+        "If Saturday morning or a weekday afternoon works, reply with ages, headcount, and a date window.",
+        "",
+        optOut,
+        "",
+        sign,
+      ];
+  const value = spanish
+    ? [
+        open,
+        "",
+        "Sigo el hilo de la fiesta de letreros en su sitio.",
+        "Con edades, número de niños y sábado por la mañana o tarde entre semana, reservamos la fecha.",
+        "",
+        optOut,
+        "",
+        sign,
+      ]
+    : [
+        open,
+        "",
+        "Checking back on an on-site sign party.",
+        "Ages, headcount, and Saturday morning or weekday afternoon is enough to hold a date.",
+        "",
+        optOut,
+        "",
+        sign,
+      ];
+  const last = spanish
+    ? [
+        open,
+        "",
+        "Última nota de SIS Custom Creations.",
+        "Si el momento no es ahora, responda STOP. Si quieren la fiesta de letreros, manden edades, número y una ventana de fecha.",
+        "",
+        sign,
+      ]
+    : [
+        open,
+        "",
+        "Last note from SIS Custom Creations.",
+        "If the timing is wrong, reply STOP. If you want the sign party, send ages, headcount, and a date window.",
+        "",
+        sign,
+      ];
+  const subjects = spanish
+    ? [
+        `Fiesta de letreros para los niños de ${center}`,
+        `Re: Fiesta de letreros para los niños de ${center}`,
+        `Re: Fiesta de letreros para los niños de ${center}. ¿Cierro el tema?`,
+      ]
+    : [
+        `Sign party for ${center} kids`,
+        `Re: Sign party for ${center} kids`,
+        `Re: Sign party for ${center} kids. Should I stop?`,
+      ];
+  return [intro, value, last].map((lines, index) => ({
+    step: index,
+    delayDays: AMANDA_STEP_DELAY_DAYS[index] ?? 7,
+    subject: subjects[index]!.slice(0, 140),
+    body: lines.join("\n").slice(0, 3000),
+  }));
+}
+
+function afeAtlasSequence(input: {
+  business: AmandaBusiness;
+  prospect: AmandaProspect;
+  spanish: boolean;
+}): AmandaStep[] {
+  const { business, prospect, spanish } = input;
+  const open = themOpen(prospect, business.city, spanish);
+  const sign = amandaSignature(business, spanish);
+  const optOut = spanish ? AMANDA_OPT_OUT_ES : AMANDA_OPT_OUT_EN;
+  const shop = prospect.prospectName.trim() || (spanish ? "su negocio" : "your shop");
+  const intro = spanish
+    ? [
+        open,
+        "",
+        "Los leads se mueren entre la primera llamada y el seguimiento. Atlas los deja en su escritorio, redacta el siguiente mensaje y usted Aprueba antes de que salga. Usted se queda con el cliente.",
+        "¿Martes o miércoles 15 minutos, o le mando un seguimiento de muestra?",
+        "",
+        optOut,
+        "",
+        sign,
+      ]
+    : [
+        open,
+        "",
+        "Leads die between the first call and the follow-up. Atlas puts those leads on your desk, drafts the next message, and you Approve before anything goes out. You keep the customer.",
+        "Tuesday or Wednesday for 15 minutes, or I can send a sample follow-up. Which is easier?",
+        "",
+        optOut,
+        "",
+        sign,
+      ];
+  const value = spanish
+    ? [
+        open,
+        "",
+        "Un seguimiento breve de Atlas For Entrepreneurs.",
+        "Le puedo mandar un seguimiento de muestra. Usted Aprueba. El cliente sigue siendo suyo.",
+        "",
+        optOut,
+        "",
+        sign,
+      ]
+    : [
+        open,
+        "",
+        "Quick follow-up from Atlas For Entrepreneurs.",
+        "I can send a sample follow-up. You Approve. The customer stays yours.",
+        "",
+        optOut,
+        "",
+        sign,
+      ];
+  const last = spanish
+    ? [
+        open,
+        "",
+        "Última nota de mi parte.",
+        "Si el momento no es ahora, responda STOP. Si quieren ver el escritorio, digan martes, miércoles o “mándeme la muestra”.",
+        "",
+        sign,
+      ]
+    : [
+        open,
+        "",
+        "Last note from me.",
+        "If the timing is wrong, reply STOP. If you want a look at the desk, say Tuesday, Wednesday, or send the sample.",
+        "",
+        sign,
+      ];
+  const subjects = spanish
+    ? [
+        `Seguimiento en el escritorio · ${shop}`,
+        `Re: Seguimiento en el escritorio · ${shop}`,
+        `Re: Seguimiento en el escritorio · ${shop}. ¿Cierro el tema?`,
+      ]
+    : [
+        `Follow-up on your desk for ${shop}`,
+        `Re: Follow-up on your desk for ${shop}`,
+        `Re: Follow-up on your desk for ${shop}. Should I stop?`,
+      ];
+  return [intro, value, last].map((lines, index) => ({
+    step: index,
+    delayDays: AMANDA_STEP_DELAY_DAYS[index] ?? 7,
+    subject: subjects[index]!.slice(0, 140),
+    body: lines.join("\n").slice(0, 3000),
+  }));
+}
+
 /**
  * Three emails, each short enough to read on a phone. The owner sees all
  * three before approving; the sender never changes the text after that.
@@ -102,6 +301,9 @@ export function amandaSequenceSteps(input: {
   spanish: boolean;
 }): AmandaStep[] {
   const { business, prospect, spanish } = input;
+  const lane = outreachDeskLane({ name: business.businessName });
+  if (lane === "sis") return sisSignPartySequence(input);
+  if (lane === "afe") return afeAtlasSequence(input);
   const trade = business.trade.trim() || (spanish ? "servicio" : "service");
   const owner = business.ownerName?.trim() || (spanish ? "el dueño" : "the owner");
   const type = prospect.prospectType?.trim();

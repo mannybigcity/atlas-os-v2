@@ -19,8 +19,9 @@ import { isAtlasAskCapped } from "@/lib/lions-den/atlas-quota";
 import { applyFounderContactKit, type FounderContactLine } from "@/lib/lions-den/founder-contact-kit";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import {
-  amandaClose,
+  firstTouchClose,
   hasSafeBusinessProfile,
+  messageDeskLane,
   nextMessage,
   type NextMessageInput,
   type NextMessageResult,
@@ -120,6 +121,7 @@ function composeInput(facts: ComposeFacts): NextMessageInput {
     contactLines: locked.contactLines,
     trade: facts.trade,
     city: facts.city,
+    organizationSlug: facts.workspaceSlug || facts.previewOrgSlug || null,
     prospectName: facts.prospectName,
     prospectCompany: facts.prospectCompany,
     prospectType: facts.prospectType,
@@ -219,13 +221,13 @@ export async function requestAmandaFirstTouchDraft(facts: ComposeFacts): Promise
     };
   }
 
-  const close = amandaClose(input);
+  const close = firstTouchClose(input);
   try {
     const result = await generateStructuredText({
       schemaName: AMANDA_COMPOSE_AI_SCHEMA_NAME,
       schema: amandaComposeAiSchema,
       maxOutputTokens: 800,
-      instructions: amandaComposeAiInstructions(spanish),
+      instructions: amandaComposeAiInstructions(spanish, messageDeskLane(input)),
       input: JSON.stringify(amandaComposeAiInput(input, close)),
       parse: (value) => {
         const parsed = parseAmandaComposeAiDraft(value);

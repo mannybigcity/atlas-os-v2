@@ -197,6 +197,15 @@ export function isSisOrganization(organization?: { name?: string | null; slug?: 
   return isSisCustomCreations(organization.name) || isSisWorkspaceSlug(organization.slug);
 }
 
+/** SIS Sign Party desk, AFE operator desk, or a tenant/trial shop. Never mix those voices. */
+export type OutreachDeskLane = "sis" | "afe" | null;
+
+export function outreachDeskLane(organization?: { name?: string | null; slug?: string | null } | null): OutreachDeskLane {
+  if (isSisOrganization(organization)) return "sis";
+  if (isAfeOperatorDeskOrganization(organization)) return "afe";
+  return null;
+}
+
 export function organizationSlugsMatch(
   left?: string | null,
   right?: string | null,

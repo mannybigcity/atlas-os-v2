@@ -3,7 +3,14 @@
  * Pure — zero Next or Supabase imports. Nothing here sends.
  */
 
-import { contactAnswerLines, type FounderContactLine } from "./founder-contact-kit.ts";
+import { outreachDeskLane, type OutreachDeskLane } from "../client-portal/identity.ts";
+import { AFE_MANNY_PHONE_DISPLAY } from "../afe-public-contact.ts";
+import {
+  DELEANA_PHONE_DISPLAY,
+  SIS_OUTREACH_EMAIL,
+  contactAnswerLines,
+  type FounderContactLine,
+} from "./founder-contact-kit.ts";
 
 export type NextMessageJob =
   | "first_touch"
@@ -28,6 +35,8 @@ export type NextMessageInput = {
   prospectCompany: string | null;
   /** What the prospect is, e.g. "property management company". Never a personal story. */
   prospectType?: string | null;
+  /** Workspace slug so SIS/AFE walls hold when the display name is thin. */
+  organizationSlug?: string | null;
   stage: string;
   opportunityType: string | null;
   lastTouchAt: string | null;
@@ -180,10 +189,31 @@ export function notesAreThin(notesText: string | null | undefined) {
   return String(notesText ?? "").trim().length < THIN_NOTES_CHARS;
 }
 
+const SIGN_PARTY_VERTICAL =
+  /\b(childcare|child care|daycare|day care|preschool|pre-?k|church|hoa|homeowners association|school|kids club|after.?school|faith)\b/i;
+
+export function messageDeskLane(
+  input: Pick<NextMessageInput, "businessName" | "organizationSlug">,
+): OutreachDeskLane {
+  return outreachDeskLane({ name: input.businessName, slug: input.organizationSlug });
+}
+
+function hasProspectHandle(input: Pick<NextMessageInput, "prospectName" | "prospectCompany" | "prospectType">) {
+  return Boolean(
+    String(input.prospectCompany ?? "").trim() ||
+      String(input.prospectName ?? "").trim() ||
+      SIGN_PARTY_VERTICAL.test(String(input.prospectType ?? "")),
+  );
+}
+
 /** Enough of the owner's business to write a first hello without inventing facts. */
 export function hasSafeBusinessProfile(
-  input: Pick<NextMessageInput, "businessName" | "trade" | "city" | "ownerFirstName">,
+  input: Pick<
+    NextMessageInput,
+    "businessName" | "trade" | "city" | "ownerFirstName" | "organizationSlug" | "prospectName" | "prospectCompany" | "prospectType"
+  >,
 ) {
+  if (messageDeskLane(input) === "sis" && hasProspectHandle(input)) return true;
   const name = String(input.businessName ?? "").trim();
   if (name && !PLACEHOLDER_BUSINESS.test(name)) return true;
   return Boolean(usableTrade(input.trade) && firstName(input.ownerFirstName));
@@ -192,8 +222,31 @@ export function hasSafeBusinessProfile(
 function who(input: NextMessageInput) {
   const person = firstName(input.prospectName);
   if (person) return person;
-  const company = String(input.prospectCompany ?? "").trim();
-  return company || (input.spanish ? "equipo" : "there");
+  return String(input.prospectCompany ?? "").trim();
+}
+
+function centerName(input: NextMessageInput) {
+  return (
+    String(input.prospectCompany ?? "").trim() ||
+    String(input.prospectName ?? "").trim() ||
+    (input.spanish ? "su programa" : "your program")
+  );
+}
+
+/** First line is them (center / trade / city). Never "Hi there". */
+export function themLine(input: NextMessageInput) {
+  const company =
+    String(input.prospectCompany ?? "").trim() || String(input.prospectName ?? "").trim();
+  const city = String(input.city ?? "").trim();
+  const kind = prospectWhat(input);
+  if (company && city && !company.toLowerCase().includes(city.toLowerCase())) {
+    return input.spanish ? `${company} en ${city}` : `${company} in ${city}`;
+  }
+  if (company) return company;
+  if (kind && city) return input.spanish ? `${kind} en ${city}` : `${kind} in ${city}`;
+  if (kind) return kind;
+  if (city) return city;
+  return "";
 }
 
 function ownerName(input: NextMessageInput, spanish: boolean) {
@@ -239,8 +292,20 @@ export function amandaClose(
   return answers.length ? `${head} ${answers.join(". ")}.` : head;
 }
 
-function withClose(body: string, input: NextMessageInput) {
-  return `${body.trim()}\n\n${amandaClose(input)}`.trim();
+export function sisFirstTouchClose() {
+  return `Deleana & Manny · SIS Custom Creations · Manny ${AFE_MANNY_PHONE_DISPLAY} · Deleana ${DELEANA_PHONE_DISPLAY} · ${SIS_OUTREACH_EMAIL}`;
+}
+
+/** SIS Sign Party first-touch uses the locked owner sign-off. Other jobs keep Amanda. */
+export function firstTouchClose(input: NextMessageInput) {
+  if (messageDeskLane(input) === "sis") return sisFirstTouchClose();
+  return amandaClose(input);
+}
+
+function withClose(body: string, input: NextMessageInput, job: NextMessageJob) {
+  const close = job === "first_touch" ? firstTouchClose(input) : amandaClose(input);
+  const trimmed = body.trim();
+  return trimmed.includes(close) ? trimmed : `${trimmed}\n\n${close}`.trim();
 }
 
 function notesBlank(notesText: string) {
@@ -334,8 +399,22 @@ function subjectFor(job: NextMessageJob, input: NextMessageInput): string {
     case "quiet_reopen":
       return es ? `Siguiendo el hilo · ${company}` : `Checking back in · ${company}`;
     default:
-      return es ? `Hola de ${shop}` : `Hello from ${shop}`;
+      return firstTouchSubject(input);
   }
+}
+
+function firstTouchSubject(input: NextMessageInput) {
+  const lane = messageDeskLane(input);
+  const center = centerName(input);
+  if (lane === "sis") {
+    return input.spanish ? `Fiesta de letreros para los niños de ${center}` : `Sign party for ${center} kids`;
+  }
+  if (lane === "afe") {
+    const whoThem = String(input.prospectCompany ?? "").trim() || input.prospectName.trim() || "your shop";
+    return input.spanish ? `Seguimiento en el escritorio · ${whoThem}` : `Follow-up on your desk for ${whoThem}`;
+  }
+  const shop = business(input);
+  return input.spanish ? `Hola de ${shop}` : `Hello from ${shop}`;
 }
 
 type DraftSet = { body: string; shorter: string; softer: string; askYes: string; extra: [string, string] };
@@ -348,7 +427,7 @@ function draftsFor(job: NextMessageJob, input: NextMessageInput): DraftSet {
   const amount = String(input.quoteAmount ?? "").trim();
   const quietDays = quietDaysSince(input.lastTouchAt, input.nowIso);
   const days = quietDays ?? 0;
-  const hello = es ? `Hola ${name},` : `Hi ${name},`;
+  const hello = name ? (es ? `Hola ${name},` : `Hi ${name},`) : es ? "Hola," : "Hello,";
 
   if (job === "need_one_fact") {
     const whoRecord = recordNoun(input);
@@ -590,6 +669,98 @@ function draftsFor(job: NextMessageJob, input: NextMessageInput): DraftSet {
         };
   }
 
+  const lane = messageDeskLane(input);
+  if (lane === "sis") return sisSignPartyDrafts(input);
+  if (lane === "afe") return afeAtlasDrafts(input);
+  return tenantFirstTouchDrafts(input, { hello, shop, owner });
+}
+
+function openLine(input: NextMessageInput) {
+  const them = themLine(input);
+  if (them) return `${them},`;
+  return input.spanish ? "Hola," : "Hello,";
+}
+
+function sisSignPartyDrafts(input: NextMessageInput): DraftSet {
+  const es = input.spanish;
+  const open = openLine(input);
+  if (es) {
+    return {
+      body: [
+        open,
+        "",
+        "Llevamos los materiales al sitio. Los niños pintan. Cada uno se lleva el proyecto a casa.",
+        "Si les sirve un sábado por la mañana o una tarde entre semana, respondan con edades, número de niños y una ventana de fecha.",
+      ].join("\n"),
+      shorter: `${open}\n\nFiesta de letreros en su sitio: llevamos materiales, los niños pintan y se lo llevan. Respondan con edades, número y sábado por la mañana o tarde entre semana.`,
+      softer: `${open}\n\nSIS Custom Creations puede armar una fiesta de letreros en su centro. Llevamos los materiales. Los niños pintan un proyecto para casa.\n\nCuando tengan edades, número de niños y un sábado por la mañana o una tarde entre semana, respondan y fijamos la fecha.`,
+      askYes: `${open}\n\n¿Ponemos una fiesta de letreros en el calendario? Respondan con edades, número de niños y sábado por la mañana o tarde entre semana, sí o no.`,
+      extra: [
+        `${open}\n\nVamos a ustedes con la pintura y las tablas. Los niños hacen un letrero y se lo llevan.\n\nEnvíen edades, número de niños y una ventana de fecha si quieren una fecha reservada.`,
+        `${open}\n\nUna fiesta de letreros es un taller corto en su sitio. Llevamos los materiales. Los niños salen con un proyecto.\n\nRespondan con edades, número y sábado por la mañana o tarde entre semana y confirmamos.`,
+      ],
+    };
+  }
+  return {
+    body: [
+      open,
+      "",
+      "We bring the supplies on-site for a kids sign party at your center. Kids paint. Each one takes a project home.",
+      "If Saturday morning or a weekday afternoon works, reply with ages, headcount, and a date window.",
+    ].join("\n"),
+    shorter: `${open}\n\nOn-site sign party: we bring supplies, kids paint, they take it home. Reply with ages, headcount, and Saturday morning or weekday afternoon.`,
+    softer: `${open}\n\nSIS Custom Creations can host a sign party at your center. We bring the supplies. Kids paint a take-home project.\n\nWhen you have ages, a headcount, and a Saturday morning or weekday afternoon window, reply and we will lock a date.`,
+    askYes: `${open}\n\nCan we put a kids sign party on your calendar? Reply with ages, headcount, and Saturday morning or weekday afternoon, yes or no.`,
+    extra: [
+      `${open}\n\nWe come to you with the paint and boards. Kids make a sign and take it home.\n\nSend ages, headcount, and a date window if you want one on the books.`,
+      `${open}\n\nA sign party is a short on-site workshop. We bring supplies. Kids leave with a project.\n\nReply with ages, headcount, and Saturday morning vs weekday afternoon and we will confirm.`,
+    ],
+  };
+}
+
+function afeAtlasDrafts(input: NextMessageInput): DraftSet {
+  const es = input.spanish;
+  const open = openLine(input);
+  if (es) {
+    return {
+      body: [
+        open,
+        "",
+        "Los leads se mueren entre la primera llamada y el seguimiento. Atlas los deja en su escritorio, redacta el siguiente mensaje y usted Aprueba antes de que salga. Usted se queda con el cliente.",
+        "¿Martes o miércoles 15 minutos, o le mando un seguimiento de muestra?",
+      ].join("\n"),
+      shorter: `${open}\n\nLos leads se pierden entre la primera llamada y el seguimiento. Atlas redacta; usted Aprueba. ¿Martes o miércoles, 15 minutos?`,
+      softer: `${open}\n\nCuando el seguimiento se atrasa, el lead se va. Atlas deja el lead en su escritorio y redacta la nota. Usted sigue Aprobando.\n\n¿Quiere un seguimiento de muestra o 15 minutos el martes o el miércoles?`,
+      askYes: `${open}\n\n¿Hacemos martes o miércoles 15 minutos, o le mando un seguimiento de muestra, sí o no?`,
+      extra: [
+        `${open}\n\nAtlas pone los leads en el escritorio y deja el seguimiento listo. Usted Aprueba. El cliente es suyo.\n\nResponda martes, miércoles o “mándeme la muestra”.`,
+        `${open}\n\nEl hueco es el seguimiento, no la primera llamada. Atlas redacta esa nota. Usted decide si sale.\n\n¿15 minutos el martes o el miércoles?`,
+      ],
+    };
+  }
+  return {
+    body: [
+      open,
+      "",
+      "Leads die between the first call and the follow-up. Atlas puts those leads on your desk, drafts the next message, and you Approve before anything goes out. You keep the customer.",
+      "Tuesday or Wednesday for 15 minutes, or I can send a sample follow-up. Which is easier?",
+    ].join("\n"),
+    shorter: `${open}\n\nLeads die between first call and follow-up. Atlas drafts the follow-up; you Approve. Tuesday or Wednesday, 15 minutes?`,
+    softer: `${open}\n\nWhen follow-up slips, the lead is gone. Atlas keeps the lead on your desk and drafts the next note. You still Approve.\n\nWant a sample follow-up, or a Tuesday or Wednesday 15-minute look?`,
+    askYes: `${open}\n\nCan we do Tuesday or Wednesday for 15 minutes, or should I send a sample follow-up, yes or no?`,
+    extra: [
+      `${open}\n\nAtlas puts the leads on the desk and leaves the follow-up drafted. You Approve. The customer stays yours.\n\nReply Tuesday, Wednesday, or "send the sample".`,
+      `${open}\n\nThe gap is the follow-up, not the first call. Atlas drafts that note. You decide if it goes out.\n\n15 minutes Tuesday or Wednesday?`,
+    ],
+  };
+}
+
+function tenantFirstTouchDrafts(
+  input: NextMessageInput,
+  bits: { hello: string; shop: string; owner: string },
+): DraftSet {
+  const es = input.spanish;
+  const { hello, shop, owner } = bits;
   const shopLine = shopPhrase(input);
   const kind = prospectWhat(input);
   const company = String(input.prospectCompany ?? "").trim();
@@ -655,7 +826,7 @@ function draftsFor(job: NextMessageJob, input: NextMessageInput): DraftSet {
 export function nextMessage(input: NextMessageInput): NextMessageResult {
   const job = pickJob(input);
   const drafts = draftsFor(job, input);
-  const wrap = (text: string) => (job === "need_one_fact" ? text.trim() : withClose(text, input));
+  const wrap = (text: string) => (job === "need_one_fact" ? text.trim() : withClose(text, input, job));
   const sendableCold =
     (job === "first_touch" || job === "client_follow") && hasSafeBusinessProfile(input);
   const notesThin = notesAreThin(input.notesText);
@@ -736,6 +907,7 @@ export function buildDeskNextMessage(input: {
   prospectName: string;
   prospectCompany?: string | null;
   prospectType?: string | null;
+  organizationSlug?: string | null;
   stage: string;
   opportunityType?: string | null;
   lastTouchAt?: string | null;
@@ -753,6 +925,7 @@ export function buildDeskNextMessage(input: {
     prospectName: input.prospectName,
     prospectCompany: input.prospectCompany ?? null,
     prospectType: input.prospectType ?? null,
+    organizationSlug: input.organizationSlug ?? null,
     stage: input.stage,
     opportunityType: input.opportunityType ?? null,
     lastTouchAt: input.lastTouchAt ?? null,
