@@ -30,6 +30,7 @@ import {
   isSisLionsDenRequest,
   isSisOrganization,
   isSisWorkspaceSlug,
+  outreachDeskLane,
   keepPrimaryOrganizationForSisRequest,
   organizationSlugsMatch,
   organizationsVisibleToActor,
@@ -74,6 +75,9 @@ test("live SIS Lion's Den matches name or sis-diy slug, not sis-custom-creations
   assert.equal(isSisOrganization({ name: "SIS Custom Creations", slug: "sis-diy-big-complete-showcase" }), true);
   assert.equal(isSisOrganization({ name: "SIS-DIY-big-complete-showcase", slug: "sis-diy-big-complete-showcase" }), true);
   assert.equal(isSisOrganization({ name: "QTime Productions", slug: "qtime-productions" }), false);
+  assert.equal(outreachDeskLane({ name: "SIS Custom Creations", slug: "sis-diy-big-complete-showcase" }), "sis");
+  assert.equal(outreachDeskLane({ name: AFE_OPERATOR_DESK_NAME, slug: AFE_OPERATOR_DESK_SLUG }), "afe");
+  assert.equal(outreachDeskLane({ name: "Cypress Plumbing", slug: "cypress-plumbing-trial" }), null);
 });
 
 test("SIS preview and selected workspace skip the super-admin CRM", () => {

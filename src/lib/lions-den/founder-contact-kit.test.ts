@@ -10,6 +10,7 @@ import {
   DELEANA_NAME,
   DELEANA_PHONE_DISPLAY,
   DELEANA_PHONE_TEL,
+  SIS_OUTREACH_EMAIL,
   applyFounderContactKit,
   correctDeleanaSpelling,
   founderContactLinesFor,
@@ -25,6 +26,7 @@ const afeOrg = { name: "Atlas For Entrepreneurs", slug: "atlas-for-entrepreneurs
 
 test("locked founder numbers: SIS uses both, AFE uses Manny only, tenants keep their own phone", () => {
   assert.equal(AFE_MANNY_PHONE_DISPLAY, "346-544-8621");
+  assert.equal(SIS_OUTREACH_EMAIL, "siscustomcreationstx@gmail.com");
   assert.equal(DELEANA_PHONE_DISPLAY, "346-544-8697");
   assert.equal(DELEANA_PHONE_TEL, "3465448697");
   assert.equal(founderPhoneTelHref(DELEANA_PHONE_DISPLAY), "tel:3465448697");
@@ -66,9 +68,11 @@ test("Amanda templates replace a wrong Delina phone on SIS and keep Manny-only o
     spanish: false,
   });
   for (const step of steps) {
-    assert.match(step.body, /Manny answers at 346-544-8621/);
-    assert.match(step.body, /Deleana answers at 346-544-8697/);
+    assert.match(step.body, /Manny 346-544-8621/);
+    assert.match(step.body, /Deleana 346-544-8697/);
+    assert.match(step.body, /siscustomcreationstx@gmail.com/);
     assert.doesNotMatch(step.body, /Delina|832-555-0100|\(832\)/);
+    assert.doesNotMatch(step.body, /Atlas|Front Desk|BASIC \$99/i);
   }
 
   const afe = applyFounderContactKit(
@@ -123,8 +127,9 @@ test("Next Message Engine close on SIS lists both locked numbers", () => {
     notesText: "",
     quoteAmount: null,
   });
-  assert.match(drafted.body, /Manny answers at 346-544-8621/);
-  assert.match(drafted.body, /Deleana answers at 346-544-8697/);
+  assert.match(drafted.body, /Manny 346-544-8621/);
+  assert.match(drafted.body, /Deleana 346-544-8697/);
+  assert.match(drafted.body, /siscustomcreationstx@gmail.com/);
   assert.doesNotMatch(drafted.body, /Delina|713-555-0000/);
   assert.match(amandaClose({ ...drafted.profile, spanish: false }), /346-544-8621/);
 });
