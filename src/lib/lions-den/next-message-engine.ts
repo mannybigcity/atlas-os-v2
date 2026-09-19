@@ -689,7 +689,8 @@ function sisSignPartyDrafts(input: NextMessageInput): DraftSet {
       body: [
         open,
         "",
-        "Llevamos los materiales al sitio. Los niños pintan. Cada uno se lleva el proyecto a casa.",
+        "Llevamos los materiales al sitio para una fiesta de letreros. Los niños pintan. Cada uno se lleva el proyecto a casa. Nosotros llevamos la pintura y las tablas.",
+        "",
         "Si les sirve un sábado por la mañana o una tarde entre semana, respondan con edades, número de niños y una ventana de fecha.",
       ].join("\n"),
       shorter: `${open}\n\nFiesta de letreros en su sitio: llevamos materiales, los niños pintan y se lo llevan. Respondan con edades, número y sábado por la mañana o tarde entre semana.`,
@@ -705,7 +706,8 @@ function sisSignPartyDrafts(input: NextMessageInput): DraftSet {
     body: [
       open,
       "",
-      "We bring the supplies on-site for a kids sign party at your center. Kids paint. Each one takes a project home.",
+      "We bring the supplies on-site for a kids sign party at your center. Kids paint. Each one takes a project home. We handle the paint and boards.",
+      "",
       "If Saturday morning or a weekday afternoon works, reply with ages, headcount, and a date window.",
     ].join("\n"),
     shorter: `${open}\n\nOn-site sign party: we bring supplies, kids paint, they take it home. Reply with ages, headcount, and Saturday morning or weekday afternoon.`,

@@ -129,7 +129,8 @@ function sisSignPartySequence(input: {
     ? [
         open,
         "",
-        "Llevamos los materiales al sitio. Los niños pintan. Cada uno se lleva el proyecto a casa.",
+        "Llevamos los materiales al sitio para una fiesta de letreros. Los niños pintan. Cada uno se lleva el proyecto a casa. Nosotros llevamos la pintura y las tablas.",
+        "",
         "Si les sirve un sábado por la mañana o una tarde entre semana, respondan con edades, número de niños y una ventana de fecha.",
         "",
         optOut,
@@ -139,7 +140,8 @@ function sisSignPartySequence(input: {
     : [
         open,
         "",
-        "We bring the supplies on-site for a kids sign party at your center. Kids paint. Each one takes a project home.",
+        "We bring the supplies on-site for a kids sign party at your center. Kids paint. Each one takes a project home. We handle the paint and boards.",
+        "",
         "If Saturday morning or a weekday afternoon works, reply with ages, headcount, and a date window.",
         "",
         optOut,

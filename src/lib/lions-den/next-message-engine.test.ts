@@ -447,6 +447,7 @@ test("first hello uses trade, city, and prospect type and never invents a person
   assert.match(sis.subject, /Sign party for Little Stars kids/);
   assert.match(sis.body, /^Little Stars in Katy,/);
   assert.match(sis.body, /We bring the supplies on-site for a kids sign party at your center\. Kids paint\./);
+  assert.match(sis.body, /We handle the paint and boards/);
   assert.match(sis.body, /ages, headcount, and a date window/);
   assert.match(
     sis.body,

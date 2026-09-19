@@ -48,6 +48,7 @@ test("SIS sequence is Sign Party voice and never Atlas sell copy", () => {
   assert.equal(steps[0]!.subject, "Sign party for Little Stars kids");
   assert.match(steps[0]!.body, /^Little Stars in Katy,/);
   assert.match(steps[0]!.body, /We bring the supplies on-site for a kids sign party at your center\. Kids paint\./);
+  assert.match(steps[0]!.body, /We handle the paint and boards/);
   assert.match(steps[0]!.body, /siscustomcreationstx@gmail.com/);
   assert.doesNotMatch(steps[0]!.body, /Hi there|I'm Amanda|rate sheet|Atlas|Front Desk|BASIC \$99/i);
   assert.doesNotMatch(steps[1]!.body, /rate sheet|plumbing/);
