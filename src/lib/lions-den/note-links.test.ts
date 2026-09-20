@@ -96,6 +96,7 @@ test("contract: notes link to records both ways and never contact anyone", () =>
     const source = readFileSync(new URL(page, import.meta.url), "utf8");
     assert.match(source, /<LinkedNotesPanel/);
     assert.match(source, /<ClientProfileForm/);
+    assert.match(source, /<CrmRecordFiles/);
   }
   const clientsPage = readFileSync(new URL("../../app/client/clients/[id]/page.tsx", import.meta.url), "utf8");
   assert.match(clientsPage, /recordTable="sis_customer"/);

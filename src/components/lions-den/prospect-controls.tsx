@@ -42,7 +42,12 @@ function ScopeFields({ organizationId, previewOrgSlug, workspaceSlug, clientReco
 export function ProspectNotice({ status, spanish }: { status?: string; spanish: boolean }) {
   const copy = prospectNoticeCopy(status, spanish);
   if (!copy) return null;
-  const tone = status === "invalid" || status === "failed" || status === "missing";
+  const tone =
+    status === "invalid" ||
+    status === "failed" ||
+    status === "missing" ||
+    status === "file_invalid" ||
+    status === "file_failed";
   return (
     <p
       className={`mt-4 rounded-xl border px-3 py-2 text-sm font-semibold ${

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenProspectDetail } from "@/components/lions-den/lions-den-prospect-detail";
 import { ClientProfileForm } from "@/components/lions-den/client-profile-form";
+import { CrmRecordFiles } from "@/components/lions-den/crm-record-files";
 import { LinkedNotesPanel } from "@/components/lions-den/linked-notes-panel";
 import { noteRecordKindForStage } from "@/lib/lions-den/note-links";
 import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
@@ -98,6 +99,16 @@ export default async function ProspectDetailPage({
       />
       <ClientProfileForm
         metadata={result.data.metadata}
+        organizationId={organization.id}
+        previewOrgSlug={workspace.previewOrgSlug || undefined}
+        recordId={result.data.id}
+        recordTable="opportunity"
+        returnPath={`/client/prospects/${result.data.id}`}
+        spanish={language === "es"}
+        workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+      />
+      <CrmRecordFiles
+        canWrite={!workspace.readOnly}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         recordId={result.data.id}

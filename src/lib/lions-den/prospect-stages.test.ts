@@ -140,6 +140,10 @@ test("notices are plain and repeat that Atlas did not contact anyone when it mat
   assert.match(prospectNoticeCopy("outcome_saved", true) ?? "", /Seguimiento/);
   assert.match(prospectNoticeCopy("outcome_wrong_number", false) ?? "", /Needs phone/);
   assert.match(prospectNoticeCopy("note_saved", false) ?? "", /Note saved/);
+  assert.match(prospectNoticeCopy("file_uploaded", false) ?? "", /did not email/);
+  assert.match(prospectNoticeCopy("file_uploaded", true) ?? "", /no lo envió/);
+  assert.equal(prospectNoticeCopy("file_deleted", false), "File deleted.");
+  assert.match(prospectNoticeCopy("file_invalid", false) ?? "", /10 MB/);
 });
 
 test("every Call, WhatsApp, or Email puts a dated, sendable check-in on the follow-up desk", () => {
