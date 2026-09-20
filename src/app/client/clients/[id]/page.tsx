@@ -5,6 +5,7 @@ import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-scre
 import { LionsDenProspectDetail } from "@/components/lions-den/lions-den-prospect-detail";
 import { ProspectContactActions, ProspectNotice } from "@/components/lions-den/prospect-controls";
 import { ClientProfileForm } from "@/components/lions-den/client-profile-form";
+import { CrmRecordFiles } from "@/components/lions-den/crm-record-files";
 import { LinkedNotesPanel } from "@/components/lions-den/linked-notes-panel";
 import { WonReviewCard } from "@/components/lions-den/won-review-card";
 import { lastDeskContactLabel, sisDeskActivityLines } from "@/lib/lions-den/prospect-stages";
@@ -198,6 +199,16 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
             spanish={spanish}
             workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
           />
+          <CrmRecordFiles
+            canWrite={!workspace.readOnly}
+            organizationId={organization.id}
+            previewOrgSlug={workspace.previewOrgSlug || undefined}
+            recordId={customer.id}
+            recordTable="sis_customer"
+            returnPath={`/client/clients/${customer.id}`}
+            spanish={spanish}
+            workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+          />
           <LinkedNotesPanel
             organizationId={organization.id}
             previewOrgSlug={workspace.previewOrgSlug || undefined}
@@ -314,6 +325,16 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
       />
       <ClientProfileForm
         metadata={result.data.metadata}
+        organizationId={organization.id}
+        previewOrgSlug={workspace.previewOrgSlug || undefined}
+        recordId={result.data.id}
+        recordTable="opportunity"
+        returnPath={`/client/clients/${result.data.id}`}
+        spanish={spanish}
+        workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+      />
+      <CrmRecordFiles
+        canWrite={!workspace.readOnly}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         recordId={result.data.id}

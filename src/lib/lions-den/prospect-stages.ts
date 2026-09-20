@@ -452,6 +452,18 @@ export function prospectNoticeCopy(status: string | undefined, spanish: boolean)
       return spanish ? "Etapa actualizada." : "Stage updated.";
     case "profile_saved":
       return spanish ? "Datos del cliente guardados." : "Client details saved.";
+    case "file_uploaded":
+      return spanish
+        ? "Archivo guardado en esta ficha. Atlas no lo envió por correo."
+        : "File saved on this card. Atlas did not email it.";
+    case "file_deleted":
+      return spanish ? "Archivo eliminado." : "File deleted.";
+    case "file_invalid":
+      return spanish
+        ? "Ese archivo no se puede guardar. Usa PDF, PNG, JPG, WEBP, DOC o DOCX de hasta 10 MB."
+        : "That file cannot be saved. Use a PDF, PNG, JPG, WEBP, DOC, or DOCX up to 10 MB.";
+    case "file_failed":
+      return spanish ? "No se pudo guardar el archivo. Inténtalo de nuevo." : "That file did not save. Try again.";
     case "invalid":
       return spanish ? "Revisa los campos marcados e inténtalo de nuevo." : "Check the highlighted fields and try again.";
     case "failed":

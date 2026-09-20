@@ -21,6 +21,9 @@ const securityHeaders = [
 const nextConfig = {
   experimental: {
     useTypeScriptCli: true,
+    serverActions: {
+      bodySizeLimit: "12mb",
+    },
   },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
