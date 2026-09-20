@@ -68,7 +68,8 @@ test("contract: Files lives on client and prospect records, private, never email
   assert.match(actions, /requireProspectOwner/);
   assert.match(actions, /isAllowedCrmRecordFile/);
   assert.doesNotMatch(actions, /sendLeadEmail|sendOwnerSms/);
-  assert.match(actions, new RegExp(CRM_FILES_BUCKET));
+  assert.match(actions, /CRM_FILES_BUCKET/);
+  assert.equal(CRM_FILES_BUCKET, "crm-files");
 
   const queries = readFileSync(join(root, "server/crm-files/queries.ts"), "utf8");
   assert.match(queries, /\.eq\("organization_id", organizationId\)/);
