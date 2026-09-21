@@ -330,6 +330,17 @@ body:has(.lions-den-hub) footer {
   .ld-trial-nav-new { animation: none; }
 }
 
+@keyframes atlas-bridge-lion-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 185, 50, 0.7); }
+  50% { box-shadow: 0 0 0 12px rgba(245, 185, 50, 0); }
+}
+.atlas-bridge-lion {
+  animation: atlas-bridge-lion-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-bridge-lion { animation: none; }
+}
+
 .ld-desk,
 .ld-desk-pipeline,
 .ld-desk-followup,

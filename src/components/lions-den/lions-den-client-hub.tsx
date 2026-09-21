@@ -4,6 +4,8 @@ import { signOut } from "@/server/auth/actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AtlasStaffRail } from "@/components/lions-den/atlas-staff-rail";
 import { getClientPortalName, getClientPortalOrgLabel, isAfeCrmDemoOrganization } from "@/lib/client-portal/identity";
+import { readRuntimeEnv } from "@/lib/env";
+import { atlasBridgeUiEnabled } from "@/lib/lions-den/atlas-bridge";
 import {
   lionsDenHref,
   lionsDenOperatorBoards,
@@ -210,6 +212,16 @@ export async function LionsDenClientHub({
         <AtlasStaffRail
           compact
           dailyUsage={aiUsage}
+          fileQueueBridge={atlasBridgeUiEnabled({
+            flag: readRuntimeEnv("ATLAS_BRIDGE_FILE_QUEUE"),
+            allowlist: readRuntimeEnv("ATLAS_BRIDGE_ORG_ALLOWLIST"),
+            organization: {
+              id: organizationId,
+              name: organizationName,
+              slug: organizationSlug || workspaceSlug,
+            },
+            trialDesk: Boolean(trial),
+          })}
           initialLanguage={language}
           organizationId={organizationId ?? ""}
           organizationName={orgLabel || portalName}

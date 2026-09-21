@@ -36,6 +36,17 @@ import {
   resolveMicahDemeanor,
 } from "../content-studio/gallery-art.ts";
 import { withStaffHandoff } from "../../lib/lions-den/atlas-staff-handoff.ts";
+import {
+  appendAtlasBridgeOpsNote,
+  atlasBridgeOpsNote,
+  logAtlasBridgeOutcome,
+  type AtlasBridgeBrain,
+} from "../../lib/lions-den/atlas-bridge.ts";
+import {
+  runConfiguredAtlasFileQueue,
+  type AtlasFileQueueInput,
+  type AtlasFileQueueResult,
+} from "./atlas-file-queue.ts";
 import { formatHunterChatAnswer } from "../hunter/review.ts";
 import {
   initialClientAiActionState,
@@ -61,6 +72,7 @@ export const clientAiResponseSchema = {
 } as const;
 
 type MembershipLike = {
+  role?: string | null;
   organization?: { id: string; name?: string | null; slug?: string | null } | null;
 };
 
@@ -145,6 +157,11 @@ export type ClientAiRequestDeps = {
     organizationId: string,
   ) => Promise<{ name?: string | null; slug?: string | null } | null>;
   configuredDemoLoginEmail?: string | null;
+  /**
+   * Ask Atlas file queue. Omitted in production so the flag (default off)
+   * decides. Tests pass a stub so CI never touches Drive.
+   */
+  runAtlasFileQueue?: (input: AtlasFileQueueInput) => Promise<AtlasFileQueueResult>;
 };
 
 export function parseClientAiResponse(value: unknown): ClientAiResponse {
@@ -225,6 +242,15 @@ function formatRequestResponse(input: {
   }
 
   return parts.join("\n");
+}
+
+function loggedResponseWithBridge(
+  response: string,
+  ops: { brain: AtlasBridgeBrain; fallback?: "openai" | null; reason?: string | null; requestId?: string | null } | null,
+) {
+  if (!ops) return response;
+  logAtlasBridgeOutcome(ops);
+  return appendAtlasBridgeOpsNote(response, atlasBridgeOpsNote(ops));
 }
 
 function compactList<T>(items: T[], limit = 5) {
@@ -1045,9 +1071,90 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
     }
 
     const dashboard = await deps.getClientDashboardData(organizationId);
-    const guardrails = await deps.loadRoleMarkdown(resolvedRole);
-    const organizationName = membership?.organization?.name ?? "Client workspace";
+    const organizationName = membership?.organization?.name ?? identity?.name ?? "Client workspace";
     const workspaceSummary = summarizeDashboard(organizationName, dashboard);
+
+    let bridgeOps: {
+      brain: AtlasBridgeBrain;
+      fallback?: "openai" | null;
+      reason?: string | null;
+      requestId?: string | null;
+    } | null = null;
+
+    if (resolvedRole === "atlas") {
+      const queued = await (deps.runAtlasFileQueue ?? runConfiguredAtlasFileQueue)({
+        organization: {
+          id: organizationId,
+          name: organizationName,
+          slug: membership?.organization?.slug ?? identity?.slug ?? null,
+        },
+        membershipRole: membership?.role ?? null,
+        isSuperAdmin,
+        requestedByUserId: user.id,
+        requestedByEmail: user.email ?? "",
+        prompt,
+        crmSnapshot: workspaceSummary.callToday,
+      });
+
+      if (queued.action === "answer") {
+        const dailyUsage = await commitSuccessfulAsk(deps, organizationId, currentUsage);
+        const answer = withStaffHandoff(resolvedRole, queued.answer);
+        const responseText = loggedResponseWithBridge(
+          formatRequestResponse({
+            answer,
+            nextStep: queued.nextStep,
+            missingInputs: [],
+          }),
+          { brain: "grok-bot-cos", reason: "outbox", requestId: queued.requestId },
+        );
+        try {
+          const logged = await deps.logClientAiRequest({
+            organizationId,
+            requestedBy: user.id,
+            role,
+            scopeStatus: decision.scopeStatus,
+            status: "succeeded",
+            prompt,
+            response: responseText,
+            routedTo: resolvedRole,
+          });
+          return {
+            status: "success",
+            role,
+            routedTo: resolvedRole,
+            scopeStatus: decision.scopeStatus,
+            requestId: logged.id,
+            createdAt: logged.createdAt,
+            answer,
+            nextStep: queued.nextStep,
+            missingInputs: [],
+            error: null,
+            dailyUsage,
+          };
+        } catch {
+          return unloggedClientAiResponse({
+            status: "success",
+            role,
+            routedTo: resolvedRole,
+            scopeStatus: decision.scopeStatus,
+            answer,
+            nextStep: queued.nextStep,
+            dailyUsage,
+          });
+        }
+      }
+
+      if (queued.action === "openai") {
+        bridgeOps = {
+          brain: "openai",
+          fallback: "openai",
+          reason: queued.reason,
+          requestId: queued.requestId,
+        };
+      }
+    }
+
+    const guardrails = await deps.loadRoleMarkdown(resolvedRole);
 
     let result: OpenAIStructuredTextResult<ClientAiResponse>;
 
@@ -1133,7 +1240,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
           scopeStatus: "in_scope",
           status: failedStatus === "blocked" ? "blocked" : "failed",
           prompt,
-          response,
+          response: loggedResponseWithBridge(response, bridgeOps),
           routedTo: resolvedRole,
         });
 
@@ -1180,7 +1287,7 @@ export function createSubmitClientAiRequest(deps: ClientAiRequestDeps) {
         scopeStatus: decision.scopeStatus,
         status: "succeeded",
         prompt,
-        response: responseText,
+        response: loggedResponseWithBridge(responseText, bridgeOps),
         routedTo: resolvedRole,
       });
 
