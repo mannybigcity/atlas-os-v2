@@ -63,10 +63,16 @@ export const lionsDenOperatorBoards: Array<{
 export function visibleLionsDenBoards(
   organization?: { name?: string | null; slug?: string | null } | null,
 ) {
-  if (isQTimeWorkspaceSlug(organization?.slug)) {
-    return lionsDenBoards.filter((board) => board.id !== "clients");
-  }
-  return lionsDenBoards;
+  const boards = isQTimeWorkspaceSlug(organization?.slug)
+    ? lionsDenBoards.filter((board) => board.id !== "clients")
+    : lionsDenBoards;
+  // SIS keeps Summary. AFE desks rename the visible tab only; /client stays.
+  if (isSisOrganization(organization)) return boards;
+  return boards.map((board) =>
+    board.id === "overview"
+      ? { ...board, label: "Calls to make", labelEs: "Llamadas por hacer" }
+      : board,
+  );
 }
 
 export function usesLionsDenHub(

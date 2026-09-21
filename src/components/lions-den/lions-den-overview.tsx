@@ -8,6 +8,7 @@ import type { ContentDraft } from "@/server/content-studio/queries";
 import type { OrganizationNote } from "@/server/notes/queries";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { prospectDetailPath, prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
+import { prospectBelongsOnCallsToMake } from "@/lib/lions-den/calls-to-make";
 import { countWonOpportunities } from "@/lib/lions-den/desk-clients";
 import { bucketFollowUpQueues, type DeskFollowUpItem } from "@/lib/lions-den/desk-queue";
 import {
@@ -18,6 +19,7 @@ import {
 import { LionsDenCalendarBoard } from "@/components/lions-den/lions-den-calendar";
 import { LionsDenNotesBoard } from "@/components/lions-den/lions-den-notes";
 import { LionsDenActivationChecklist } from "@/components/lions-den/lions-den-activation-checklist";
+import { ProspectNoteForm } from "@/components/lions-den/prospect-controls";
 import {
   isActivationSampleWalkthrough,
   shouldShowActivationChecklist,
@@ -130,6 +132,15 @@ export function LionsDenOverview({
     : spanish
       ? "Seguimiento"
       : "Follow-up";
+  const sisDesk = Boolean(sisDashboard);
+  const callsToMake = sisDesk ? prospects : prospects.filter(prospectBelongsOnCallsToMake);
+  const callsToMakeTitle = sisDesk
+    ? spanish
+      ? "Prospectos"
+      : "Prospects"
+    : spanish
+      ? "Llamadas por hacer"
+      : "Calls to make";
 
   return (
     <div aria-label={spanish ? `Escritorio de ${organizationName || "The Lion’s Den"}` : `${organizationName || "The Lion’s Den"} desk`} className="ld-desk">
@@ -254,12 +265,12 @@ export function LionsDenOverview({
           </div>
         </section>
 
-        <section className="ld-panel ld-desk-pile">
+        <section className="ld-panel ld-desk-pile" data-calls-to-make={!sisDesk || undefined}>
           <div className="ld-panel-head">
-            <p>{spanish ? "Prospectos" : "Prospects"}</p>
+            <p>{callsToMakeTitle}</p>
             <div className="flex items-center gap-2">
               <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#5c6578]">
-                {prospects.length}
+                {callsToMake.length}
               </span>
               <Link className="text-[11px] font-semibold text-[#071b42] underline" href={href("/client/prospects")}>
                 {spanish ? "Abrir" : "Open"}
@@ -267,27 +278,35 @@ export function LionsDenOverview({
             </div>
           </div>
           <div className="ld-panel-body">
-            {prospects.length === 0 ? (
+            {callsToMake.length === 0 ? (
               <p className="ld-empty">
-                {spanish
-                  ? "Lista de llamadas vacía. Acepta un hallazgo de HUNTER. Atlas no llama, escribe ni envía SMS."
-                  : "Call list empty. Accept a HUNTER find. Atlas does not call, email, or text."}
+                {sisDesk
+                  ? spanish
+                    ? "Lista de llamadas vacía. Acepta un hallazgo de HUNTER. Atlas no llama, escribe ni envía SMS."
+                    : "Call list empty. Accept a HUNTER find. Atlas does not call, email, or text."
+                  : spanish
+                    ? "Nada por llamar. Solo aparecen prospectos con teléfono que aún no contactaste. Sin teléfono se quedan en Prospectos."
+                    : "No calls to make. Only prospects with a phone you have not marked contacted show here. No-phone rows stay on Prospects."}
               </p>
             ) : (
-              prospects.slice(0, 10).map((prospect) => {
+              callsToMake.slice(0, 10).map((prospect) => {
                 const places = prospectPlacesCard(prospect);
+                const detailHref = prospectDetailPath(prospect.id, href("/client/prospects"));
                 return (
-                  <Link
-                    className="block border-b border-[#ece7d8] py-1.5 last:border-b-0 hover:bg-[#fffdf6]"
-                    href={prospectDetailPath(prospect.id, href("/client/prospects"))}
+                  <article
+                    className="border-b border-[#ece7d8] py-1.5 last:border-b-0"
+                    data-calls-to-make-row={sisDesk ? undefined : prospect.id}
                     key={prospect.id}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1">
-                          <h3 className="truncate text-sm font-semibold text-[#071b42] underline decoration-[#d8c27a] underline-offset-2">
+                          <Link
+                            className="truncate text-sm font-semibold text-[#071b42] underline decoration-[#d8c27a] underline-offset-2 hover:bg-[#fffdf6]"
+                            href={detailHref}
+                          >
                             {prospect.name}
-                          </h3>
+                          </Link>
                           {isTrialSampleOpportunity(prospect) ? <DemoBadge label={sampleCopy.badge} /> : null}
                         </div>
                         {prospect.contactName || places.phone ? (
@@ -305,7 +324,19 @@ export function LionsDenOverview({
                         {presentedProspectStageLabel(prospect, spanish)}
                       </span>
                     </div>
-                  </Link>
+                    {!sisDesk && organizationId ? (
+                      <ProspectNoteForm
+                        compact
+                        organizationId={organizationId}
+                        previewOrgSlug={previewOrgSlug}
+                        prospect={prospect}
+                        returnTo="/client"
+                        spanish={spanish}
+                        variant="log-call"
+                        workspaceSlug={workspaceSlug}
+                      />
+                    ) : null}
+                  </article>
                 );
               })
             )}

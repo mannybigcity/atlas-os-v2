@@ -68,6 +68,10 @@ test("Clients board is on every Lion's Den desk, not SIS-only", () => {
   assert.equal(trial.some((board) => board.id === "amanda"), true);
   assert.equal(qtime.some((board) => board.id === "clients"), false);
   assert.equal(qtime.some((board) => board.id === "amanda"), true);
+  assert.equal(sis.find((board) => board.id === "overview")?.label, "Summary");
+  assert.equal(afe.find((board) => board.id === "overview")?.label, "Calls to make");
+  assert.equal(sample.find((board) => board.id === "overview")?.label, "Calls to make");
+  assert.equal(trial.find((board) => board.id === "overview")?.label, "Calls to make");
   assert.equal(sis.some((board) => board.id === "trial-inbox"), false);
   assert.equal(sample.some((board) => board.id === "trial-inbox"), false);
   assert.equal(trial.some((board) => board.id === "trial-inbox"), false);

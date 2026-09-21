@@ -73,10 +73,13 @@ test("the owner can drop a note on the timeline without editing the whole record
   assert.match(actions, /export async function addProspectNote/);
   assert.match(actions, /prospectNoteEvent\(/);
   assert.match(actions, /event_type: "note_added"/);
+  assert.match(actions, /owner_contacted_at: ownerContactedAt/);
+  assert.match(actions, /stage: "contacted"/);
   assert.match(controls, /export function ProspectNoteForm/);
   assert.match(controls, /data-prospect-note/);
   assert.match(controls, /Save note/);
   assert.match(controls, /Guardar nota/);
+  assert.match(controls, /Log call/);
   assert.match(detail, /<ProspectNoteForm/);
 });
 
