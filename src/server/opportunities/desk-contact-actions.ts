@@ -15,6 +15,7 @@ import {
   type DeskContactChannel,
 } from "@/lib/lions-den/prospect-stages";
 import { asOpportunityMetadata } from "@/server/opportunities/queries";
+import { appendDeskCallLog } from "@/server/opportunities/desk-call-log";
 import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -300,14 +301,15 @@ export async function addProspectNote(formData: FormData) {
   if (!uuidPattern.test(opportunityId)) {
     redirect(scopedPath("/client/prospects", formData, "invalid"));
   }
-  const note = prospectNoteEvent(text(formData, "note", 3000));
+  const rawNote = text(formData, "note", 3000);
+  const note = prospectNoteEvent(rawNote);
   if (!note && !logCall) {
     redirect(afterWritePath(opportunityId, formData, "invalid"));
   }
 
   const { data } = await supabase
     .from("organization_opportunities")
-    .select("id, stage, metadata")
+    .select("id, name, stage, metadata")
     .eq("id", opportunityId)
     .eq("organization_id", organizationId)
     .maybeSingle();
@@ -363,6 +365,16 @@ export async function addProspectNote(formData: FormData) {
     redirect(afterWritePath(opportunityId, formData, "failed"));
   }
 
+  const logged = await appendDeskCallLog(supabase, {
+    organizationId,
+    opportunityId,
+    prospectName: String(data.name ?? ""),
+    note: rawNote,
+    loggedAt: stamp.at,
+  });
   revalidateRecord(opportunityId);
+  if (!logged.ok && !logged.missing) {
+    redirect(afterWritePath(opportunityId, formData, "call_log_failed"));
+  }
   redirect(afterWritePath(opportunityId, formData, logCall ? "contact_logged" : "note_saved"));
 }
