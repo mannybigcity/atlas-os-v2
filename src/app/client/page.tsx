@@ -23,6 +23,7 @@ import { getFollowUpOpportunities, getOpportunityPipeline } from "@/server/oppor
 import { getHunterReviewPile } from "@/server/hunter/queries";
 import { getContentStudio } from "@/server/content-studio/queries";
 import { getOrganizationNotes } from "@/server/notes/queries";
+import { getAfeCallDesk } from "@/server/opportunities/desk-call-log";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +54,7 @@ type ClientDashboardPageProps = {
     workspace?: string;
     lang?: string;
     prospect?: string;
+    callDay?: string;
   }>;
 };
 
@@ -112,15 +114,16 @@ export default async function ClientDashboardPage({
   const sisDashboard = primaryOrganization && isSisWorkspace
     ? await getSisDashboardData(primaryOrganization.id)
     : null;
-  const [pipeline, followUpPipeline, reviewPile, studio, notes] = useLionsDen && primaryOrganization
+  const [pipeline, followUpPipeline, reviewPile, studio, notes, callDesk] = useLionsDen && primaryOrganization
     ? await Promise.all([
         getOpportunityPipeline(primaryOrganization.id),
         getFollowUpOpportunities(primaryOrganization.id),
         getHunterReviewPile(primaryOrganization.id),
         getContentStudio(primaryOrganization.id),
         getOrganizationNotes(primaryOrganization.id),
+        isSisWorkspace ? Promise.resolve(null) : getAfeCallDesk(primaryOrganization.id, params?.callDay),
       ])
-    : [null, null, null, null, null];
+    : [null, null, null, null, null, null];
 
   const alerts = (
     <div className="mb-2 space-y-2 empty:hidden">
@@ -167,6 +170,26 @@ export default async function ClientDashboardPage({
           {spanish
             ? "Llamada registrada. Siguen en Prospectos. Atlas no hizo la llamada."
             : "Call logged. They stay on Prospects. Atlas did not place the call."}
+        </StatusAlert>
+      ) : null}
+      {params?.prospect === "call_log_failed" ? (
+        <StatusAlert tone="rose">
+          {spanish
+            ? "El prospecto quedó marcado, pero la llamada no entró al registro del día. Inténtalo de nuevo."
+            : "The prospect was marked, but the call did not land on today's log. Try again."}
+        </StatusAlert>
+      ) : null}
+      {params?.prospect === "goal_saved" ? (
+        <StatusAlert>{spanish ? "Meta del día guardada." : "Daily goal saved."}</StatusAlert>
+      ) : null}
+      {params?.prospect === "goal_invalid" ? (
+        <StatusAlert tone="amber">
+          {spanish ? "La meta tiene que ser un número del 1 al 500." : "The goal has to be a whole number from 1 to 500."}
+        </StatusAlert>
+      ) : null}
+      {params?.prospect === "goal_failed" ? (
+        <StatusAlert tone="rose">
+          {spanish ? "No se pudo guardar la meta. Inténtalo de nuevo." : "The goal did not save. Try again."}
         </StatusAlert>
       ) : null}
       {params?.note === "error" ? (
@@ -299,6 +322,7 @@ export default async function ClientDashboardPage({
             sisDashboard={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data : null}
             spanish={spanish}
             workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
+            callDesk={callDesk}
           />
         )}
       </LionsDenBoardScreen>

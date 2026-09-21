@@ -19,7 +19,9 @@ import {
 import { LionsDenCalendarBoard } from "@/components/lions-den/lions-den-calendar";
 import { LionsDenNotesBoard } from "@/components/lions-den/lions-den-notes";
 import { LionsDenActivationChecklist } from "@/components/lions-den/lions-den-activation-checklist";
+import { AfeCallLogDesk } from "@/components/lions-den/afe-call-log";
 import { ProspectNoteForm } from "@/components/lions-den/prospect-controls";
+import type { AfeCallDesk } from "@/server/opportunities/desk-call-log";
 import {
   isActivationSampleWalkthrough,
   shouldShowActivationChecklist,
@@ -52,6 +54,8 @@ type LionsDenOverviewProps = {
   foundCount?: number;
   drafts: ContentDraft[];
   notes: OrganizationNote[];
+  /** AFE Calls to make counter, goal, and day log. SIS leaves this unset. */
+  callDesk?: AfeCallDesk | null;
 };
 
 export function LionsDenOverview({
@@ -70,6 +74,7 @@ export function LionsDenOverview({
   foundCount,
   drafts,
   notes,
+  callDesk = null,
 }: LionsDenOverviewProps) {
   const href = (path: string) => lionsDenHref(path, previewOrgSlug, workspaceSlug);
   const sampleCopy = trialSampleCopy(spanish);
@@ -278,6 +283,15 @@ export function LionsDenOverview({
             </div>
           </div>
           <div className="ld-panel-body">
+            {!sisDesk && callDesk && organizationId ? (
+              <AfeCallLogDesk
+                callDesk={callDesk}
+                organizationId={organizationId}
+                previewOrgSlug={previewOrgSlug}
+                spanish={spanish}
+                workspaceSlug={workspaceSlug}
+              />
+            ) : null}
             {callsToMake.length === 0 ? (
               <p className="ld-empty">
                 {sisDesk

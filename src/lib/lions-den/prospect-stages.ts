@@ -522,6 +522,16 @@ export function prospectNoticeCopy(status: string | undefined, spanish: boolean)
         : "Noted. The prospect is back under “Needs phone”. Find the right number under Edit.";
     case "note_saved":
       return spanish ? "Nota guardada en la actividad." : "Note saved on the activity.";
+    case "call_log_failed":
+      return spanish
+        ? "El prospecto quedó marcado, pero la llamada no entró al registro del día. Inténtalo de nuevo."
+        : "The prospect was marked, but the call did not land on today's log. Try again.";
+    case "goal_saved":
+      return spanish ? "Meta del día guardada." : "Daily goal saved.";
+    case "goal_invalid":
+      return spanish ? "La meta tiene que ser un número del 1 al 500." : "The goal has to be a whole number from 1 to 500.";
+    case "goal_failed":
+      return spanish ? "No se pudo guardar la meta. Inténtalo de nuevo." : "The goal did not save. Try again.";
     default:
       return null;
   }
