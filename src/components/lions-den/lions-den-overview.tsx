@@ -9,6 +9,8 @@ import type { OrganizationNote } from "@/server/notes/queries";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { prospectDetailPath, prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
 import { prospectBelongsOnCallsToMake } from "@/lib/lions-den/calls-to-make";
+import type { TodaysFiveDesk } from "@/lib/lions-den/todays-five";
+import { TodaysFivePanel } from "@/components/lions-den/todays-five-panel";
 import { countWonOpportunities } from "@/lib/lions-den/desk-clients";
 import { bucketFollowUpQueues, type DeskFollowUpItem } from "@/lib/lions-den/desk-queue";
 import {
@@ -56,6 +58,7 @@ type LionsDenOverviewProps = {
   notes: OrganizationNote[];
   /** AFE Calls to make counter, goal, and day log. SIS leaves this unset. */
   callDesk?: AfeCallDesk | null;
+  todaysFive?: TodaysFiveDesk | null;
 };
 
 export function LionsDenOverview({
@@ -75,6 +78,7 @@ export function LionsDenOverview({
   drafts,
   notes,
   callDesk = null,
+  todaysFive = null,
 }: LionsDenOverviewProps) {
   const href = (path: string) => lionsDenHref(path, previewOrgSlug, workspaceSlug);
   const sampleCopy = trialSampleCopy(spanish);
@@ -283,6 +287,13 @@ export function LionsDenOverview({
             </div>
           </div>
           <div className="ld-panel-body">
+            {!sisDesk && todaysFive ? (
+              <TodaysFivePanel
+                model={todaysFive}
+                prospectHref={(id) => prospectDetailPath(id, href("/client/prospects"))}
+                spanish={spanish}
+              />
+            ) : null}
             {!sisDesk && callDesk && organizationId ? (
               <AfeCallLogDesk
                 callDesk={callDesk}
