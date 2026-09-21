@@ -25,6 +25,7 @@ import { getContentStudio } from "@/server/content-studio/queries";
 import { getOrganizationNotes } from "@/server/notes/queries";
 import { getAfeCallDesk } from "@/server/opportunities/desk-call-log";
 import { getSiteLanguage } from "@/lib/site-language-server";
+import { loadTodaysFiveForDesk } from "@/server/lions-den/todays-five";
 
 export const dynamic = "force-dynamic";
 
@@ -291,6 +292,10 @@ export default async function ClientDashboardPage({
     const deskNotes = (notes && !notes.setupRequired ? notes.data : []).map((item) =>
       presentLiveDeskNote(primaryOrganization, item),
     );
+    const todaysFive =
+      primaryOrganization && !isSisWorkspace && !wantsSisLionsDen
+        ? await loadTodaysFiveForDesk(primaryOrganization.id, prospects)
+        : null;
 
     return (
       <LionsDenBoardScreen board="overview" workspace={workspace}>
@@ -321,6 +326,7 @@ export default async function ClientDashboardPage({
             reviewPile={reviewItems}
             sisDashboard={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data : null}
             spanish={spanish}
+            todaysFive={todaysFive}
             workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
             callDesk={callDesk}
           />
