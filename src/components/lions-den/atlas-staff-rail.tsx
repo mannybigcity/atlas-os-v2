@@ -5,6 +5,11 @@ import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { AtlasStaffPane } from "@/components/lions-den/atlas-staff-pane";
 import { ATLAS_LION_SRC } from "@/lib/lions-den/atlas-brand";
+import {
+  ATLAS_BRIDGE_STAGE_COPY,
+  ATLAS_BRIDGE_STAGE_EVENT,
+  type AtlasBridgeStage,
+} from "@/lib/lions-den/atlas-bridge-copy";
 import { MICAH_TALK_EVENT } from "@/lib/lions-den/micah-starter-week";
 import type { SiteLanguage } from "@/lib/site-language";
 
@@ -26,6 +31,7 @@ export function AtlasStaffRail({
   const language = useSiteLanguage(initialLanguage);
   const spanish = language === "es";
   const [expanded, setExpanded] = useState(false);
+  const [bridgeStage, setBridgeStage] = useState<AtlasBridgeStage | null>(null);
   const expandedRef = useRef(false);
   const expandRef = useRef<HTMLButtonElement>(null);
   const collapseRef = useRef<HTMLButtonElement>(null);
@@ -38,6 +44,15 @@ export function AtlasStaffRail({
   useEffect(() => {
     expandedRef.current = expanded;
   }, [expanded]);
+
+  useEffect(() => {
+    function onBridgeStage(event: Event) {
+      const stage = (event as CustomEvent<{ stage?: AtlasBridgeStage | null }>).detail?.stage ?? null;
+      setBridgeStage(stage);
+    }
+    window.addEventListener(ATLAS_BRIDGE_STAGE_EVENT, onBridgeStage);
+    return () => window.removeEventListener(ATLAS_BRIDGE_STAGE_EVENT, onBridgeStage);
+  }, []);
 
   useEffect(() => {
     // Preference lives in localStorage, so it can only be read after mount.
@@ -103,9 +118,17 @@ export function AtlasStaffRail({
         title={expandLabel}
         type="button"
       >
-        <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#f5b932] bg-black">
+        <span
+          className={`grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#f5b932] bg-black ${bridgeStage && bridgeStage !== "answer" ? "atlas-bridge-lion" : ""}`}
+          data-atlas-bridge={bridgeStage ?? "idle"}
+        >
           <Image alt="" className="h-full w-full object-contain" height={64} src={ATLAS_LION_SRC} width={64} />
         </span>
+        {bridgeStage ? (
+          <span className="sr-only">
+            {spanish ? ATLAS_BRIDGE_STAGE_COPY[bridgeStage].es : ATLAS_BRIDGE_STAGE_COPY[bridgeStage].en}
+          </span>
+        ) : null}
         <span className="text-[11px] font-black uppercase tracking-[0.14em] xl:[writing-mode:vertical-rl]">
           {railLabel}
         </span>

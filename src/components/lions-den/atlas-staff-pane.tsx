@@ -7,6 +7,14 @@ import { useRouter } from "next/navigation";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { ATLAS_LION_SRC } from "@/lib/lions-den/atlas-brand";
 import {
+  ATLAS_BRIDGE_ANSWER_MS,
+  ATLAS_BRIDGE_LISTENING_MS,
+  ATLAS_BRIDGE_STAGE_COPY,
+  ATLAS_BRIDGE_STAGE_EVENT,
+  stripAtlasBridgeOpsNote,
+  type AtlasBridgeStage,
+} from "@/lib/lions-den/atlas-bridge-copy";
+import {
   ATLAS_STAFF_EMPTY_EN,
   ATLAS_STAFF_EMPTY_ES,
   ATLAS_STAFF_SAMPLE_EMPTY_EN,
@@ -34,6 +42,7 @@ type AtlasStaffPaneProps = {
   dailyUsage?: ClientAiDailyUsage | null;
   compact?: boolean;
   sampleDesk?: boolean;
+  fileQueueBridge?: boolean;
 };
 
 type SpeechRecognitionLike = {
@@ -65,6 +74,7 @@ export function AtlasStaffPane({
   requests,
   dailyUsage,
   sampleDesk = false,
+  fileQueueBridge = false,
 }: AtlasStaffPaneProps) {
   const language = useSiteLanguage();
   const spanish = language === "es";
@@ -86,6 +96,8 @@ export function AtlasStaffPane({
   const lastPromptRef = useRef("");
   const lastNavKeyRef = useRef("");
   const pendingMicahPromptRef = useRef<string | null>(null);
+  const bridgeFlightRef = useRef(0);
+  const [bridgeStage, setBridgeStage] = useState<AtlasBridgeStage | null>(null);
   const plan = usage.plan as AtlasAskPlan;
   const capped = isAtlasAskCapped(usage.used, plan);
   const hasWorkspace = Boolean(organizationId);
@@ -149,6 +161,40 @@ export function AtlasStaffPane({
   }, [state.status, state.requestId, organizationId]);
 
   useEffect(() => {
+    function publish(next: AtlasBridgeStage | null) {
+      setBridgeStage(next);
+      if (typeof window === "undefined") return;
+      window.dispatchEvent(
+        new CustomEvent(ATLAS_BRIDGE_STAGE_EVENT, { detail: { stage: next } }),
+      );
+    }
+
+    if (!fileQueueBridge) {
+      publish(null);
+      return;
+    }
+
+    const flight = bridgeFlightRef.current;
+    if (pending) {
+      publish("listening");
+      const timer = window.setTimeout(() => {
+        if (bridgeFlightRef.current === flight) publish("thinking");
+      }, ATLAS_BRIDGE_LISTENING_MS);
+      return () => window.clearTimeout(timer);
+    }
+
+    if (flight > 0 && state.status === "success" && state.answer) {
+      publish("answer");
+      const timer = window.setTimeout(() => {
+        if (bridgeFlightRef.current === flight) publish(null);
+      }, ATLAS_BRIDGE_ANSWER_MS);
+      return () => window.clearTimeout(timer);
+    }
+
+    publish(null);
+  }, [fileQueueBridge, pending, state.answer, state.status]);
+
+  useEffect(() => {
     if (state.status === "idle") return;
     const navKey = `${state.requestId ?? ""}:${state.status}:${state.routedTo ?? ""}:${state.answer ?? ""}`;
     if (lastNavKeyRef.current === navKey) return;
@@ -203,6 +249,7 @@ export function AtlasStaffPane({
     pendingMicahPromptRef.current = null;
     if (prompt.length < 2) return;
     lastPromptRef.current = prompt;
+    if (fileQueueBridge) bridgeFlightRef.current += 1;
     const formData = new FormData(form);
     formData.set("prompt", prompt);
     formAction(formData);
@@ -210,11 +257,15 @@ export function AtlasStaffPane({
 
   return (
     <section
+      aria-busy={pending && fileQueueBridge ? true : undefined}
       aria-label="Talk to Atlas"
       className="flex h-full min-h-0 flex-col bg-[#fbfaf4]"
     >
       <div className="flex shrink-0 flex-col items-center px-3 pt-3">
-        <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-[#f5b932] bg-black shadow-[0_8px_18px_rgba(7,27,66,0.18)]">
+        <div
+          className={`h-24 w-24 overflow-hidden rounded-full border-2 border-[#f5b932] bg-black shadow-[0_8px_18px_rgba(7,27,66,0.18)] ${bridgeStage && bridgeStage !== "answer" ? "atlas-bridge-lion" : ""}`}
+          data-atlas-bridge={bridgeStage ?? "idle"}
+        >
           <Image
             alt="Atlas"
             className="h-full w-full object-contain"
@@ -226,6 +277,15 @@ export function AtlasStaffPane({
         <h2 className="mt-1 font-[family-name:var(--font-display)] text-sm font-semibold tracking-wide text-[#071b42]">
           Atlas
         </h2>
+        {bridgeStage ? (
+          <p
+            aria-live="polite"
+            className="mt-1 text-center text-[11px] font-semibold text-[#5c4a12]"
+            data-atlas-bridge-line={bridgeStage}
+          >
+            {spanish ? ATLAS_BRIDGE_STAGE_COPY[bridgeStage].es : ATLAS_BRIDGE_STAGE_COPY[bridgeStage].en}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-auto px-3">
@@ -246,7 +306,7 @@ export function AtlasStaffPane({
               {item.prompt}
             </p>
             <p className="mr-4 rounded-2xl rounded-bl-sm bg-[#071b42] px-2.5 py-1.5 text-xs leading-5 text-white">
-              <ThreadAnswer routedTo={item.routedTo} text={item.response} />
+              <ThreadAnswer routedTo={item.routedTo} text={stripAtlasBridgeOpsNote(item.response)} />
             </p>
           </article>
         ))}
@@ -259,7 +319,7 @@ export function AtlasStaffPane({
             ) : null}
             {state.answer ? (
               <p className="mr-4 rounded-2xl rounded-bl-sm bg-[#071b42] px-2.5 py-1.5 text-xs leading-5 text-white">
-                <ThreadAnswer routedTo={state.routedTo} text={state.answer} />
+                <ThreadAnswer routedTo={state.routedTo} text={stripAtlasBridgeOpsNote(state.answer)} />
               </p>
             ) : null}
           </article>
@@ -367,7 +427,7 @@ export function AtlasStaffPane({
               disabled={!canSend || (draft.trim().length < 2 && !attachment)}
               type="submit"
             >
-              {pending ? "…" : spanish ? "Enviar" : "Send"}
+              {pending && !fileQueueBridge ? "…" : spanish ? "Enviar" : "Send"}
             </button>
           </div>
         </form>

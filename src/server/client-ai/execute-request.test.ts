@@ -131,6 +131,8 @@ function createHarness(options: {
   createMicahGalleryDraft?: ClientAiRequestDeps["createMicahGalleryDraft"];
   readMicahDemeanor?: ClientAiRequestDeps["readMicahDemeanor"];
   getOrganizationIdentity?: ClientAiRequestDeps["getOrganizationIdentity"];
+  runAtlasFileQueue?: ClientAiRequestDeps["runAtlasFileQueue"];
+  useDefaultAtlasBridge?: boolean;
 }) {
   let used = options.used ?? 0;
   let generateCalls = 0;
@@ -140,6 +142,7 @@ function createHarness(options: {
   const markdownRoles: string[] = [];
   const generateInputs: string[] = [];
   const generateInstructions: string[] = [];
+  const loggedResponses: string[] = [];
   const plan = options.plan ?? "basic";
 
   const generate: ClientAiRequestDeps["generateStructuredText"] =
@@ -201,14 +204,21 @@ function createHarness(options: {
       markdownRoles.push(role);
       return `# ${role}\n`;
     },
-    logClientAiRequest: async () => ({
-      id: `req-${generateCalls + reserveCalls + 1}`,
-      createdAt: "2026-09-01T00:00:00.000Z",
-    }),
+    logClientAiRequest: async (input) => {
+      loggedResponses.push(input.response);
+      return {
+        id: `req-${generateCalls + reserveCalls + 1}`,
+        createdAt: "2026-09-01T00:00:00.000Z",
+      };
+    },
     runHunterChatSearch: options.runHunterChatSearch,
     createMicahGalleryDraft: options.createMicahGalleryDraft,
     readMicahDemeanor: options.readMicahDemeanor,
   };
+
+  if (!options.useDefaultAtlasBridge) {
+    deps.runAtlasFileQueue = options.runAtlasFileQueue ?? (async () => ({ action: "skip" }));
+  }
 
   return {
     submit: createSubmitClientAiRequest(deps),
@@ -221,6 +231,7 @@ function createHarness(options: {
       markdownRoles,
       generateInputs,
       generateInstructions,
+      loggedResponses,
     }),
   };
 }
@@ -756,5 +767,86 @@ test("DAVID fallback lists published phones and never invents missing ones", asy
   assert.match(String(result.answer), /did not call, email, or text anyone/i);
   assert.doesNotMatch(String(result.answer), /I called|I emailed|I texted|sent SMS/i);
   assert.equal(stats().used, 1);
+});
+
+const ATLAS_GENERIC_PROMPT = "What is the priority for this desk today?";
+
+test("ATLAS_BRIDGE_FILE_QUEUE defaults off and the generic ask stays on OpenAI", async () => {
+  const previous = process.env.ATLAS_BRIDGE_FILE_QUEUE;
+  delete process.env.ATLAS_BRIDGE_FILE_QUEUE;
+  try {
+    const { submit, stats } = createHarness({
+      isSuperAdmin: true,
+      useDefaultAtlasBridge: true,
+    });
+    const result = await submit(initialClientAiActionState, askForm(ATLAS_GENERIC_PROMPT));
+    assert.equal(result.status, "success");
+    assert.equal(result.routedTo, "atlas");
+    assert.equal(stats().generateCalls, 1);
+    assert.doesNotMatch(stats().loggedResponses.join("\n"), /atlas-bridge/);
+    assert.doesNotMatch(String(result.answer), /fallback|grok-bot-cos|atlas-bridge/);
+  } finally {
+    if (previous === undefined) delete process.env.ATLAS_BRIDGE_FILE_QUEUE;
+    else process.env.ATLAS_BRIDGE_FILE_QUEUE = previous;
+  }
+});
+
+test("generic atlas bridge answer skips OpenAI and logs grok-bot-cos", async () => {
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    runAtlasFileQueue: async () => ({
+      action: "answer",
+      answer: "The priority on this desk is the approval sitting in the queue.",
+      nextStep: "Open the approval and decide it.",
+      requestId: "bridge-req-1",
+    }),
+  });
+  const result = await submit(initialClientAiActionState, askForm(ATLAS_GENERIC_PROMPT));
+  assert.equal(result.status, "success");
+  assert.equal(result.routedTo, "atlas");
+  assert.match(String(result.answer), /approval sitting in the queue/);
+  assert.doesNotMatch(String(result.answer), /fallback|grok-bot-cos|atlas-bridge|openai/i);
+  assert.equal(stats().generateCalls, 0);
+  assert.equal(stats().reserveCalls, 1);
+  assert.match(stats().loggedResponses[0] ?? "", /"brain":"grok-bot-cos"/);
+  assert.doesNotMatch(stats().loggedResponses[0] ?? "", /"fallback":"openai"/);
+});
+
+test("bridge timeout falls back to OpenAI without a user-facing fallback", async () => {
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    runAtlasFileQueue: async () => ({ action: "openai", reason: "timeout", requestId: "bridge-req-2" }),
+  });
+  const result = await submit(initialClientAiActionState, askForm(ATLAS_GENERIC_PROMPT));
+  assert.equal(result.status, "success");
+  assert.equal(result.error, null);
+  assert.match(String(result.answer), /ABC Plumbing/);
+  assert.doesNotMatch(String(result.answer), /fallback|timed out|Drive|heartbeat|grok/i);
+  assert.equal(stats().generateCalls, 1);
+  assert.match(stats().loggedResponses[0] ?? "", /"brain":"openai"/);
+  assert.match(stats().loggedResponses[0] ?? "", /"fallback":"openai"/);
+});
+
+test("Hunter Places path does not enter the file queue", async () => {
+  let bridgeCalls = 0;
+  const { submit, stats } = createHarness({
+    isSuperAdmin: true,
+    runHunterChatSearch: async () => ({
+      status: "success",
+      message: "Found one shop.",
+      query: "plumbers 70119",
+      places: [{ name: "ABC Plumbing", formattedAddress: "1 Main St" }],
+      persistedCount: 1,
+    }),
+    runAtlasFileQueue: async () => {
+      bridgeCalls += 1;
+      return { action: "skip" };
+    },
+  });
+  const result = await submit(initialClientAiActionState, askForm("Find plumbers in 70119"));
+  assert.equal(result.status, "success");
+  assert.equal(result.routedTo, "hunter");
+  assert.equal(bridgeCalls, 0);
+  assert.equal(stats().generateCalls, 0);
 });
 
