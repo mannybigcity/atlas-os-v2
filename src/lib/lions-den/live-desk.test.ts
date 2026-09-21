@@ -285,6 +285,7 @@ test("MICAH uses the live Lion's Den hub pane and does not restore preview staff
   const micah = readFileSync(join(root, "src/app/client/micah/page.tsx"), "utf8");
   const pane = readFileSync(join(root, "src/components/lions-den/atlas-staff-pane.tsx"), "utf8");
   const hub = readFileSync(join(root, "src/components/lions-den/lions-den-client-hub.tsx"), "utf8");
+  const rail = readFileSync(join(root, "src/components/lions-den/atlas-staff-rail.tsx"), "utf8");
 
   assert.match(micah, /LionsDenBoardScreen board="micah"/);
   assert.doesNotMatch(micah, /usesLionsDenHub/);
@@ -294,7 +295,8 @@ test("MICAH uses the live Lion's Den hub pane and does not restore preview staff
   assert.match(pane, /submitClientAiRequest/);
   assert.doesNotMatch(pane, /previewMode/);
   assert.doesNotMatch(pane, /staff chat does not send/);
-  assert.match(hub, /<AtlasStaffPane/);
+  assert.match(hub, /<AtlasStaffRail/);
+  assert.match(rail, /<AtlasStaffPane/);
   assert.doesNotMatch(hub, /previewMode/);
   assert.match(hub, /sampleDesk/);
   assert.equal(usesLionsDenHub({ name: AFE_OPERATOR_DESK_NAME, slug: AFE_OPERATOR_DESK_SLUG }), true);

@@ -88,8 +88,12 @@ test("Lion's Den hub narrows the desk menu and stretches Summary metrics across 
   const hub = readRepo("src/components/lions-den/lions-den-client-hub.tsx");
 
   const hubBody = css.match(/\.lions-den-hub-body\s*\{[^}]+\}/)?.[0] ?? "";
-  assert.match(hubBody, /grid-template-columns:\s*9rem\s+minmax\(0,\s*1fr\)\s+17rem/);
+  assert.match(hubBody, /grid-template-columns:\s*9rem\s+minmax\(0,\s*1fr\)\s+3\.25rem/);
   assert.doesNotMatch(hubBody, /12rem/);
+  assert.match(
+    css,
+    /\.lions-den-hub-body:has\(\.lions-den-hub-staff\[data-staff="expanded"\]\)\s*\{[^}]*grid-template-columns:\s*9rem\s+minmax\(0,\s*1fr\)\s+17rem/,
+  );
 
   assert.match(css, /\.ld-desk-metrics\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/);
   assert.match(css, /\.ld-desk-metrics-row\s*\{[^}]*display:\s*flex/);
@@ -102,6 +106,9 @@ test("Lion's Den hub narrows the desk menu and stretches Summary metrics across 
   assert.doesNotMatch(overview, /truncate text-\[10px\] font-black uppercase tracking-\[0\.12em\]/);
 
   assert.match(hub, /lions-den-hub-nav/);
-  assert.match(hub, /lions-den-hub-staff/);
+  assert.match(hub, /AtlasStaffRail/);
   assert.match(hub, /xl:px-2 xl:py-2\.5/);
+  const rail = readRepo("src/components/lions-den/atlas-staff-rail.tsx");
+  assert.match(rail, /lions-den-hub-staff/);
+  assert.match(rail, /data-staff=\{expanded \? "expanded" : "collapsed"\}/);
 });

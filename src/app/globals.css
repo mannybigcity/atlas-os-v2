@@ -380,6 +380,37 @@ body:has(.lions-den-hub) footer {
   }
 }
 
+/* Below the desk columns, Ask Atlas is a bottom rail. Expanded, it is a sheet. */
+@media (max-width: 1279px) {
+  .lions-den-hub:has(.lions-den-hub-staff[data-staff="collapsed"]) {
+    padding-bottom: 3.5rem;
+  }
+  .lions-den-hub-staff[data-staff="collapsed"] {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+  }
+  .lions-den-hub:has(.lions-den-hub-staff[data-staff="expanded"]) {
+    padding-bottom: min(70vh, 36rem);
+  }
+  .lions-den-hub-staff[data-staff="expanded"] {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    display: flex;
+    height: min(70vh, 36rem);
+    max-height: min(70vh, 36rem);
+    flex-direction: column;
+    overflow: hidden;
+    border-top: 2px solid #f5b932;
+    box-shadow: 0 -12px 30px rgba(7, 27, 66, 0.28);
+  }
+}
+
 @media (min-width: 1280px) {
   html:has(.lions-den-hub),
   body:has(.lions-den-hub) {
@@ -396,7 +427,11 @@ body:has(.lions-den-hub) footer {
     display: grid;
     flex: 1 1 auto;
     min-height: 0;
-    /* Tighter desk menu; leftover width goes to main, up to Talk to Atlas. */
+    /* Desk menu, main, Ask Atlas. Collapsed rail until the staff pane is expanded. */
+    grid-template-columns: 9rem minmax(0, 1fr) 3.25rem;
+    transition: grid-template-columns 160ms ease;
+  }
+  .lions-den-hub-body:has(.lions-den-hub-staff[data-staff="expanded"]) {
     grid-template-columns: 9rem minmax(0, 1fr) 17rem;
   }
   .lions-den-hub-nav {

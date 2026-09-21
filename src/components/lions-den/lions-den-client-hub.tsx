@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { signOut } from "@/server/auth/actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { AtlasStaffPane } from "@/components/lions-den/atlas-staff-pane";
+import { AtlasStaffRail } from "@/components/lions-den/atlas-staff-rail";
 import { getClientPortalName, getClientPortalOrgLabel, isAfeCrmDemoOrganization } from "@/lib/client-portal/identity";
 import {
   lionsDenHref,
@@ -207,16 +207,15 @@ export async function LionsDenClientHub({
           {children}
         </main>
 
-        <aside className="lions-den-hub-staff border-t border-[#d5d0c4] bg-[#fbfaf4] xl:border-t-0 xl:border-l">
-          <AtlasStaffPane
-            compact
-            dailyUsage={aiUsage}
-            organizationId={organizationId ?? ""}
-            organizationName={orgLabel || portalName}
-            requests={aiRequests}
-            sampleDesk={isAfeCrmDemoOrganization({ name: organizationName, slug: organizationSlug || workspaceSlug })}
-          />
-        </aside>
+        <AtlasStaffRail
+          compact
+          dailyUsage={aiUsage}
+          initialLanguage={language}
+          organizationId={organizationId ?? ""}
+          organizationName={orgLabel || portalName}
+          requests={aiRequests}
+          sampleDesk={isAfeCrmDemoOrganization({ name: organizationName, slug: organizationSlug || workspaceSlug })}
+        />
       </div>
     </div>
   );
