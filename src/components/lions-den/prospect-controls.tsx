@@ -13,7 +13,7 @@ import { DeskContactButton } from "@/components/lions-den/desk-contact-button";
 import { DeskEmailCompose } from "@/components/lions-den/desk-email-compose";
 import type { NextMessageResult } from "@/lib/lions-den/next-message-engine";
 import { addProspectNote, logDeskContactOutcome } from "@/server/opportunities/desk-contact-actions";
-import { LD_CHIP } from "@/lib/lions-den/desk-chips";
+import { LD_CHIP, LD_CHIP_XS } from "@/lib/lions-den/desk-chips";
 import {
   createProspect,
   deleteProspect,
@@ -254,39 +254,58 @@ export function DeskContactOutcomeForm({
   );
 }
 
-/** A one-line note straight onto the Activity timeline. Saving contacts no one. */
+/**
+ * Timeline note, or the Calls-to-make "Log call" action. Saving stamps
+ * contacted so the row leaves that queue. Atlas does not place the call.
+ */
 export function ProspectNoteForm({
   prospect,
   spanish,
   returnTo,
+  variant = "note",
+  compact = false,
   ...scope
 }: Scope & {
   prospect: Pick<OrganizationOpportunity, "id">;
   spanish: boolean;
   returnTo: string;
+  variant?: "note" | "log-call";
+  compact?: boolean;
 }) {
+  const logCall = variant === "log-call";
   return (
-    <form action={addProspectNote} className="flex flex-col gap-2 sm:flex-row sm:items-start" data-prospect-note>
+    <form
+      action={addProspectNote}
+      className={compact ? "mt-1.5 flex flex-col gap-1" : "flex flex-col gap-2 sm:flex-row sm:items-start"}
+      data-prospect-note={logCall ? "log-call" : "note"}
+    >
       <ScopeFields {...scope} />
       <input name="opportunityId" type="hidden" value={prospect.id} />
       <input name="returnTo" type="hidden" value={returnTo} />
+      <input name="lang" type="hidden" value={spanish ? "es" : "en"} />
+      {logCall ? <input name="logCall" type="hidden" value="1" /> : null}
       <label className="block flex-1 text-xs font-semibold text-[#5c6578]">
-        <span className="sr-only">{spanish ? "Nota" : "Note"}</span>
+        <span className="sr-only">{logCall ? (spanish ? "Nota de la llamada" : "Call notes") : spanish ? "Nota" : "Note"}</span>
         <textarea
-          className={fieldClass}
+          className={compact ? `${fieldClass} mt-0 min-h-0 py-1.5 text-xs` : fieldClass}
           maxLength={3000}
-          minLength={2}
+          minLength={logCall ? undefined : 2}
           name="note"
-          placeholder={spanish ? "Agrega una nota: qué dijeron, qué sigue…" : "Add a note: what they said, what is next…"}
-          required
+          placeholder={
+            logCall
+              ? spanish
+                ? "Qué dijeron, qué sigue… (opcional)"
+                : "What they said, what is next… (optional)"
+              : spanish
+                ? "Agrega una nota: qué dijeron, qué sigue…"
+                : "Add a note: what they said, what is next…"
+          }
+          required={!logCall}
           rows={2}
         />
       </label>
-      <button
-        className={`w-fit ${LD_CHIP} sm:mt-1`}
-        type="submit"
-      >
-        {spanish ? "Guardar nota" : "Save note"}
+      <button className={`w-fit ${compact ? LD_CHIP_XS : LD_CHIP} ${compact ? "" : "sm:mt-1"}`} type="submit">
+        {logCall ? (spanish ? "Registrar llamada" : "Log call") : spanish ? "Guardar nota" : "Save note"}
       </button>
     </form>
   );

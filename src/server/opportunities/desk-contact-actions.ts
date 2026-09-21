@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { reachedOutFollowUp } from "@/lib/lions-den/follow-up-queue";
 import { prospectTelHref, prospectWhatsAppHref } from "@/lib/lions-den/prospect-places";
 import {
   deskContactCheckIn,
@@ -197,6 +198,14 @@ function recordPath(opportunityId: string, formData: FormData) {
   return returnTo.startsWith("/client/clients/") ? returnTo : `/client/prospects/${opportunityId}`;
 }
 
+function afterWritePath(opportunityId: string, formData: FormData, status?: string) {
+  const returnTo = text(formData, "returnTo", 120);
+  if (returnTo === "/client" || /^\/client\/?(\?|$)/.test(returnTo)) {
+    return scopedPath("/client", formData, status);
+  }
+  return scopedPath(recordPath(opportunityId, formData), formData, status);
+}
+
 /**
  * The owner tells us how the call went. That becomes the next dated step on the
  * Follow-up desk (or "Needs phone" for a wrong number). Atlas contacts no one.
@@ -277,43 +286,83 @@ export async function logDeskContactOutcome(formData: FormData) {
   redirect(scopedPath(detailBase, formData, outcome === "wrong_number" && !closed ? "outcome_wrong_number" : "outcome_saved"));
 }
 
-/** A quick line on the timeline ("Maria said call back Tuesday"). Nothing else changes. */
+/**
+ * Saves a post-call note and stamps the prospect contacted so they leave
+ * Calls to make. Prospects tab still lists them; Follow-up uses the existing
+ * contacted-stage rule. Atlas does not place the call.
+ */
 export async function addProspectNote(formData: FormData) {
   const organizationId = text(formData, "organizationId", 36);
   const opportunityId = text(formData, "opportunityId", 36);
-  const { supabase } = await requireProspectOwner(organizationId, formData);
+  const logCall = text(formData, "logCall", 8) === "1";
+  const spanish = text(formData, "lang", 2) === "es";
+  const { user, supabase } = await requireProspectOwner(organizationId, formData);
   if (!uuidPattern.test(opportunityId)) {
     redirect(scopedPath("/client/prospects", formData, "invalid"));
   }
-  const detailBase = recordPath(opportunityId, formData);
   const note = prospectNoteEvent(text(formData, "note", 3000));
-  if (!note) {
-    redirect(scopedPath(detailBase, formData, "invalid"));
+  if (!note && !logCall) {
+    redirect(afterWritePath(opportunityId, formData, "invalid"));
   }
 
   const { data } = await supabase
     .from("organization_opportunities")
-    .select("id")
+    .select("id, stage, metadata")
     .eq("id", opportunityId)
     .eq("organization_id", organizationId)
     .maybeSingle();
   if (!data) {
-    redirect(scopedPath(detailBase, formData, "missing"));
+    redirect(afterWritePath(opportunityId, formData, "missing"));
   }
 
-  const { error } = await supabase.from("organization_opportunity_events").insert({
-    opportunity_id: opportunityId,
-    organization_id: organizationId,
-    event_type: "note_added",
-    actor_role: "client",
-    summary: note.summary,
-    body: note.body,
-  });
-  if (error) {
-    console.error("Prospect note failed", error);
-    redirect(scopedPath(detailBase, formData, "failed"));
+  if (note) {
+    const { error } = await supabase.from("organization_opportunity_events").insert({
+      opportunity_id: opportunityId,
+      organization_id: organizationId,
+      event_type: "note_added",
+      actor_role: "client",
+      summary: note.summary,
+      body: note.body,
+    });
+    if (error) {
+      console.error("Prospect note failed", error);
+      redirect(afterWritePath(opportunityId, formData, "failed"));
+    }
+  }
+
+  const metadata = asOpportunityMetadata(data.metadata);
+  const stamp = deskContactStamp("call", user.email);
+  const existingContact = readLastDeskContact(metadata);
+  const closed = STAGES_CLOSED.has(String(data.stage));
+  const alreadyPast = STAGES_PAST_CONTACTED.has(String(data.stage));
+  const ownerContactedAt =
+    typeof metadata.owner_contacted_at === "string" && !Number.isNaN(new Date(metadata.owner_contacted_at).getTime())
+      ? metadata.owner_contacted_at
+      : stamp.at;
+  const checkIn = reachedOutFollowUp({ spanish, sentAt: new Date(stamp.at) });
+  const { error: updateError } = await supabase
+    .from("organization_opportunities")
+    .update({
+      metadata: {
+        ...metadata,
+        last_desk_contact: existingContact ?? stamp,
+        owner_contacted_at: ownerContactedAt,
+      },
+      ...(closed || alreadyPast
+        ? {}
+        : {
+            stage: "contacted",
+            next_action: checkIn.nextAction,
+            next_action_due: checkIn.nextActionDue,
+          }),
+    })
+    .eq("id", opportunityId)
+    .eq("organization_id", organizationId);
+  if (updateError) {
+    console.error("Prospect contacted stamp failed", updateError);
+    redirect(afterWritePath(opportunityId, formData, "failed"));
   }
 
   revalidateRecord(opportunityId);
-  redirect(scopedPath(detailBase, formData, "note_saved"));
+  redirect(afterWritePath(opportunityId, formData, logCall ? "contact_logged" : "note_saved"));
 }

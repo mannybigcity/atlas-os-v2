@@ -52,6 +52,7 @@ type ClientDashboardPageProps = {
     reason?: string;
     workspace?: string;
     lang?: string;
+    prospect?: string;
   }>;
 };
 
@@ -160,6 +161,13 @@ export default async function ClientDashboardPage({
       ) : null}
       {params?.note === "created" ? (
         <StatusAlert>{spanish ? "Nota guardada." : "Note saved."}</StatusAlert>
+      ) : null}
+      {params?.prospect === "contact_logged" || params?.prospect === "note_saved" ? (
+        <StatusAlert>
+          {spanish
+            ? "Llamada registrada. Siguen en Prospectos. Atlas no hizo la llamada."
+            : "Call logged. They stay on Prospects. Atlas did not place the call."}
+        </StatusAlert>
       ) : null}
       {params?.note === "error" ? (
         <StatusAlert tone="rose">

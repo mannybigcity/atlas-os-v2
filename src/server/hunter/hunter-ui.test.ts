@@ -76,7 +76,7 @@ test("HUNTER desk shows the growth funnel and Accept, not a Maps-only dead end",
   assert.match(pile, /setupRequired/);
 });
 
-test("Prospect rows on Summary and Prospects open a Google Places detail view", () => {
+test("Prospect rows on Calls to make and Prospects open a Google Places detail view", () => {
   const overview = readRepo("src/components/lions-den/lions-den-overview.tsx");
   const list = readRepo("src/components/lions-den/lions-den-prospects.tsx");
   const detail = readRepo("src/components/lions-den/lions-den-prospect-detail.tsx");
@@ -87,6 +87,7 @@ test("Prospect rows on Summary and Prospects open a Google Places detail view", 
 
   assert.match(overview, /prospectDetailPath/);
   assert.match(overview, /presentedProspectNextAction/);
+  assert.match(overview, /prospectBelongsOnCallsToMake/);
   assert.match(overview, /will not invent a number/);
   assert.match(list, /prospectDetailPath/);
   assert.match(list, /presentedProspectNextAction/);

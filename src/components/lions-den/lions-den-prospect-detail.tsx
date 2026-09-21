@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { prospectPlacesCard, presentedProspectNextAction, presentedProspectStageLabel } from "@/lib/lions-den/prospect-places";
+import { prospectBelongsOnCallsToMake } from "@/lib/lions-den/calls-to-make";
 import { lastDeskContactLabel, needsDeskContactOutcome, readLastDeskContact } from "@/lib/lions-den/prospect-stages";
 import { deskQuoteText, formatUsd, latestDeskQuote, readDeskQuotes } from "@/lib/lions-den/desk-quote";
 import {
@@ -264,6 +265,22 @@ export function LionsDenProspectDetail({
         </p>
       ) : null}
 
+      {scope && !readOnly && prospectBelongsOnCallsToMake(prospect) ? (
+        <div className="mt-4 rounded-2xl border border-[#d8c27a] bg-[#fff8e6] p-4" data-log-call>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a6a12]">
+            {spanish ? "Llamadas por hacer" : "Calls to make"}
+          </p>
+          <p className="mt-1 text-xs text-[#5c4a12]">
+            {spanish
+              ? "Registra la llamada y una nota. Salen de esta cola y siguen en Prospectos. Atlas no hace la llamada."
+              : "Log the call and a note. They leave this queue and stay on Prospects. Atlas does not place the call."}
+          </p>
+          <div className="mt-3">
+            <ProspectNoteForm {...scope} prospect={prospect} returnTo={recordPath} spanish={spanish} variant="log-call" />
+          </div>
+        </div>
+      ) : null}
+
       {presentedProspectNextAction(prospect, spanish) ? (
         <div className="mt-6 rounded-2xl bg-[#fbfaf4] p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5c6578]">
@@ -350,7 +367,7 @@ export function LionsDenProspectDetail({
             ? "Llamadas, WhatsApp, correos y notas del vendedor. Atlas no hace la llamada."
             : "Calls, WhatsApp, emails, and the salesman's notes. Atlas does not place the call."}
         </p>
-        {scope ? (
+        {scope && !prospectBelongsOnCallsToMake(prospect) ? (
           <div className="mt-3">
             <ProspectNoteForm {...scope} prospect={prospect} returnTo={recordPath} spanish={spanish} />
           </div>
