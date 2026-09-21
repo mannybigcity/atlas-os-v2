@@ -10,11 +10,19 @@ export const HUNTER_PLACES_ERROR_COPY = {
   provider_400_key_invalid:
     "GOOGLE_PLACES_API_KEY was rejected by Google. In Netlify, set GOOGLE_PLACES_API_KEY (Builds and Functions scopes) to a valid Places API (New) server key, then redeploy.",
   provider_403_referrer:
-    "GOOGLE_PLACES_API_KEY is restricted to HTTP referrers. Places API (New) server calls from Netlify cannot use a browser referrer key. Set Application restriction to None or IP addresses, and API restriction to Places API (New) only.",
+    "GOOGLE_PLACES_API_KEY is restricted to HTTP referrers. Netlify sends no browser referrer, so Places API (New) returns HTTP 403. In Google Cloud Console → Credentials, set Application restrictions to None and API restrictions to Places API (New) only, then retry.",
+  provider_403_ip:
+    "GOOGLE_PLACES_API_KEY is restricted to IP addresses that do not include Netlify. Functions do not have a fixed outbound IP. Set Application restrictions to None and API restrictions to Places API (New) only, then retry.",
+  provider_403_application:
+    "GOOGLE_PLACES_API_KEY has an Android, iOS, or other application restriction. Netlify server calls need Application restrictions set to None and API restrictions set to Places API (New) only, then retry.",
+  provider_403_api_restriction:
+    "GOOGLE_PLACES_API_KEY is not allowed to call Places API (New). Edit the key's API restrictions and allow Places API (New) only. Legacy Places API alone still returns HTTP 403. Enable Places API (New) on the project, then retry.",
   provider_403_api_disabled:
     "Places API (New) is not enabled on the Google Cloud project for GOOGLE_PLACES_API_KEY. Enable Places API (New) and confirm billing is active.",
   provider_403_billing:
     "Google Cloud billing blocked this Places request. Check billing and budgets on the project that owns GOOGLE_PLACES_API_KEY.",
+  provider_error_403:
+    "Google Places denied this search (HTTP 403). For GOOGLE_PLACES_API_KEY: set Application restrictions to None, set API restrictions to Places API (New) only, enable Places API (New), and confirm billing is active. Retry in a few minutes. The failed request was recorded.",
   provider_403_fields:
     "Google Places denied the requested contact fields. Enable Places API (New) Pro/Enterprise SKUs for phone and website, then retry.",
   provider_429_quota:
@@ -32,6 +40,10 @@ export type GooglePlacesHttpClassification = {
   retryable: boolean;
   retryWithoutServiceArea: boolean;
   retryWithProFields: boolean;
+  /** Google ErrorInfo reason, when the body included one. Never an API key. */
+  reason: string | null;
+  /** Short redacted hint safe for server logs. */
+  logHint: string;
 };
 
 const API_KEY_PATTERN = /AIza[0-9A-Za-z_-]{10,}/g;
@@ -44,13 +56,59 @@ export function redactGooglePlacesErrorText(raw: string) {
     .slice(0, 2000);
 }
 
-function googleRpcStatus(bodyText: string) {
+function classified(
+  operatorCode: string,
+  options: {
+    retryable?: boolean;
+    retryWithoutServiceArea?: boolean;
+    retryWithProFields?: boolean;
+    reason?: string | null;
+    logHint?: string | null;
+  } = {},
+): GooglePlacesHttpClassification {
+  const reason = options.reason ?? null;
+  return {
+    operatorCode,
+    retryable: options.retryable ?? false,
+    retryWithoutServiceArea: options.retryWithoutServiceArea ?? false,
+    retryWithProFields: options.retryWithProFields ?? false,
+    reason,
+    logHint: options.logHint ?? reason ?? "unclassified",
+  };
+}
+
+function googleErrorFacts(bodyText: string) {
+  const reasons: string[] = [];
+  let rpcStatus = "";
   try {
-    const parsed = JSON.parse(bodyText) as { error?: { status?: unknown; message?: unknown } };
-    return typeof parsed.error?.status === "string" ? parsed.error.status : "";
+    const parsed = JSON.parse(bodyText) as {
+      error?: { status?: unknown; details?: unknown };
+    };
+    if (typeof parsed.error?.status === "string") {
+      rpcStatus = parsed.error.status.toUpperCase();
+    }
+    const details = parsed.error?.details;
+    if (Array.isArray(details)) {
+      for (const detail of details) {
+        if (!detail || typeof detail !== "object") continue;
+        const reason = (detail as { reason?: unknown }).reason;
+        if (typeof reason === "string" && reason.trim()) {
+          reasons.push(reason.trim().toUpperCase());
+        }
+      }
+    }
   } catch {
-    return "";
+    // Plain-text provider bodies are classified from the redacted text.
   }
+  return { rpcStatus, reasons };
+}
+
+function hasSignal(text: string, reasons: string[], needles: string[]) {
+  return needles.some((needle) => text.includes(needle.toLowerCase()) || reasons.includes(needle.toUpperCase()));
+}
+
+function matchedReason(reasons: string[], names: string[], fallback: string) {
+  return names.find((name) => reasons.includes(name)) ?? fallback;
 }
 
 export function classifyGooglePlacesHttpError(
@@ -58,73 +116,126 @@ export function classifyGooglePlacesHttpError(
   bodyText: string,
 ): GooglePlacesHttpClassification {
   const text = redactGooglePlacesErrorText(bodyText).toLowerCase();
-  const rpcStatus = googleRpcStatus(bodyText).toUpperCase();
+  const { rpcStatus, reasons } = googleErrorFacts(bodyText);
 
   if (status === 429 || rpcStatus === "RESOURCE_EXHAUSTED" || /\bquota\b/.test(text)) {
-    return {
-      operatorCode: "provider_429_quota",
+    return classified("provider_429_quota", {
       retryable: true,
-      retryWithoutServiceArea: false,
-      retryWithProFields: false,
-    };
+      reason: matchedReason(reasons, ["RESOURCE_EXHAUSTED"], "quota"),
+    });
   }
 
   if (
-    text.includes("referer restriction") ||
-    text.includes("referrer restriction") ||
-    text.includes("http referer") ||
-    text.includes("http referrer") ||
-    text.includes("browser restriction")
+    hasSignal(text, reasons, [
+      "referer restriction",
+      "referrer restriction",
+      "http referer",
+      "http referrer",
+      "browser restriction",
+      "requests from referer",
+      "requests from referrer",
+      "referer <empty>",
+      "referrer <empty>",
+      "API_KEY_HTTP_REFERRER_BLOCKED",
+    ])
   ) {
-    return {
-      operatorCode: "provider_403_referrer",
-      retryable: false,
-      retryWithoutServiceArea: false,
-      retryWithProFields: false,
-    };
+    return classified("provider_403_referrer", {
+      reason: matchedReason(reasons, ["API_KEY_HTTP_REFERRER_BLOCKED"], "referrer"),
+    });
   }
 
   if (
-    text.includes("api key not valid") ||
-    text.includes("api_key_invalid") ||
-    text.includes("invalid api key") ||
+    hasSignal(text, reasons, [
+      "ip address restriction",
+      "requests from ip address",
+      "requests from this ip",
+      "originating ip address",
+      "API_KEY_IP_ADDRESS_BLOCKED",
+    ])
+  ) {
+    return classified("provider_403_ip", {
+      reason: matchedReason(reasons, ["API_KEY_IP_ADDRESS_BLOCKED"], "ip"),
+    });
+  }
+
+  if (
+    hasSignal(text, reasons, [
+      "android client application",
+      "ios client application",
+      "android application restriction",
+      "ios application restriction",
+      "android restrictions",
+      "ios restrictions",
+      "not authorized to use this api key",
+      "API_KEY_ANDROID_APP_BLOCKED",
+      "API_KEY_IOS_APP_BLOCKED",
+    ])
+  ) {
+    return classified("provider_403_application", {
+      reason: matchedReason(
+        reasons,
+        ["API_KEY_ANDROID_APP_BLOCKED", "API_KEY_IOS_APP_BLOCKED"],
+        "application",
+      ),
+    });
+  }
+
+  if (
+    hasSignal(text, reasons, [
+      "api key not valid",
+      "api key is invalid",
+      "api_key_invalid",
+      "invalid api key",
+      "api key expired",
+      "API_KEY_INVALID",
+      "API_KEY_EXPIRED",
+    ]) ||
     (status === 400 && text.includes("api key"))
   ) {
-    return {
-      operatorCode: "provider_400_key_invalid",
-      retryable: false,
-      retryWithoutServiceArea: false,
-      retryWithProFields: false,
-    };
+    return classified("provider_400_key_invalid", {
+      reason: matchedReason(reasons, ["API_KEY_INVALID", "API_KEY_EXPIRED"], "key_invalid"),
+    });
   }
 
   if (
-    text.includes("billing not enabled") ||
-    text.includes("billingnotenabled") ||
-    text.includes("this api method requires billing") ||
-    text.includes("billing account")
+    hasSignal(text, reasons, [
+      "billing not enabled",
+      "billing has not been enabled",
+      "billingnotenabled",
+      "this api method requires billing",
+      "billing account",
+      "BILLING_DISABLED",
+    ])
   ) {
-    return {
-      operatorCode: "provider_403_billing",
-      retryable: false,
-      retryWithoutServiceArea: false,
-      retryWithProFields: false,
-    };
+    return classified("provider_403_billing", {
+      reason: matchedReason(reasons, ["BILLING_DISABLED"], "billing"),
+    });
   }
 
   if (
-    text.includes("has not been used") ||
-    text.includes("api is not enabled") ||
-    text.includes("is disabled") ||
-    text.includes("accessnotconfigured") ||
-    text.includes("service_disabled")
+    hasSignal(text, reasons, [
+      "has not been used",
+      "api is not enabled",
+      "is disabled",
+      "accessnotconfigured",
+      "service_disabled",
+      "enable it by visiting",
+      "SERVICE_DISABLED",
+      "ACCESS_NOT_CONFIGURED",
+    ])
   ) {
-    return {
-      operatorCode: "provider_403_api_disabled",
-      retryable: false,
-      retryWithoutServiceArea: false,
-      retryWithProFields: false,
-    };
+    return classified("provider_403_api_disabled", {
+      reason: matchedReason(reasons, ["SERVICE_DISABLED", "ACCESS_NOT_CONFIGURED"], "api_disabled"),
+    });
+  }
+
+  if (
+    hasSignal(text, reasons, ["API_KEY_SERVICE_BLOCKED"]) ||
+    (text.includes("requests to this api") && text.includes("are blocked"))
+  ) {
+    return classified("provider_403_api_restriction", {
+      reason: matchedReason(reasons, ["API_KEY_SERVICE_BLOCKED"], "api_restriction"),
+    });
   }
 
   if (
@@ -134,47 +245,32 @@ export function classifyGooglePlacesHttpError(
     text.includes("invalid field") ||
     text.includes("does not have access to")
   ) {
-    return {
-      operatorCode: "provider_403_fields",
-      retryable: false,
-      retryWithoutServiceArea: false,
+    return classified("provider_403_fields", {
       retryWithProFields: true,
-    };
+      reason: "fields",
+    });
   }
 
   if (status === 403) {
-    return {
-      operatorCode: "provider_error_403",
-      retryable: false,
-      retryWithoutServiceArea: false,
+    return classified("provider_error_403", {
       retryWithProFields: true,
-    };
+      logHint: `unclassified:${text.slice(0, 160)}`,
+    });
   }
 
   if (status === 400) {
-    return {
-      operatorCode: "provider_400_invalid_argument",
-      retryable: false,
+    return classified("provider_400_invalid_argument", {
       retryWithoutServiceArea: true,
       retryWithProFields: true,
-    };
+      logHint: `invalid_argument:${text.slice(0, 160)}`,
+    });
   }
 
   if (status >= 500) {
-    return {
-      operatorCode: `provider_error_${status}`,
-      retryable: true,
-      retryWithoutServiceArea: false,
-      retryWithProFields: false,
-    };
+    return classified(`provider_error_${status}`, { retryable: true });
   }
 
-  return {
-    operatorCode: status ? `provider_error_${status}` : "provider_error",
-    retryable: false,
-    retryWithoutServiceArea: false,
-    retryWithProFields: false,
-  };
+  return classified(status ? `provider_error_${status}` : "provider_error");
 }
 
 export function hunterPlacesErrorCopy(

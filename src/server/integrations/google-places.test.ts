@@ -150,6 +150,41 @@ test("referrer-restricted keys fail once with an operator code and do not retry"
   );
 });
 
+test("empty-referrer 403 is an application-restriction failure and does not retry", async () => {
+  process.env.GOOGLE_PLACES_API_KEY = "test-places-key";
+  let calls = 0;
+  await assert.rejects(
+    () =>
+      searchGooglePlacesText(
+        { textQuery: "roofer in ZIP code 77429 or Cypress, TX within 10 miles", maxResults: 2 },
+        {
+          fetchImplementation: async () => {
+            calls += 1;
+            return new Response(
+              JSON.stringify({
+                error: {
+                  code: 403,
+                  message: "Requests from referer <empty> are blocked.",
+                  status: "PERMISSION_DENIED",
+                  details: [{ reason: "API_KEY_HTTP_REFERRER_BLOCKED" }],
+                },
+              }),
+              { status: 403, headers: { "Content-Type": "application/json" } },
+            );
+          },
+        },
+      ),
+    (error: unknown) => {
+      assert.equal(calls, 1);
+      assert.equal(
+        (error as { options?: { operatorCode?: string } }).options?.operatorCode,
+        "provider_403_referrer",
+      );
+      return true;
+    },
+  );
+});
+
 test("Places requests omit referrer and do not send extra cookies", async () => {
   process.env.GOOGLE_PLACES_API_KEY = "test-places-key";
   await searchGooglePlacesText(

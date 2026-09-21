@@ -43,12 +43,31 @@ Do these in order. Do not test MICAH or HUNTER before the usage ledger exists.
    Never add `NEXT_PUBLIC_` to provider secrets. Never paste secret values into
    source code, a screenshot, chat, or a client-side component.
 
-3. In Google Cloud:
+3. In Google Cloud, on the project that owns `GOOGLE_PLACES_API_KEY`:
 
-   - enable Places API (New);
-   - restrict the key to only the Places API and the production server use case;
+   - enable **Places API (New)** (`places.googleapis.com`). Legacy Places API alone
+     returns HTTP 403 `API_KEY_SERVICE_BLOCKED`;
+   - Credentials → that key → **Application restrictions: None**. Do not use HTTP
+     referrers, IP addresses, Android, or iOS. Netlify Functions send no browser
+     referrer and do not have a fixed outbound IP, so those restrictions return
+     HTTP 403;
+   - **API restrictions: Restrict key → Places API (New) only**;
    - add billing-budget alerts and a conservative provider quota;
    - confirm the billing account and project are the intended Atlas accounts.
+
+   Netlify → Environment variables → `GOOGLE_PLACES_API_KEY` must be set for
+   **Builds** and **Functions** on Production, with no quotes and no
+   `NEXT_PUBLIC_` prefix. A Google Cloud change applies within a few minutes.
+   A Netlify value change applies only after a redeploy of
+   `launch/afe-emergency-revenue-20260822`.
+
+   HUNTER HTTP 403 (checked 21 Sep 2026): the live ledger row for
+   `roofer in ZIP code 77429` is `provider_error_403`. The query included the
+   ZIP. The same Places API (New) client succeeded on 12 Sep and failed on
+   17 Sep before the classifier shipped, so this is the Google key or billing
+   setup, not a missing ZIP. After the classifier deploy, the desk names the
+   restriction (referrer, IP, mobile app, API restriction, disabled API, or
+   billing) instead of a generic HTTP 403.
 
 4. In the OpenAI API billing settings, create a deliberately small project
    budget/alert. ChatGPT or Codex subscription charges are separate from OpenAI

@@ -245,7 +245,12 @@ function throwClassifiedProviderError(
   status: number,
   classified: GooglePlacesHttpClassification,
 ): never {
-  console.error("[hunter.google_places]", classified.operatorCode, status);
+  console.error(
+    "[hunter.google_places]",
+    classified.operatorCode,
+    status,
+    classified.logHint,
+  );
   throw new IntegrationRequestError("google_places", "provider_error", {
     status,
     retryable: classified.retryable,
@@ -392,6 +397,8 @@ export async function searchGooglePlacesText(
       retryable: false,
       retryWithoutServiceArea: false,
       retryWithProFields: false,
+      reason: null,
+      logHint: "unclassified",
     },
   );
 }
@@ -445,6 +452,8 @@ export async function getGooglePlaceDetails(
       retryable: false,
       retryWithoutServiceArea: false,
       retryWithProFields: false,
+      reason: null,
+      logHint: "unclassified",
     },
   );
 }
