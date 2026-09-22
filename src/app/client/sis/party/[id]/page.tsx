@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { isSisOrganization } from "@/lib/client-portal/identity";
+import { deskDateLabel } from "@/lib/desk-time";
+import { partySlotLabel } from "@/lib/sis/party-availability";
+import { releaseSisPartySlotForm } from "@/server/sis-workspace/actions";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getSisPartyEventDetail } from "@/server/sis-workspace/queries";
 
@@ -39,11 +42,21 @@ export default async function SisPartyDetailPage({ params }: { params: Promise<{
             </div>
           </div>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Data label="Party date" value={formatDate(party.partyStartsAt)} />
+            <Data label="Party block" value={party.preferredDate && party.partySlot ? `${deskDateLabel(party.preferredDate, false)} · ${partySlotLabel(party.partySlot)}` : formatDate(party.partyStartsAt)} />
             <Data label="Location" value={[party.venueType, party.address, party.city].filter(Boolean).join(", ") || "To confirm"} />
             <Data label="Calendar" value={party.calendarStatus.replaceAll("_", " ")} />
             <Data label="Customer confirmation" value={party.customerConfirmationStatus.replaceAll("_", " ")} />
           </div>
+          {party.partySlot && (party.calendarStatus === "tentative" || party.calendarStatus === "confirmed") ? (
+            <form action={releaseSisPartySlotForm} className="mt-5">
+              <input name="partyEventId" type="hidden" value={party.id} />
+              <input name="returnTo" type="hidden" value={`/client/sis/party/${party.id}`} />
+              <button className="rounded-full border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-800" type="submit">
+                Cancel hold
+              </button>
+              <p className="mt-2 text-xs leading-5 text-[#5c6578]">Cancelling frees the block on the SIS calendar immediately.</p>
+            </form>
+          ) : null}
         </section>
         <section className="grid gap-5 lg:grid-cols-[1fr_.8fr]">
           <article className="rounded-[1.6rem] border border-[#d8c27a] bg-white p-6">

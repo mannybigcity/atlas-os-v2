@@ -391,6 +391,25 @@ export function LionsDenOverview({
                     <input aria-label="Phone" className="rounded-md border border-[#d5d0c4] px-2 py-1 text-xs" name="phone" placeholder={spanish ? "Teléfono" : "Phone"} />
                     <input aria-label="Next action" className="rounded-md border border-[#d5d0c4] px-2 py-1 text-xs" name="nextAction" placeholder={spanish ? "Próxima acción" : "Required next action"} required />
                     <input aria-label="Next action due date" className="rounded-md border border-[#d5d0c4] px-2 py-1 text-xs" name="nextActionDue" required type="date" />
+                    <label className="grid gap-1 text-[10px] font-semibold text-[#5c6578]">
+                      {spanish ? "Fecha pedida (opcional)" : "Requested date (optional)"}
+                      <input aria-label={spanish ? "Fecha pedida" : "Requested party date"} className="rounded-md border border-[#d5d0c4] px-2 py-1 text-xs" name="preferredDate" type="date" />
+                    </label>
+                    <label className="grid gap-1 text-[10px] font-semibold text-[#5c6578]">
+                      {spanish ? "Bloque (opcional)" : "Block (optional)"}
+                      <select aria-label={spanish ? "Bloque AM o PM" : "AM or PM block"} className="rounded-md border border-[#d5d0c4] px-2 py-1 text-xs" defaultValue="" name="partySlot">
+                        <option value="">{spanish ? "Sin bloque" : "No block yet"}</option>
+                        <option value="am">AM 9:00–1:00</option>
+                        <option value="pm">PM 2:00–6:00</option>
+                      </select>
+                    </label>
+                    {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+                    {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+                    <p className="text-[10px] leading-4 text-[#5c6578]">
+                      {spanish
+                        ? "Fecha y AM o PM juntos apartan el bloque. Si está tomado, la consulta se guarda y te sugerimos sábados libres."
+                        : "A date plus AM or PM holds that block. If it is taken, the inquiry still saves and we suggest open Saturdays."}
+                    </p>
                     <button className="rounded-md bg-[#f5b932] px-2 py-1 text-xs font-semibold text-[#071b42]" type="submit">
                       {spanish ? "Agregar" : "Add"}
                     </button>

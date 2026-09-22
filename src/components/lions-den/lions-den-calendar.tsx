@@ -14,6 +14,8 @@ type LionsDenCalendarBoardProps = {
   partyEvents: SisPartyEventSummary[];
   spanish: boolean;
   compact?: boolean;
+  /** SIS calendar page keeps follow-ups visible without letting them look like party bookings. */
+  variant?: "primary" | "follow-up";
 };
 
 export function LionsDenCalendarBoard({
@@ -22,6 +24,7 @@ export function LionsDenCalendarBoard({
   partyEvents,
   spanish,
   compact = false,
+  variant = "primary",
 }: LionsDenCalendarBoardProps) {
   const contextOptions = [
     ...prospects.map((item) => ({
@@ -82,15 +85,19 @@ export function LionsDenCalendarBoard({
     <section className="space-y-5">
       <article className="rounded-[1.6rem] border border-[#d8c27a] bg-white p-5 sm:p-6">
         <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#f5b932]">
-          {spanish ? "Calendario" : "Calendar"}
+          {variant === "follow-up" ? (spanish ? "Recordatorios" : "Reminders") : spanish ? "Calendario" : "Calendar"}
         </p>
         <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#071b42]">
-          {spanish ? "Fechas de trabajo" : "Working dates"}
+          {variant === "follow-up" ? (spanish ? "Seguimientos" : "Follow-ups") : spanish ? "Fechas de trabajo" : "Working dates"}
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#33415c]">
-          {spanish
-            ? "Solo fechas que ya existen en el espacio. Si está vacío, aún no hay nada que mostrar."
-            : "Only dates already in the workspace. If it is empty, there is nothing to show yet."}
+          {variant === "follow-up"
+            ? spanish
+              ? "Fechas de seguimiento y recordatorios de este dispositivo. No apartan un bloque de fiesta y no cambian el morado de arriba."
+              : "Follow-up dates and reminders on this device. They do not hold a party block and they do not change the purple calendar above."
+            : spanish
+              ? "Solo fechas que ya existen en el espacio. Si está vacío, aún no hay nada que mostrar."
+              : "Only dates already in the workspace. If it is empty, there is nothing to show yet."}
         </p>
       </article>
       <ClientCalendar
