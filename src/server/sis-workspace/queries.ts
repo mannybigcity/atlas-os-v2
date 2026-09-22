@@ -1,6 +1,7 @@
 import { isArchivedDeskClient } from "@/lib/lions-den/desk-clients";
 import { readSisCustomerPayPalFields } from "@/lib/lions-den/sis-customers";
 import { readLastDeskContact, type DeskContactStamp } from "@/lib/lions-den/prospect-stages";
+import { activePartyHolds, isPartySlot, partySlotColumnMissing, type PartyHold } from "@/lib/sis/party-availability";
 import { createClient } from "@/lib/supabase/server";
 import type { WorkspaceQueryResult } from "@/server/organizations/queries";
 
@@ -62,6 +63,15 @@ export type SisInboxTask = {
   party: { hostName: string; stage: string } | null;
 };
 
+export type SisPartyCalendarParty = {
+  id: string;
+  hostName: string;
+  stage: string;
+  preferredDate: string | null;
+  partySlot: "am" | "pm" | null;
+  calendarStatus: string;
+};
+
 export type SisPartyEventDetail = SisPartyEventSummary & {
   partyType: string | null;
   guestCount: number | null;
@@ -73,6 +83,8 @@ export type SisPartyEventDetail = SisPartyEventSummary & {
   amountPaid: number;
   calendarStatus: string;
   customerConfirmationStatus: string;
+  preferredDate: string | null;
+  partySlot: "am" | "pm" | null;
   activities: Array<{ id: string; summary: string; eventType: string; createdAt: string }>;
   tasks: SisInboxTask[];
 };
@@ -306,17 +318,65 @@ export async function getSisCustomers(
   };
 }
 
+const partyDetailColumns =
+  "id, host_name, stage, party_starts_at, deposit_status, next_action, next_action_due, party_type, guest_count, address, city, venue_type, door_hanger_theme, total_due, amount_paid, calendar_status, customer_confirmation_status, preferred_date, party_slot";
+
+export async function getSisPartyCalendar(
+  organizationId: string,
+): Promise<WorkspaceQueryResult<{ holds: PartyHold[]; parties: SisPartyCalendarParty[] }>> {
+  const supabase = await createClient();
+  const [holdsQuery, partiesQuery] = await Promise.all([
+    supabase
+      .from("organization_sis_party_events")
+      .select("id, host_name, stage, preferred_date, party_slot, calendar_status")
+      .eq("organization_id", organizationId)
+      .in("calendar_status", ["tentative", "confirmed"])
+      .limit(500),
+    supabase
+      .from("organization_sis_party_events")
+      .select("id, host_name, stage, preferred_date, party_slot, calendar_status")
+      .eq("organization_id", organizationId)
+      .order("updated_at", { ascending: false })
+      .limit(80),
+  ]);
+  const error = holdsQuery.error ?? partiesQuery.error;
+  if (error) {
+    return {
+      data: { holds: [], parties: [] },
+      setupRequired: true,
+      error: partySlotColumnMissing(error)
+        ? "migration"
+        : error.message,
+    };
+  }
+  const parties = ((partiesQuery.data ?? []) as PartySlotRow[]).map(toPartyCalendarParty);
+  const holds = activePartyHolds(((holdsQuery.data ?? []) as PartySlotRow[]).map(toPartyCalendarParty));
+  return { data: { holds, parties }, setupRequired: false, error: null };
+}
+
 export async function getSisPartyEventDetail(
   organizationId: string,
   partyEventId: string,
 ): Promise<WorkspaceQueryResult<SisPartyEventDetail | null>> {
   const supabase = await createClient();
-  const { data: event, error } = await supabase
+  let partySlotSupported = true;
+  let { data: event, error } = await supabase
     .from("organization_sis_party_events")
-    .select("id, host_name, stage, party_starts_at, deposit_status, next_action, next_action_due, party_type, guest_count, address, city, venue_type, door_hanger_theme, total_due, amount_paid, calendar_status, customer_confirmation_status")
+    .select(partyDetailColumns)
     .eq("organization_id", organizationId)
     .eq("id", partyEventId)
     .maybeSingle();
+  if (error && partySlotColumnMissing(error)) {
+    partySlotSupported = false;
+    const retry = await supabase
+      .from("organization_sis_party_events")
+      .select(partyDetailColumns.replace(", party_slot", ""))
+      .eq("organization_id", organizationId)
+      .eq("id", partyEventId)
+      .maybeSingle();
+    event = (retry.data ?? null) as typeof event;
+    error = retry.error;
+  }
 
   if (error) return { data: null, setupRequired: true, error: error.message };
   if (!event) return { data: null, setupRequired: false, error: null };
@@ -335,7 +395,29 @@ export async function getSisPartyEventDetail(
     venueType: event.venue_type, doorHangerTheme: event.door_hanger_theme, totalDue: event.total_due,
     amountPaid: event.amount_paid, calendarStatus: event.calendar_status,
     customerConfirmationStatus: event.customer_confirmation_status,
+    preferredDate: event.preferred_date ?? null,
+    partySlot: partySlotSupported && isPartySlot(event.party_slot) ? event.party_slot : null,
     activities: ((activities.data ?? []) as Array<{ id: string; summary: string; event_type: string; created_at: string }>).map((activity) => ({ id: activity.id, summary: activity.summary, eventType: activity.event_type, createdAt: activity.created_at })),
     tasks: taskRows.map((task) => { const party = Array.isArray(task.organization_sis_party_events) ? task.organization_sis_party_events[0] ?? null : task.organization_sis_party_events; return { id: task.id, title: task.title, dueAt: task.due_at, kind: task.kind, party: party ? { hostName: party.host_name, stage: party.stage } : null }; }),
   }, setupRequired: false, error: null };
+}
+
+type PartySlotRow = {
+  id: string;
+  host_name: string;
+  stage: string;
+  preferred_date: string | null;
+  party_slot: string | null;
+  calendar_status: string;
+};
+
+function toPartyCalendarParty(row: PartySlotRow): SisPartyCalendarParty {
+  return {
+    id: row.id,
+    hostName: row.host_name,
+    stage: row.stage,
+    preferredDate: row.preferred_date,
+    partySlot: isPartySlot(row.party_slot) ? row.party_slot : null,
+    calendarStatus: row.calendar_status,
+  };
 }

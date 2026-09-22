@@ -50,6 +50,45 @@ export function deskDayKey(value: string | null | undefined, timeZone = deskTime
   return deskDateOnly(parsed, timeZone);
 }
 
+/**
+ * UTC instant for a wall-clock time on a desk calendar day.
+ * 9:00 in America/Chicago stays 9:00 Central whether the server is UTC or the
+ * browser is somewhere else.
+ */
+export function deskWallClockIso(dateOnly: string, hour: number, minute = 0, timeZone = deskTimeZone()) {
+  const match = DATE_ONLY.exec(dateOnly);
+  if (!match) return null;
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) {
+    return null;
+  }
+  try {
+    const desiredUtc = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), hour, minute, 0);
+    let instant = desiredUtc;
+    for (let pass = 0; pass < 2; pass += 1) {
+      instant = desiredUtc - zonedOffsetMs(new Date(instant), timeZone);
+    }
+    return new Date(instant).toISOString();
+  } catch {
+    return null;
+  }
+}
+
+function zonedOffsetMs(instant: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(instant);
+  const value = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? "NaN");
+  const asUtc = Date.UTC(value("year"), value("month") - 1, value("day"), value("hour") % 24, value("minute"), value("second"));
+  return asUtc - instant.getTime();
+}
+
 /** Weekday name ("Friday" / "viernes") as the owner experienced it. */
 export function deskWeekday(date: Date, spanish: boolean, timeZone = deskTimeZone()) {
   return new Intl.DateTimeFormat(spanish ? "es" : "en", { weekday: "long", timeZone }).format(date);

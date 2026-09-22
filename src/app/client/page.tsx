@@ -7,7 +7,9 @@ import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenOverview } from "@/components/lions-den/lions-den-overview";
 import { getClientPortalOrgLabel, isSisLionsDenRequest, isSisOrganization, shouldShowSuperAdminCrm } from "@/lib/client-portal/identity";
-import { clientOverviewRendersLionsDen, usesLionsDenHub } from "@/lib/lions-den/client-hub";
+import { clientOverviewRendersLionsDen, lionsDenHref, usesLionsDenHub } from "@/lib/lions-den/client-hub";
+import { deskDateLabel } from "@/lib/desk-time";
+import { decodeSuggestions, partySlotLabel } from "@/lib/sis/party-availability";
 import {
   presentLiveDeskDraft,
   presentLiveDeskNote,
@@ -56,6 +58,8 @@ type ClientDashboardPageProps = {
     lang?: string;
     prospect?: string;
     callDay?: string;
+    party?: string;
+    open?: string;
   }>;
 };
 
@@ -300,6 +304,35 @@ export default async function ClientDashboardPage({
     return (
       <LionsDenBoardScreen board="overview" workspace={workspace}>
         {alerts}
+        {isSisWorkspace && params?.party === "slot_held" ? (
+          <StatusAlert>
+            {spanish
+              ? "Consulta guardada y el bloque quedó apartado. El calendario púrpura ya lo muestra ocupado."
+              : "Inquiry saved and the block is held. The purple calendar already shows it as taken."}
+          </StatusAlert>
+        ) : null}
+        {isSisWorkspace && params?.party === "slot_taken" ? (
+          <StatusAlert tone="amber">
+            <p>
+              {spanish
+                ? "Ese bloque ya estaba apartado. La consulta se guardó sin fecha. Atlas no escribió al cliente. Próximos bloques libres:"
+                : "That block was already held. The inquiry was saved without a date. Atlas did not email the customer. Next open blocks:"}
+            </p>
+            <ul className="mt-2 space-y-1">
+              {decodeSuggestions(params.open).map((slot) => {
+                const calendarHref = lionsDenHref("/client/calendar", workspace.previewOrgSlug, workspace.selectedWorkspaceSlug);
+                const href = `${calendarHref}${calendarHref.includes("?") ? "&" : "?"}date=${slot.date}`;
+                return (
+                  <li key={`${slot.date}-${slot.slot}`}>
+                    <Link className="font-semibold underline" href={href}>
+                      {deskDateLabel(slot.date, spanish)} · {partySlotLabel(slot.slot)}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </StatusAlert>
+        ) : null}
         {sisDashboard?.setupRequired ? (
           <StatusAlert tone="rose">
             {spanish
