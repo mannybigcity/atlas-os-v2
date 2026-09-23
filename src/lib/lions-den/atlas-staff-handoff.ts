@@ -1,4 +1,4 @@
-export type AtlasStaffRole = "atlas" | "hunter" | "micah" | "david";
+export type AtlasStaffRole = "atlas" | "hunter" | "micah" | "david" | "amanda";
 
 export function staffHandoffLine(role: AtlasStaffRole | null) {
   if (role === "hunter") return "Handed to HUNTER.";

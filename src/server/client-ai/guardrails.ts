@@ -1,6 +1,6 @@
 import path from "node:path";
 
-export type ClientAiRole = "atlas" | "hunter" | "micah" | "david";
+export type ClientAiRole = "atlas" | "hunter" | "micah" | "david" | "amanda";
 
 export type ClientAiRoleSpec = {
   role: ClientAiRole;
@@ -104,6 +104,8 @@ const roleKeywordSets: Record<ClientAiRole, string[]> = {
     "what to say",
     "due today",
   ],
+  // Selectable persona. Auto-routing stays with Hunter, Micah, and David.
+  amanda: [],
 };
 
 const blockedPatterns = [
@@ -170,6 +172,15 @@ export const clientAiRoleSpecs: ClientAiRoleSpec[] = [
     promptHint: "Ask the Follow-up Desk about CRM status, follow-up, or review queues.",
     markdownPath: path.join("docs", "client-ai", "david.md"),
   },
+  {
+    role: "amanda",
+    label: "Client Closer",
+    title: "Client Closer",
+    summary:
+      "Answer prospect and client questions from this desk and quote product, pricing, and turnaround.",
+    promptHint: "Ask about a prospect, a quote, or product and pricing on this desk.",
+    markdownPath: path.join("docs", "client-ai", "amanda.md"),
+  },
 ];
 
 export function getClientAiRoleSpec(role: ClientAiRole) {
@@ -177,7 +188,13 @@ export function getClientAiRoleSpec(role: ClientAiRole) {
 }
 
 export function isClientAiRole(value: string): value is ClientAiRole {
-  return value === "atlas" || value === "hunter" || value === "micah" || value === "david";
+  return (
+    value === "atlas" ||
+    value === "hunter" ||
+    value === "micah" ||
+    value === "david" ||
+    value === "amanda"
+  );
 }
 
 function includesAny(prompt: string, keywords: string[]) {

@@ -73,6 +73,13 @@ const spanishRoleCopy: Record<ClientAiRole, { label: string; title: string; summ
     summary: "Informa sobre seguimiento, estado de revisión y la próxima acción que debe ver el cliente.",
     promptHint: "Pregunta al Centro de Seguimiento por el estado del CRM, seguimientos o colas de revisión.",
   },
+  amanda: {
+    label: "Cierre de Clientes",
+    title: "Cierre de Clientes",
+    summary:
+      "Responde preguntas de prospectos y clientes de este escritorio y cotiza producto, precios y tiempos de entrega.",
+    promptHint: "Pregunta por un prospecto, una cotización, o el producto y los precios de este escritorio.",
+  },
 };
 
 function roleCopy(role: ClientAiRole, spanish: boolean) {
