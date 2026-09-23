@@ -441,7 +441,7 @@ function ThreadAnswer({
   routedTo,
 }: {
   text: string;
-  routedTo: "atlas" | "hunter" | "micah" | "david" | null;
+  routedTo: "atlas" | "hunter" | "micah" | "david" | "amanda" | null;
 }) {
   const line = staffHandoffLine(routedTo);
   const body = line && text.startsWith(line) ? text.slice(line.length).trim() : text;
