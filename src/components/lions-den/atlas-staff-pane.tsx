@@ -32,6 +32,11 @@ import {
 import { freshDeskChatRequests } from "@/lib/lions-den/desk-chat";
 import { staffHandoffLine } from "@/lib/lions-den/atlas-staff-handoff";
 import { submitClientAiRequest } from "@/server/client-ai/actions";
+import {
+  clientAiRoleSpecs,
+  type ClientAiRole,
+  type ClientAiRoleSpec,
+} from "@/server/client-ai/guardrails";
 import { initialClientAiActionState } from "@/server/client-ai/types";
 import type { ClientAiDailyUsage, ClientAiRequest } from "@/server/client-ai/queries";
 
@@ -69,6 +74,21 @@ function draftStorageKey(organizationId: string) {
   return `lions-den-atlas-draft:${organizationId || "desk"}`;
 }
 
+const staffRailShortLabel: Record<ClientAiRole, { en: string; es: string }> = {
+  atlas: { en: "Atlas", es: "Atlas" },
+  hunter: { en: "Hunter", es: "Hunter" },
+  micah: { en: "Micah", es: "Micah" },
+  david: { en: "David", es: "David" },
+  amanda: { en: "Client Closer", es: "Cierre de Clientes" },
+};
+
+function staffRailRoleLabel(spec: ClientAiRoleSpec, spanish: boolean) {
+  const short = staffRailShortLabel[spec.role];
+  if (!short) return spec.label;
+  if (spec.role === "amanda") return spanish ? short.es : spec.label;
+  return spanish ? short.es : short.en;
+}
+
 export function AtlasStaffPane({
   organizationId,
   requests,
@@ -83,6 +103,7 @@ export function AtlasStaffPane({
     submitClientAiRequest,
     initialClientAiActionState,
   );
+  const [activeRole, setActiveRole] = useState<ClientAiRole>("atlas");
   const [draft, setDraft] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [listening, setListening] = useState(false);
@@ -98,6 +119,8 @@ export function AtlasStaffPane({
   const pendingMicahPromptRef = useRef<string | null>(null);
   const bridgeFlightRef = useRef(0);
   const [bridgeStage, setBridgeStage] = useState<AtlasBridgeStage | null>(null);
+  const activeRoleSpec = clientAiRoleSpecs.find((spec) => spec.role === activeRole) ?? clientAiRoleSpecs[0];
+  const activeLabel = staffRailRoleLabel(activeRoleSpec, spanish);
   const plan = usage.plan as AtlasAskPlan;
   const capped = isAtlasAskCapped(usage.used, plan);
   const hasWorkspace = Boolean(organizationId);
@@ -275,7 +298,7 @@ export function AtlasStaffPane({
           />
         </div>
         <h2 className="mt-1 font-[family-name:var(--font-display)] text-sm font-semibold tracking-wide text-[#071b42]">
-          Atlas
+          {activeLabel}
         </h2>
         {bridgeStage ? (
           <p
@@ -355,8 +378,36 @@ export function AtlasStaffPane({
           ref={formRef}
         >
           <input name="organizationId" type="hidden" value={organizationId} />
-          <input name="role" type="hidden" value="atlas" />
           <input name="scopeMode" type="hidden" value="business_only" />
+          <fieldset className="mb-1.5">
+            <legend className="sr-only">{spanish ? "Con quién hablar" : "Who to talk to"}</legend>
+            <div className="flex flex-wrap gap-1">
+              {clientAiRoleSpecs.map((spec) => {
+                const checked = spec.role === activeRole;
+                const label = staffRailRoleLabel(spec, spanish);
+                return (
+                  <label
+                    className={`inline-flex h-7 cursor-pointer items-center gap-1 rounded-full px-2 text-[11px] font-semibold ${
+                      checked
+                        ? "bg-[#071b42] text-[#f5b932]"
+                        : "bg-[#fff8e6] text-[#071b42] hover:bg-[#f5b932]/40"
+                    }`}
+                    key={spec.role}
+                  >
+                    <input
+                      checked={checked}
+                      className={`h-3 w-3 shrink-0 ${checked ? "accent-[#f5b932]" : "accent-[#071b42]"}`}
+                      name="role"
+                      onChange={() => setActiveRole(spec.role)}
+                      type="radio"
+                      value={spec.role}
+                    />
+                    {label}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
           <input
             accept="image/*,.pdf,.txt,.md,.csv,.json,.doc,.docx"
             className="hidden"
@@ -380,7 +431,7 @@ export function AtlasStaffPane({
             </p>
           ) : null}
           <label className="sr-only" htmlFor="atlas-staff-prompt">
-            {spanish ? "Mensaje para Atlas" : "Message Atlas"}
+            {spanish ? `Mensaje para ${activeLabel}` : `Message ${activeLabel}`}
           </label>
           <textarea
             className="min-h-16 w-full resize-none rounded-xl border border-[#d5d0c4] bg-[#fbfaf4] px-2.5 py-2 text-sm leading-5 text-[#071b42] outline-none placeholder:text-[#8a93a3] focus:border-[#f5b932] focus:ring-2 focus:ring-[#f5b932]/30 disabled:opacity-50"
@@ -388,7 +439,7 @@ export function AtlasStaffPane({
             id="atlas-staff-prompt"
             maxLength={ATLAS_STAFF_PROMPT_LIMIT}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder={spanish ? "Habla con Atlas" : "Talk to Atlas"}
+            placeholder={spanish ? `Habla con ${activeLabel}` : `Talk to ${activeLabel}`}
             value={draft}
           />
           <div className="mt-1.5 flex items-center gap-1">
@@ -441,7 +492,7 @@ function ThreadAnswer({
   routedTo,
 }: {
   text: string;
-  routedTo: "atlas" | "hunter" | "micah" | "david" | "amanda" | null;
+  routedTo: ClientAiRole | null;
 }) {
   const line = staffHandoffLine(routedTo);
   const body = line && text.startsWith(line) ? text.slice(line.length).trim() : text;
