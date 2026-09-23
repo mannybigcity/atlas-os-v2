@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import {
   decideClientAiRoute,
   detectSpecialistLane,
+  getClientAiRoleSpec,
+  isClientAiRole,
   isHunterFindPrompt,
   isMicahCreatePrompt,
 } from "./guardrails.ts";
@@ -91,6 +95,17 @@ test("staff HUNTER / MICAH / DAVID buttons keep their lane when the ask matches"
     decideClientAiRoute({ role: "david", prompt: "Summarize follow-up notes and history" }).routedTo,
     null,
   );
+});
+
+test("amanda is a loadable Ask Atlas role", async () => {
+  assert.equal(isClientAiRole("amanda"), true);
+  const spec = getClientAiRoleSpec("amanda");
+  assert.equal(spec.role, "amanda");
+  assert.equal(spec.markdownPath, path.join("docs", "client-ai", "amanda.md"));
+  const markdown = await readFile(path.join(process.cwd(), spec.markdownPath), "utf8");
+  assert.match(markdown, /^# Amanda Client Closer/);
+  assert.match(markdown, /SIS on SIS desk, AFE on AFE desk/);
+  assert.match(markdown, /speak for a desk she hasn't been briefed on/);
 });
 
 test("publish and live-post asks stay declined", () => {
