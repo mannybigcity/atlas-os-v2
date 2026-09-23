@@ -99,7 +99,12 @@ test("every founder Lion's Den board mounts LionsDenBoardScreen and the live Atl
   assert.match(pane, /submitClientAiRequest/);
   assert.match(pane, /atlasDeskNextHref/);
   assert.match(pane, /freshDeskChatRequests/);
-  assert.match(pane, /value="atlas"/);
+  assert.match(pane, /clientAiRoleSpecs\.map/);
+  assert.match(pane, /type="radio"/);
+  assert.match(pane, /name="role"/);
+  assert.match(pane, /setActiveRole\(spec\.role\)/);
+  assert.match(pane, /value=\{spec\.role\}/);
+  assert.doesNotMatch(pane, /value="atlas"/);
   assert.doesNotMatch(pane, /atlasAskUsageLabel/);
   assert.doesNotMatch(pane, /usageLabel/);
   assert.doesNotMatch(pane, /0 \/ 5|0\/5/);
