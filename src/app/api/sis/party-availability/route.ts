@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { deskDateOnly, shiftDateOnly } from "@/lib/desk-time";
+import { allowedOrigin } from "@/lib/sis/public-party-cors";
 import {
   monthBounds,
   parsePublicPartyHold,
@@ -25,19 +26,6 @@ function requestIp(request: NextRequest) {
     request.headers.get("cf-connecting-ip")?.trim() ||
     ""
   );
-}
-
-function allowedOrigin(origin: string) {
-  try {
-    const url = new URL(origin);
-    const host = url.hostname;
-    if (url.protocol === "http:" && (host === "localhost" || host === "127.0.0.1")) return true;
-    if (url.protocol !== "https:") return false;
-    if (host === "atlasforentrepreneurs.com" || host === "www.atlasforentrepreneurs.com") return true;
-    return host.endsWith(".netlify.app") || host.endsWith(".vercel.app") || host.endsWith(".github.io");
-  } catch {
-    return false;
-  }
 }
 
 function corsHeaders(request: NextRequest) {

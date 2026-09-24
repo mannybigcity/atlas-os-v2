@@ -112,6 +112,7 @@ test("public SQL and route stay on the SIS org and do not return host details", 
   assert.doesNotMatch(sql, /p_organization|afe_crm|atlas_sales_prospects/i);
 
   const route = read("src/app/api/sis/party-availability/route.ts");
+  assert.match(route, /from "@\/lib\/sis\/public-party-cors"/);
   assert.match(route, /p_host_name: input\.hostName/);
   assert.doesNotMatch(route, /row\.host|hostName:\s*row|select\(".*host_name/);
   assert.doesNotMatch(route, /searchParams\.get\(\s*["']organization/);
