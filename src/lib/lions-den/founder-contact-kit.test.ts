@@ -168,10 +168,9 @@ test("AFE public homepage Call today is Manny only and Amanda templates never sp
   const header = readRepo("src/components/site-header.tsx");
   const publicContact = readRepo("src/lib/afe-public-contact.ts");
   const queries = readRepo("src/server/outreach/queries.ts");
-  assert.match(homepage, /callToday:\s*AFE_CALL_TODAY_EN/);
-  assert.match(homepage, /\{t\.callToday\}/);
-  assert.match(homepage, /tel:\$\{AFE_MANNY_PHONE_TEL\}/);
+  assert.doesNotMatch(homepage, /callToday|atlas-hero-call|tel:\$\{AFE_MANNY_PHONE_TEL\}/);
   assert.match(header, /AFE_CALL_TODAY_EN/);
+  assert.match(header, /Call today/);
   assert.match(header, /tel:\$\{AFE_MANNY_PHONE_TEL\}/);
   assert.match(queries, /applyFounderContactKit/);
   assert.match(queries, /organizationSlug/);

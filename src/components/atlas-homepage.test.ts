@@ -24,21 +24,32 @@ test("AFE homepage catalyst hero speaks cash and follow-up in English and Spanis
   assert.doesNotMatch(homepage, /agentic/i);
 });
 
-test("AFE homepage hero has one gold trial button and quiet secondary links", () => {
+test("AFE homepage hero has one gold trial button, the after-day-7 path, and an optional assessment", () => {
   assert.match(hero, /atlas-button gold/);
   assert.match(homepage, /trial:\s*"Start 7-day free trial"/);
   assert.match(hero, /\{t\.trial\}/);
   assert.match(hero, /\/start-trial/);
   assert.equal([...hero.matchAll(/atlas-button/g)].length, 1);
-  assert.match(hero, /atlas-hero-link[\s\S]*\/#den/);
-  assert.match(homepage, /See how the desk works →/);
-  assert.match(hero, /atlas-hero-link[\s\S]*\/assessment/);
-  assert.match(hero, /atlas-hero-call/);
-  assert.match(hero, /\{t\.callToday\}/);
-  assert.match(hero, /tel:\$\{AFE_MANNY_PHONE_TEL\}/);
-  assert.match(homepage, /callToday:\s*AFE_CALL_TODAY_EN/);
+  assert.match(hero, /atlas-hero-path/);
+  assert.match(hero, /\{t\.afterTrial\}/);
+  assert.match(
+    homepage,
+    /After the 7 days, Debbie onboards you for \$500, then you get 2 weeks free before a paid plan\./,
+  );
+  assert.match(
+    homepage,
+    /Después de los 7 días, Debbie te incorpora por \$500 y luego tienes 2 semanas gratis antes de un plan de pago\./,
+  );
+  assert.match(hero, /atlas-hero-optional/);
+  assert.match(hero, /\/assessment/);
+  assert.match(homepage, /Not sure yet\?/);
+  assert.match(homepage, /Take the optional business assessment/);
+  assert.match(homepage, /¿Aún no estás seguro\?/);
+  assert.match(homepage, /Haz la evaluación opcional del negocio/);
+  assert.doesNotMatch(hero, /atlas-hero-link|atlas-hero-call|See how the desk works|tel:|Create account|Call today/);
   assert.doesNotMatch(hero, /atlas-button outline/);
   assert.doesNotMatch(hero, /Deleana|346-544-8697|SIS Custom Creations/);
+  assert.doesNotMatch(homepage, /2 months|two months|dos meses/i);
 });
 
 test("AFE homepage hero shows live BASIC GROW UNLIMITED prices from the pricing source", () => {
@@ -90,8 +101,12 @@ test("AFE homepage states the one-sentence outcome above the how-it-works featur
 
 test("AFE homepage keeps CLIENT PANEL and does not sell SIS chrome", () => {
   assert.match(homepage, /denTitle:\s*"CLIENT PANEL"/);
-  assert.match(homepage, /denCta:\s*"ENTER THE CLIENT PANEL"/);
-  assert.match(homepage, /denCta:\s*"ENTRAR AL CLIENT PANEL"/);
+  assert.match(homepage, /denCta:\s*"Sign in — existing clients"/);
+  assert.match(homepage, /denCta:\s*"Iniciar sesión — clientes actuales"/);
+  assert.match(homepage, /Real client login for people who already have an account\. Not a public demo\./);
+  assert.match(homepage, /Acceso real para quien ya tiene cuenta\. No es una demostración pública\./);
+  assert.match(homepage, /href=\{withSiteLanguage\("\/login", language\)\}/);
+  assert.doesNotMatch(homepage, /ENTER THE CLIENT PANEL|ENTRAR AL CLIENT PANEL/);
   assert.doesNotMatch(homepage, /PANEL DE CLIENTES|Panel de clientes/);
   assert.doesNotMatch(homepage, /sis-homepage|SisHeader|sis-real|SIS Custom Creations/);
 });
@@ -125,9 +140,21 @@ test("AFE homepage specialized desks show Amanda, Hunter, and Micah without live
 
   assert.match(homepage, /id="desk-stills"/);
   assert.match(homepage, /One workflow\. Specialized desks\./);
-  assert.match(homepage, /Amanda receives\. Hunter finds\. Micah turns ideas into weekly content\./);
+  assert.match(
+    homepage,
+    /Atlas commands the desk\. Hunter finds businesses\. Micah drafts content\. David keeps the CRM\. Amanda writes the inbound drafts you approve\./,
+  );
   assert.match(homepage, /Un flujo\. Escritorios especializados\./);
-  assert.match(homepage, /Amanda recibe\. Hunter encuentra\. Micah convierte las ideas en contenido semanal\./);
+  assert.match(
+    homepage,
+    /Atlas manda el escritorio\. Hunter encuentra negocios\. Micah redacta contenido\. David lleva el CRM\. Amanda escribe los borradores de entrada que tú apruebas\./,
+  );
+  assert.match(homepage, /Atlas commands/);
+  assert.match(homepage, /Chief of Staff/);
+  assert.match(homepage, /David keeps the CRM/);
+  assert.match(homepage, /Client Closer/);
+  assert.match(homepage, /Jefe de Gabinete/);
+  assert.match(homepage, /David lleva el CRM/);
   assert.match(homepage, /stillsWorkflow: \["Receive", "Find", "Review", "Accept", "Follow-up"\]/);
   assert.match(homepage, /Amanda receives/);
   assert.match(homepage, /Inbound email \(and text when live\) lands on the desk/);
@@ -193,6 +220,7 @@ test("AFE public header is one desktop row with quiet equal-weight nav", () => {
   assert.match(header, /whitespace-nowrap px-1\.5 py-1 text-sm font-medium/);
   assert.match(header, /Client Login/);
   assert.match(header, /whitespace-nowrap[\s\S]*bg-\[#f5b932\][\s\S]*Start 7-day free trial/);
+  assert.doesNotMatch(header, /Create account|Crear cuenta/);
   assert.match(header, /max-w-\[1250px\][\s\S]*items-center justify-between/);
   assert.match(header, /hidden shrink-0 items-center gap-x-2\.5 xl:flex/);
   assert.match(header, /hidden shrink-0 items-center gap-2\.5 xl:flex/);

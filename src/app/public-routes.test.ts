@@ -66,6 +66,31 @@ test("no SIS Custom Creations pages, components, or assets ship on the Atlas pub
   }
 });
 
+test("start-trial states the Debbie path beside submit and login separates sample desk from sign-in", () => {
+  const trial = readFileSync(join(root, "src/app/start-trial/page.tsx"), "utf8");
+  const login = readFileSync(join(root, "src/app/login/page.tsx"), "utf8");
+
+  assert.match(trial, /No card required/);
+  assert.match(trial, /Email verification is required before the starter workspace opens/);
+  assert.match(trial, /No necesitas tarjeta/);
+  assert.match(
+    trial,
+    /After the 7 days, Debbie onboards you for \$500, then you get 2 weeks free before a paid plan\./,
+  );
+  assert.match(
+    trial,
+    /Después de los 7 días, Debbie te incorpora por \$500 y luego tienes 2 semanas gratis antes de un plan de pago\./,
+  );
+  assert.match(trial, /\{copy\.afterTrial\}/);
+  assert.doesNotMatch(trial, /2 months|two months|dos meses/i);
+
+  assert.match(login, /Sign in/);
+  assert.match(login, /Preview the sample desk/);
+  assert.match(login, /Ver el escritorio de muestra/);
+  assert.match(login, /Start 7-day free trial/);
+  assert.doesNotMatch(login, /Create an account|Crea una cuenta|Show the desk|Mostrar el escritorio/);
+});
+
 test("Atlas contact page exists, is bilingual, and is listed in the sitemap and footer", () => {
   const contact = readFileSync(join(root, "src/app/contact/page.tsx"), "utf8");
   assert.match(contact, /atlasforentrepreneurs@gmail\.com/);

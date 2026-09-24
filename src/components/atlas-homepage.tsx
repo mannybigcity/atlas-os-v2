@@ -7,7 +7,6 @@ import { useSiteLanguage } from "@/components/language-switcher";
 import { SiteHeader } from "@/components/site-header";
 import { atlasPricingPlans } from "@/lib/pricing";
 import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
-import { AFE_CALL_TODAY_EN, AFE_CALL_TODAY_ES, AFE_MANNY_PHONE_TEL } from "@/lib/afe-public-contact";
 
 type WorkflowStep = {
   title: string;
@@ -21,9 +20,9 @@ type LandingCopy = {
   heroCopy: string;
   example: string;
   trial: string;
-  primary: string;
-  secondary: string;
-  callToday: string;
+  afterTrial: string;
+  assessmentPrompt: string;
+  assessmentLink: string;
   nav: { how: string; who: string; dashboard: string; pricing: string; resources: string; login: string; action: string };
   principles: string[];
   peopleTitle: string;
@@ -35,6 +34,7 @@ type LandingCopy = {
   denCopy: string;
   denPoints: string[];
   denCta: string;
+  denCtaNote: string;
   closingTitle: [string, string];
   closingCopy: string;
   stats: { value: string; label: string }[];
@@ -75,9 +75,11 @@ function IndustryGlyph({ index }: { index: number }) {
 function DeskGlyph({ index }: { index: number }) {
   const common = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, strokeWidth: 2.2 };
   const glyphs = [
-    <><path {...common} d="M4 6h16v12H4z" /><path {...common} d="m4 7 8 6 8-6" /></>,
+    <><circle {...common} cx="12" cy="8" r="3" /><path {...common} d="M6 19c.8-2.4 2.8-3.6 6-3.6s5.2 1.2 6 3.6" /></>,
     <><circle {...common} cx="11" cy="11" r="6" /><path {...common} d="m20 20-3.5-3.5" /></>,
     <><rect {...common} x="4" y="5" width="16" height="15" rx="2" /><path {...common} d="M8 3v4M16 3v4M4 10h16" /></>,
+    <><path {...common} d="M8 5h8v15H8z" /><path {...common} d="M10 9h4M10 13h4M10 17h2" /></>,
+    <><path {...common} d="M4 6h16v12H4z" /><path {...common} d="m4 7 8 6 8-6" /></>,
   ];
   return <svg aria-hidden="true" className="atlas-desks-svg" viewBox="0 0 24 24">{glyphs[index % glyphs.length]}</svg>;
 }
@@ -89,9 +91,9 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     heroCopy: "Keep prospects, callbacks, and next actions in one desk. You approve every customer message.",
     example: "Example: New HVAC inquiry → reminder to call → you approve the follow-up → marked booked.",
     trial: "Start 7-day free trial",
-    primary: "See how the desk works →",
-    secondary: "Business assessment",
-    callToday: AFE_CALL_TODAY_EN,
+    afterTrial: "After the 7 days, Debbie onboards you for $500, then you get 2 weeks free before a paid plan.",
+    assessmentPrompt: "Not sure yet?",
+    assessmentLink: "Take the optional business assessment",
     nav: {
       how: "How ATLAS Works",
       who: "Who It's For",
@@ -139,7 +141,8 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       "Tasks and reminders",
       "Notes, activity, and account usage",
     ],
-    denCta: "ENTER THE CLIENT PANEL",
+    denCta: "Sign in — existing clients",
+    denCtaNote: "Real client login for people who already have an account. Not a public demo.",
     closingTitle: ["RUN THE BUSINESS.", "MAKE IT TO THE MOMENTS THAT MATTER."],
     closingCopy:
       "ATLAS organizes the work that gets scattered: prospects, follow-up, pipeline, tasks, and approved drafts, so you can focus on your customers and your family.",
@@ -154,12 +157,12 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     perMonth: "per month",
     stillsLabel: "THE DESKS",
     stillsTitle: "One workflow. Specialized desks.",
-    stillsLede: "Amanda receives. Hunter finds. Micah turns ideas into weekly content.",
+    stillsLede: "Atlas commands the desk. Hunter finds businesses. Micah drafts content. David keeps the CRM. Amanda writes the inbound drafts you approve.",
     stillsWorkflow: ["Receive", "Find", "Review", "Accept", "Follow-up"],
     stillsCards: [
       {
-        title: "Amanda receives",
-        body: "Inbound email (and text when live) lands on the desk. She drafts the reply. You approve before anything sends.",
+        title: "Atlas commands",
+        body: "Chief of Staff. One priority and the next move. You stay in charge of every send.",
       },
       {
         title: "Hunter finds businesses that can send work",
@@ -168,6 +171,14 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       {
         title: "Micah turns ideas into weekly content",
         body: "Done-for-you day-cards and gallery drafts, ready to copy or download. Never a live post.",
+      },
+      {
+        title: "David keeps the CRM",
+        body: "Pipeline, follow-ups, and the next action stay in one place so good leads do not go cold.",
+      },
+      {
+        title: "Amanda receives",
+        body: "Client Closer. Inbound email (and text when live) lands on the desk. She drafts the reply. You approve before anything sends.",
       },
     ],
     stillsOwner: "Every desk keeps the owner in control. You decide. Nothing sends or posts without you.",
@@ -204,9 +215,9 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     heroCopy: "Mantén prospectos, devoluciones de llamada y próximos pasos en un solo escritorio. Tú apruebas cada mensaje al cliente.",
     example: "Ejemplo: Nueva consulta de HVAC → recordatorio para llamar → tú apruebas el seguimiento → marcado como reservado.",
     trial: "Iniciar prueba gratuita de 7 días",
-    primary: "Mira cómo funciona el escritorio →",
-    secondary: "Evaluación del negocio",
-    callToday: AFE_CALL_TODAY_ES,
+    afterTrial: "Después de los 7 días, Debbie te incorpora por $500 y luego tienes 2 semanas gratis antes de un plan de pago.",
+    assessmentPrompt: "¿Aún no estás seguro?",
+    assessmentLink: "Haz la evaluación opcional del negocio",
     nav: {
       how: "Cómo funciona ATLAS",
       who: "Para quién es",
@@ -251,7 +262,8 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       "Tareas y recordatorios",
       "Notas, actividad y uso de la cuenta",
     ],
-    denCta: "ENTRAR AL CLIENT PANEL",
+    denCta: "Iniciar sesión — clientes actuales",
+    denCtaNote: "Acceso real para quien ya tiene cuenta. No es una demostración pública.",
     closingTitle: ["MANEJA EL NEGOCIO.", "LLEGA A LOS MOMENTOS QUE IMPORTAN."],
     closingCopy:
       "ATLAS organiza el trabajo que se dispersa: prospectos, seguimientos, oportunidades, tareas y borradores aprobados, para que puedas enfocarte en tus clientes y tu familia.",
@@ -266,12 +278,12 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     perMonth: "al mes",
     stillsLabel: "LOS ESCRITORIOS",
     stillsTitle: "Un flujo. Escritorios especializados.",
-    stillsLede: "Amanda recibe. Hunter encuentra. Micah convierte las ideas en contenido semanal.",
+    stillsLede: "Atlas manda el escritorio. Hunter encuentra negocios. Micah redacta contenido. David lleva el CRM. Amanda escribe los borradores de entrada que tú apruebas.",
     stillsWorkflow: ["Recibe", "Busca", "Revisa", "Acepta", "Seguimiento"],
     stillsCards: [
       {
-        title: "Amanda recibe",
-        body: "El correo de entrada (y el texto cuando esté en vivo) llega al escritorio. Ella redacta la respuesta. Tú apruebas antes de enviar.",
+        title: "Atlas manda",
+        body: "Jefe de Gabinete. Una prioridad y el siguiente paso. Tú decides cada envío.",
       },
       {
         title: "Hunter encuentra negocios que te pueden mandar trabajo",
@@ -280,6 +292,14 @@ const copy: Record<SiteLanguage, LandingCopy> = {
       {
         title: "Micah convierte ideas en contenido semanal",
         body: "Tarjetas del día y borradores de galería, listos para copiar o descargar. Nunca una publicación en vivo.",
+      },
+      {
+        title: "David lleva el CRM",
+        body: "El pipeline, los seguimientos y el próximo paso se quedan a la vista para que no se enfríen los buenos clientes.",
+      },
+      {
+        title: "Amanda recibe",
+        body: "Cierre de clientes. El correo de entrada (y el texto cuando esté en vivo) llega al escritorio. Ella redacta la respuesta. Tú apruebas antes de enviar.",
       },
     ],
     stillsOwner: "Cada escritorio te deja el control. Tú decides. Nada se envía ni se publica sin ti.",
@@ -367,11 +387,11 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
               </div>
               <div className="atlas-hero-actions">
                 <Link className="atlas-button gold" href={withSiteLanguage("/start-trial", language)}>{t.trial}</Link>
-                <Link className="atlas-hero-link" href={withSiteLanguage("/#den", language)}>{t.primary}</Link>
-                <Link className="atlas-hero-link" href={withSiteLanguage("/assessment", language)}>{t.secondary}</Link>
               </div>
-              <p className="atlas-hero-call">
-                <a href={`tel:${AFE_MANNY_PHONE_TEL}`}>{t.callToday}</a>
+              <p className="atlas-hero-path">{t.afterTrial}</p>
+              <p className="atlas-hero-optional">
+                {t.assessmentPrompt}{" "}
+                <Link href={withSiteLanguage("/assessment", language)}>{t.assessmentLink}</Link>
               </p>
             </div>
             <div className="atlas-hero-art" aria-label={language === "es" ? "Atlas carga con el negocio" : "Atlas carries the business"}>
@@ -421,6 +441,7 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
             <h2 id="den-title">{t.denCopy}</h2>
             <ul>{t.denPoints.map((point) => <li key={point}>{point}</li>)}</ul>
             <Link className="atlas-button gold compact" href={withSiteLanguage("/login", language)}>{t.denCta}</Link>
+            <p className="atlas-den-note">{t.denCtaNote}</p>
           </div>
           <DeskSummaryStill alt={t.denStillAlt} />
         </section>
@@ -431,6 +452,15 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
               <p className="atlas-section-label">{t.stillsLabel}</p>
               <h2 id="stills-title">{t.stillsTitle}</h2>
               <p className="atlas-desks-lede">{t.stillsLede}</p>
+            </div>
+            <div className="atlas-desks-cards">
+              {t.stillsCards.map((card, index) => (
+                <article key={card.title}>
+                  <span className="atlas-desks-icon"><DeskGlyph index={index} /></span>
+                  <strong>{card.title}</strong>
+                  <p>{card.body}</p>
+                </article>
+              ))}
             </div>
             <div className="atlas-stills-grid">
               {t.stills.map((still) => (
@@ -459,15 +489,6 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
                 </li>
               ))}
             </ol>
-            <div className="atlas-desks-cards">
-              {t.stillsCards.map((card, index) => (
-                <article key={card.title}>
-                  <span className="atlas-desks-icon"><DeskGlyph index={index} /></span>
-                  <strong>{card.title}</strong>
-                  <p>{card.body}</p>
-                </article>
-              ))}
-            </div>
             <p className="atlas-desks-owner">{t.stillsOwner}</p>
             <p className="atlas-desks-footer">{t.stillsFooter}</p>
           </div>

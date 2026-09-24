@@ -62,11 +62,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         email: "Correo electrónico",
         password: "Contraseña",
         signIn: "Iniciar sesión",
-        showDesk: "Mostrar el escritorio",
+        showDesk: "Ver el escritorio de muestra",
+        showDeskHelp: "Abre un escritorio de muestra para recorrerlo. No es tu inicio de sesión de cliente.",
         sampleDeskUnavailable: "El escritorio de muestra no está configurado todavía.",
         sampleDeskSignInFailed: "No se pudo abrir el escritorio de muestra. Inténtalo de nuevo o inicia sesión con el correo de muestra.",
         resetPassword: "Restablecer contraseña",
-        createAccount: "Crea una cuenta / Comienza tu prueba gratis de 7 días",
+        createAccount: "Iniciar prueba gratuita de 7 días",
         noCard: "No necesitas tarjeta.",
       }
     : {
@@ -80,11 +81,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         email: "Email",
         password: "Password",
         signIn: "Sign in",
-        showDesk: "Show the desk",
+        showDesk: "Preview the sample desk",
+        showDeskHelp: "Opens a sample desk you can look through. This is not your client sign-in.",
         sampleDeskUnavailable: "The sample desk is not configured yet.",
         sampleDeskSignInFailed: "The sample desk could not be opened. Try again, or sign in with the sample email.",
         resetPassword: "Reset password",
-        createAccount: "Create an account / Start 7-day free trial",
+        createAccount: "Start 7-day free trial",
         noCard: "No card required.",
       };
 
@@ -155,11 +157,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           <form action={signInToSampleDesk} className="mt-3">
             <button
+              aria-describedby="sample-desk-help"
               className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#d9e2ef] bg-white px-5 text-sm font-semibold text-[#06266d] transition hover:bg-[#eef4ff]"
               type="submit"
             >
               {copy.showDesk}
             </button>
+            <p className="mt-2 text-center text-xs leading-5 text-slate-500" id="sample-desk-help">
+              {copy.showDeskHelp}
+            </p>
           </form>
 
           <div className="mt-6 space-y-3">
