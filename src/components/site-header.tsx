@@ -92,11 +92,21 @@ export function SiteHeader({ active, initialLanguage = "en" }: SiteHeaderProps) 
           </a>
           <LanguageSwitcher compact initialLanguage={initialLanguage} />
           <Link
-            aria-label={spanish ? "Crear una cuenta. Comenzar prueba gratis de 7 días" : "Create an account. Start 7-day free trial"}
+            aria-label={spanish ? "Iniciar prueba gratuita de 7 días" : "Start 7-day free trial"}
             className="inline-flex h-8 items-center whitespace-nowrap rounded-full bg-[#f5b932] px-2.5 text-xs font-black !text-[#071b42] transition hover:bg-[#ffd064] hover:!text-[#071b42]"
             href={withSiteLanguage("/start-trial", language)}
           >
-            {spanish ? "Crear cuenta" : "Create account"}
+            {spanish ? (
+              <>
+                <span className="sm:hidden">Prueba de 7 días</span>
+                <span className="hidden sm:inline">Iniciar prueba gratuita de 7 días</span>
+              </>
+            ) : (
+              <>
+                <span className="sm:hidden">Start trial</span>
+                <span className="hidden sm:inline">Start 7-day free trial</span>
+              </>
+            )}
           </Link>
           <button
             aria-controls="atlas-mobile-nav"

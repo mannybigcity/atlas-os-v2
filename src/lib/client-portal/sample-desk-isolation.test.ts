@@ -76,7 +76,9 @@ test("workspace context no longer auto-attaches afe-crm-demo to admin", () => {
 
   const login = readRepo("src/app/login/page.tsx");
   assert.match(login, /signInToSampleDesk/);
-  assert.match(login, /Show the desk/);
+  assert.match(login, /Preview the sample desk/);
+  assert.match(login, /This is not your client sign-in/);
+  assert.doesNotMatch(login, /Show the desk/);
   assert.match(login, /export const runtime = "nodejs"/);
   assert.match(login, /sample_desk_signin_failed/);
   assert.doesNotMatch(login, /DEMO_LOGIN_PASSWORD/);
