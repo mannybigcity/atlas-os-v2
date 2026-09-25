@@ -70,7 +70,30 @@ export type HunterReviewItem = {
   status: HunterReviewStatus;
   acceptedOpportunityId: string | null;
   createdAt: string;
+  /** google_places for HUNTER search rows. signscout for device ingest. */
+  source?: "google_places" | "signscout";
+  notes?: string | null;
+  contactEmail?: string | null;
+  photoUrl?: string | null;
 };
+
+export function isSignScoutHunterItem(item: {
+  source?: string | null;
+  place_id?: string | null;
+  placeId?: string | null;
+}) {
+  if (item.source === "signscout") return true;
+  const placeId = item.place_id ?? item.placeId ?? "";
+  return placeId.startsWith("signscout:");
+}
+
+export function shouldFetchGooglePlaceDetails(item: {
+  source?: string | null;
+  place_id?: string | null;
+  placeId?: string | null;
+}) {
+  return !isSignScoutHunterItem(item);
+}
 
 export function buildHunterSearchQuery(input: {
   service: string;
@@ -195,21 +218,33 @@ export type AcceptedHunterOpportunityInput = {
   internationalPhoneNumber?: string | null;
   primaryType: string | null;
   businessStatus: string | null;
+  origin?: "google_places" | "signscout";
+  notes?: string | null;
 };
 
 export function acceptedHunterOpportunityFields(input: AcceptedHunterOpportunityInput) {
   const phone = pickStoredPlacePhone(input);
-  const mapsUrl =
-    input.googleMapsUrl?.trim() || googleMapsUrlFromPlaceId(input.placeId);
+  const signScout = input.origin === "signscout" || isSignScoutHunterItem(input);
+  const mapsUrl = signScout
+    ? input.googleMapsUrl?.trim() || null
+    : input.googleMapsUrl?.trim() || googleMapsUrlFromPlaceId(input.placeId);
   const websiteUrl = input.websiteUrl?.trim() || null;
   const contactEmail = input.contactEmail?.trim().toLowerCase() || null;
   const formattedAddress = input.formattedAddress?.trim() || null;
-  const researchSummary = acceptedProspectResearchSummary({
-    name: input.name,
-    formattedAddress,
-    phone,
-    websiteUrl,
-  });
+  const researchSummary = signScout
+    ? signScoutProspectResearchSummary({
+        name: input.name,
+        formattedAddress,
+        phone,
+        websiteUrl,
+        notes: input.notes,
+      })
+    : acceptedProspectResearchSummary({
+        name: input.name,
+        formattedAddress,
+        phone,
+        websiteUrl,
+      });
 
   return {
     name: input.name.slice(0, 220),
@@ -217,27 +252,52 @@ export function acceptedHunterOpportunityFields(input: AcceptedHunterOpportunity
     stage: phone ? ("ready_for_follow_up" as const) : ("needs_client_input" as const),
     fit_score: 0,
     owner_role: "client" as const,
-    source_label: "HUNTER Google Maps",
-    source_url: mapsUrl?.slice(0, 2000) ?? null,
+    source_label: signScout ? "SignScout" : "HUNTER Google Maps",
+    source_url: (signScout ? websiteUrl || mapsUrl : mapsUrl)?.slice(0, 2000) ?? null,
     contact_email: contactEmail,
     contact_phone: phone,
     research_summary: researchSummary.slice(0, 3000),
     next_action: acceptedProspectNextAction(phone),
     metadata: {
       hunter_review_item_id: input.reviewItemId,
-      google_place_id: input.placeId.slice(0, 256),
-      google_maps_url: mapsUrl,
-      google_maps_attribution: "Google Maps",
+      google_place_id: signScout ? null : input.placeId.slice(0, 256),
+      signscout_lead_id: signScout ? input.placeId.slice(0, 256) : null,
+      source: signScout ? "SignScout" : "HUNTER Google Maps",
+      google_maps_url: signScout ? null : mapsUrl,
+      google_maps_attribution: signScout ? null : "Google Maps",
       formatted_address: formattedAddress,
       website_url: websiteUrl,
       national_phone_number: input.nationalPhoneNumber?.trim() || null,
       international_phone_number: input.internationalPhoneNumber?.trim() || null,
+      notes: signScout ? input.notes?.trim().slice(0, 1000) || null : null,
       no_outreach_sent: true,
       accepted_for_calling: Boolean(phone),
       primary_type: input.primaryType,
       business_status: input.businessStatus,
     },
   };
+}
+
+function signScoutProspectResearchSummary(place: {
+  name: string;
+  formattedAddress: string | null;
+  phone?: string | null;
+  websiteUrl?: string | null;
+  notes?: string | null;
+}) {
+  const address = place.formattedAddress?.trim() || "City not listed on the sign";
+  const phone = publishedPlacePhone(place.phone);
+  const website = place.websiteUrl?.trim();
+  const note = place.notes?.trim();
+  const extras = [
+    phone ? ` Phone: ${phone}.` : "",
+    website ? ` Website: ${website}.` : "",
+    note ? ` Sign scan notes: ${note.slice(0, 240)}.` : "",
+  ].join("");
+  const role = phone
+    ? `${place.name} is now a Prospect the salesman can call.`
+    : `${place.name} is now a Prospect, but the sign scan had no phone.`;
+  return `Accepted from the HUNTER review pile. This lead came from SignScout. ${role} Address: ${address}.${extras} Atlas has not emailed, called, or texted this business.`;
 }
 
 export function mergeHunterPlaceDetails(
@@ -313,10 +373,20 @@ export type HunterReviewRowRef = {
   accepted_opportunity_id: string | null;
 };
 
-export function isMissingHunterReviewTable(
+export function isMissingHunterReviewColumn(
   error: { code?: string | null; message?: string | null } | null | undefined,
 ) {
   if (!error) return false;
+  const code = String(error.code ?? "");
+  const message = String(error.message ?? "");
+  if (code === "42703" || code === "PGRST204") return true;
+  return /column/i.test(message) && /does not exist|schema cache|could not find/i.test(message);
+}
+
+export function isMissingHunterReviewTable(
+  error: { code?: string | null; message?: string | null } | null | undefined,
+) {
+  if (!error || isMissingHunterReviewColumn(error)) return false;
   const code = String(error.code ?? "");
   const message = String(error.message ?? "");
   if (code === "42P01" || code === "PGRST205") return true;

@@ -14,6 +14,7 @@ import { buildHunterSearchQuery, parseHunterReviewItemIds } from "@/server/hunte
 import {
   acceptHunterReviewItemsForOrg,
   acceptPendingHunterReviewItem,
+  loadHunterReviewItemById,
   loadPendingHunterReviewItemsForOrg,
   type HunterAcceptOneResult,
 } from "@/server/hunter/accept-item";
@@ -149,16 +150,9 @@ export async function acceptHunterReviewItem(formData: FormData) {
     redirect("/client/hunter?hunter=invalid");
   }
 
-  const { data: item, error: itemError } = await supabase
-    .from("organization_hunter_review_items")
-    .select(
-      "id, organization_id, place_id, name, formatted_address, google_maps_url, website_url, phone, primary_type, business_status, status, accepted_opportunity_id",
-    )
-    .eq("id", reviewItemId)
-    .eq("organization_id", organizationId)
-    .maybeSingle();
+  const item = await loadHunterReviewItemById(supabase, organizationId, reviewItemId);
 
-  if (itemError || !item) {
+  if (!item) {
     redirect("/client/hunter?hunter=missing");
   }
 

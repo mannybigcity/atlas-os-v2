@@ -20,7 +20,10 @@ import {
   buildHunterSearchQuery,
   formatHunterChatAnswer,
   hunterDailyCapReached,
+  isMissingHunterReviewColumn,
   isMissingHunterReviewTable,
+  isSignScoutHunterItem,
+  shouldFetchGooglePlaceDetails,
   placesToReviewInserts,
   parseHunterChatQuery,
 } from "./review.ts";
@@ -166,6 +169,21 @@ test("missing review-pile table detection ignores unrelated query errors", () =>
   );
   assert.equal(isMissingHunterReviewTable({ code: "42501", message: "permission denied" }), false);
   assert.equal(isMissingHunterReviewTable(null), false);
+  assert.equal(
+    isMissingHunterReviewColumn({
+      message: "Could not find the 'source' column of 'organization_hunter_review_items' in the schema cache",
+    }),
+    true,
+  );
+  assert.equal(
+    isMissingHunterReviewTable({
+      message: "Could not find the 'source' column of 'organization_hunter_review_items' in the schema cache",
+    }),
+    false,
+  );
+  assert.equal(shouldFetchGooglePlaceDetails({ place_id: "ChIJ-mobile-dent" }), true);
+  assert.equal(shouldFetchGooglePlaceDetails({ place_id: "signscout:lead-1", source: "signscout" }), false);
+  assert.equal(isSignScoutHunterItem({ placeId: "signscout:lead-1" }), true);
 });
 
 test("persist notes never treat a save failure as already accepted", () => {
@@ -344,4 +362,33 @@ test("Accept prefers Place Details phone and website over empty review-pile fiel
   assert.equal(fields.contact_phone, "(281) 246-8800");
   assert.equal(fields.metadata.website_url, "https://mobiledent.example");
   assert.equal(fields.metadata.formatted_address, "123 Paint St, Cypress, TX");
+});
+
+test("Accept of a SignScout row does not pretend the lead came from Google Maps", () => {
+  const fields = acceptedHunterOpportunityFields({
+    reviewItemId: "review-ss",
+    placeId: "signscout:6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+    name: "Houston Pipe Co",
+    formattedAddress: "Houston",
+    googleMapsUrl: "https://www.google.com/maps?q=29.76,-95.37",
+    websiteUrl: "https://houstonpipe.example",
+    contactEmail: "office@houstonpipe.example",
+    nationalPhoneNumber: "(713) 555-0101",
+    internationalPhoneNumber: null,
+    primaryType: "plumbing",
+    businessStatus: null,
+    origin: "signscout",
+    notes: "White van on I-10",
+  });
+
+  assert.equal(fields.source_label, "SignScout");
+  assert.equal(fields.contact_phone, "(713) 555-0101");
+  assert.equal(fields.contact_email, "office@houstonpipe.example");
+  assert.equal(fields.metadata.google_place_id, null);
+  assert.equal(fields.metadata.google_maps_attribution, null);
+  assert.equal(fields.metadata.signscout_lead_id, "signscout:6ba7b810-9dad-11d1-80b4-00c04fd430c8");
+  assert.match(fields.research_summary, /SignScout/);
+  assert.doesNotMatch(fields.research_summary, /Google did not publish a phone/);
+  assert.match(fields.research_summary, /has not emailed, called, or texted/);
+  assert.equal(fields.stage, "ready_for_follow_up");
 });

@@ -24,6 +24,7 @@ export const PUBLIC_SITEMAP_ENTRIES: readonly PublicSitemapEntry[] = [
   { path: "/contact", changeFrequency: "monthly", priority: 0.5 },
   { path: "/responsible-ai", changeFrequency: "monthly", priority: 0.5 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/signscout/privacy", changeFrequency: "yearly", priority: 0.3 },
   { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
   { path: "/accessibility", changeFrequency: "yearly", priority: 0.3 },
 ];

@@ -74,6 +74,11 @@ test("HUNTER desk shows the growth funnel and Accept, not a Maps-only dead end",
   assert.doesNotMatch(pile, /Apply the HUNTER review pile migration/);
   assert.match(pile, /HUNTER_REVIEW_PILE_MIGRATION/);
   assert.match(pile, /setupRequired/);
+  assert.match(pile, /data-signscout-badge/);
+  assert.match(pile, /data-signscout-notes/);
+  assert.match(pile, /data-signscout-photo/);
+  assert.match(pile, /Phone read from the sign/);
+  assert.match(pile, /Phone published by Google/);
 });
 
 test("Prospect rows on Calls to make and Prospects open a Google Places detail view", () => {

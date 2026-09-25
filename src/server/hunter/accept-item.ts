@@ -4,14 +4,20 @@ import {
   HUNTER_BULK_ACCEPT_CONCURRENCY,
   HUNTER_BULK_ACCEPT_MAX,
   acceptedHunterOpportunityFields,
+  isMissingHunterReviewColumn,
+  isSignScoutHunterItem,
   mergeHunterPlaceDetails,
   parseHunterReviewItemIds,
   pendingHunterReviewItemsForOrg,
   blockedHunterAcceptReason,
+  shouldFetchGooglePlaceDetails,
 } from "@/server/hunter/review";
 
 export const HUNTER_REVIEW_ITEM_SELECT =
   "id, organization_id, place_id, name, formatted_address, google_maps_url, website_url, phone, primary_type, business_status, status, accepted_opportunity_id";
+
+export const HUNTER_REVIEW_ITEM_SELECT_WITH_SOURCE =
+  `${HUNTER_REVIEW_ITEM_SELECT}, source, notes, contact_email`;
 
 export type HunterAcceptRow = {
   id: string;
@@ -26,6 +32,9 @@ export type HunterAcceptRow = {
   business_status: string | null;
   status: string;
   accepted_opportunity_id: string | null;
+  source?: string | null;
+  notes?: string | null;
+  contact_email?: string | null;
 };
 
 export type HunterAcceptOneResult =
@@ -75,17 +84,23 @@ export async function acceptPendingHunterReviewItem(
   }
 
   let placeDetails = null;
-  try {
-    placeDetails = await getGooglePlaceDetails(item.place_id);
-  } catch {
-    placeDetails = null;
+  if (shouldFetchGooglePlaceDetails(item)) {
+    try {
+      placeDetails = await getGooglePlaceDetails(item.place_id);
+    } catch {
+      placeDetails = null;
+    }
   }
 
   const merged = mergeHunterPlaceDetails(item, placeDetails);
-  const websiteEmail = merged.websiteUrl ? await findEmailOnBusinessWebsite(merged.websiteUrl) : null;
+  const storedEmail = item.contact_email?.trim() || null;
+  const websiteEmail =
+    storedEmail || (merged.websiteUrl ? await findEmailOnBusinessWebsite(merged.websiteUrl) : null);
   const opportunityFields = acceptedHunterOpportunityFields({
     ...merged,
     contactEmail: websiteEmail,
+    origin: isSignScoutHunterItem(item) ? "signscout" : "google_places",
+    notes: item.notes ?? null,
   });
   const researchSummary = opportunityFields.research_summary;
   const { data: opportunity, error: opportunityError } = await supabase
@@ -138,16 +153,18 @@ export async function loadPendingHunterReviewItemsForOrg(
   if (selectedIds && selectedIds.length === 0) return [];
 
   if (selectedIds) {
-    const { data, error } = await supabase
-      .from("organization_hunter_review_items")
-      .select(HUNTER_REVIEW_ITEM_SELECT)
-      .eq("organization_id", organizationId)
-      .eq("status", "pending")
-      .in("id", selectedIds)
-      .order("created_at", { ascending: false })
-      .limit(HUNTER_BULK_ACCEPT_MAX);
-    if (error || !data) return [];
-    return pendingHunterReviewItemsForOrg(data as HunterAcceptRow[], organizationId);
+    const data = await selectPendingReviewRows(supabase, (columns) =>
+      supabase
+        .from("organization_hunter_review_items")
+        .select(columns)
+        .eq("organization_id", organizationId)
+        .eq("status", "pending")
+        .in("id", selectedIds)
+        .order("created_at", { ascending: false })
+        .limit(HUNTER_BULK_ACCEPT_MAX),
+    );
+    if (!data) return [];
+    return pendingHunterReviewItemsForOrg(data, organizationId);
   }
 
   const pageSize = 100;
@@ -155,14 +172,16 @@ export async function loadPendingHunterReviewItemsForOrg(
   let from = 0;
   while (rows.length < HUNTER_BULK_ACCEPT_MAX) {
     const to = from + pageSize - 1;
-    const { data, error } = await supabase
-      .from("organization_hunter_review_items")
-      .select(HUNTER_REVIEW_ITEM_SELECT)
-      .eq("organization_id", organizationId)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    if (error || !data?.length) break;
+    const data = await selectPendingReviewRows(supabase, (columns) =>
+      supabase
+        .from("organization_hunter_review_items")
+        .select(columns)
+        .eq("organization_id", organizationId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .range(from, to),
+    );
+    if (!data?.length) break;
     rows.push(...(data as HunterAcceptRow[]));
     if (data.length < pageSize) break;
     from += pageSize;
@@ -183,4 +202,34 @@ export async function acceptHunterReviewItemsForOrg(
   return mapPool(scoped, HUNTER_BULK_ACCEPT_CONCURRENCY, (item) =>
     acceptPendingHunterReviewItem(supabase, organizationId, item),
   );
+}
+
+export async function loadHunterReviewItemById(
+  supabase: HunterDb,
+  organizationId: string,
+  reviewItemId: string,
+): Promise<HunterAcceptRow | null> {
+  const rows = await selectPendingReviewRows(supabase, (columns) =>
+    supabase
+      .from("organization_hunter_review_items")
+      .select(columns)
+      .eq("id", reviewItemId)
+      .eq("organization_id", organizationId)
+      .limit(1),
+  );
+  return rows?.[0] ?? null;
+}
+
+async function selectPendingReviewRows(
+  _supabase: HunterDb,
+  query: (columns: string) => Promise<{ data: HunterAcceptRow[] | null; error: { code?: string; message?: string } | null }>,
+) {
+  const extended = await query(HUNTER_REVIEW_ITEM_SELECT_WITH_SOURCE);
+  if (extended.error && isMissingHunterReviewColumn(extended.error)) {
+    const legacy = await query(HUNTER_REVIEW_ITEM_SELECT);
+    if (legacy.error || !legacy.data) return null;
+    return legacy.data;
+  }
+  if (extended.error || !extended.data) return null;
+  return extended.data;
 }

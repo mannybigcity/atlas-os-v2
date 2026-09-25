@@ -167,8 +167,26 @@ export function HunterReviewPileBoard({
                 <div>
                   <h3 className="flex flex-wrap items-center gap-2 font-semibold text-[#071b42]">
                     <span>{item.name}</span>
+                    {item.source === "signscout" ? (
+                      <span
+                        className="rounded-full bg-[#071b42] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#f5b932]"
+                        data-signscout-badge
+                      >
+                        SignScout
+                      </span>
+                    ) : null}
                     {isTrialSampleHunterItem(item) ? <SampleBadge label={trialSampleCopy(spanish).badge} /> : null}
                   </h3>
+                  {item.source === "signscout" && item.photoUrl ? (
+                    // Signed Storage URLs are short-lived and the host is per project, so they cannot go through the image optimizer.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      alt={spanish ? `Letrero de ${item.name}` : `${item.name} sign`}
+                      className="mt-2 h-24 w-24 rounded-md border border-[#ece7d8] object-cover"
+                      data-signscout-photo
+                      src={item.photoUrl}
+                    />
+                  ) : null}
                   {prospectTelHref(item.phone) ? (
                     <p className="mt-1 text-sm font-medium text-[#071b42]">
                       <a className="underline decoration-[#d8c27a] underline-offset-4" href={prospectTelHref(item.phone) ?? undefined}>
@@ -195,17 +213,30 @@ export function HunterReviewPileBoard({
                       ))}
                     </div>
                   ) : null}
+                  {item.source === "signscout" && item.notes ? (
+                    <p className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-sm leading-6 text-[#33415c]" data-signscout-notes>
+                      {item.notes}
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-xs font-medium text-[#8a6a12]">
-                    {prospectTelHref(item.phone)
-                      ? spanish
-                        ? "Teléfono publicado por Google. Acepta para ponerlo en tu lista de llamadas."
-                        : "Phone published by Google. Accept to put it on your call list."
-                      : spanish
-                        ? "Google no publicó teléfono aquí. Atlas no inventa números; puedes agregar uno después de aceptar."
-                        : "Google published no phone for this listing. Atlas will not invent a number; you can add one after accepting."}
+                    {item.source === "signscout"
+                      ? prospectTelHref(item.phone)
+                        ? spanish
+                          ? "Teléfono leído del letrero. Acepta para ponerlo en tu lista de llamadas."
+                          : "Phone read from the sign. Accept to put it on your call list."
+                        : spanish
+                          ? "El letrero no traía teléfono. Atlas no inventa números; puedes agregar uno después de aceptar."
+                          : "The sign had no phone. Atlas will not invent a number; you can add one after accepting."
+                      : prospectTelHref(item.phone)
+                        ? spanish
+                          ? "Teléfono publicado por Google. Acepta para ponerlo en tu lista de llamadas."
+                          : "Phone published by Google. Accept to put it on your call list."
+                        : spanish
+                          ? "Google no publicó teléfono aquí. Atlas no inventa números; puedes agregar uno después de aceptar."
+                          : "Google published no phone for this listing. Atlas will not invent a number; you can add one after accepting."}
                   </p>
                   <p className="mt-2 text-xs text-[#8a93a3]" translate="no">
-                    Google Maps · {item.searchQuery}
+                    {item.source === "signscout" ? "SignScout" : `Google Maps · ${item.searchQuery}`}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
