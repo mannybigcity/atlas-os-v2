@@ -32,6 +32,7 @@ const PUBLIC_APP_DIRS = [
   "responsible-ai",
   "security",
   "set-password",
+  "signscout",
   "start-trial",
   "starter",
   "success",

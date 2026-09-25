@@ -14,12 +14,14 @@ export function SiteFooter({ initialLanguage = "en" }: { initialLanguage?: SiteL
     ? [
         { href: "/responsible-ai", label: "IA responsable" },
         { href: "/privacy", label: "Política de privacidad" },
+        { href: "/signscout/privacy", label: "Privacidad de SignScout" },
         { href: "/terms", label: "Términos de uso" },
         { href: "/accessibility", label: "Accesibilidad" },
       ]
     : [
         { href: "/responsible-ai", label: "Responsible AI" },
         { href: "/privacy", label: "Privacy policy" },
+        { href: "/signscout/privacy", label: "SignScout privacy" },
         { href: "/terms", label: "Terms of use" },
         { href: "/accessibility", label: "Accessibility" },
       ];

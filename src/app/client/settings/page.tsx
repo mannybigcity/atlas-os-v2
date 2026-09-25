@@ -12,6 +12,9 @@ import { openBillingPortal } from "@/server/stripe/portal-actions";
 import { getTrialProfile } from "@/server/trials/profile";
 import { LD_CHIP } from "@/lib/lions-den/desk-chips";
 import { founderContactLinesFor, founderPhoneTelHref } from "@/lib/lions-den/founder-contact-kit";
+import { SignScoutTokenPanel } from "@/components/lions-den/signscout-token-panel";
+import { canManageSignScoutTokens } from "@/server/signscout/access";
+import { listSignScoutDeviceTokens } from "@/server/signscout/tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +72,13 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         : null;
 
   const helpContacts = founderContactLinesFor(primaryOrganization) ?? [];
+  const showSignScoutTokens = canManageSignScoutTokens({
+    organization: primaryOrganization,
+    isSuperAdmin: workspace.isSuperAdmin,
+    isClientPreview: workspace.isClientPreview,
+    role: workspace.primaryMembership?.role ?? null,
+  });
+  const signScoutTokens = showSignScoutTokens ? await listSignScoutDeviceTokens() : null;
   const rows: Array<[string, string]> = [
     [spanish ? "Negocio" : "Business", businessName || "—"],
     [spanish ? "Tipo de negocio" : "Business type", profile?.business_type || "—"],
@@ -215,6 +225,16 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             )}
           </div>
         </section>
+
+        {showSignScoutTokens && primaryOrganization && signScoutTokens ? (
+          <SignScoutTokenPanel
+            migration={signScoutTokens.migration}
+            organizationId={primaryOrganization.id}
+            setupRequired={signScoutTokens.setupRequired}
+            spanish={spanish}
+            tokens={signScoutTokens.tokens}
+          />
+        ) : null}
 
         <section className="ld-panel" id="help">
           <div className="ld-panel-head">
