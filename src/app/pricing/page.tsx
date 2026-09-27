@@ -228,8 +228,9 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Not yet. ATLAS FRONT DESK is coming soon as a separate future add-on, and it is not operational in this release.":
     "Todavía no. ATLAS FRONT DESK llegará próximamente como un complemento futuro independiente y no está operativo en esta versión.",
   "Is there a long-term contract?": "¿Hay un contrato a largo plazo?",
-  "Paid Starter, Growth, and Pro plans are monthly Stripe subscriptions. They renew until you cancel. Start with a free 7-day QuickStart trial. If you stay, we charge your plan's one-time setup fee and your first month, and Debbie completes your full setup. Elite uses the same monthly renewal and one-time setup terms; there is no Elite checkout link on this page yet. The business assessment and the 7-day trial at /start-trial are not paid subscriptions and do not take a card.":
-    "Los planes de pago Inicial, Crecimiento y Pro son suscripciones mensuales de Stripe. Se renuevan hasta que los canceles. Comienza con una prueba QuickStart gratis de 7 días. Si te quedas, cobramos la tarifa única de configuración de tu plan y tu primer mes, y Debbie completa tu configuración. Élite usa las mismas condiciones de renovación mensual y tarifa única de configuración; todavía no hay un enlace de pago de Élite en esta página. La evaluación empresarial y la prueba de 7 días en /start-trial no son suscripciones de pago y no piden tarjeta.",
+  "Choose Elite": "Elegir Élite",
+  "Paid Starter, Growth, Pro, and Elite plans are monthly Stripe subscriptions. They renew until you cancel. Each checkout also charges that plan's one-time setup fee. Start with a free 7-day QuickStart trial. If you stay, we charge your plan's one-time setup fee and your first month, and Debbie completes your full setup. The business assessment and the 7-day trial at /start-trial are not paid subscriptions and do not take a card.":
+    "Los planes de pago Inicial, Crecimiento, Pro y Élite son suscripciones mensuales de Stripe. Se renuevan hasta que los canceles. Cada pago también cobra la tarifa única de configuración de ese plan. Comienza con una prueba QuickStart gratis de 7 días. Si te quedas, cobramos la tarifa única de configuración de tu plan y tu primer mes, y Debbie completa tu configuración. La evaluación empresarial y la prueba de 7 días en /start-trial no son suscripciones de pago y no piden tarjeta.",
   "ATLAS FRONT DESK": "ATLAS FRONT DESK",
   "$149-$249/month plus usage": "$149-$249/mes más uso",
   "AI receptionist and inbound call handling for lead capture, callback capture, call summaries, and CRM writeback.":
@@ -348,11 +349,8 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
           <div className="mx-auto w-full max-w-[84rem] px-6 py-20 sm:px-7 sm:py-24">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4" id="plans">
               {atlasPublicPricingPlans.map((plan) => {
-                const checkoutLink = plan.slug === "elite" ? null : planPaymentLinks[plan.slug];
-                const href =
-                  plan.slug === "elite"
-                    ? withSiteLanguage("/start-trial", language)
-                    : checkoutLink ?? withSiteLanguage(`/assessment?plan=${plan.slug}`, language);
+                const checkoutLink = planPaymentLinks[plan.slug];
+                const href = checkoutLink ?? withSiteLanguage(`/assessment?plan=${plan.slug}`, language);
 
                 return (
                 <article
@@ -423,9 +421,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
                       rel={checkoutLink ? "noreferrer" : undefined}
                       target={checkoutLink ? "_blank" : undefined}
                     >
-                      {plan.slug === "elite" || checkoutLink
-                        ? t(plan.cta)
-                        : `${t("Review")} ${t(plan.name)}`}
+                      {checkoutLink ? t(plan.cta) : `${t("Review")} ${t(plan.name)}`}
                     </Link>
                   </div>
                 </article>

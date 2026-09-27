@@ -72,7 +72,9 @@ test("AFE homepage hero shows Starter Growth Pro Elite prices from the public pr
   assert.equal(pro?.setupFee, 499);
   assert.equal(elite?.setupFee, 749);
   assert.equal(grow?.featured, true);
-  assert.equal(elite?.cta, "Start 7-day free trial");
+  assert.equal(elite?.cta, "Choose Elite");
+  assert.match(hero, /planPaymentLinks\[plan\.slug\]/);
+  assert.match(hero, /t\.choose/);
   assert.match(hero, /atlasPublicPricingPlans\.map/);
   assert.match(hero, /atlas-hero-plans/);
   assert.match(hero, /\$\{plan\.monthlyPrice\}/);

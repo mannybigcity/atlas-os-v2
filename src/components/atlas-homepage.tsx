@@ -5,6 +5,7 @@ import Link from "next/link";
 import { RecoveryLinkRedirect } from "@/components/recovery-link-redirect";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { SiteHeader } from "@/components/site-header";
+import { getAtlasPlanPaymentLinks } from "@/lib/payment-links";
 import { atlasPublicPricingPlans, atlasSetupFeeNote, ATLAS_QUICKSTART_AFTER_TRIAL } from "@/lib/pricing";
 import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
 
@@ -41,6 +42,7 @@ type LandingCopy = {
   bottomCta: string;
   mostPopular: string;
   perMonth: string;
+  choose: Record<"Starter" | "Growth" | "Pro" | "Elite", string>;
   stillsLabel: string;
   stillsTitle: string;
   stillsLede: string;
@@ -155,6 +157,12 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     bottomCta: "Start 7-day free trial",
     mostPopular: "Most popular",
     perMonth: "per month",
+    choose: {
+      Starter: "Choose Starter",
+      Growth: "Choose Growth",
+      Pro: "Choose Pro",
+      Elite: "Choose Elite",
+    },
     stillsLabel: "THE DESKS",
     stillsTitle: "One workflow. Specialized desks.",
     stillsLede: "Atlas commands the desk. Hunter finds businesses. Micah drafts content. David keeps the CRM. Amanda writes the inbound drafts you approve.",
@@ -276,6 +284,12 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     bottomCta: "Iniciar prueba gratuita de 7 días",
     mostPopular: "Más popular",
     perMonth: "al mes",
+    choose: {
+      Starter: "Elegir Inicial",
+      Growth: "Elegir Crecimiento",
+      Pro: "Elegir Pro",
+      Elite: "Elegir Élite",
+    },
     stillsLabel: "LOS ESCRITORIOS",
     stillsTitle: "Un flujo. Escritorios especializados.",
     stillsLede: "Atlas manda el escritorio. Hunter encuentra negocios. Micah redacta contenido. David lleva el CRM. Amanda escribe los borradores de entrada que tú apruebas.",
@@ -351,6 +365,7 @@ function DeskSummaryStill({ alt }: { alt: string }) {
 export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: SiteLanguage }) {
   const language = useSiteLanguage(initialLanguage);
   const t = copy[language];
+  const planPaymentLinks = getAtlasPlanPaymentLinks();
 
   return (
     <div className="atlas-site">
@@ -383,6 +398,9 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
                     <strong className="atlas-hero-plan-price">${plan.monthlyPrice}</strong>
                     <span className="atlas-hero-plan-period">{t.perMonth}</span>
                     <span className="atlas-hero-plan-setup">{atlasSetupFeeNote(plan.setupFee, language)}</span>
+                    <a className="atlas-hero-plan-cta" href={planPaymentLinks[plan.slug]} rel="noreferrer" target="_blank">
+                      {t.choose[plan.name as keyof typeof t.choose]}
+                    </a>
                   </article>
                 ))}
               </div>
