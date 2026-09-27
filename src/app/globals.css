@@ -103,6 +103,7 @@ button { font: inherit; }
 .atlas-hero-plan.featured .atlas-hero-plan-price { color: var(--gold); }
 .atlas-hero-plan-period { color: #52607a; font-size: .58rem; font-weight: 700; }
 .atlas-hero-plan-setup { max-width: 14rem; color: #52607a; font-size: .62rem; font-weight: 650; line-height: 1.35; }
+.atlas-hero-plan-cta { color: var(--navy); font-size: .62rem; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; text-decoration: underline; text-underline-offset: .16em; }
 @media (max-width: 540px) {
   .atlas-hero-plans { grid-template-columns: 1fr; max-width: 100%; gap: .7rem; }
   .atlas-hero-plan { min-height: 0; padding: .8rem .7rem .7rem; }

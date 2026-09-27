@@ -5,11 +5,14 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { FOUNDER_MAILBOX_EMAIL } from "../../lib/client-portal/identity.ts";
 import {
+  ATLAS_BUILTIN_RECURRING_PRICE_IDS,
   ATLAS_PLAN_PRICE_ENV,
+  ATLAS_SETUP_FEE_PRICE_IDS,
   canAttachPaidEntitlementToOrganization,
   isActivePaidEntitlementStatus,
   pickReusablePaidWorkspace,
   planForConfiguredPriceId,
+  planFromCheckoutLineItems,
   preservedCheckoutSessionId,
   shouldBlockExpiredTrial,
   shouldProcessStripeBillingEvent,
@@ -25,7 +28,7 @@ const EXISTING_PRICE_ENV = {
   STRIPE_ATLAS_UNLIMITED_PRICE_ID: "price_existing_unlimited",
 };
 
-test("paid plans map only from the existing Stripe price env names", () => {
+test("paid plans map from Stripe price env names and the live recurring price ids", () => {
   assert.deepEqual(ATLAS_PLAN_PRICE_ENV, {
     basic: "STRIPE_ATLAS_BASIC_PRICE_ID",
     grow: "STRIPE_ATLAS_GROW_PRICE_ID",
@@ -36,6 +39,38 @@ test("paid plans map only from the existing Stripe price env names", () => {
   assert.equal(planForConfiguredPriceId("price_existing_unlimited", EXISTING_PRICE_ENV), "unlimited");
   assert.equal(planForConfiguredPriceId("price_invented_later", EXISTING_PRICE_ENV), null);
   assert.equal(planForConfiguredPriceId(null, EXISTING_PRICE_ENV), null);
+  assert.equal(planForConfiguredPriceId(ATLAS_BUILTIN_RECURRING_PRICE_IDS.basic, {}), "basic");
+  assert.equal(planForConfiguredPriceId(ATLAS_BUILTIN_RECURRING_PRICE_IDS.grow, {}), "grow");
+  assert.equal(planForConfiguredPriceId(ATLAS_BUILTIN_RECURRING_PRICE_IDS.unlimited, {}), "unlimited");
+  assert.equal(planForConfiguredPriceId(ATLAS_BUILTIN_RECURRING_PRICE_IDS.elite, {}), "unlimited");
+  for (const setupPriceId of ATLAS_SETUP_FEE_PRICE_IDS) {
+    assert.equal(planForConfiguredPriceId(setupPriceId, EXISTING_PRICE_ENV), null);
+  }
+});
+
+test("checkout with a setup fee and a recurring price uses the recurring price, including Elite", () => {
+  const setupFirst = planFromCheckoutLineItems([
+    { price: { id: ATLAS_SETUP_FEE_PRICE_IDS[0], type: "one_time" }, amount_total: 14900 },
+    { price: { id: ATLAS_BUILTIN_RECURRING_PRICE_IDS.basic, type: "recurring", recurring: { interval: "month" } }, amount_total: 9900 },
+  ]);
+  assert.deepEqual(setupFirst, { priceId: ATLAS_BUILTIN_RECURRING_PRICE_IDS.basic, plan: "basic" });
+
+  const recurringFirst = planFromCheckoutLineItems([
+    { price: { id: ATLAS_BUILTIN_RECURRING_PRICE_IDS.unlimited, type: "recurring", recurring: { interval: "month" } }, amount_total: 49900 },
+    { price: { id: ATLAS_SETUP_FEE_PRICE_IDS[2], type: "one_time" }, amount_total: 49900 },
+  ]);
+  assert.deepEqual(recurringFirst, { priceId: ATLAS_BUILTIN_RECURRING_PRICE_IDS.unlimited, plan: "unlimited" });
+
+  const elite = planFromCheckoutLineItems([
+    { price: { id: ATLAS_SETUP_FEE_PRICE_IDS[3], type: "one_time" }, amount_total: 74900 },
+    { price: ATLAS_BUILTIN_RECURRING_PRICE_IDS.elite, amount_total: 74900 },
+  ]);
+  assert.deepEqual(elite, { priceId: ATLAS_BUILTIN_RECURRING_PRICE_IDS.elite, plan: "unlimited" });
+
+  const setupOnly = planFromCheckoutLineItems([
+    { price: { id: ATLAS_SETUP_FEE_PRICE_IDS[1], type: "one_time" }, amount_total: 104800 },
+  ]);
+  assert.equal(setupOnly, null);
 });
 
 test("webhook unlock events include checkout.session.completed and subscription updates", () => {

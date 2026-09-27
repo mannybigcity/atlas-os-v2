@@ -143,7 +143,7 @@ const atlasElitePlan: AtlasPublicPricingPlan = {
   setupFee: 749,
   bestFor: "Owners who want the highest allowance",
   featured: false,
-  cta: "Start 7-day free trial",
+  cta: "Choose Elite",
   usageAllowance: "Highest monthly usage allowance",
   availability: "available",
   features: [
@@ -280,7 +280,7 @@ export const atlasPricingFaqs: AtlasPricingFaq[] = [
   {
     question: "Is there a long-term contract?",
     answer:
-      "Paid Starter, Growth, and Pro plans are monthly Stripe subscriptions. They renew until you cancel. Start with a free 7-day QuickStart trial. If you stay, we charge your plan's one-time setup fee and your first month, and Debbie completes your full setup. Elite uses the same monthly renewal and one-time setup terms; there is no Elite checkout link on this page yet. The business assessment and the 7-day trial at /start-trial are not paid subscriptions and do not take a card.",
+      "Paid Starter, Growth, Pro, and Elite plans are monthly Stripe subscriptions. They renew until you cancel. Each checkout also charges that plan's one-time setup fee. Start with a free 7-day QuickStart trial. If you stay, we charge your plan's one-time setup fee and your first month, and Debbie completes your full setup. The business assessment and the 7-day trial at /start-trial are not paid subscriptions and do not take a card.",
   },
 ];
 

@@ -4,7 +4,7 @@ import type Stripe from "stripe";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   type AtlasPaidPlanSlug,
-  planForConfiguredPriceId,
+  planFromCheckoutLineItems,
   preservedCheckoutSessionId,
   shouldProcessStripeBillingEvent,
   STRIPE_BILLING_UNLOCK_EVENTS,
@@ -24,8 +24,10 @@ const SUPPORTED_EVENTS = new Set<string>(STRIPE_BILLING_UNLOCK_EVENTS);
 
 type PlanSlug = AtlasPaidPlanSlug;
 
-function planForPrice(priceId: string | null | undefined): PlanSlug | null {
-  return planForConfiguredPriceId(priceId);
+function priceRefFromStripe(price: string | Stripe.Price | null | undefined) {
+  if (!price) return null;
+  if (typeof price === "string") return price;
+  return { id: price.id, type: price.type, recurring: price.recurring };
 }
 
 function customerId(value: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined) {
@@ -146,13 +148,20 @@ async function handleCheckoutCompleted(event: Stripe.Event, session: Stripe.Chec
   const stripe = getAtlasStripeClient();
   if (!stripe) throw new Error("STRIPE_SECRET_KEY is required to resolve checkout line items.");
 
-  const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 1 });
-  const priceId = lineItems.data[0]?.price?.id ?? null;
-  const plan = planForPrice(priceId);
-  if (!plan) {
-    await finishEvent(event.id, "unmapped", `No AFE plan is configured for Stripe price ${priceId ?? "unknown"}.`);
+  const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 100 });
+  const selected = planFromCheckoutLineItems(
+    lineItems.data.map((item) => ({
+      price: priceRefFromStripe(item.price),
+      amount_total: item.amount_total,
+      amount_subtotal: item.amount_subtotal,
+    })),
+  );
+  if (!selected) {
+    const seen = lineItems.data.map((item) => (typeof item.price === "string" ? item.price : item.price?.id) ?? "unknown").join(", ");
+    await finishEvent(event.id, "unmapped", `No AFE plan is configured for Stripe prices ${seen || "unknown"}.`);
     return;
   }
+  const { priceId, plan } = selected;
 
   const subscription = subscriptionId(session.subscription);
   let currentPeriodEnd: number | null = null;
@@ -160,7 +169,11 @@ async function handleCheckoutCompleted(event: Stripe.Event, session: Stripe.Chec
   let cancelAtPeriodEnd = false;
   if (subscription) {
     const record = await stripe.subscriptions.retrieve(subscription);
-    currentPeriodEnd = record.items.data[0]?.current_period_end ?? null;
+    const matched = record.items.data.find((item) => {
+      const id = typeof item.price === "string" ? item.price : item.price.id;
+      return id === priceId;
+    });
+    currentPeriodEnd = matched?.current_period_end ?? record.items.data[0]?.current_period_end ?? null;
     status = record.status;
     cancelAtPeriodEnd = record.cancel_at_period_end;
   }
@@ -210,12 +223,19 @@ async function emailFromSubscription(subscription: Stripe.Subscription) {
 }
 
 async function handleSubscription(event: Stripe.Event, subscription: Stripe.Subscription) {
-  const priceId = subscription.items.data[0]?.price?.id ?? null;
-  const plan = planForPrice(priceId);
-  if (!plan) {
-    await finishEvent(event.id, "unmapped", `No AFE plan is configured for Stripe price ${priceId ?? "unknown"}.`);
+  const selected = planFromCheckoutLineItems(
+    subscription.items.data.map((item) => ({ price: priceRefFromStripe(item.price) })),
+  );
+  if (!selected) {
+    const seen = subscription.items.data.map((item) => (typeof item.price === "string" ? item.price : item.price.id)).join(", ");
+    await finishEvent(event.id, "unmapped", `No AFE plan is configured for Stripe prices ${seen || "unknown"}.`);
     return;
   }
+  const { priceId, plan } = selected;
+  const matchedItem = subscription.items.data.find((item) => {
+    const id = typeof item.price === "string" ? item.price : item.price.id;
+    return id === priceId;
+  });
 
   const email = await emailFromSubscription(subscription);
   const workspace =
@@ -231,7 +251,7 @@ async function handleSubscription(event: Stripe.Event, subscription: Stripe.Subs
     priceId,
     plan,
     status: subscription.status,
-    currentPeriodEnd: subscription.items.data[0]?.current_period_end ?? null,
+    currentPeriodEnd: matchedItem?.current_period_end ?? subscription.items.data[0]?.current_period_end ?? null,
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
     provisioningStatus:
       event.type === "customer.subscription.deleted"
