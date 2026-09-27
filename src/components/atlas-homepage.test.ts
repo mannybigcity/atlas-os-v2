@@ -3,7 +3,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { atlasPricingPlans } from "../lib/pricing.ts";
+import { atlasPublicPricingPlans, ATLAS_QUICKSTART_AFTER_TRIAL } from "../lib/pricing.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const homepage = readFileSync(join(root, "src/components/atlas-homepage.tsx"), "utf8");
@@ -32,14 +32,14 @@ test("AFE homepage hero has one gold trial button, the after-day-7 path, and an 
   assert.equal([...hero.matchAll(/atlas-button/g)].length, 1);
   assert.match(hero, /atlas-hero-path/);
   assert.match(hero, /\{t\.afterTrial\}/);
-  assert.match(
-    homepage,
-    /After the 7 days, Debbie onboards you for \$500, then you get 2 weeks free before a paid plan\./,
+  assert.match(homepage, /ATLAS_QUICKSTART_AFTER_TRIAL\.en/);
+  assert.match(homepage, /ATLAS_QUICKSTART_AFTER_TRIAL\.es/);
+  assert.equal(
+    ATLAS_QUICKSTART_AFTER_TRIAL.en,
+    "Start with a free 7-day QuickStart trial. If you stay, we charge your plan's one-time setup fee and your first month, and Debbie completes your full setup.",
   );
-  assert.match(
-    homepage,
-    /Después de los 7 días, Debbie te incorpora por \$500 y luego tienes 2 semanas gratis antes de un plan de pago\./,
-  );
+  assert.match(ATLAS_QUICKSTART_AFTER_TRIAL.es, /QuickStart/);
+  assert.doesNotMatch(homepage, /\$500|2 weeks free|2 semanas gratis/);
   assert.match(hero, /atlas-hero-optional/);
   assert.match(hero, /\/assessment/);
   assert.match(homepage, /Not sure yet\?/);
@@ -52,19 +52,36 @@ test("AFE homepage hero has one gold trial button, the after-day-7 path, and an 
   assert.doesNotMatch(homepage, /2 months|two months|dos meses/i);
 });
 
-test("AFE homepage hero shows live BASIC GROW UNLIMITED prices from the pricing source", () => {
-  const basic = atlasPricingPlans.find((plan) => plan.slug === "basic");
-  const grow = atlasPricingPlans.find((plan) => plan.slug === "grow");
-  const unlimited = atlasPricingPlans.find((plan) => plan.slug === "unlimited");
+test("AFE homepage hero shows Starter Growth Pro Elite prices from the public pricing source", () => {
+  const basic = atlasPublicPricingPlans.find((plan) => plan.slug === "basic");
+  const grow = atlasPublicPricingPlans.find((plan) => plan.slug === "grow");
+  const pro = atlasPublicPricingPlans.find((plan) => plan.slug === "unlimited");
+  const elite = atlasPublicPricingPlans.find((plan) => plan.slug === "elite");
 
+  assert.equal(atlasPublicPricingPlans.length, 4);
+  assert.equal(basic?.name, "Starter");
+  assert.equal(grow?.name, "Growth");
+  assert.equal(pro?.name, "Pro");
+  assert.equal(elite?.name, "Elite");
   assert.equal(basic?.monthlyPrice, 99);
   assert.equal(grow?.monthlyPrice, 249);
-  assert.equal(unlimited?.monthlyPrice, 499);
+  assert.equal(pro?.monthlyPrice, 499);
+  assert.equal(elite?.monthlyPrice, 749);
+  assert.equal(basic?.setupFee, 149);
+  assert.equal(grow?.setupFee, 299);
+  assert.equal(pro?.setupFee, 499);
+  assert.equal(elite?.setupFee, 749);
   assert.equal(grow?.featured, true);
-  assert.match(hero, /atlasPricingPlans\.map/);
+  assert.equal(elite?.cta, "Start 7-day free trial");
+  assert.match(hero, /atlasPublicPricingPlans\.map/);
   assert.match(hero, /atlas-hero-plans/);
   assert.match(hero, /\$\{plan\.monthlyPrice\}/);
+  assert.match(hero, /atlasSetupFeeNote/);
   assert.match(hero, /plan\.featured/);
+  assert.doesNotMatch(
+    atlasPublicPricingPlans.map((plan) => `${plan.name} ${plan.features.join(" ")} ${plan.usageAllowance}`).join("\n"),
+    /\bUnlimited\b/,
+  );
 });
 
 test("AFE homepage does not publish Phone AI / Front Desk later-and-not-live disclaimers", () => {

@@ -13,12 +13,10 @@ export function AssessmentRecommendationResult({ language, recommendation }: Pro
   const planAnchor = recommendation.plan === "unlimited" ? "unlimited" : "grow";
   const planLabel =
     recommendation.plan === "unlimited"
-      ? spanish
-        ? "ATLAS ILIMITADO"
-        : "ATLAS UNLIMITED"
+      ? "Pro"
       : spanish
-        ? "ATLAS CRECIMIENTO"
-        : "ATLAS GROW";
+        ? "Crecimiento"
+        : "Growth";
 
   return (
     <section
@@ -110,6 +108,11 @@ export function AssessmentRecommendationResult({ language, recommendation }: Pro
         <p className="mt-2 text-4xl font-black tracking-[-0.08em] text-[#f7cc62]">
           ${recommendation.monthlyPrice}
           <span className="text-base font-bold text-white/70">{spanish ? "/mes" : "/mo"}</span>
+        </p>
+        <p className="mt-2 text-sm leading-5 text-white/70">
+          {spanish
+            ? `+ $${recommendation.setupFee} de configuración única, solo si te quedas después de la prueba`
+            : `+ $${recommendation.setupFee} one-time setup, only if you stay after the trial`}
         </p>
         <p className="mt-2 text-sm font-semibold text-white/78">{copy(recommendation.bestFor)}</p>
         <p className="mt-4 text-sm leading-6 text-white/80">{copy(recommendation.planWhy)}</p>

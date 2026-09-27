@@ -59,7 +59,7 @@ export default async function ContactPage() {
           </li>
           <li>
             <span className="font-semibold text-[#071b42]">{spanish ? "Planes y facturación" : "Plans and billing"}</span>
-            {spanish ? " — BASIC, GROW, UNLIMITED, cambios de plan o cancelación." : " — BASIC, GROW, UNLIMITED, plan changes, or cancellation."}
+            {spanish ? " — Inicial, Crecimiento, Pro y Élite, cambios de plan o cancelación." : " — Starter, Growth, Pro, and Elite, plan changes, or cancellation."}
           </li>
           <li>
             <span className="font-semibold text-[#071b42]">{spanish ? "Solicitud de privacidad" : "Privacy request"}</span>

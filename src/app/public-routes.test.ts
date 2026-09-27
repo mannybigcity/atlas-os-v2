@@ -74,14 +74,9 @@ test("start-trial states the Debbie path beside submit and login separates sampl
   assert.match(trial, /No card required/);
   assert.match(trial, /Email verification is required before the starter workspace opens/);
   assert.match(trial, /No necesitas tarjeta/);
-  assert.match(
-    trial,
-    /After the 7 days, Debbie onboards you for \$500, then you get 2 weeks free before a paid plan\./,
-  );
-  assert.match(
-    trial,
-    /Después de los 7 días, Debbie te incorpora por \$500 y luego tienes 2 semanas gratis antes de un plan de pago\./,
-  );
+  assert.match(trial, /ATLAS_QUICKSTART_AFTER_TRIAL\.en/);
+  assert.match(trial, /ATLAS_QUICKSTART_AFTER_TRIAL\.es/);
+  assert.doesNotMatch(trial, /\$500|2 weeks free|2 semanas gratis/);
   assert.match(trial, /\{copy\.afterTrial\}/);
   assert.doesNotMatch(trial, /2 months|two months|dos meses/i);
 

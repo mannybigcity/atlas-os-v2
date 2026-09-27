@@ -131,7 +131,8 @@ test("recommendation includes a score, priced plan, next step, and trial-ready p
 
   assert.equal(recommendation.plan, "grow");
   assert.equal(recommendation.monthlyPrice, 249);
-  assert.equal(recommendation.planName, "ATLAS GROW");
+  assert.equal(recommendation.planName, "Growth");
+  assert.equal(recommendation.setupFee, 299);
   assert.equal(recommendation.priority, "follow_up");
   assert.match(recommendation.priorityTitle.en, /Follow up faster/);
   assert.match(recommendation.nextStep.en, /pipeline/);
@@ -153,7 +154,8 @@ test("unlimited recommendation prices $499 and never claims live Front Desk phon
 
   assert.equal(recommendation.plan, "unlimited");
   assert.equal(recommendation.monthlyPrice, 499);
-  assert.equal(recommendation.planName, "ATLAS UNLIMITED");
+  assert.equal(recommendation.planName, "Pro");
+  assert.equal(recommendation.setupFee, 499);
   assert.doesNotMatch(copyBlob(recommendation), /Front Desk is live|phone AI is live|SIS Custom/i);
   assert.match(copyBlob(recommendation), /not live|future add-on/i);
 });

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { RecoveryLinkRedirect } from "@/components/recovery-link-redirect";
 import { useSiteLanguage } from "@/components/language-switcher";
 import { SiteHeader } from "@/components/site-header";
-import { atlasPricingPlans } from "@/lib/pricing";
+import { atlasPublicPricingPlans, atlasSetupFeeNote, ATLAS_QUICKSTART_AFTER_TRIAL } from "@/lib/pricing";
 import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
 
 type WorkflowStep = {
@@ -91,7 +91,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     heroCopy: "Keep prospects, callbacks, and next actions in one desk. You approve every customer message.",
     example: "Example: New HVAC inquiry → reminder to call → you approve the follow-up → marked booked.",
     trial: "Start 7-day free trial",
-    afterTrial: "After the 7 days, Debbie onboards you for $500, then you get 2 weeks free before a paid plan.",
+    afterTrial: ATLAS_QUICKSTART_AFTER_TRIAL.en,
     assessmentPrompt: "Not sure yet?",
     assessmentLink: "Take the optional business assessment",
     nav: {
@@ -215,7 +215,7 @@ const copy: Record<SiteLanguage, LandingCopy> = {
     heroCopy: "Mantén prospectos, devoluciones de llamada y próximos pasos en un solo escritorio. Tú apruebas cada mensaje al cliente.",
     example: "Ejemplo: Nueva consulta de HVAC → recordatorio para llamar → tú apruebas el seguimiento → marcado como reservado.",
     trial: "Iniciar prueba gratuita de 7 días",
-    afterTrial: "Después de los 7 días, Debbie te incorpora por $500 y luego tienes 2 semanas gratis antes de un plan de pago.",
+    afterTrial: ATLAS_QUICKSTART_AFTER_TRIAL.es,
     assessmentPrompt: "¿Aún no estás seguro?",
     assessmentLink: "Haz la evaluación opcional del negocio",
     nav: {
@@ -373,15 +373,16 @@ export function AtlasHomepage({ initialLanguage = "en" }: { initialLanguage?: Si
                 <p>{t.example}</p>
               </article>
               <div className="atlas-hero-plans" aria-label={language === "es" ? "Planes mensuales" : "Monthly plans"}>
-                {atlasPricingPlans.map((plan) => (
+                {atlasPublicPricingPlans.map((plan) => (
                   <article
                     className={plan.featured ? "atlas-hero-plan featured" : "atlas-hero-plan"}
                     key={plan.slug}
                   >
                     {plan.featured ? <span className="atlas-hero-plan-tag">{t.mostPopular}</span> : null}
-                    <span className="atlas-hero-plan-name">{plan.name.replace(/^ATLAS\s+/, "")}</span>
+                    <span className="atlas-hero-plan-name">{plan.name}</span>
                     <strong className="atlas-hero-plan-price">${plan.monthlyPrice}</strong>
                     <span className="atlas-hero-plan-period">{t.perMonth}</span>
+                    <span className="atlas-hero-plan-setup">{atlasSetupFeeNote(plan.setupFee, language)}</span>
                   </article>
                 ))}
               </div>

@@ -6,7 +6,9 @@ import {
   atlasPhoneAiAddOn,
   atlasPricingComparisonRows,
   atlasPricingFaqs,
-  atlasPricingPlans,
+  atlasPublicPricingPlans,
+  atlasSetupFeeNote,
+  ATLAS_QUICKSTART_AFTER_TRIAL,
 } from "@/lib/pricing";
 import { getAtlasPlanPaymentLinks } from "@/lib/payment-links";
 import { withSiteLanguage, type SiteLanguage } from "@/lib/site-language";
@@ -14,7 +16,8 @@ import { getSiteLanguage } from "@/lib/site-language-server";
 
 export const metadata: Metadata = {
   title: "Pricing | Atlas For Entrepreneurs",
-  description: "Atlas pricing for solo operators, growing businesses, and established teams.",
+  description:
+    "Four monthly Atlas plans: Starter, Growth, Pro, and Elite. Each has a one-time setup fee only if you stay after the free 7-day QuickStart trial.",
   alternates: {
     canonical: "/pricing",
   },
@@ -52,7 +55,7 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
     "Los planes de pago son mensuales y se renuevan hasta que los canceles.",
   "Monthly usage allowance included": "Asignación mensual de uso incluida",
   "Human approval before external action": "Aprobación humana antes de cualquier acción externa",
-  "Three monthly plans for different stages of growth": "Tres planes mensuales para distintas etapas de crecimiento",
+  "Four monthly plans for different stages of growth": "Cuatro planes mensuales para distintas etapas de crecimiento",
   "Atlas lion carrying the world": "León de Atlas cargando el mundo",
   "Most popular": "Más popular",
   "/month": "/mes",
@@ -63,8 +66,8 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Review": "Revisar",
   "Plan comparison": "Comparación de planes",
   "What each Atlas plan includes": "Lo que incluye cada plan de Atlas",
-  "Atlas pricing comparison between Basic, Grow, and Unlimited.":
-    "Comparación de precios de Atlas entre Básico, Crecimiento e Ilimitado.",
+  "Atlas pricing comparison between Starter, Growth, Pro, and Elite.":
+    "Comparación de precios de Atlas entre Inicial, Crecimiento, Pro y Élite.",
   "Plan": "Plan",
   "What Atlas replaces or simplifies": "Lo que Atlas reemplaza o simplifica",
   "Fewer disconnected tools. More coordinated work.": "Menos herramientas desconectadas. Más trabajo coordinado.",
@@ -99,9 +102,9 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
     "Si quieres ayuda para decidir, comienza con la evaluación empresarial. Atlas puede orientar la conversación sobre la opción adecuada sin inventar precios ni promesas.",
   "Paid plans are monthly and renew until you cancel. Front Desk is not live.":
     "Los planes de pago son mensuales y se renuevan hasta que los canceles. Front Desk no está activo.",
-  "ATLAS BASIC": "ATLAS BÁSICO",
+  "Starter": "Inicial",
   "Solo owners / very small businesses": "Propietarios independientes / negocios muy pequeños",
-  "Choose BASIC": "Elegir BÁSICO",
+  "Choose Starter": "Elegir Inicial",
   "Monthly usage allowance": "Asignación mensual de uso",
   "CRM / Sales Command": "CRM / Comando de ventas",
   "Lead generation tools": "Herramientas de generación de prospectos",
@@ -114,11 +117,11 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Standard support": "Soporte estándar",
   "Expanded automation as the workflow matures": "Automatización ampliada a medida que madura el flujo de trabajo",
   "Higher usage capacity as the business grows": "Mayor capacidad de uso a medida que crece el negocio",
-  "ATLAS GROW": "ATLAS CRECIMIENTO",
+  "Growth": "Crecimiento",
   "Growing local businesses": "Negocios locales en crecimiento",
-  "Choose GROW": "Elegir CRECIMIENTO",
+  "Choose Growth": "Elegir Crecimiento",
   "Larger monthly usage allowance": "Mayor asignación mensual de uso",
-  "Everything in BASIC": "Todo lo incluido en BÁSICO",
+  "Everything in Starter": "Todo lo incluido en Inicial",
   "Expanded lead generation": "Generación ampliada de prospectos",
   "Full Sales Command workflow": "Flujo completo de Comando de ventas",
   "Stronger follow-up capability": "Mayor capacidad de seguimiento",
@@ -128,11 +131,11 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Priority support": "Soporte prioritario",
   "Priority onboarding for the next phase": "Incorporación prioritaria para la siguiente fase",
   "More specialized automation as usage proves the need": "Automatización más especializada cuando el uso demuestre la necesidad",
-  "ATLAS UNLIMITED": "ATLAS ILIMITADO",
+  "Pro": "Pro",
   "Established teams": "Equipos establecidos",
-  "Choose UNLIMITED": "Elegir ILIMITADO",
-  "Largest monthly usage allowance": "La mayor asignación mensual de uso",
-  "Everything in GROW": "Todo lo incluido en CRECIMIENTO",
+  "Choose Pro": "Elegir Pro",
+  "Higher monthly usage allowance": "Asignación mensual de uso más amplia",
+  "Everything in Growth": "Todo lo incluido en Crecimiento",
   "Higher usage limits": "Límites de uso más altos",
   "Multi-user team support": "Soporte para equipos con varios usuarios",
   "Executive reporting": "Informes ejecutivos",
@@ -140,12 +143,33 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "Priority onboarding": "Incorporación prioritaria",
   "Future automation privileges": "Privilegios de automatización futura",
   "Phone AI is a future add-on, not live": "Phone AI es un complemento futuro, no está activo",
-  "Preferred access to future voice and receptionist tooling": "Acceso preferente a futuras herramientas de voz y recepción",
+  "Phone and receptionist tooling stays a separate future add-on":
+    "Las herramientas de teléfono y recepción siguen siendo un complemento futuro aparte",
   "More advanced automation privileges as systems mature": "Privilegios de automatización más avanzados a medida que maduran los sistemas",
+  "Elite": "Élite",
+  "Owners who want the highest allowance": "Dueños que quieren la asignación más alta",
+  "Highest monthly usage allowance": "La asignación mensual de uso más alta",
+  "Everything in Pro": "Todo lo incluido en Pro",
+  "In-person quarterly business review (Houston area)": "Revisión de negocio trimestral en persona (área de Houston)",
+  "Priority onboarding with Debbie": "Incorporación prioritaria con Debbie",
+  "Phone and receptionist features are not included": "Las funciones de teléfono y recepción no están incluidas",
+  "Quarterly review visits stay in the Houston area": "Las visitas de revisión trimestral se quedan en el área de Houston",
+  "Front Desk phone handling stays a separate future add-on and is not part of Elite":
+    "La gestión telefónica de Front Desk sigue siendo un complemento futuro aparte y no forma parte de Élite",
   "Monthly price": "Precio mensual",
   "$99/mo": "$99/mes",
   "$249/mo": "$249/mes",
   "$499/mo": "$499/mes",
+  "$749/mo": "$749/mes",
+  "One-time setup": "Configuración única",
+  "$149": "$149",
+  "$299": "$299",
+  "$499": "$499",
+  "$749": "$749",
+  "Same as Pro": "Igual que Pro",
+  "Not included": "No incluido",
+  "Houston area": "Área de Houston",
+  "In-person quarterly review": "Revisión trimestral en persona",
   "Best for": "Ideal para",
   "Users": "Usuarios",
   "1-2": "1-2",
@@ -166,7 +190,8 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "AI usage": "Uso de IA",
   "Monthly allowance": "Asignación mensual",
   "Larger allowance": "Mayor asignación",
-  "Largest allowance": "La mayor asignación",
+  "Higher allowance": "Asignación más amplia",
+  "Highest allowance": "La asignación más alta",
   "Reporting": "Informes",
   "Growth dashboard": "Panel de crecimiento",
   "Executive dashboard": "Panel ejecutivo",
@@ -194,17 +219,17 @@ const spanishByEnglish: Readonly<Record<string, string>> = {
   "No. Atlas is meant to coordinate work, reduce missed steps, and help your team move faster with clearer priorities.":
     "No. Atlas está diseñado para coordinar el trabajo, reducir pasos omitidos y ayudar a tu equipo a avanzar más rápido con prioridades más claras.",
   "What counts toward AI or prospect-search usage?": "¿Qué cuenta para el uso de IA o búsqueda de prospectos?",
-  "Usage is tracked against the AI and discovery work the system performs. The product includes allowances, not unlimited usage.":
-    "El uso se contabiliza según el trabajo de IA y descubrimiento que realiza el sistema. El producto incluye asignaciones, no uso ilimitado.",
+  "Usage is tracked against the AI and discovery work the system performs. Every plan includes a monthly allowance.":
+    "El uso se contabiliza según el trabajo de IA y descubrimiento que realiza el sistema. Cada plan incluye una asignación mensual.",
   "Can my team use Atlas?": "¿Mi equipo puede usar Atlas?",
-  "Yes. ATLAS UNLIMITED is the clearest fit for teams, and the product is designed to expand with organization needs.":
-    "Sí. ATLAS ILIMITADO es la opción más clara para equipos, y el producto está diseñado para crecer con las necesidades de la organización.",
+  "Yes. Pro is the clearest fit for established teams. Elite adds the highest monthly usage allowance, an in-person quarterly business review in the Houston area, and priority onboarding with Debbie. Phone and receptionist features are not included.":
+    "Sí. Pro es la opción más clara para equipos establecidos. Élite agrega la asignación mensual de uso más alta, una revisión de negocio trimestral en persona en el área de Houston y una incorporación prioritaria con Debbie. Las funciones de teléfono y recepción no están incluidas.",
   "Is Phone AI included?": "¿Está incluida la IA telefónica?",
   "Not yet. ATLAS FRONT DESK is coming soon as a separate future add-on, and it is not operational in this release.":
     "Todavía no. ATLAS FRONT DESK llegará próximamente como un complemento futuro independiente y no está operativo en esta versión.",
   "Is there a long-term contract?": "¿Hay un contrato a largo plazo?",
-  "Paid BASIC, GROW, and UNLIMITED plans are monthly Stripe subscriptions. They renew until you cancel. The business assessment and the 7-day trial at /start-trial are not paid subscriptions and do not take a card.":
-    "Los planes de pago BÁSICO, CRECIMIENTO e ILIMITADO son suscripciones mensuales de Stripe. Se renuevan hasta que las canceles. La evaluación empresarial y la prueba de 7 días en /start-trial no son suscripciones de pago y no piden tarjeta.",
+  "Paid Starter, Growth, and Pro plans are monthly Stripe subscriptions. They renew until you cancel. Start with a free 7-day QuickStart trial. If you stay, we charge your plan's one-time setup fee and your first month, and Debbie completes your full setup. Elite uses the same monthly renewal and one-time setup terms; there is no Elite checkout link on this page yet. The business assessment and the 7-day trial at /start-trial are not paid subscriptions and do not take a card.":
+    "Los planes de pago Inicial, Crecimiento y Pro son suscripciones mensuales de Stripe. Se renuevan hasta que los canceles. Comienza con una prueba QuickStart gratis de 7 días. Si te quedas, cobramos la tarifa única de configuración de tu plan y tu primer mes, y Debbie completa tu configuración. Élite usa las mismas condiciones de renovación mensual y tarifa única de configuración; todavía no hay un enlace de pago de Élite en esta página. La evaluación empresarial y la prueba de 7 días en /start-trial no son suscripciones de pago y no piden tarjeta.",
   "ATLAS FRONT DESK": "ATLAS FRONT DESK",
   "$149-$249/month plus usage": "$149-$249/mes más uso",
   "AI receptionist and inbound call handling for lead capture, callback capture, call summaries, and CRM writeback.":
@@ -295,10 +320,13 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
               <p className="mt-4 text-sm font-semibold text-blue-100/75">
                 {t("Paid plans are monthly and renew until you cancel.")}
               </p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100/75">
+                {ATLAS_QUICKSTART_AFTER_TRIAL[language]}
+              </p>
               <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-blue-100/70">
                 <span>{t("Monthly usage allowance included")}</span>
                 <span>{t("Human approval before external action")}</span>
-                <span>{t("Three monthly plans for different stages of growth")}</span>
+                <span>{t("Four monthly plans for different stages of growth")}</span>
               </div>
             </div>
 
@@ -318,19 +346,26 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
 
         <section className="border-t border-white/10 bg-[#f4f7fb] text-[#071b42]">
           <div className="mx-auto w-full max-w-[84rem] px-6 py-20 sm:px-7 sm:py-24">
-            <div className="grid gap-5 lg:grid-cols-3" id="plans">
-              {atlasPricingPlans.map((plan) => (
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4" id="plans">
+              {atlasPublicPricingPlans.map((plan) => {
+                const checkoutLink = plan.slug === "elite" ? null : planPaymentLinks[plan.slug];
+                const href =
+                  plan.slug === "elite"
+                    ? withSiteLanguage("/start-trial", language)
+                    : checkoutLink ?? withSiteLanguage(`/assessment?plan=${plan.slug}`, language);
+
+                return (
                 <article
-                  className={`relative overflow-hidden rounded-[1.9rem] border p-7 shadow-[0_18px_48px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 ${
+                  className={`relative flex h-full flex-col overflow-hidden rounded-[1.9rem] border p-5 shadow-[0_18px_48px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 sm:p-6 ${
                     plan.featured
-                      ? "border-[#f0c24a] bg-[#fffdf5] lg:scale-[1.02]"
+                      ? "border-[#f0c24a] bg-[#fffdf5]"
                       : "border-[#dce5f1] bg-white"
                   }`}
                   id={plan.slug}
                   key={plan.slug}
                 >
                   {plan.featured ? (
-                    <span className="absolute right-5 top-5 rounded-full bg-[#f5b932] px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-[#071b42]">
+                    <span className="mb-4 inline-flex w-fit rounded-full bg-[#f5b932] px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-[#071b42]">
                       {t("Most popular")}
                     </span>
                   ) : null}
@@ -338,11 +373,14 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
                     {t(plan.name)}
                   </p>
                   <div className="mt-4 flex items-end gap-2">
-                    <p className="text-5xl font-black tracking-[-0.06em]">
+                    <p className="text-4xl font-black tracking-[-0.06em] xl:text-5xl">
                       {money.format(plan.monthlyPrice)}
                     </p>
-                    <p className="pb-2 text-sm font-semibold text-slate-500">{t("/month")}</p>
+                    <p className="pb-1 text-sm font-semibold text-slate-500">{t("/month")}</p>
                   </div>
+                  <p className="mt-2 text-sm font-medium leading-5 text-slate-500">
+                    {atlasSetupFeeNote(plan.setupFee, language)}
+                  </p>
                   <p className="mt-4 text-sm font-semibold text-[#16325c]">
                     {t(plan.bestFor)}
                   </p>
@@ -367,7 +405,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
                       ))}
                     </ul>
                   </div>
-                  <div className="mt-7 flex items-center justify-between gap-3">
+                  <div className="mt-auto flex flex-col gap-3 pt-7">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                       {plan.availability === "available"
                         ? t("Available now")
@@ -376,25 +414,23 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
                           : t("Coming soon")}
                     </p>
                     <Link
-                      className={`rounded-full px-4 py-2.5 text-sm font-black transition ${
+                      className={`inline-flex w-full items-center justify-center rounded-full px-4 py-2.5 text-center text-sm font-black transition ${
                         plan.featured
                           ? "bg-[#071b42] !text-white hover:bg-[#0a2f78] hover:!text-white"
                           : "bg-[#f5b932] !text-[#071b42] hover:bg-[#ffd064] hover:!text-[#071b42]"
                       }`}
-                      href={
-                        planPaymentLinks[plan.slug] ??
-                        withSiteLanguage(`/assessment?plan=${plan.slug}`, language)
-                      }
-                      rel={planPaymentLinks[plan.slug] ? "noreferrer" : undefined}
-                      target={planPaymentLinks[plan.slug] ? "_blank" : undefined}
+                      href={href}
+                      rel={checkoutLink ? "noreferrer" : undefined}
+                      target={checkoutLink ? "_blank" : undefined}
                     >
-                      {planPaymentLinks[plan.slug]
+                      {plan.slug === "elite" || checkoutLink
                         ? t(plan.cta)
                         : `${t("Review")} ${t(plan.name)}`}
                     </Link>
                   </div>
                 </article>
-              ))}
+                );
+              })}
             </div>
 
             <section className="mt-8 rounded-[1.8rem] border border-[#d9e4f4] bg-white p-5 shadow-[0_16px_42px_rgba(15,23,42,0.05)] sm:p-6">
@@ -410,24 +446,20 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
               </div>
 
               <div className="mt-5 overflow-x-auto">
-                <table className="min-w-[760px] w-full border-separate border-spacing-0 text-left">
+                <table className="min-w-[920px] w-full border-separate border-spacing-0 text-left">
                   <caption className="sr-only">
-                    {t("Atlas pricing comparison between Basic, Grow, and Unlimited.")}
+                    {t("Atlas pricing comparison between Starter, Growth, Pro, and Elite.")}
                   </caption>
                   <thead>
                     <tr className="text-xs uppercase tracking-[0.16em] text-slate-500">
                       <th className="border-b border-[#e5edf7] px-4 py-3 font-black">
                         {t("Plan")}
                       </th>
-                      <th className="border-b border-[#e5edf7] px-4 py-3 text-right font-black">
-                        {t("ATLAS BASIC")}
-                      </th>
-                      <th className="border-b border-[#e5edf7] px-4 py-3 text-right font-black">
-                        {t("ATLAS GROW")}
-                      </th>
-                      <th className="border-b border-[#e5edf7] px-4 py-3 text-right font-black">
-                        {t("ATLAS UNLIMITED")}
-                      </th>
+                      {atlasPublicPricingPlans.map((plan) => (
+                        <th className="border-b border-[#e5edf7] px-4 py-3 text-right font-black" key={plan.slug}>
+                          {t(plan.name)}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -447,6 +479,9 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
                         </td>
                         <td className="border-b border-[#edf2f8] px-4 py-4 text-right text-sm font-semibold text-slate-700">
                           {t(row.unlimited)}
+                        </td>
+                        <td className="border-b border-[#edf2f8] px-4 py-4 text-right text-sm font-semibold text-slate-700">
+                          {t(row.elite)}
                         </td>
                       </tr>
                     ))}
