@@ -111,12 +111,12 @@ export default async function AssessmentPage({ searchParams }: PageProps) {
                     ? [
                         ["01", "Puntaje", "Una lectura clara de qué tan listo está el negocio para crecer."],
                         ["02", "Siguiente paso", "La primera acción de mayor impacto, basada en tus respuestas."],
-                        ["03", "Plan", "GROW $249 o ILIMITADO $499, justificado para este negocio."],
+                        ["03", "Plan", "Crecimiento $249/mes + $299 de configuración, o Pro $499/mes + $499 de configuración, justificado para este negocio."],
                       ]
                     : [
                         ["01", "Score", "A clear read on how ready the business is to grow."],
                         ["02", "Next step", "The highest-impact first move, based on your answers."],
-                        ["03", "Plan", "GROW $249 or UNLIMITED $499, justified for this business."],
+                        ["03", "Plan", "Growth $249/month + $299 setup, or Pro $499/month + $499 setup, justified for this business."],
                       ]
                   : spanish
                     ? [

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { ATLAS_QUICKSTART_AFTER_TRIAL } from "@/lib/pricing";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import { startTrial } from "@/server/auth/actions";
 
@@ -64,7 +65,7 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
         terms: "términos",
         privacy: "política de privacidad",
         submit: "Comenzar mi prueba gratis de 7 días",
-        afterTrial: "Después de los 7 días, Debbie te incorpora por $500 y luego tienes 2 semanas gratis antes de un plan de pago.",
+        afterTrial: ATLAS_QUICKSTART_AFTER_TRIAL.es,
         noCard: "No necesitas tarjeta. Actualiza después de siete días si Atlas es adecuado para tu negocio.",
         options: [
           ["Contractor or home service", "Contratista o servicio para el hogar"],
@@ -109,7 +110,7 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
         terms: "terms",
         privacy: "privacy policy",
         submit: "Start my 7-day free trial",
-        afterTrial: "After the 7 days, Debbie onboards you for $500, then you get 2 weeks free before a paid plan.",
+        afterTrial: ATLAS_QUICKSTART_AFTER_TRIAL.en,
         noCard: "No card required. Upgrade after seven days if Atlas is right for your business.",
         options: [
           ["Contractor or home service", "Contractor or home service"],

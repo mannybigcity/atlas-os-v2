@@ -92,8 +92,9 @@ export type AssessmentSignals = {
 export type AssessmentRecommendation = {
   score: number;
   plan: AssessmentRecommendedPlan;
-  planName: "ATLAS GROW" | "ATLAS UNLIMITED";
+  planName: "Growth" | "Pro";
   monthlyPrice: 249 | 499;
+  setupFee: 299 | 499;
   bestFor: LocalizedCopy;
   planWhy: LocalizedCopy;
   planProof: LocalizedCopy[];
@@ -350,8 +351,8 @@ const planCopy: Record<
 > = {
   grow: {
     why: {
-      en: "ATLAS GROW is the right starting plan for a growing local business that needs Sales Command, stronger follow-up, and expanded lead generation.",
-      es: "ATLAS CRECIMIENTO es el plan de partida correcto para un negocio local en crecimiento que necesita Sales Command, un seguimiento más firme y más generación de prospectos.",
+      en: "Growth is the right starting plan for a growing local business that needs Sales Command, stronger follow-up, and expanded lead generation.",
+      es: "Crecimiento es el plan de partida correcto para un negocio local en crecimiento que necesita Sales Command, un seguimiento más firme y más generación de prospectos.",
     },
     bestFor: {
       en: "Growing local businesses",
@@ -363,8 +364,8 @@ const planCopy: Record<
         es: "Flujo completo de Sales Command para que cada prospecto tenga una próxima acción.",
       },
       {
-        en: "Stronger follow-up capability and growth reporting at $249/month.",
-        es: "Seguimiento más firme e informes de crecimiento por $249 al mes.",
+        en: "Stronger follow-up capability and growth reporting at $249/month, plus a $299 one-time setup fee only if you stay after the trial.",
+        es: "Seguimiento más firme e informes de crecimiento por $249 al mes, más $299 de configuración única solo si te quedas después de la prueba.",
       },
       {
         en: "Expanded lead generation and priority support while you run the trial.",
@@ -374,8 +375,8 @@ const planCopy: Record<
   },
   unlimited: {
     why: {
-      en: "ATLAS UNLIMITED is the right starting plan for an established team that needs multi-user support, higher usage, and executive reporting.",
-      es: "ATLAS ILIMITADO es el plan de partida correcto para un equipo establecido que necesita varios usuarios, más uso e informes ejecutivos.",
+      en: "Pro is the right starting plan for an established team that needs multi-user support, higher usage, and executive reporting.",
+      es: "Pro es el plan de partida correcto para un equipo establecido que necesita varios usuarios, más uso e informes ejecutivos.",
     },
     bestFor: {
       en: "Established teams",
@@ -383,12 +384,12 @@ const planCopy: Record<
     },
     proof: [
       {
-        en: "Everything in GROW, plus multi-user team support.",
-        es: "Todo lo de CRECIMIENTO, más soporte para equipos con varios usuarios.",
+        en: "Everything in Growth, plus multi-user team support.",
+        es: "Todo lo de Crecimiento, más soporte para equipos con varios usuarios.",
       },
       {
-        en: "Highest usage limits and executive reporting at $499/month.",
-        es: "Los límites de uso más altos e informes ejecutivos por $499 al mes.",
+        en: "A higher monthly usage allowance and executive reporting at $499/month, plus a $499 one-time setup fee only if you stay after the trial.",
+        es: "Una asignación mensual de uso más amplia e informes ejecutivos por $499 al mes, más $499 de configuración única solo si te quedas después de la prueba.",
       },
       {
         en: "Priority onboarding for teams. Phone AI remains a future add-on, not live.",
@@ -408,8 +409,9 @@ export function recommendAssessment(signals: AssessmentSignals): AssessmentRecom
   return {
     score: scoreAssessment(signals),
     plan,
-    planName: plan === "unlimited" ? "ATLAS UNLIMITED" : "ATLAS GROW",
+    planName: plan === "unlimited" ? "Pro" : "Growth",
     monthlyPrice: (priced?.monthlyPrice ?? (plan === "unlimited" ? 499 : 249)) as 249 | 499,
+    setupFee: (priced?.setupFee ?? (plan === "unlimited" ? 499 : 299)) as 299 | 499,
     bestFor: recommended.bestFor,
     planWhy: recommended.why,
     planProof: recommended.proof,

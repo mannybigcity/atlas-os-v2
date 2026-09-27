@@ -14,7 +14,8 @@ test("post-submit assessment page renders the recommendation result instead of a
   assert.match(page, /recommendAssessment/);
   assert.match(page, /resolveAssessmentSignals/);
   assert.match(page, /Atlas already has a recommendation/);
-  assert.match(page, /GROW \$249 or UNLIMITED \$499/);
+  assert.match(page, /Growth \$249\/month \+ \$299 setup, or Pro \$499\/month \+ \$499 setup/);
+  assert.doesNotMatch(page, /UNLIMITED|ILIMITADO|ATLAS GROW|ATLAS BASIC/);
   assert.match(page, /Start the 7-day free trial/);
   assert.doesNotMatch(page, /queued for private CRM review/);
   assert.doesNotMatch(page, /Explore the 7-day trial/);

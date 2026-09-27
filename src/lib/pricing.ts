@@ -2,10 +2,13 @@ export type AtlasPricingAvailability = "available" | "launch_offer" | "coming_so
 
 export type AtlasPricingPlanSlug = "basic" | "grow" | "unlimited";
 
+export type AtlasPublicPlanSlug = AtlasPricingPlanSlug | "elite";
+
 export type AtlasPricingPlan = {
   slug: AtlasPricingPlanSlug;
   name: string;
   monthlyPrice: number;
+  setupFee: number;
   bestFor: string;
   featured: boolean;
   cta: string;
@@ -15,12 +18,30 @@ export type AtlasPricingPlan = {
   futureFeatures: string[];
 };
 
+/** Public marketing card. Elite has no checkout slug and no Stripe link. */
+export type AtlasPublicPricingPlan = Omit<AtlasPricingPlan, "slug"> & {
+  slug: AtlasPublicPlanSlug;
+};
+
 export type AtlasPricingComparisonRow = {
   label: string;
   basic: string;
   grow: string;
   unlimited: string;
+  elite: string;
 };
+
+export const ATLAS_QUICKSTART_AFTER_TRIAL = {
+  en: "Start with a free 7-day QuickStart trial. If you stay, we charge your plan's one-time setup fee and your first month, and Debbie completes your full setup.",
+  es: "Comienza con una prueba QuickStart gratis de 7 días. Si te quedas, cobramos la tarifa única de configuración de tu plan y tu primer mes, y Debbie completa tu configuración.",
+} as const;
+
+export function atlasSetupFeeNote(amount: number, language: "en" | "es" = "en") {
+  if (language === "es") {
+    return `+ $${amount} de configuración única, solo si te quedas después de la prueba`;
+  }
+  return `+ $${amount} one-time setup, only if you stay after the trial`;
+}
 
 export type AtlasPricingFaq = {
   question: string;
@@ -39,11 +60,12 @@ export type AtlasFutureAddOn = {
 export const atlasPricingPlans: AtlasPricingPlan[] = [
   {
     slug: "basic",
-    name: "ATLAS BASIC",
+    name: "Starter",
     monthlyPrice: 99,
+    setupFee: 149,
     bestFor: "Solo owners / very small businesses",
     featured: false,
-    cta: "Choose BASIC",
+    cta: "Choose Starter",
     usageAllowance: "Monthly usage allowance",
     availability: "available",
     features: [
@@ -64,15 +86,16 @@ export const atlasPricingPlans: AtlasPricingPlan[] = [
   },
   {
     slug: "grow",
-    name: "ATLAS GROW",
+    name: "Growth",
     monthlyPrice: 249,
+    setupFee: 299,
     bestFor: "Growing local businesses",
     featured: true,
-    cta: "Choose GROW",
+    cta: "Choose Growth",
     usageAllowance: "Larger monthly usage allowance",
     availability: "available",
     features: [
-      "Everything in BASIC",
+      "Everything in Starter",
       "Expanded lead generation",
       "Full Sales Command workflow",
       "Stronger follow-up capability",
@@ -88,15 +111,16 @@ export const atlasPricingPlans: AtlasPricingPlan[] = [
   },
   {
     slug: "unlimited",
-    name: "ATLAS UNLIMITED",
+    name: "Pro",
     monthlyPrice: 499,
+    setupFee: 499,
     bestFor: "Established teams",
     featured: false,
-    cta: "Choose UNLIMITED",
-    usageAllowance: "Largest monthly usage allowance",
+    cta: "Choose Pro",
+    usageAllowance: "Higher monthly usage allowance",
     availability: "available",
     features: [
-      "Everything in GROW",
+      "Everything in Growth",
       "Higher usage limits",
       "Multi-user team support",
       "Executive reporting",
@@ -106,47 +130,109 @@ export const atlasPricingPlans: AtlasPricingPlan[] = [
       "Phone AI is a future add-on, not live",
     ],
     futureFeatures: [
-      "Preferred access to future voice and receptionist tooling",
+      "Phone and receptionist tooling stays a separate future add-on",
       "More advanced automation privileges as systems mature",
     ],
   },
 ];
 
+const atlasElitePlan: AtlasPublicPricingPlan = {
+  slug: "elite",
+  name: "Elite",
+  monthlyPrice: 749,
+  setupFee: 749,
+  bestFor: "Owners who want the highest allowance",
+  featured: false,
+  cta: "Start 7-day free trial",
+  usageAllowance: "Highest monthly usage allowance",
+  availability: "available",
+  features: [
+    "Everything in Pro",
+    "Highest monthly usage allowance",
+    "In-person quarterly business review (Houston area)",
+    "Priority onboarding with Debbie",
+    "Phone and receptionist features are not included",
+  ],
+  futureFeatures: [
+    "Quarterly review visits stay in the Houston area",
+    "Front Desk phone handling stays a separate future add-on and is not part of Elite",
+  ],
+};
+
+/** Marketing cards only. Checkout plans stay on atlasPricingPlans so logged-in billing does not grow a fourth Stripe door. */
+export const atlasPublicPricingPlans: AtlasPublicPricingPlan[] = [...atlasPricingPlans, atlasElitePlan];
+
 export const atlasPricingComparisonRows: AtlasPricingComparisonRow[] = [
-  { label: "Monthly price", basic: "$99/mo", grow: "$249/mo", unlimited: "$499/mo" },
+  { label: "Monthly price", basic: "$99/mo", grow: "$249/mo", unlimited: "$499/mo", elite: "$749/mo" },
+  { label: "One-time setup", basic: "$149", grow: "$299", unlimited: "$499", elite: "$749" },
   {
     label: "Best for",
     basic: "Solo owners / very small businesses",
     grow: "Growing local businesses",
     unlimited: "Established teams",
+    elite: "Owners who want the highest allowance",
   },
-  { label: "Users", basic: "1-2", grow: "Up to 5", unlimited: "Up to 15" },
-  { label: "Customer relationship management (CRM)", basic: "Included", grow: "Included", unlimited: "Included" },
-  { label: "Lead generation", basic: "Limited", grow: "Expanded", unlimited: "High-volume" },
-  { label: "Social media content", basic: "Basic", grow: "Full", unlimited: "Full + advanced workflows" },
-  { label: "AI business assistant", basic: "Basic", grow: "Full", unlimited: "Full" },
-  { label: "Business assessment", basic: "Included", grow: "Included", unlimited: "Included" },
-  { label: "Opportunity tracking", basic: "Included", grow: "Included", unlimited: "Included" },
-  { label: "Activity and follow-up center", basic: "Included", grow: "Included", unlimited: "Included" },
+  { label: "Users", basic: "1-2", grow: "Up to 5", unlimited: "Up to 15", elite: "Same as Pro" },
+  {
+    label: "Customer relationship management (CRM)",
+    basic: "Included",
+    grow: "Included",
+    unlimited: "Included",
+    elite: "Included",
+  },
+  { label: "Lead generation", basic: "Limited", grow: "Expanded", unlimited: "High-volume", elite: "Same as Pro" },
+  {
+    label: "Social media content",
+    basic: "Basic",
+    grow: "Full",
+    unlimited: "Full + advanced workflows",
+    elite: "Same as Pro",
+  },
+  { label: "AI business assistant", basic: "Basic", grow: "Full", unlimited: "Full", elite: "Same as Pro" },
+  { label: "Business assessment", basic: "Included", grow: "Included", unlimited: "Included", elite: "Included" },
+  { label: "Opportunity tracking", basic: "Included", grow: "Included", unlimited: "Included", elite: "Included" },
+  {
+    label: "Activity and follow-up center",
+    basic: "Included",
+    grow: "Included",
+    unlimited: "Included",
+    elite: "Included",
+  },
   {
     label: "AI usage",
     basic: "Monthly allowance",
     grow: "Larger allowance",
-    unlimited: "Largest allowance",
+    unlimited: "Higher allowance",
+    elite: "Highest allowance",
   },
-  { label: "Reporting", basic: "Basic", grow: "Growth dashboard", unlimited: "Executive dashboard" },
-  { label: "Integrations", basic: "Core", grow: "Expanded", unlimited: "Priority" },
+  {
+    label: "Reporting",
+    basic: "Basic",
+    grow: "Growth dashboard",
+    unlimited: "Executive dashboard",
+    elite: "Same as Pro",
+  },
+  { label: "Integrations", basic: "Core", grow: "Expanded", unlimited: "Priority", elite: "Same as Pro" },
   {
     label: "Support",
     basic: "Standard",
     grow: "Priority",
     unlimited: "Priority + onboarding",
+    elite: "Priority onboarding with Debbie",
+  },
+  {
+    label: "In-person quarterly review",
+    basic: "Not included",
+    grow: "Not included",
+    unlimited: "Not included",
+    elite: "Houston area",
   },
   {
     label: "Future ATLAS Phone AI",
     basic: "Add-on",
     grow: "Add-on",
     unlimited: "Add-on",
+    elite: "Add-on",
   },
 ];
 
@@ -179,12 +265,12 @@ export const atlasPricingFaqs: AtlasPricingFaq[] = [
   {
     question: "What counts toward AI or prospect-search usage?",
     answer:
-      "Usage is tracked against the AI and discovery work the system performs. The product includes allowances, not unlimited usage.",
+      "Usage is tracked against the AI and discovery work the system performs. Every plan includes a monthly allowance.",
   },
   {
     question: "Can my team use Atlas?",
     answer:
-      "Yes. ATLAS UNLIMITED is the clearest fit for teams, and the product is designed to expand with organization needs.",
+      "Yes. Pro is the clearest fit for established teams. Elite adds the highest monthly usage allowance, an in-person quarterly business review in the Houston area, and priority onboarding with Debbie. Phone and receptionist features are not included.",
   },
   {
     question: "Is Phone AI included?",
@@ -194,7 +280,7 @@ export const atlasPricingFaqs: AtlasPricingFaq[] = [
   {
     question: "Is there a long-term contract?",
     answer:
-      "Paid BASIC, GROW, and UNLIMITED plans are monthly Stripe subscriptions. They renew until you cancel. The business assessment and the 7-day trial at /start-trial are not paid subscriptions and do not take a card.",
+      "Paid Starter, Growth, and Pro plans are monthly Stripe subscriptions. They renew until you cancel. Start with a free 7-day QuickStart trial. If you stay, we charge your plan's one-time setup fee and your first month, and Debbie completes your full setup. Elite uses the same monthly renewal and one-time setup terms; there is no Elite checkout link on this page yet. The business assessment and the 7-day trial at /start-trial are not paid subscriptions and do not take a card.",
   },
 ];
 
