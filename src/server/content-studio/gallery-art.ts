@@ -480,6 +480,8 @@ export type MicahWeekCard = {
   linkedinCaption: string;
   cta: string;
   imageSvg: string;
+  /** Stored card image: a private crm-files path or an https URL. Null keeps the SVG. */
+  imageUrl: string | null;
   companyName: string;
   demoLabeled: boolean;
   gradePass: boolean;
@@ -595,6 +597,7 @@ export function buildMicahWeekPack(input: {
         primaryColor,
         secondaryColor,
       }),
+      imageUrl: null,
     };
   });
 }
@@ -664,6 +667,7 @@ export function selectMicahWeekGallery(
       linkedinCaption: String(draft.metadata.linkedin_caption ?? ""),
       cta: String(draft.metadata.kingdom_cta ?? ""),
       imageSvg,
+      imageUrl: String(draft.imageUrl ?? "").trim() || null,
       companyName: String(draft.metadata.company_name ?? ""),
       demoLabeled: Boolean(draft.metadata.demo_labeled),
       gradePass: draft.metadata.kingdom_grade !== "fail",

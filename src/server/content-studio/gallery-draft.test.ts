@@ -22,7 +22,21 @@ import {
   selectMicahWeekGallery,
   wrapMicahCardLines,
 } from "./gallery-art.ts";
+import {
+  MICAH_GALLERY_IMAGE_MAX_BYTES,
+  MICAH_GALLERY_IMAGE_URL_TTL_SECONDS,
+  applyMicahGalleryImageChange,
+  micahGalleryImageBytesMatch,
+  planMicahGalleryImageChange,
+  resolveMicahGalleryImageSource,
+} from "./gallery-image.ts";
 import { gradeKingdomWeek } from "./kingdom-social.ts";
+import { presentLiveDeskDraft } from "../../lib/lions-den/live-desk.ts";
+
+const IMAGE_ORG_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const IMAGE_DRAFT_ID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
 
 test("MICAH gallery drafts are navy/gold downloadable SVGs and never live posts", () => {
   const copy = buildMicahDraftCopy("Make a Facebook post and a flyer image for Labor Day");
@@ -450,5 +464,388 @@ test("AFE DEMO gallery shows 7 day-cards instead of the old blue placeholder box
   assert.equal(gallery.length, 7);
   assert.equal(gallery.every((card) => Boolean(card.imageSvg)), true);
   assert.equal(gallery.every((card) => card.imageSvg.includes("#071b42")), true);
+  assert.equal(gallery.every((card) => card.imageUrl === null), true);
   assert.equal(gallery.some((card) => card.headline === "DEMO hats for the crew"), false);
+});
+
+test("a gallery card keeps an uploaded image and a card without one stays on the SVG", () => {
+  const storedSvg = '<svg xmlns="http://www.w3.org/2000/svg"><text>Thursday card</text></svg>';
+  const storedPath = `crm-files/${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.png`;
+  const withImage = selectMicahWeekGallery(
+    [
+      {
+        id: IMAGE_DRAFT_ID,
+        title: "Day 4 · Thursday · shop photo",
+        headline: "Throwback Thursday",
+        caption: "Thursday in the shop is the photo clients save.",
+        supportingText: "Download this draft and post it yourself.",
+        imageSvg: storedSvg,
+        imageUrl: storedPath,
+        metadata: { week_pack: true, week_day: 4, week_theme: "Throwback Thursday" },
+      },
+    ],
+    { demoDesk: false, logoDataUri: null },
+  );
+  assert.equal(withImage.length, 1);
+  assert.equal(withImage[0]?.imageUrl, storedPath);
+  assert.equal(withImage[0]?.imageSvg, storedSvg);
+  assert.equal(withImage[0]?.day, 4);
+  assert.equal(withImage[0]?.weekday, "Thursday");
+
+  const withoutImage = selectMicahWeekGallery(
+    [
+      {
+        id: IMAGE_DRAFT_ID,
+        title: "Day 4 · Thursday · shop photo",
+        headline: "Throwback Thursday",
+        caption: "Thursday in the shop is the photo clients save.",
+        supportingText: "Download this draft and post it yourself.",
+        imageSvg: storedSvg,
+        imageUrl: null,
+        metadata: { week_pack: true, week_day: 4, week_theme: "Throwback Thursday" },
+      },
+    ],
+    { demoDesk: false, logoDataUri: null },
+  );
+  assert.equal(withoutImage[0]?.imageUrl, null);
+  assert.equal(withoutImage[0]?.imageSvg, storedSvg);
+
+  const generated = buildMicahWeekPack({
+    prompt: "Week of posts for the shop",
+    demeanor: "straight",
+  });
+  assert.equal(generated.every((card) => card.imageUrl === null), true);
+});
+
+test("gallery image storage paths resolve to a one-hour signed URL download name", () => {
+  const storedPath = `crm-files/${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.png`;
+  const storage = resolveMicahGalleryImageSource({
+    imageUrl: storedPath,
+    organizationId: IMAGE_ORG_ID,
+    draftId: IMAGE_DRAFT_ID,
+    day: 4,
+    weekday: "Thursday",
+  });
+  assert.equal(storage.kind, "storage");
+  if (storage.kind !== "storage") return;
+  assert.equal(storage.bucket, "crm-files");
+  assert.equal(storage.objectPath, `${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.png`);
+  assert.equal(storage.downloadName, "micah-day-4-thursday.png");
+  assert.equal(storage.expiresIn, MICAH_GALLERY_IMAGE_URL_TTL_SECONDS);
+  assert.equal(storage.expiresIn, 3600);
+  assert.doesNotMatch(storage.objectPath, /^crm-files\//);
+
+  const jpeg = resolveMicahGalleryImageSource({
+    imageUrl: `crm-files/${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.jpeg`,
+    organizationId: IMAGE_ORG_ID,
+    draftId: IMAGE_DRAFT_ID,
+    day: 4,
+    weekday: "Thursday",
+  });
+  assert.equal(jpeg.kind, "storage");
+  if (jpeg.kind === "storage") {
+    assert.equal(jpeg.downloadName, "micah-day-4-thursday.jpeg");
+    assert.equal(jpeg.objectPath, `${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.jpeg`);
+  }
+
+  const https = resolveMicahGalleryImageSource({
+    imageUrl: "https://cdn.example.com/cards/thursday.jpg?token=1",
+    organizationId: IMAGE_ORG_ID,
+    draftId: IMAGE_DRAFT_ID,
+    day: 4,
+    weekday: "Thursday",
+  });
+  assert.deepEqual(https, {
+    kind: "https",
+    href: "https://cdn.example.com/cards/thursday.jpg?token=1",
+    downloadName: "micah-day-4-thursday.jpg",
+  });
+
+  assert.equal(
+    resolveMicahGalleryImageSource({
+      imageUrl: `crm-files/${IMAGE_DRAFT_ID}/micah/${IMAGE_ORG_ID}.png`,
+      organizationId: IMAGE_ORG_ID,
+      draftId: IMAGE_DRAFT_ID,
+      day: 4,
+      weekday: "Thursday",
+    }).kind,
+    "none",
+  );
+  assert.equal(
+    resolveMicahGalleryImageSource({
+      imageUrl: `crm-files/${IMAGE_ORG_ID}/micah/../${IMAGE_DRAFT_ID}.png`,
+      organizationId: IMAGE_ORG_ID,
+      draftId: IMAGE_DRAFT_ID,
+      day: 4,
+      weekday: "Thursday",
+    }).kind,
+    "none",
+  );
+  assert.equal(
+    resolveMicahGalleryImageSource({
+      imageUrl: `crm-files/${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.svg`,
+      organizationId: IMAGE_ORG_ID,
+      draftId: IMAGE_DRAFT_ID,
+      day: 4,
+      weekday: "Thursday",
+    }).kind,
+    "none",
+  );
+  assert.equal(
+    resolveMicahGalleryImageSource({
+      imageUrl: "http://cdn.example.com/card.png",
+      organizationId: IMAGE_ORG_ID,
+      draftId: IMAGE_DRAFT_ID,
+      day: 4,
+      weekday: "Thursday",
+    }).kind,
+    "none",
+  );
+});
+
+test("daily MICAH job and caption save do not write image_url", () => {
+  const daily = readFileSync(join(process.cwd(), "netlify/functions/daily-content-studio.mjs"), "utf8");
+  const insertAt = daily.indexOf('supabaseRequest("organization_content_drafts"');
+  assert.ok(insertAt > 0);
+  const insert = daily.slice(insertAt, daily.indexOf("const draftId", insertAt));
+  assert.match(insert, /method: "POST"/);
+  assert.match(insert, /image_svg: svg/);
+  assert.doesNotMatch(insert, /image_url/);
+  assert.doesNotMatch(insert, /resolution=merge|on_conflict|method: "PATCH"/);
+
+  const captionPersist = readFileSync(
+    join(process.cwd(), "src/server/content-studio/gallery-caption-persist.ts"),
+    "utf8",
+  );
+  const updateAt = captionPersist.indexOf(".update({");
+  assert.ok(updateAt > 0);
+  const update = captionPersist.slice(updateAt, updateAt + 280);
+  assert.match(update, /caption: input\.caption/);
+  assert.match(update, /status: input\.status/);
+  assert.match(update, /metadata: input\.metadata/);
+  assert.doesNotMatch(update, /image_url/);
+
+  const sql = readFileSync(
+    join(process.cwd(), "supabase/migrations/20260907161500_update_micah_gallery_caption.sql"),
+    "utf8",
+  );
+  assert.doesNotMatch(sql, /image_url/);
+  assert.match(sql, /set\s+caption = v_caption/i);
+
+  const patch = buildMicahGalleryCaptionUpdate({
+    metadata: { week_pack: true, week_day: 4 },
+    caption: "Thursday in the shop is the photo clients save.\n\nBook this week's visit.",
+    status: "approved",
+    editedAt: "2026-10-08T15:00:00.000Z",
+  });
+  assert.ok(patch);
+  assert.deepEqual(Object.keys(patch).sort(), ["caption", "metadata", "status"]);
+  assert.equal(patch?.status, "approved");
+  assert.equal("image_url" in (patch ?? {}), false);
+});
+
+test("a non-admin gallery image upload is refused before storage or a status change", async () => {
+  const calls: string[] = [];
+  const refused = await applyMicahGalleryImageChange({
+    signedIn: true,
+    isSuperAdmin: false,
+    intent: "upload",
+    organizationId: IMAGE_ORG_ID,
+    draftId: IMAGE_DRAFT_ID,
+    file: { name: "thursday.png", type: "image/png", size: PNG_BYTES.length, bytes: PNG_BYTES },
+    loadDraft: async () => {
+      calls.push("load");
+      return { imageUrl: null };
+    },
+    upload: async () => {
+      calls.push("upload");
+      return { error: null };
+    },
+    remove: async () => {
+      calls.push("remove");
+      return { error: null };
+    },
+    saveImageUrl: async () => {
+      calls.push("save");
+      return { error: null };
+    },
+  });
+  assert.equal(refused.status, "error");
+  assert.match(refused.error ?? "", /Only an Atlas admin/);
+  assert.deepEqual(calls, []);
+
+  const signedOut = planMicahGalleryImageChange({
+    signedIn: false,
+    isSuperAdmin: false,
+    intent: "upload",
+    organizationId: IMAGE_ORG_ID,
+    draftId: IMAGE_DRAFT_ID,
+    draftFound: true,
+    currentImageUrl: null,
+    file: { name: "thursday.png", type: "image/png", size: PNG_BYTES.length },
+  });
+  assert.deepEqual(signedOut, { ok: false, reason: "signed_out" });
+
+  const tooBig = planMicahGalleryImageChange({
+    signedIn: true,
+    isSuperAdmin: true,
+    intent: "upload",
+    organizationId: IMAGE_ORG_ID,
+    draftId: IMAGE_DRAFT_ID,
+    draftFound: true,
+    currentImageUrl: null,
+    file: { name: "thursday.png", type: "image/png", size: MICAH_GALLERY_IMAGE_MAX_BYTES + 1 },
+  });
+  assert.deepEqual(tooBig, { ok: false, reason: "invalid_file" });
+
+  const webp = planMicahGalleryImageChange({
+    signedIn: true,
+    isSuperAdmin: true,
+    intent: "upload",
+    organizationId: IMAGE_ORG_ID,
+    draftId: IMAGE_DRAFT_ID,
+    draftFound: true,
+    currentImageUrl: null,
+    file: { name: "thursday.webp", type: "image/webp", size: 1200 },
+  });
+  assert.deepEqual(webp, { ok: false, reason: "invalid_file" });
+  assert.equal(micahGalleryImageBytesMatch(PNG_BYTES, "png"), true);
+  assert.equal(micahGalleryImageBytesMatch(JPEG_BYTES, "jpg"), true);
+  assert.equal(micahGalleryImageBytesMatch(new Uint8Array([1, 2, 3, 4]), "png"), false);
+
+  let savedUrl: string | null = "unset";
+  const removed: string[] = [];
+  const saved = await applyMicahGalleryImageChange({
+    signedIn: true,
+    isSuperAdmin: true,
+    intent: "upload",
+    organizationId: IMAGE_ORG_ID,
+    draftId: IMAGE_DRAFT_ID,
+    file: { name: "Thursday.PNG", type: "image/png", size: PNG_BYTES.length, bytes: PNG_BYTES },
+    loadDraft: async () => ({
+      imageUrl: `crm-files/${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.jpg`,
+    }),
+    upload: async (objectPath, _bytes, contentType) => {
+      assert.equal(objectPath, `${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.png`);
+      assert.equal(contentType, "image/png");
+      return { error: null };
+    },
+    remove: async (objectPath) => {
+      removed.push(objectPath);
+      return { error: null };
+    },
+    saveImageUrl: async (imageUrl) => {
+      savedUrl = imageUrl;
+      return { error: null };
+    },
+  });
+  assert.equal(saved.status, "success");
+  assert.equal(savedUrl, `crm-files/${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.png`);
+  assert.deepEqual(removed, [`${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.jpg`]);
+
+  let cleared: string | null = "unset";
+  const removedImage = await applyMicahGalleryImageChange({
+    signedIn: true,
+    isSuperAdmin: true,
+    intent: "remove",
+    organizationId: IMAGE_ORG_ID,
+    draftId: IMAGE_DRAFT_ID,
+    file: null,
+    loadDraft: async () => ({
+      imageUrl: `crm-files/${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.png`,
+    }),
+    upload: async () => {
+      throw new Error("remove must not upload");
+    },
+    remove: async () => ({ error: null }),
+    saveImageUrl: async (imageUrl) => {
+      cleared = imageUrl;
+      return { error: null };
+    },
+  });
+  assert.equal(removedImage.status, "success");
+  assert.equal(cleared, null);
+
+  const approved = planMicahGalleryImageChange({
+    signedIn: true,
+    isSuperAdmin: true,
+    intent: "upload",
+    organizationId: IMAGE_ORG_ID,
+    draftId: IMAGE_DRAFT_ID,
+    draftFound: true,
+    currentImageUrl: null,
+    file: { name: "thursday.jpg", type: "image/jpeg", size: JPEG_BYTES.length },
+  });
+  assert.equal(approved.ok, true);
+  if (approved.ok && approved.intent === "upload") {
+    assert.equal(approved.storedPath, `crm-files/${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.jpg`);
+    assert.equal("status" in approved, false);
+    assert.notEqual(approved.storedPath.startsWith("https://"), true);
+  }
+});
+
+test("uploaded card images stay outside the live-desk text sanitizer", () => {
+  const imageUrl = `crm-files/${IMAGE_ORG_ID}/micah/${IMAGE_DRAFT_ID}.png`;
+  const tricky = `${imageUrl}?note=sample-fake`;
+  const storedDraft = {
+    campaign: "SAMPLE week",
+    title: "SAMPLE title",
+    headline: "fake sample headline",
+    caption: "This sample caption is fake and should be cleaned for the live desk view.",
+    imageSvg: "<svg>sample fake card</svg>",
+    imageUrl: tricky,
+  };
+  const draft = presentLiveDeskDraft(
+    { name: "Harbor HVAC", slug: "harbor-hvac-trial" },
+    storedDraft,
+  );
+  assert.equal(draft.imageUrl, tricky);
+  assert.doesNotMatch(String(draft.imageSvg), /\bsample\b|\bfake\b/i);
+
+  const liveDesk = readFileSync(join(process.cwd(), "src/lib/lions-den/live-desk.ts"), "utf8");
+  const presenter = liveDesk.slice(
+    liveDesk.indexOf("export function presentLiveDeskDraft"),
+    liveDesk.indexOf("export function presentLiveDeskReviewItem"),
+  );
+  assert.match(presenter, /imageSvg/);
+  assert.doesNotMatch(presenter, /imageUrl/);
+});
+
+test("gallery renders an uploaded image download and keeps image changes admin-only", () => {
+  const gallery = readFileSync(join(process.cwd(), "src/components/micah-week-gallery.tsx"), "utf8");
+  assert.match(gallery, /data-micah-card-image=\{uploadedImage \? "file" : "svg"\}/);
+  assert.match(gallery, /aspect-square w-full object-contain/);
+  assert.match(gallery, /imageDownloadUrl/);
+  assert.match(gallery, /imageFileName/);
+  assert.match(gallery, /Upload image/);
+  assert.match(gallery, /Replace image/);
+  assert.match(gallery, /Remove image/);
+  assert.match(gallery, /\/api\/client\/micah\/image/);
+  assert.match(gallery, /canUploadImage && card\.id/);
+  assert.match(gallery, /download=\{fileName\}/);
+  const controls = gallery.slice(
+    gallery.indexOf('data-micah-image="controls"'),
+    gallery.indexOf("canReview && card.id"),
+  );
+  assert.match(controls, /type="button"/);
+  assert.doesNotMatch(controls, /<form|type="submit"/);
+
+  const page = readFileSync(join(process.cwd(), "src/app/client/micah/page.tsx"), "utf8");
+  assert.match(page, /canUploadImage=\{workspace\.isSuperAdmin\}/);
+
+  const persist = readFileSync(
+    join(process.cwd(), "src/server/content-studio/gallery-image-persist.ts"),
+    "utf8",
+  );
+  const actorAt = persist.indexOf("micahGalleryImageActorDecision");
+  const uploadAt = persist.indexOf(".upload(");
+  const updateAt = persist.indexOf(".update({ image_url: imageUrl })");
+  assert.ok(actorAt > 0 && uploadAt > actorAt && updateAt > actorAt);
+  assert.match(persist, /if \(actor !== "allow"\) return micahGalleryImageActionResult\(actor\)/);
+  assert.match(persist, /createSignedUrl\(\s*source\.objectPath,\s*source\.expiresIn,\s*\{\s*download: source\.downloadName/);
+  assert.match(persist, /createClient\(/);
+  assert.doesNotMatch(persist, /createAdminClient|getPublicUrl/);
+  const imageUpdate = persist.slice(updateAt, updateAt + 80);
+  assert.match(imageUpdate, /image_url: imageUrl/);
+  assert.doesNotMatch(imageUpdate, /status/);
 });

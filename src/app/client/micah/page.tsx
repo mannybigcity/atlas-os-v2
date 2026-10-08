@@ -70,6 +70,7 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
         <ClientContentStudio
           allowCaptionEdit={canShowMicahGalleryEdit(primaryOrganization)}
           canReview={canShowMicahGalleryEdit(primaryOrganization)}
+          canUploadImage={workspace.isSuperAdmin}
           demoDesk={isAfeCrmDemoOrganization(primaryOrganization)}
           organizationId={primaryOrganization.id}
           organizationName={primaryOrganization.name}
