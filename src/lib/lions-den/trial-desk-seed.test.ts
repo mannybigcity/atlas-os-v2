@@ -7,11 +7,15 @@ import {
   applyTrialLionsDenSeed,
   assertTrialDeskSeedIsSafe,
   canSeedTrialLionsDenDesk,
+  getTrialClientSeeds,
+  getTrialHunterSeedFinds,
   getTrialLionsDenSeed,
+  getTrialProspectSeeds,
   trialDeskSeedWriteTables,
   trialHunterSeedPlaceIds,
   trialMicahSeedSlots,
 } from "./trial-desk-seed.ts";
+import { hasTrialSamples } from "./trial-samples.ts";
 import { AFE_OPERATOR_DESK_NAME, AFE_OPERATOR_DESK_SLUG, SAMPLE_DESK_DISPLAY_NAME } from "../client-portal/identity.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -131,19 +135,27 @@ function createSeedClient(organizations: Array<{ id: string; name: string; slug:
   };
 }
 
-test("trial seed is a denser local review pile, 2–3 prospects, 1 closed win, and follow-up drafts, with no generic MICAH cards", () => {
+test("new trial seed starts empty and still knows the owner's market", () => {
   const seed = getTrialLionsDenSeed({
     businessName: "Cypress Pest Pros",
     businessType: "Contractor or home service",
   });
   assert.doesNotThrow(() => assertTrialDeskSeedIsSafe(seed));
-  assert.equal(seed.hunterFinds.length, 7);
-  assert.equal(seed.prospects.length, 3);
-  assert.equal(seed.followUps.length, 2);
-  assert.equal(seed.clients.length, 1);
+  assert.equal(seed.hunterFinds.length, 0);
+  assert.equal(seed.prospects.length, 0);
+  assert.equal(seed.followUps.length, 0);
+  assert.equal(seed.clients.length, 0);
   assert.equal(seed.micahSlots.length, 0);
   assert.equal(seed.market.serviceQuery, "pest control");
   assert.equal(seed.market.city, "Cypress");
+  assert.equal(
+    hasTrialSamples({ opportunities: [], hunterItems: [], drafts: [] }),
+    false,
+  );
+  assert.throws(
+    () => assertTrialDeskSeedIsSafe({ ...seed, hunterFinds: getTrialHunterSeedFinds(seed.market) }),
+    /start empty/,
+  );
   assert.equal(trialHunterSeedPlaceIds(seed.market).every((id) => id.startsWith("trial-seed-")), true);
   assert.deepEqual(trialMicahSeedSlots(), [
     "trial-seed-week-d1",
@@ -157,16 +169,21 @@ test("trial seed is a denser local review pile, 2–3 prospects, 1 closed win, a
   const writeTables: readonly string[] = trialDeskSeedWriteTables();
   assert.equal(writeTables.includes("organization_opportunities"), true);
   assert.equal(writeTables.includes("organization_sis_customers"), false);
-  for (const find of seed.hunterFinds) {
+  const catalogFinds = getTrialHunterSeedFinds(seed.market);
+  assert.equal(catalogFinds.length, 7);
+  for (const find of catalogFinds) {
     assert.match(find.name, /pest|termite|mosquito|rodent|wildlife|exterminator/i);
     assert.match(find.formattedAddress, /Cypress/);
     assert.match(find.searchQuery, /pest control/);
   }
-  for (const prospect of seed.prospects) {
+  const catalogProspects = getTrialProspectSeeds(seed.market);
+  assert.equal(catalogProspects.length, 3);
+  for (const prospect of catalogProspects) {
     assert.doesNotMatch(prospect.name, /\bSAMPLE\b/);
     assert.match(prospect.researchSummary, /has not called, emailed, or texted/);
   }
-  const wonClient = seed.clients[0];
+  const wonClient = getTrialClientSeeds(seed.market)[0];
+  assert.ok(wonClient);
   assert.doesNotMatch(wonClient.name, /\bSAMPLE\b/);
   assert.match(wonClient.name, /pest|termite|mosquito|hoa/i);
   assert.match(wonClient.researchSummary, /did not close this automatically|owner marks real wins/i);
@@ -174,8 +191,6 @@ test("trial seed is a denser local review pile, 2–3 prospects, 1 closed win, a
   assert.match(wonClient.note, /did not call, email, or text/i);
   assert.match(wonClient.contactEmail, /@example\.invalid$/);
   assert.match(wonClient.hunterPlaceId, /^trial-seed-won-/);
-  assert.equal(seed.followUps.every((row) => row.daysUntilDue != null), true);
-  assert.equal(seed.micahSlots.length, 0);
 });
 
 test("trial seed never invents phones, SIS, sample desk, Faith, or auto-send", () => {
@@ -191,20 +206,14 @@ test("trial seed never invents phones, SIS, sample desk, Faith, or auto-send", (
   assert.doesNotMatch(blob, /\bfaith\b/i);
   assert.doesNotMatch(blob, /auto-?send|already sent|was sent/i);
   assert.equal(seed.market.vertical, "maintenance");
+  assert.equal(seed.hunterFinds.length, 0);
+  assert.equal(seed.prospects.length, 0);
+  assert.equal(seed.clients.length, 0);
   assert.equal(seed.micahSlots.length, 0);
-  for (const find of seed.hunterFinds) {
+  for (const find of getTrialHunterSeedFinds(seed.market)) {
     assert.doesNotMatch(find.name, /\bSAMPLE\b/);
     assert.doesNotMatch(find.searchQuery, /SAMPLE|not a real location/i);
     assert.match(find.searchQuery, /maintenance|handyman|repair|upkeep/i);
-  }
-  for (const slot of seed.micahSlots) {
-    assert.doesNotMatch(slot.caption, /\bSAMPLE\b/);
-    assert.match(slot.caption, /did not post/);
-    assert.match(slot.callToAction, /book|call|stop in|save this/i);
-    assert.doesNotMatch(slot.headline, /placeholder/i);
-    assert.match(slot.dayLabel, /DAY \d/);
-    assert.match(slot.imageSvg, /Download and post yourself/);
-    assert.doesNotMatch(slot.imageSvg, /\bSAMPLE\b|atlas-logo|atlas-lion/i);
   }
 });
 
@@ -235,7 +244,7 @@ test("eligibility is new trial orgs only — never SIS, sample, or operator", ()
   );
 });
 
-test("apply writes pending HUNTER finds, local prospects, one won client, follow-up drafts, and MICAH drafts once", async () => {
+test("apply writes no example HUNTER finds, prospects, closed wins, or MICAH cards on a new trial", async () => {
   const client = createSeedClient([
     { id: "org-trial", name: "Cypress Pest Pros", slug: "cypress-pest-pros-trial" },
     { id: "org-sample", name: SAMPLE_DESK_DISPLAY_NAME, slug: "afe-crm-demo" },
@@ -248,76 +257,21 @@ test("apply writes pending HUNTER finds, local prospects, one won client, follow
     hasTrialProfile: true,
     market: { businessName: "Cypress Pest Pros", businessType: "Contractor or home service" },
   });
-  assert.equal(first.status, "applied");
-  if (first.status === "applied") {
-    assert.equal(first.clientCount, 1);
-    assert.equal(first.wroteClients, true);
+  assert.equal(first.status, "already_seeded");
+  if (first.status === "already_seeded") {
+    assert.equal(first.hunterCount, 0);
+    assert.equal(first.prospectCount, 0);
+    assert.equal(first.clientCount, 0);
+    assert.equal(first.followUpCount, 0);
+    assert.equal(first.micahCount, 0);
   }
-  const pendingHunter = client.store.organization_hunter_review_items.filter((row) => row.status === "pending");
-  const acceptedHunter = client.store.organization_hunter_review_items.filter((row) => row.status === "accepted");
-  const wonClients = client.store.organization_opportunities.filter((row) => row.stage === "won");
-  assert.equal(pendingHunter.length, 7);
-  assert.equal(acceptedHunter.length, 4);
-  assert.equal(client.store.organization_opportunities.length, 4);
-  assert.equal(wonClients.length, 1);
+  assert.equal(client.store.organization_hunter_review_items.length, 0);
+  assert.equal(client.store.organization_opportunities.length, 0);
+  assert.equal(client.store.organization_opportunity_events.length, 0);
   assert.equal(client.store.organization_content_drafts.length, 0);
-  assert.equal(
-    client.store.organization_opportunities.filter((row) => row.stage === "follow_up_queued").length,
-    2,
-  );
-  assert.equal(
-    client.store.organization_opportunities.filter((row) => row.next_action_due).length,
-    2,
-  );
-  assert.doesNotMatch(String(wonClients[0]?.name), /\bSAMPLE\b/);
-  assert.equal(wonClients[0]?.contact_phone, null);
-  assert.equal((wonClients[0]?.metadata as { closed_win?: boolean }).closed_win, true);
-  assert.match(String(wonClients[0]?.source_label), /closed win/i);
-  assert.match(String(wonClients[0]?.research_summary), /did not close this automatically|owner marks real wins/);
-  assert.equal(
-    pendingHunter.every((row) => row.accepted_opportunity_id == null),
-    true,
-  );
-  assert.equal(
-    client.store.organization_hunter_review_items.every((row) => row.organization_id === "org-trial"),
-    true,
-  );
-  assert.equal(
-    client.store.organization_opportunities.every((row) => (row.metadata as { trial_seed?: boolean }).trial_seed),
-    true,
-  );
-  assert.equal(
-    client.store.organization_opportunities.every((row) => !String(row.name).includes("SAMPLE")),
-    true,
-  );
-  assert.equal(
-    client.store.organization_opportunities.every((row) => row.contact_phone == null),
-    true,
-  );
-  assert.equal(
-    client.store.organization_content_drafts.every((row) => (row.metadata as { trial_seed?: boolean }).trial_seed),
-    true,
-  );
-  assert.equal(
-    client.store.organization_content_drafts.every(
-      (row) => (row.metadata as { micah_demeanor?: string; faith_language?: boolean }).micah_demeanor === "straight",
-    ),
-    true,
-  );
-  assert.equal(
-    client.store.organization_opportunity_events.some((row) => row.event_type === "follow_up_queued"),
-    true,
-  );
-  assert.equal(
-    client.store.organization_opportunity_events.some((row) => row.event_type === "won"),
-    true,
-  );
-  assert.equal(
-    client.store.organization_opportunity_events.some(
-      (row) => row.event_type === "note_added" && /won after they booked/.test(String(row.summary)),
-    ),
-    true,
-  );
+  assert.equal(client.store.organization_content_draft_events.length, 0);
+  assert.equal(client.writes.some((row) => row.startsWith("upsert:")), false);
+  assert.equal(hasTrialSamples({ opportunities: [], hunterItems: [], drafts: [] }), false);
 
   const second = await applyTrialLionsDenSeed(client, {
     organizationId: "org-trial",
@@ -326,13 +280,8 @@ test("apply writes pending HUNTER finds, local prospects, one won client, follow
     market: { businessName: "Cypress Pest Pros", businessType: "Contractor or home service" },
   });
   assert.equal(second.status, "already_seeded");
-  if (second.status === "already_seeded") {
-    assert.equal(second.clientCount, 1);
-  }
-  assert.equal(pendingHunter.length, 7);
-  assert.equal(client.store.organization_hunter_review_items.length, 11);
-  assert.equal(client.store.organization_opportunities.length, 4);
-  assert.equal(client.store.organization_opportunities.filter((row) => row.stage === "won").length, 1);
+  assert.equal(client.store.organization_hunter_review_items.length, 0);
+  assert.equal(client.store.organization_opportunities.length, 0);
   assert.equal(client.store.organization_content_drafts.length, 0);
 });
 
@@ -375,7 +324,9 @@ test("closed-win honesty is required, SAMPLE chrome is banned, and apply stays n
     businessName: "Massive Action Maintenance",
     businessType: "Contractor or home service",
   });
-  const labeled = seed.clients[0];
+  const labeled = getTrialClientSeeds(seed.market)[0];
+  assert.ok(labeled);
+  assert.equal(seed.clients.length, 0);
   assert.doesNotMatch(labeled.name, /\bSAMPLE\b/);
   assert.doesNotMatch(labeled.note, /\bSAMPLE\b/);
   assert.match(labeled.note, /did not call, email, or text/);
@@ -456,6 +407,18 @@ test("apply refuses SIS and sample desk even when asked", async () => {
   assert.equal(client.store.organization_hunter_review_items.length, 0);
   assert.equal(client.store.organization_opportunities.length, 0);
   assert.equal(client.store.organization_content_drafts.length, 0);
+});
+
+test("fresh trial empty copy points at real HUNTER and MICAH steps; SIS and sample copy stay", () => {
+  const overview = readRepo("src/components/lions-den/lions-den-overview.tsx");
+  assert.match(overview, /freshTrialDesk/);
+  assert.match(overview, /Run HUNTER for real places/);
+  assert.match(overview, /Build them in MICAH from your website or a short list of services/);
+  assert.match(overview, /Call list empty\. Accept a HUNTER find/);
+  assert.match(overview, /No drafts to download\. MICAH does not publish/);
+  assert.match(overview, /hasTrialSamples/);
+  assert.match(overview, /value=\{prospects\.length\}/);
+  assert.match(overview, /countWonOpportunities\(prospects\)/);
 });
 
 test("workspace setup and Lion's Den load call the trial seed once-safe helper", () => {

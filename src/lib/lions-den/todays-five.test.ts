@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { callGoalProgress } from "./call-log.ts";
 import type { OrganizationOpportunity } from "../../server/opportunities/queries.ts";
 import {
   TODAYS_FIVE_LIMIT,
@@ -365,6 +366,36 @@ test("logged calls drop off the cached five without a new Places trip", () => {
     spanish: false,
   });
   assert.match(sampleNotes.situation, /Sample records stay off/);
+});
+
+test("an empty call queue still builds Today's 5 without sample copy", async () => {
+  const empty = await assembleTodaysFive({
+    prospects: [],
+    deskDate,
+    cached: null,
+  });
+  assert.equal(empty.snapshot.rows.length, 0);
+  assert.equal(empty.snapshot.queueSize, 0);
+  assert.equal(empty.placeLookups, 0);
+  const emptyDesk = presentTodaysFive(empty.snapshot, []);
+  assert.equal(emptyDesk.rows.length, 0);
+  assert.equal(emptyDesk.skippedSamples, 0);
+  const emptyNotes = todaysFiveNotes({
+    rowCount: 0,
+    poolSize: 0,
+    queueSize: 0,
+    loggedOff: 0,
+    skippedSamples: 0,
+    placesChecked: false,
+    hunterChecked: false,
+    spanish: false,
+  });
+  assert.match(emptyNotes.situation, /Run HUNTER for real places/);
+  assert.doesNotMatch(emptyNotes.situation, /Sample records/);
+  const progress = callGoalProgress(0, 0);
+  assert.equal(progress.calls, 0);
+  assert.equal(progress.goal, 100);
+  assert.equal(Number.isFinite(progress.percent), true);
 });
 
 test("Today's 5 sits on the AFE call queue and reuses HUNTER Places", () => {

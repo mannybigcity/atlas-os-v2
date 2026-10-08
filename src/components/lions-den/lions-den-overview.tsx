@@ -142,6 +142,7 @@ export function LionsDenOverview({
       ? "Seguimiento"
       : "Follow-up";
   const sisDesk = Boolean(sisDashboard);
+  const freshTrialDesk = !sisDesk && !sampleWalkthrough;
   const callsToMake = sisDesk ? prospects : prospects.filter(prospectBelongsOnCallsToMake);
   const callsToMakeTitle = sisDesk
     ? spanish
@@ -225,9 +226,13 @@ export function LionsDenOverview({
           <div className="ld-panel-body">
             {reviewPile.length === 0 ? (
               <p className="ld-empty">
-                {spanish
-                  ? "Nada en la pila. Busca en HUNTER. Aceptar mueve el hallazgo a Prospectos. Nadie se contacta desde aquí."
-                  : "Nothing in the pile. Search in HUNTER. Accept moves a find into Prospects. Nobody is contacted from here."}
+                {freshTrialDesk
+                  ? spanish
+                    ? "Nada en la pila. Busca lugares reales en HUNTER. Aceptar mueve el hallazgo a Prospectos. Nadie se contacta desde aquí."
+                    : "Nothing in the pile. Run HUNTER for real places. Accept moves a find into Prospects. Nobody is contacted from here."
+                  : spanish
+                    ? "Nada en la pila. Busca en HUNTER. Aceptar mueve el hallazgo a Prospectos. Nadie se contacta desde aquí."
+                    : "Nothing in the pile. Search in HUNTER. Accept moves a find into Prospects. Nobody is contacted from here."}
               </p>
             ) : (
               reviewPile.slice(0, 8).map((item) => (
@@ -309,9 +314,13 @@ export function LionsDenOverview({
                   ? spanish
                     ? "Lista de llamadas vacía. Acepta un hallazgo de HUNTER. Atlas no llama, escribe ni envía SMS."
                     : "Call list empty. Accept a HUNTER find. Atlas does not call, email, or text."
-                  : spanish
-                    ? "Nada por llamar. Solo aparecen prospectos con teléfono que aún no contactaste. Sin teléfono se quedan en Prospectos."
-                    : "No calls to make. Only prospects with a phone you have not marked contacted show here. No-phone rows stay on Prospects."}
+                  : freshTrialDesk
+                    ? spanish
+                      ? "Nada por llamar. Busca lugares reales en HUNTER y acepta uno que tenga teléfono. Sin teléfono se quedan en Prospectos."
+                      : "No calls to make. Run HUNTER for real places and accept a find that has a phone. No-phone rows stay on Prospects."
+                    : spanish
+                      ? "Nada por llamar. Solo aparecen prospectos con teléfono que aún no contactaste. Sin teléfono se quedan en Prospectos."
+                      : "No calls to make. Only prospects with a phone you have not marked contacted show here. No-phone rows stay on Prospects."}
               </p>
             ) : (
               callsToMake.slice(0, 10).map((prospect) => {
@@ -430,7 +439,13 @@ export function LionsDenOverview({
           <div className="ld-panel-body">
             {drafts.length === 0 ? (
               <p className="ld-empty">
-                {spanish ? "No hay borradores para descargar. MICAH no publica." : "No drafts to download. MICAH does not publish."}
+                {freshTrialDesk
+                  ? spanish
+                    ? "Aún no hay tarjetas. Ármalas en MICAH con tu sitio o una lista corta de servicios. MICAH no publica."
+                    : "No cards yet. Build them in MICAH from your website or a short list of services. MICAH does not post."
+                  : spanish
+                    ? "No hay borradores para descargar. MICAH no publica."
+                    : "No drafts to download. MICAH does not publish."}
               </p>
             ) : (
               <ul className="space-y-1">

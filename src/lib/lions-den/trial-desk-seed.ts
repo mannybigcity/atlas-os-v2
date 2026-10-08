@@ -320,14 +320,14 @@ export function trialHunterSeedPlaceIds(marketInput: TrialDeskMarketInput = {}) 
 
 export function getTrialLionsDenSeed(marketInput: TrialDeskMarketInput = {}): TrialLionsDenSeed {
   const market = inferTrialDeskMarket(marketInput);
-  const prospects = getTrialProspectSeeds(market);
+  // New trials start with no example records. HUNTER finds, prospects, the
+  // closed win, and MICAH cards are built by the owner. Existing desks are
+  // left alone because apply writes nothing when these arrays are empty.
   return {
-    hunterFinds: getTrialHunterSeedFinds(market),
-    prospects,
-    followUps: prospects.filter((row) => row.daysUntilDue != null),
-    clients: getTrialClientSeeds(market),
-    // New trials do not ship generic MICAH cards. Real cards are built later
-    // from the owner's website or a short service intake.
+    hunterFinds: [],
+    prospects: [],
+    followUps: [],
+    clients: [],
     micahSlots: [],
     market,
   };
@@ -344,22 +344,6 @@ export function trialDeskSeedWriteTables() {
 }
 
 export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
-  if (seed.hunterFinds.length < 5 || seed.hunterFinds.length > 8) {
-    throw new Error("Trial seed should be a denser HUNTER review pile (5–8 local business rows).");
-  }
-  if (seed.prospects.length < 2 || seed.prospects.length > 3) {
-    throw new Error("Trial seed should include 2–3 Accept-ready prospects.");
-  }
-  if (seed.followUps.length < 1 || seed.followUps.length > 2) {
-    throw new Error("Trial seed should include 1–2 follow-up drafts.");
-  }
-  if (seed.clients.length !== 1) {
-    throw new Error("Trial seed should include exactly one closed client win.");
-  }
-  if (seed.micahSlots.length !== 0) {
-    throw new Error("Trial seed must not include generic MICAH cards.");
-  }
-
   const blob = JSON.stringify(seed);
   if (/\b(?:contact_)?phone|\(\s*555\s*\)|\+1[\s-]?\d/i.test(blob)) {
     throw new Error("Trial seed must not invent phone numbers.");
@@ -447,6 +431,16 @@ export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
     if (/atlas-logo|atlas-lion|sis custom creations/i.test(slot.imageSvg)) {
       throw new Error(`MICAH trial slot must not stamp the AFE lion or SIS chrome: ${slot.title}`);
     }
+  }
+
+  if (
+    seed.hunterFinds.length !== 0 ||
+    seed.prospects.length !== 0 ||
+    seed.followUps.length !== 0 ||
+    seed.clients.length !== 0 ||
+    seed.micahSlots.length !== 0
+  ) {
+    throw new Error("New trial seed must start empty: no example HUNTER finds, prospects, closed wins, or MICAH cards.");
   }
 }
 
