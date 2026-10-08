@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { reviewContentDraft } from "@/server/content-studio/actions";
 import {
   initialMicahDeskActionState,
@@ -20,6 +21,10 @@ export type MicahWeekGalleryCard = {
   instagramCaption?: string;
   linkedinCaption?: string;
   imageSvg: string;
+  imageUrl?: string | null;
+  imageDownloadUrl?: string | null;
+  imageFileName?: string | null;
+  hasGalleryImage?: boolean;
   demoLabeled: boolean;
   gradePass?: boolean;
 };
@@ -27,14 +32,43 @@ export type MicahWeekGalleryCard = {
 type MicahWeekGalleryProps = {
   organizationId: string;
   canReview: boolean;
+  canUploadImage?: boolean;
   allowCaptionEdit?: boolean;
   returnTo?: string;
   spanish: boolean;
   cards: MicahWeekGalleryCard[];
 };
 
+type MicahImageActionResult = {
+  status: "success" | "error";
+  error: string | null;
+  message: string | null;
+};
+
 function svgDataUrl(svg: string) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function browserImageHref(value: string | null | undefined) {
+  const href = String(value ?? "").trim();
+  if (!/^https?:\/\//i.test(href)) return null;
+  try {
+    const url = new URL(href);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    return href;
+  } catch {
+    return null;
+  }
+}
+
+function imageExtensionFromHref(href: string) {
+  try {
+    const extension = new URL(href).pathname.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
+    if (extension === "png" || extension === "jpg" || extension === "jpeg") return extension;
+  } catch {
+    return "png";
+  }
+  return "png";
 }
 
 function captionForCopy(caption: string) {
@@ -62,6 +96,7 @@ function MicahDayCard({
   card,
   organizationId,
   canReview,
+  canUploadImage,
   allowCaptionEdit,
   returnTo,
   spanish,
@@ -69,10 +104,13 @@ function MicahDayCard({
   card: MicahWeekGalleryCard;
   organizationId: string;
   canReview: boolean;
+  canUploadImage: boolean;
   allowCaptionEdit: boolean;
   returnTo: string;
   spanish: boolean;
 }) {
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [caption, setCaption] = useState(card.caption);
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState<"facebook" | "instagram" | "linkedin" | null>(
@@ -80,6 +118,8 @@ function MicahDayCard({
   );
   const [saveState, setSaveState] = useState<MicahDeskActionState>(initialMicahDeskActionState);
   const [saving, setSaving] = useState(false);
+  const [imageState, setImageState] = useState<MicahImageActionResult | null>(null);
+  const [imagePending, setImagePending] = useState(false);
 
   useEffect(() => {
     setCaption(card.caption);
@@ -128,9 +168,68 @@ function MicahDayCard({
       setSaving(false);
     }
   }
-  const source = svgDataUrl(card.imageSvg);
-  const fileName = `micah-day-${card.day}-${card.weekday.toLowerCase()}.svg`;
+  const uploadedImage = browserImageHref(card.imageUrl);
+  const downloadHref = browserImageHref(card.imageDownloadUrl) ?? uploadedImage;
+  const source = uploadedImage ?? svgDataUrl(card.imageSvg);
+  const fileName = uploadedImage
+    ? card.imageFileName ||
+      `micah-day-${card.day}-${card.weekday.toLowerCase()}.${imageExtensionFromHref(uploadedImage)}`
+    : `micah-day-${card.day}-${card.weekday.toLowerCase()}.svg`;
   const canSave = allowCaptionEdit && Boolean(card.id);
+  const hasStoredImage = Boolean(uploadedImage) || Boolean(card.hasGalleryImage);
+
+  async function changeImage(intent: "upload" | "remove", file?: File | null) {
+    if (!card.id || !canUploadImage) return;
+    if (intent === "upload") {
+      if (!file || file.size <= 0 || file.size > 10 * 1024 * 1024 || !/\.(png|jpe?g)$/i.test(file.name)) {
+        setImageState({
+          status: "error",
+          error: spanish
+            ? "Usa un PNG o JPEG de hasta 10 MB. No se publicó nada."
+            : "Use a PNG or JPEG up to 10 MB. Nothing was posted.",
+          message: null,
+        });
+        return;
+      }
+    }
+    setImagePending(true);
+    try {
+      const body = new FormData();
+      body.set("organizationId", organizationId);
+      body.set("draftId", card.id);
+      body.set("intent", intent);
+      if (file) body.set("file", file);
+      const response = await fetch("/api/client/micah/image", {
+        method: "POST",
+        credentials: "same-origin",
+        body,
+      });
+      const payload = (await response.json().catch(() => null)) as MicahImageActionResult | null;
+      if (payload?.status === "success" || payload?.status === "error") {
+        setImageState(payload);
+        if (payload.status === "success") router.refresh();
+        return;
+      }
+      setImageState({
+        status: "error",
+        error: spanish
+          ? "La imagen no se guardó. No se publicó nada."
+          : "Image was not saved. Nothing was posted.",
+        message: null,
+      });
+    } catch {
+      setImageState({
+        status: "error",
+        error: spanish
+          ? "La imagen no se guardó. No se publicó nada."
+          : "Image was not saved. Nothing was posted.",
+        message: null,
+      });
+    } finally {
+      setImagePending(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   async function copyVariant(
     value: string,
@@ -194,7 +293,7 @@ function MicahDayCard({
       <a
         className={`inline-flex ${LD_CHIP}`}
         download={fileName}
-        href={source}
+        href={downloadHref ?? source}
       >
         {spanish ? "Descargar archivo" : "Download file"}
       </a>
@@ -212,6 +311,7 @@ function MicahDayCard({
         <img
           alt={`${card.dayLabel}: ${card.headline}`}
           className="aspect-square w-full object-contain"
+          data-micah-card-image={uploadedImage ? "file" : "svg"}
           src={source}
         />
       </div>
@@ -328,6 +428,66 @@ function MicahDayCard({
           </div>
         )}
 
+        {canUploadImage && card.id ? (
+          <div className="mt-4 space-y-2" data-micah-image="controls">
+            <input
+              accept="image/png,image/jpeg,.png,.jpg,.jpeg"
+              className="sr-only"
+              data-micah-image="file"
+              onChange={(event) => void changeImage("upload", event.target.files?.[0] ?? null)}
+              ref={fileInputRef}
+              type="file"
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={LD_CHIP}
+                data-micah-image={hasStoredImage ? "replace" : "upload"}
+                disabled={imagePending}
+                onClick={() => fileInputRef.current?.click()}
+                type="button"
+              >
+                {imagePending
+                  ? spanish
+                    ? "Guardando imagen"
+                    : "Saving image"
+                  : hasStoredImage
+                    ? spanish
+                      ? "Reemplazar imagen"
+                      : "Replace image"
+                    : spanish
+                      ? "Subir imagen"
+                      : "Upload image"}
+              </button>
+              {hasStoredImage ? (
+                <button
+                  className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  data-micah-image="remove"
+                  disabled={imagePending}
+                  onClick={() => void changeImage("remove")}
+                  type="button"
+                >
+                  {spanish ? "Quitar imagen" : "Remove image"}
+                </button>
+              ) : null}
+            </div>
+            {imageState?.status === "success" ? (
+              <p className="text-xs leading-5 text-[#0b6b3a]" data-micah-image="success">
+                {imageState.message}
+              </p>
+            ) : null}
+            {imageState?.status === "error" ? (
+              <p className="text-xs leading-5 text-[#9b1c1c]" data-micah-image="error">
+                {imageState.error}
+              </p>
+            ) : null}
+            <p className="text-xs leading-5 text-[#5c6578]">
+              {spanish
+                ? "PNG o JPEG, hasta 10 MB. No se publica."
+                : "PNG or JPEG, up to 10 MB. Nothing is posted."}
+            </p>
+          </div>
+        ) : null}
+
         {canReview && card.id ? (
           <form action={reviewContentDraft} className="mt-4 space-y-3">
             <input name="organizationId" type="hidden" value={organizationId} />
@@ -369,6 +529,7 @@ function MicahDayCard({
 export function MicahWeekGallery({
   organizationId,
   canReview,
+  canUploadImage,
   allowCaptionEdit,
   returnTo,
   spanish,
@@ -380,6 +541,7 @@ export function MicahWeekGallery({
         <MicahDayCard
           allowCaptionEdit={allowCaptionEdit ?? canReview}
           canReview={canReview}
+          canUploadImage={canUploadImage ?? false}
           card={card}
           key={card.id ?? `day-${card.day}`}
           organizationId={organizationId}

@@ -8,6 +8,7 @@ import {
   galleryLogoForMicahDesk,
   selectMicahWeekGallery,
 } from "@/server/content-studio/gallery-art";
+import { attachMicahGalleryImageUrls } from "@/server/content-studio/gallery-image-persist";
 import type { ContentStudio } from "@/server/content-studio/queries";
 import { getSiteLanguage } from "@/lib/site-language-server";
 
@@ -15,6 +16,7 @@ type ClientContentStudioProps = {
   organizationId: string;
   organizationName?: string | null;
   canReview: boolean;
+  canUploadImage?: boolean;
   allowCaptionEdit?: boolean;
   returnTo?: string;
   demoDesk?: boolean;
@@ -25,6 +27,7 @@ export async function ClientContentStudio({
   organizationId,
   organizationName,
   canReview,
+  canUploadImage = false,
   allowCaptionEdit,
   returnTo,
   demoDesk = false,
@@ -34,13 +37,14 @@ export async function ClientContentStudio({
   const spanish = language === "es";
   const prefill = await readMicahWorkspacePrefill(organizationId, organizationName);
   const brand = brandKitForMicahDesk(studio.drafts, prefill);
-  const cards = selectMicahWeekGallery(studio.drafts, {
+  const selected = selectMicahWeekGallery(studio.drafts, {
     demoDesk,
     logoDataUri: galleryLogoForMicahDesk({
       demoDesk,
       brandLogo: brand.logoDataUri,
     }),
   });
+  const cards = await attachMicahGalleryImageUrls(organizationId, selected);
 
   return (
     <section
@@ -82,6 +86,7 @@ export async function ClientContentStudio({
         <MicahWeekGallery
           allowCaptionEdit={allowCaptionEdit ?? canReview}
           canReview={canReview}
+          canUploadImage={canUploadImage}
           cards={cards}
           organizationId={organizationId}
           returnTo={returnTo}
