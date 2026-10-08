@@ -1,3 +1,4 @@
+import { MicahBusinessIntake } from "@/components/micah-business-intake";
 import { MicahWeekGallery } from "@/components/micah-week-gallery";
 import { MicahWeekDesk } from "@/components/micah-week-desk";
 import {
@@ -68,12 +69,25 @@ export async function ClientContentStudio({
         </div>
       </div>
 
+      {!demoDesk && cards.length === 0 ? (
+        <MicahBusinessIntake
+          businessName={brand.businessName || organizationName || ""}
+          canEdit={canReview}
+          city={brand.city}
+          organizationId={organizationId}
+          phone={brand.phone}
+          spanish={spanish}
+          website={brand.website}
+        />
+      ) : null}
+
       <MicahWeekDesk
         brand={brand}
         calendarHref="/client/calendar"
         canEdit={canReview}
         cards={cards}
         demoDesk={demoDesk}
+        intakeMode={!demoDesk && cards.length === 0}
         organizationId={organizationId}
         spanish={spanish}
       />

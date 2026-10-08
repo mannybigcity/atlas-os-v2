@@ -241,6 +241,14 @@ function seedSearchQuery(market: TrialDeskMarket) {
   return `${market.serviceQuery} in ${area}`;
 }
 
+/** Avoid "local local business" when the trade label already starts with local. */
+function describedTrade(serviceQuery: string) {
+  const service = serviceQuery.replace(/\s+/g, " ").trim();
+  if (!service) return "local business";
+  if (/^local\b/i.test(service)) return service;
+  return `local ${service}`;
+}
+
 export function getTrialHunterSeedFinds(marketInput: TrialDeskMarketInput = {}): TrialHunterSeedFind[] {
   const market = inferTrialDeskMarket(marketInput);
   return HUNTER_CATALOG[market.vertical].slice(0, 7).map((row) => ({
@@ -271,10 +279,10 @@ export function getTrialProspectSeeds(marketInput: TrialDeskMarketInput = {}): T
       daysUntilDue,
       nextAction,
       researchSummary: [
-        `${row.name} looks like a local ${market.serviceQuery} shop in ${area}.`,
+        `${row.name} looks like a ${describedTrade(market.serviceQuery)} shop in ${area}.`,
         "Atlas has not called, emailed, or texted anyone. The owner approves any send.",
       ].join(" "),
-      fitReason: `Local ${market.serviceQuery} name for the Prospects board. Atlas has not contacted them.`,
+      fitReason: `${describedTrade(market.serviceQuery)} name for the Prospects board. Atlas has not contacted them.`,
       hunterPlaceId: `trial-seed-accepted-${row.seedKey}`,
       primaryType: row.primaryType,
     };
@@ -318,7 +326,9 @@ export function getTrialLionsDenSeed(marketInput: TrialDeskMarketInput = {}): Tr
     prospects,
     followUps: prospects.filter((row) => row.daysUntilDue != null),
     clients: getTrialClientSeeds(market),
-    micahSlots: getTrialMicahSeedSlots(market),
+    // New trials do not ship generic MICAH cards. Real cards are built later
+    // from the owner's website or a short service intake.
+    micahSlots: [],
     market,
   };
 }
@@ -346,8 +356,8 @@ export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
   if (seed.clients.length !== 1) {
     throw new Error("Trial seed should include exactly one closed client win.");
   }
-  if (seed.micahSlots.length !== 7) {
-    throw new Error("Trial seed must include one MICAH week card for each weekday.");
+  if (seed.micahSlots.length !== 0) {
+    throw new Error("Trial seed must not include generic MICAH cards.");
   }
 
   const blob = JSON.stringify(seed);
@@ -504,7 +514,7 @@ export async function applyTrialLionsDenSeed(
   assertTrialDeskSeedIsSafe(seed);
 
   const placeIds = seed.hunterFinds.map((find) => find.placeId);
-  const slots = trialMicahSeedSlots();
+  const slots = seed.micahSlots.map((item) => item.slot);
 
   const hunterRead = await client
     .from("organization_hunter_review_items")

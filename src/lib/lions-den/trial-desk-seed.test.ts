@@ -131,7 +131,7 @@ function createSeedClient(organizations: Array<{ id: string; name: string; slug:
   };
 }
 
-test("trial seed is a denser local review pile, 2–3 prospects, 1 closed win, follow-up drafts, and 7 MICAH week cards", () => {
+test("trial seed is a denser local review pile, 2–3 prospects, 1 closed win, and follow-up drafts, with no generic MICAH cards", () => {
   const seed = getTrialLionsDenSeed({
     businessName: "Cypress Pest Pros",
     businessType: "Contractor or home service",
@@ -141,13 +141,9 @@ test("trial seed is a denser local review pile, 2–3 prospects, 1 closed win, f
   assert.equal(seed.prospects.length, 3);
   assert.equal(seed.followUps.length, 2);
   assert.equal(seed.clients.length, 1);
-  assert.equal(seed.micahSlots.length, 7);
+  assert.equal(seed.micahSlots.length, 0);
   assert.equal(seed.market.serviceQuery, "pest control");
   assert.equal(seed.market.city, "Cypress");
-  assert.deepEqual(
-    seed.micahSlots.map((item) => `${item.day}:${item.weekday}`),
-    ["1:Monday", "2:Tuesday", "3:Wednesday", "4:Thursday", "5:Friday", "6:Saturday", "7:Sunday"],
-  );
   assert.equal(trialHunterSeedPlaceIds(seed.market).every((id) => id.startsWith("trial-seed-")), true);
   assert.deepEqual(trialMicahSeedSlots(), [
     "trial-seed-week-d1",
@@ -179,11 +175,7 @@ test("trial seed is a denser local review pile, 2–3 prospects, 1 closed win, f
   assert.match(wonClient.contactEmail, /@example\.invalid$/);
   assert.match(wonClient.hunterPlaceId, /^trial-seed-won-/);
   assert.equal(seed.followUps.every((row) => row.daysUntilDue != null), true);
-  const monday = seed.micahSlots[0];
-  assert.match(monday.headline, /pest check/i);
-  assert.match(monday.caption, /Cypress Pest Pros/);
-  assert.match(monday.caption, /Cypress/);
-  assert.match(monday.callToAction, /pest check/i);
+  assert.equal(seed.micahSlots.length, 0);
 });
 
 test("trial seed never invents phones, SIS, sample desk, Faith, or auto-send", () => {
@@ -199,6 +191,7 @@ test("trial seed never invents phones, SIS, sample desk, Faith, or auto-send", (
   assert.doesNotMatch(blob, /\bfaith\b/i);
   assert.doesNotMatch(blob, /auto-?send|already sent|was sent/i);
   assert.equal(seed.market.vertical, "maintenance");
+  assert.equal(seed.micahSlots.length, 0);
   for (const find of seed.hunterFinds) {
     assert.doesNotMatch(find.name, /\bSAMPLE\b/);
     assert.doesNotMatch(find.searchQuery, /SAMPLE|not a real location/i);
@@ -267,7 +260,7 @@ test("apply writes pending HUNTER finds, local prospects, one won client, follow
   assert.equal(acceptedHunter.length, 4);
   assert.equal(client.store.organization_opportunities.length, 4);
   assert.equal(wonClients.length, 1);
-  assert.equal(client.store.organization_content_drafts.length, 7);
+  assert.equal(client.store.organization_content_drafts.length, 0);
   assert.equal(
     client.store.organization_opportunities.filter((row) => row.stage === "follow_up_queued").length,
     2,
@@ -340,7 +333,7 @@ test("apply writes pending HUNTER finds, local prospects, one won client, follow
   assert.equal(client.store.organization_hunter_review_items.length, 11);
   assert.equal(client.store.organization_opportunities.length, 4);
   assert.equal(client.store.organization_opportunities.filter((row) => row.stage === "won").length, 1);
-  assert.equal(client.store.organization_content_drafts.length, 7);
+  assert.equal(client.store.organization_content_drafts.length, 0);
 });
 
 test("apply does not add seed finds on top of a real HUNTER pile, Prospects, or week pack", async () => {

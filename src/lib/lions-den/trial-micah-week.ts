@@ -152,7 +152,7 @@ const VERTICAL_VOICE: Record<TrialDeskVertical, VerticalVoice> = {
     offer: "this week's featured service",
     neighbor: "the customer who sent the next one",
     rest: "Monday loaded, Sunday off the ringer",
-    book: "call to book this week",
+    book: "book this week",
     facebook: ["#LocalBusiness", "#ThisWeek", "#OwnerRun"],
     instagram: ["#MainStreet", "#NeighborhoodShop", "#BookThisWeek", "#LocalOwner"],
     linkedin: ["#SmallBusiness", "#LocalService", "#OwnerOperated"],
@@ -178,32 +178,51 @@ function cityHashtag(city: string) {
   return compact ? `#${compact.slice(0, 24)}` : "#LocalShop";
 }
 
-export function trialMicahAudiencePrefill(market: TrialDeskMarket) {
-  const area = trialMarketAreaLabel(market);
-  return `Neighbors in ${area} who need ${market.serviceQuery} and should call or book this week.`;
-}
-
-export function trialMicahOfferPrefill(market: TrialDeskMarket) {
-  const area = trialMarketAreaLabel(market);
-  const voice = VERTICAL_VOICE[market.vertical];
-  return `${voice.offer[0].toUpperCase()}${voice.offer.slice(1)} for ${area}.`;
-}
-
 export function trialMicahBrandPrefill(market: TrialDeskMarket) {
-  if (!market.city.trim()) {
-    return {
-      organizationName: market.businessName,
-      city: "",
-      audience: "",
-      weeklyOffer: "",
-    };
-  }
   return {
     organizationName: market.businessName,
-    city: market.city,
-    audience: trialMicahAudiencePrefill(market),
-    weeklyOffer: trialMicahOfferPrefill(market),
+    city: market.city.trim(),
+    audience: "",
+    weeklyOffer: "",
   };
+}
+
+function wrapCardLines(value: string, maxChars: number, maxLines: number) {
+  const words = value.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxChars && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+    if (lines.length === maxLines) break;
+  }
+  if (current && lines.length < maxLines) lines.push(current);
+  return lines.length ? lines : [""];
+}
+
+function wrappedSvgText(input: {
+  x: number;
+  y: number;
+  fill: string;
+  fontSize: number;
+  fontFamily: string;
+  fontWeight?: string;
+  lines: string[];
+  lineHeight: number;
+}) {
+  const tspans = input.lines
+    .map((line, index) => {
+      const dy = index === 0 ? 0 : input.lineHeight;
+      return `<tspan x="${input.x}" dy="${dy}">${escapeXml(line)}</tspan>`;
+    })
+    .join("");
+  const weight = input.fontWeight ? ` font-weight="${input.fontWeight}"` : "";
+  return `<text x="${input.x}" y="${input.y}" fill="${input.fill}" font-size="${input.fontSize}" font-family="${input.fontFamily}"${weight} text-anchor="middle">${tspans}</text>`;
 }
 
 function trialMicahCardSvg(input: {
@@ -213,10 +232,32 @@ function trialMicahCardSvg(input: {
   shopLine: string;
 }) {
   const dayLabel = escapeXml(clip(input.dayLabel, 40));
-  const headline = escapeXml(clip(input.headline, 72));
-  const supporting = escapeXml(clip(input.supportingText, 90));
-  const shopLine = escapeXml(clip(input.shopLine, 48));
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><rect width="1080" height="1080" fill="#071b42"/><rect x="48" y="48" width="984" height="984" fill="none" stroke="#f5b932" stroke-width="10"/><rect x="72" y="72" width="936" height="936" fill="none" stroke="#f5b932" stroke-width="2"/><text x="540" y="160" fill="#f5b932" font-size="26" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" letter-spacing="4">${dayLabel}</text><text x="540" y="430" fill="#d8c27a" font-size="28" font-family="Arial,sans-serif" text-anchor="middle">${shopLine}</text><text x="540" y="560" fill="#ffffff" font-size="48" font-family="Georgia,Times,serif" font-weight="700" text-anchor="middle">${headline}</text><text x="540" y="660" fill="#d8c27a" font-size="28" font-family="Arial,sans-serif" text-anchor="middle">${supporting}</text><text x="540" y="980" fill="#f5b932" font-size="22" font-family="Arial,sans-serif" text-anchor="middle">Download and post yourself. Not published.</text></svg>`;
+  const headline = clip(input.headline, 72);
+  const supporting = clip(input.supportingText, 90);
+  const shopLine = clip(input.shopLine, 36);
+  const headlineLines = wrapCardLines(headline, headline.length > 28 ? 22 : 28, 3);
+  const headlineSize = headlineLines.length > 2 ? 32 : headlineLines.length > 1 ? 40 : 48;
+  const supportingLines = wrapCardLines(supporting, 34, 2);
+  const headlineText = wrappedSvgText({
+    x: 540,
+    y: 500,
+    fill: "#ffffff",
+    fontSize: headlineSize,
+    fontFamily: "Georgia,Times,serif",
+    fontWeight: "700",
+    lines: headlineLines,
+    lineHeight: Math.round(headlineSize * 1.15),
+  });
+  const supportingText = wrappedSvgText({
+    x: 540,
+    y: 500 + headlineLines.length * Math.round(headlineSize * 1.15) + 36,
+    fill: "#d8c27a",
+    fontSize: 24,
+    fontFamily: "Arial,sans-serif",
+    lines: supportingLines,
+    lineHeight: 30,
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080" overflow="hidden"><rect width="1080" height="1080" fill="#071b42"/><rect x="48" y="48" width="984" height="984" fill="none" stroke="#f5b932" stroke-width="10"/><rect x="72" y="72" width="936" height="936" fill="none" stroke="#f5b932" stroke-width="2"/><text x="540" y="160" fill="#f5b932" font-size="26" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" letter-spacing="4">${dayLabel}</text><text x="540" y="400" fill="#d8c27a" font-size="28" font-family="Arial,sans-serif" text-anchor="middle">${escapeXml(shopLine)}</text>${headlineText}${supportingText}<text x="540" y="980" fill="#f5b932" font-size="22" font-family="Arial,sans-serif" text-anchor="middle">Download and post yourself. Not published.</text></svg>`;
 }
 
 function captionBlocks(input: {
