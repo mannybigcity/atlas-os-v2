@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   TRIAL_DESK_VERTICALS,
+  cityFromPostalCode,
   hunterSearchDefaultsFromMarket,
   inferTrialCityFromName,
   inferTrialDeskMarket,
   inferTrialVertical,
   isSelfSearch,
   referralTargetsForVertical,
+  trialMarketAreaLabel,
 } from "./trial-desk-market.ts";
 
 test("Cypress Pest Pros infers pest control in Cypress, TX — not auto repair / 77065", () => {
@@ -94,6 +96,40 @@ test("metadata fills market when dedicated fields are empty", () => {
   assert.equal(market.city, "Spring");
   assert.equal(market.zipCode, "77379");
   assert.equal(market.state, "TX");
+});
+
+test("ZIP 77447 fills Hockley when the signup city is blank", () => {
+  assert.deepEqual(cityFromPostalCode("77447"), { city: "Hockley", state: "TX" });
+  const market = inferTrialDeskMarket({
+    businessName: "Good Times & Vibes Event Rentals LLC",
+    businessType: "Other small business",
+    zipCode: "77447",
+  });
+  assert.equal(market.city, "Hockley");
+  assert.equal(market.state, "TX");
+  assert.equal(trialMarketAreaLabel(market), "Hockley, TX");
+  assert.notEqual(trialMarketAreaLabel(market), "this area");
+
+  const unknown = inferTrialDeskMarket({
+    businessName: "Weekday Books",
+    businessType: "Other small business",
+    zipCode: "00000",
+  });
+  assert.equal(unknown.city, "");
+  assert.equal(trialMarketAreaLabel(unknown), "00000");
+});
+
+test("Other small business does not send HUNTER to property managers", () => {
+  const market = inferTrialDeskMarket({
+    businessName: "Good Times & Vibes Event Rentals LLC",
+    businessType: "Other small business",
+    zipCode: "77447",
+  });
+  const defaults = hunterSearchDefaultsFromMarket(market);
+  assert.equal(market.vertical, "other");
+  assert.notEqual(defaults.service, "property management company");
+  assert.ok(defaults.targets.every((target) => !/property management|real estate agency/i.test(target.query)));
+  assert.equal(defaults.city, "Hockley");
 });
 
 test("business type alone still avoids the hardcoded auto-repair market", () => {

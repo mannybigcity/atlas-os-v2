@@ -35,6 +35,7 @@ type MicahWeekDeskProps = {
   brand: MicahBrandKit;
   cards: MicahWeekStripCard[];
   calendarHref: string;
+  intakeMode?: boolean;
 };
 
 type MicahDeskIntent = "save" | "build";
@@ -85,6 +86,7 @@ export function MicahWeekDesk({
   brand,
   cards,
   calendarHref,
+  intakeMode = false,
 }: MicahWeekDeskProps) {
   const router = useRouter();
   const deskRef = useRef<HTMLDivElement>(null);
@@ -364,15 +366,17 @@ export function MicahWeekDesk({
 
       {onboardingDone || !empty ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <button
-            className="rounded-full bg-[#071b42] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
-            data-micah-desk-control="build"
-            disabled={!canEdit || pending}
-            onClick={() => void postDesk("build")}
-            type="button"
-          >
-            {pending ? "Working…" : empty ? "Build my 7-day week" : "Rebuild this week's cards"}
-          </button>
+          {intakeMode ? null : (
+            <button
+              className="rounded-full bg-[#071b42] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              data-micah-desk-control="build"
+              disabled={!canEdit || pending}
+              onClick={() => void postDesk("build")}
+              type="button"
+            >
+              {pending ? "Working…" : empty ? "Build my 7-day week" : "Rebuild this week's cards"}
+            </button>
+          )}
           <button
             className={`${LD_CHIP} px-5 py-3 disabled:opacity-50`}
             data-micah-desk-control="save"
