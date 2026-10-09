@@ -73,6 +73,7 @@ type LionsDenFollowUpBoardProps = {
   composeFromEmail?: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   engineOwner?: FollowUpEngineOwner | null;
   linkedNotes?: FollowUpLinkedNote[];
   readOnly?: boolean;
@@ -166,6 +167,7 @@ export function LionsDenFollowUpBoard({
   composeFromEmail = "",
   previewOrgSlug,
   workspaceSlug,
+  clientView = false,
   engineOwner = null,
   linkedNotes = [],
   readOnly = false,
@@ -201,6 +203,7 @@ export function LionsDenFollowUpBoard({
                 draftBody: engine?.body || detail || item.nextAction || "",
                 amanda: amandaInfoFor(item, amanda, spanish),
                 engine,
+                clientView,
                 fromEmail: composeFromEmail,
                 previewOrgSlug,
                 workspaceSlug,

@@ -15,6 +15,7 @@ type CrmRecordFilesProps = {
   returnPath: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   spanish: boolean;
   canWrite?: boolean;
 };
@@ -26,6 +27,7 @@ function ScopeFields({
   returnPath,
   previewOrgSlug,
   workspaceSlug,
+  clientView,
 }: Omit<CrmRecordFilesProps, "spanish" | "canWrite">) {
   return (
     <>
@@ -36,6 +38,7 @@ function ScopeFields({
       {returnPath.startsWith("/client/clients/") ? <input name="clientRecord" type="hidden" value="1" /> : null}
       {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
       {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+      {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
     </>
   );
 }

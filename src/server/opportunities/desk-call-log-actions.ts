@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { rememberClientView } from "@/lib/lions-den/client-view";
 import { parseDailyCallGoal } from "@/lib/lions-den/call-log";
 import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
 
@@ -23,6 +24,7 @@ function deskPath(formData: FormData, status?: string) {
   const lang = text(formData, "lang", 2);
   if (previewOrg && slugPattern.test(previewOrg)) params.set("previewOrg", previewOrg);
   if (workspace && slugPattern.test(workspace)) params.set("workspace", workspace);
+  rememberClientView(params, formData);
   if (dayPattern.test(callDay)) params.set("callDay", callDay);
   if (lang === "es" || lang === "en") params.set("lang", lang);
   if (status) params.set("prospect", status);

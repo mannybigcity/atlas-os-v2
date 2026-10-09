@@ -8,6 +8,7 @@ type WonReviewCardProps = {
   businessName: string;
   organizationId: string;
   previewOrgSlug?: string;
+  clientView?: boolean;
   prospect: Pick<OrganizationOpportunity, "id" | "name" | "contactName" | "nextActionDue" | "metadata">;
   spanish: boolean;
   workspaceSlug?: string;
@@ -18,6 +19,7 @@ export async function WonReviewCard({
   businessName,
   organizationId,
   previewOrgSlug,
+  clientView = false,
   prospect,
   spanish,
   workspaceSlug,
@@ -50,6 +52,7 @@ export async function WonReviewCard({
         <input name="opportunityId" type="hidden" value={prospect.id} />
         <input name="lang" type="hidden" value={spanish ? "es" : "en"} />
         {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+        {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
         {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
         <label className="block min-w-[16rem] flex-1 text-xs font-semibold text-[#5c4a12]">
           {spanish ? "Tu enlace de reseñas de Google" : "Your Google review link"}

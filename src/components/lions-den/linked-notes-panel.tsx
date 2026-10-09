@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { forClientView } from "@/lib/lions-den/client-view";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { noteRecordValue, type NoteRecordRef } from "@/lib/lions-den/note-links";
 import { createOrganizationNote } from "@/server/notes/actions";
@@ -12,6 +13,7 @@ type LinkedNotesPanelProps = {
   returnPath: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   spanish: boolean;
   canCreate?: boolean;
 };
@@ -27,16 +29,18 @@ export async function LinkedNotesPanel({
   returnPath,
   previewOrgSlug,
   workspaceSlug,
+  clientView = false,
   spanish,
   canCreate = true,
 }: LinkedNotesPanelProps) {
   const result = await getOrganizationNotes(organizationId, { recordId: record.id, limit: 20 });
-  const notes = result.setupRequired ? [] : result.data;
+  const notes = forClientView(clientView, result.setupRequired ? [] : result.data);
   const scope = new URLSearchParams();
   if (previewOrgSlug) scope.set("previewOrg", previewOrgSlug);
   if (workspaceSlug) scope.set("workspace", workspaceSlug);
+  if (clientView) scope.set("clientView", "1");
   const returnTo = scope.toString() ? `${returnPath}?${scope.toString()}` : returnPath;
-  const notesHref = lionsDenHref("/client/notes", previewOrgSlug, workspaceSlug);
+  const notesHref = lionsDenHref("/client/notes", previewOrgSlug, workspaceSlug, clientView);
   const allHref = `${notesHref}${notesHref.includes("?") ? "&" : "?"}record=${noteRecordValue(record)}`;
   const fieldClass = "mt-1 block w-full rounded-md border border-[#d5d0c4] bg-white px-3 py-2 text-sm text-[#071b42]";
 

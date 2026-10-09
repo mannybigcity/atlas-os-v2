@@ -25,15 +25,17 @@ type Scope = {
   organizationId: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   clientRecord?: boolean;
 };
 
-function ScopeFields({ organizationId, previewOrgSlug, workspaceSlug, clientRecord }: Scope) {
+function ScopeFields({ organizationId, previewOrgSlug, workspaceSlug, clientView, clientRecord }: Scope) {
   return (
     <>
       <input name="organizationId" type="hidden" value={organizationId} />
       {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
       {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+      {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
       {clientRecord ? <input name="clientRecord" type="hidden" value="1" /> : null}
     </>
   );
@@ -80,6 +82,7 @@ export function ProspectContactActions({
     customerId?: string;
     previewOrgSlug?: string;
     workspaceSlug?: string;
+    clientView?: boolean;
     returnTo?: string;
     detailHref?: string;
     initialOpen?: boolean;
@@ -117,6 +120,7 @@ export function ProspectContactActions({
             label={spanish ? "Llamar" : "Call"}
             opportunityId={compose.opportunityId}
             organizationId={compose.organizationId}
+            clientView={compose.clientView}
             previewOrgSlug={compose.previewOrgSlug}
             returnTo={compose.returnTo}
             spanish={spanish}
@@ -139,6 +143,7 @@ export function ProspectContactActions({
             label="WhatsApp"
             opportunityId={compose.opportunityId}
             organizationId={compose.organizationId}
+            clientView={compose.clientView}
             previewOrgSlug={compose.previewOrgSlug}
             returnTo={compose.returnTo}
             spanish={spanish}
@@ -157,6 +162,7 @@ export function ProspectContactActions({
           fromEmail={compose.fromEmail}
           opportunityId={compose.opportunityId}
           organizationId={compose.organizationId}
+          clientView={compose.clientView}
           previewOrgSlug={compose.previewOrgSlug}
           prospectName={prospect.name}
           returnTo={compose.returnTo}

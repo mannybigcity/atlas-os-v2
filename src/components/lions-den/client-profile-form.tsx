@@ -15,6 +15,7 @@ type ClientProfileFormProps = {
   returnPath: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   spanish: boolean;
 };
 
@@ -27,6 +28,7 @@ export function ClientProfileForm({
   returnPath,
   previewOrgSlug,
   workspaceSlug,
+  clientView = false,
   spanish,
 }: ClientProfileFormProps) {
   const profile = readClientProfile(metadata);
@@ -69,6 +71,7 @@ export function ClientProfileForm({
             <input name="clientRecord" type="hidden" value="1" />
           ) : null}
           {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+          {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
           {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
           <label className="block text-xs font-semibold text-[#5c6578] sm:col-span-2">
             {labels.service}

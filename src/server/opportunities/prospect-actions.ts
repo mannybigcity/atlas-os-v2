@@ -18,6 +18,7 @@ import { deskDateInDays } from "@/lib/desk-time";
 import { createClient } from "@/lib/supabase/server";
 import { getDeskReviewLink } from "@/server/trials/desk-review-link";
 import { requireUser } from "@/server/auth/guards";
+import { rememberClientView } from "@/lib/lions-den/client-view";
 import { asOpportunityMetadata } from "@/server/opportunities/queries";
 import { getUserMemberships } from "@/server/organizations/queries";
 
@@ -36,6 +37,7 @@ function scopedPath(base: string, formData: FormData, status?: string) {
   const workspace = text(formData, "workspace", 80);
   if (previewOrg && slugPattern.test(previewOrg)) params.set("previewOrg", previewOrg);
   if (workspace && slugPattern.test(workspace)) params.set("workspace", workspace);
+  rememberClientView(params, formData);
   if (status) params.set("prospect", status);
   const query = params.toString();
   return query ? `${base}?${query}` : base;

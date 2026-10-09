@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenNotesBoard } from "@/components/lions-den/lions-den-notes";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
+import { forClientView } from "@/lib/lions-den/client-view";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { presentLiveDeskNote } from "@/lib/lions-den/live-desk";
 import { noteRecordOptions, parseNoteRecord } from "@/lib/lions-den/note-links";
@@ -84,14 +85,15 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
             "/client/notes",
             workspace.previewOrgSlug || undefined,
             workspace.selectedWorkspaceSlug || undefined,
+            workspace.clientView,
           )}
           canCreate={workspace.canCreateNotes}
           filterRecord={filterRecord}
           notes={(notes && !notes.setupRequired ? notes.data : []).map((item) =>
-            presentLiveDeskNote(organization, item),
+            forClientView(workspace.clientView, presentLiveDeskNote(organization, item)),
           )}
           organizationId={organization.id}
-          records={records}
+          records={forClientView(workspace.clientView, records)}
           spanish={spanish}
         />
       ) : (

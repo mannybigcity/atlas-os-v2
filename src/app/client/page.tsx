@@ -7,6 +7,7 @@ import { ClientQTimeDashboard } from "@/components/client-qtime-dashboard";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenOverview } from "@/components/lions-den/lions-den-overview";
 import { getClientPortalOrgLabel, isSisLionsDenRequest, isSisOrganization, shouldShowSuperAdminCrm } from "@/lib/client-portal/identity";
+import { forClientView } from "@/lib/lions-den/client-view";
 import { clientOverviewRendersLionsDen, lionsDenHref, usesLionsDenHub } from "@/lib/lions-den/client-hub";
 import { deskDateLabel } from "@/lib/desk-time";
 import { decodeSuggestions, partySlotLabel } from "@/lib/sis/party-availability";
@@ -280,21 +281,22 @@ export default async function ClientDashboardPage({
   }
 
   if ((useLionsDen || wantsSisLionsDen) && !organizations) {
+    const privacy = workspace.clientView;
     const prospects = (pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
-      presentLiveDeskOpportunity(primaryOrganization, item),
+      forClientView(privacy, presentLiveDeskOpportunity(primaryOrganization, item)),
     );
     const followUpProspects = (followUpPipeline && !followUpPipeline.setupRequired
       ? followUpPipeline.data.opportunities
       : prospects
-    ).map((item) => presentLiveDeskOpportunity(primaryOrganization, item));
+    ).map((item) => forClientView(privacy, presentLiveDeskOpportunity(primaryOrganization, item)));
     const reviewItems = (reviewPile && !reviewPile.setupRequired ? reviewPile.data : []).map((item) =>
-      presentLiveDeskReviewItem(primaryOrganization, item),
+      forClientView(privacy, presentLiveDeskReviewItem(primaryOrganization, item)),
     );
     const drafts = (studio && !studio.setupRequired ? studio.data.drafts : []).map((item) =>
-      presentLiveDeskDraft(primaryOrganization, item),
+      forClientView(privacy, presentLiveDeskDraft(primaryOrganization, item)),
     );
     const deskNotes = (notes && !notes.setupRequired ? notes.data : []).map((item) =>
-      presentLiveDeskNote(primaryOrganization, item),
+      forClientView(privacy, presentLiveDeskNote(primaryOrganization, item)),
     );
     const todaysFive =
       primaryOrganization && !isSisWorkspace && !wantsSisLionsDen
@@ -320,7 +322,12 @@ export default async function ClientDashboardPage({
             </p>
             <ul className="mt-2 space-y-1">
               {decodeSuggestions(params.open).map((slot) => {
-                const calendarHref = lionsDenHref("/client/calendar", workspace.previewOrgSlug, workspace.selectedWorkspaceSlug);
+                const calendarHref = lionsDenHref(
+                  "/client/calendar",
+                  workspace.previewOrgSlug,
+                  workspace.selectedWorkspaceSlug,
+                  workspace.clientView,
+                );
                 const href = `${calendarHref}${calendarHref.includes("?") ? "&" : "?"}date=${slot.date}`;
                 return (
                   <li key={`${slot.date}-${slot.slot}`}>
@@ -351,6 +358,7 @@ export default async function ClientDashboardPage({
               (wantsSisLionsDen ? "SIS Custom Creations" : "The Lion’s Den")
             }
             organizationSlug={primaryOrganization?.slug || undefined}
+            clientView={workspace.clientView}
             previewOrgSlug={workspace.previewOrgSlug || undefined}
             acceptedCount={reviewPile?.acceptedCount ?? 0}
             foundCount={reviewPile?.foundCount ?? 0}
@@ -361,7 +369,7 @@ export default async function ClientDashboardPage({
             spanish={spanish}
             todaysFive={todaysFive}
             workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
-            callDesk={callDesk}
+            callDesk={callDesk ? forClientView(privacy, callDesk) : callDesk}
           />
         )}
       </LionsDenBoardScreen>

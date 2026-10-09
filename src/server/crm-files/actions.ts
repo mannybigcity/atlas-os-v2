@@ -11,6 +11,7 @@ import {
   parseCrmFileLabel,
   parseCrmFileRecordTable,
 } from "@/lib/lions-den/crm-record-files";
+import { rememberClientView } from "@/lib/lions-den/client-view";
 import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
@@ -29,6 +30,7 @@ function backTo(formData: FormData, status: string) {
   const workspace = text(formData, "workspace", 80);
   if (previewOrg && slugPattern.test(previewOrg)) params.set("previewOrg", previewOrg);
   if (workspace && slugPattern.test(workspace)) params.set("workspace", workspace);
+  rememberClientView(params, formData);
   params.set("prospect", status);
   return `${path}?${params.toString()}`;
 }

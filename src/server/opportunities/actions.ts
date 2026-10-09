@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isSuperAdminEmail } from "@/lib/env";
+import { rememberClientView } from "@/lib/lions-den/client-view";
 import { isFollowUpDeskPath } from "@/lib/lions-den/client-hub";
 import { followUpSentCheckIn } from "@/lib/lions-den/follow-up-drafts";
 import { safeRedirectPath } from "@/lib/paths";
@@ -38,6 +39,7 @@ function followUpReturnPath(formData: FormData, status: string) {
   if (workspace && /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(workspace)) {
     next.set("workspace", workspace);
   }
+  rememberClientView(next, params);
   next.set("followup", status);
   return `${destination}?${next.toString()}`;
 }

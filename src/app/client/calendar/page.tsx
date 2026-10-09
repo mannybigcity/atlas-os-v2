@@ -6,6 +6,7 @@ import { SisPartyAvailabilityCalendar } from "@/components/lions-den/sis-party-a
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
 import { deskDateOnly } from "@/lib/desk-time";
 import { SIS_PARTY_SLOT_MIGRATION } from "@/lib/sis/party-availability";
+import { forClientView } from "@/lib/lions-den/client-view";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { getFollowUpOpportunities } from "@/server/opportunities/queries";
@@ -49,10 +50,13 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
   const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(params?.date ?? "") ? params?.date ?? "" : "";
   const prospects = organization
     ? (pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
-        presentLiveDeskOpportunity(organization, item),
+        forClientView(workspace.clientView, presentLiveDeskOpportunity(organization, item)),
       )
     : [];
-  const partyEvents = sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.partyEvents : [];
+  const partyEvents = forClientView(
+    workspace.clientView,
+    sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.partyEvents : [],
+  );
 
   return (
     <LionsDenBoardScreen board="calendar" workspace={workspace}>

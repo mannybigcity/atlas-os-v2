@@ -6,6 +6,7 @@ import { presentLiveDeskAiRequest } from "@/lib/lions-den/live-desk";
 import { freshDeskChatRequests } from "@/lib/lions-den/desk-chat";
 import type { LionsDenBoard } from "@/lib/lions-den/client-hub";
 import { canSeeSignScoutNav, getSignScoutUrl } from "@/lib/lions-den/signscout";
+import { canSeeClientViewNav } from "@/lib/lions-den/client-view";
 import { canSeeTrialInboxNav } from "@/lib/lions-den/trial-inbox";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import {
@@ -40,6 +41,7 @@ export async function LionsDenBoardScreen({
     organization,
   };
   const showTrialInbox = canSeeTrialInboxNav(operatorChrome);
+  const showClientView = canSeeClientViewNav(operatorChrome) || workspace.clientView;
   const showSignScout = canSeeSignScoutNav(operatorChrome);
   const resolvedTrialInboxCount = showTrialInbox
     ? trialInboxCount ?? (await getAfeTrialInboxCount())
@@ -62,7 +64,9 @@ export async function LionsDenBoardScreen({
       organizationId={organization?.id ?? ""}
       organizationName={organization?.name}
       organizationSlug={organization?.slug}
+      clientView={workspace.clientView}
       previewOrgSlug={workspace.previewOrgSlug || undefined}
+      showClientView={showClientView}
       showSignScout={showSignScout}
       showTrialInbox={showTrialInbox}
       signScoutUrl={showSignScout ? getSignScoutUrl() : null}
@@ -78,6 +82,16 @@ export async function LionsDenBoardScreen({
           : [],
       )}
     >
+      {workspace.clientView ? (
+        <div
+          className="mb-4 rounded-2xl border border-[#d8c27a] bg-[#fff8e6] px-4 py-3 text-sm leading-6 text-[#071b42]"
+          data-client-view-banner
+        >
+          {spanish
+            ? "Vista de cliente. Ves la estructura del escritorio, los borradores y las etiquetas. Correos, teléfonos, direcciones, pagos, credenciales y mensajes con datos privados están ocultos. Nada se publica desde aquí."
+            : "Client View. You see the desk structure, drafts, and labels. Emails, phones, street addresses, payment details, credentials, and messages that contain private contact details are withheld. Nothing publishes from here."}
+        </div>
+      ) : null}
       {workspace.readOnly ? (
         <div
           className="mb-4 rounded-2xl border border-[#ffb4a2] bg-[#fff4f1] px-4 py-3 text-sm text-[#071b42]"

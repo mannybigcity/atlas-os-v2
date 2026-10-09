@@ -19,6 +19,9 @@ import { LD_CHIP } from "@/lib/lions-den/desk-chips";
 type HunterSearchProps = {
   organizationId?: string;
   prospectsHref?: string;
+  previewOrgSlug?: string;
+  workspaceSlug?: string;
+  clientView?: boolean;
   defaults?: {
     service?: string;
     zipCode?: string;
@@ -33,6 +36,9 @@ type HunterSearchProps = {
 export function HunterSearch({
   organizationId,
   prospectsHref = "/client/prospects",
+  previewOrgSlug,
+  workspaceSlug,
+  clientView = false,
   defaults,
 }: HunterSearchProps) {
   const language = useSiteLanguage();
@@ -135,6 +141,9 @@ export function HunterSearch({
 
       <form action={action} className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.2fr_.8fr_.45fr_.45fr_.55fr_auto] sm:items-end">
         {organizationId ? <input name="organizationId" type="hidden" value={organizationId} /> : null}
+        {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+        {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+        {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
         <label>
           <span className="text-sm font-medium text-[#071b42]">{spanish ? "A quién buscar" : "Who to look for"}</span>
           <input
@@ -262,11 +271,14 @@ export function HunterSearch({
           <div className="divide-y divide-[#ece7d8]">
             {state.places.map((place) => (
               <HunterSearchFindRow
+                clientView={clientView}
                 key={place.placeId}
                 organizationId={organizationId}
                 place={place}
+                previewOrgSlug={previewOrgSlug}
                 prospectsHref={prospectsHref}
                 spanish={spanish}
+                workspaceSlug={workspaceSlug}
               />
             ))}
           </div>
@@ -289,11 +301,17 @@ function HunterSearchFindRow({
   organizationId,
   place,
   prospectsHref,
+  previewOrgSlug,
+  workspaceSlug,
+  clientView = false,
   spanish,
 }: {
   organizationId?: string;
   place: HunterSearchFind;
   prospectsHref: string;
+  previewOrgSlug?: string;
+  workspaceSlug?: string;
+  clientView?: boolean;
   spanish: boolean;
 }) {
   return (
@@ -356,6 +374,9 @@ function HunterSearchFindRow({
               >
                 <input name="organizationId" type="hidden" value={organizationId} />
                 <input name="reviewItemId" type="hidden" value={place.reviewItemId} />
+                {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+                {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+                {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
                 <button className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white" type="submit">
                   {spanish ? "Aceptar" : "Accept"}
                 </button>
@@ -363,6 +384,9 @@ function HunterSearchFindRow({
               <form action={dismissHunterReviewItem}>
                 <input name="organizationId" type="hidden" value={organizationId} />
                 <input name="reviewItemId" type="hidden" value={place.reviewItemId} />
+                {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+                {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+                {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
                 <button className={LD_CHIP} type="submit">
                   {spanish ? "Omitir" : "Skip"}
                 </button>

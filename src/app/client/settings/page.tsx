@@ -102,6 +102,13 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 ? "Estos datos vienen de tu registro. Para cambiarlos, escríbenos y los actualizamos el mismo día."
                 : "These details come from your signup. To change any of them, email us and we will update them the same day."}
             </p>
+            {workspace.clientView ? (
+              <p className="mt-4 rounded-md border border-[#d8c27a] bg-[#fff8e6] px-3 py-2 text-sm leading-6 text-[#071b42]" data-client-view-settings>
+                {spanish
+                  ? "Vista de cliente. El correo, el teléfono, la dirección y los datos de pago de este escritorio quedan ocultos."
+                  : "Client View. This desk’s email, phone, street address, and payment details stay hidden."}
+              </p>
+            ) : (
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               {rows.map(([label, value]) => (
                 <div className="rounded-md border border-[#ece7d8] bg-[#fbfaf4] px-3 py-2" key={label}>
@@ -110,6 +117,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 </div>
               ))}
             </dl>
+            )}
           </div>
         </section>
 
@@ -118,13 +126,19 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             <p>{spanish ? "Plan y facturación" : "Plan & billing"}</p>
           </div>
           <div className="ld-panel-body">
-            {billingNotice ? (
+            {workspace.clientView ? (
+              <p className="text-sm leading-6 text-[#5c6578]">
+                {spanish
+                  ? "Los datos de pago de este escritorio quedan ocultos en la Vista de cliente."
+                  : "Payment details for this desk stay hidden in Client View."}
+              </p>
+            ) : billingNotice ? (
               <p className="mb-3 rounded-md border border-[#e9d9a6] bg-[#fff8e6] px-3 py-2 text-sm text-[#5c4a12]" role="status">
                 {billingNotice}
               </p>
             ) : null}
 
-            {billing?.active ? (
+            {workspace.clientView ? null : billing?.active ? (
               <div>
                 <h2 className="text-xl font-semibold text-[#071b42]">
                   {spanish ? "Plan activo" : "Active plan"}: {String(billing.planSlug ?? "atlas").toUpperCase()}

@@ -18,9 +18,25 @@ import {
   loadPendingHunterReviewItemsForOrg,
   type HunterAcceptOneResult,
 } from "@/server/hunter/accept-item";
+import { forClientView, isClientViewFlag, rememberClientView } from "@/lib/lions-den/client-view";
 import type { HunterSearchState } from "@/server/hunter/types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
+
+function hunterDeskPath(path: string, formData?: FormData) {
+  const [base, query = ""] = path.split("?");
+  const params = new URLSearchParams(query);
+  if (formData) {
+    const previewOrg = String(formData.get("previewOrg") ?? "").trim();
+    const workspace = String(formData.get("workspace") ?? "").trim();
+    if (slugPattern.test(previewOrg) && !/^afe-crm-demo$/i.test(previewOrg)) params.set("previewOrg", previewOrg);
+    if (slugPattern.test(workspace)) params.set("workspace", workspace);
+    rememberClientView(params, formData);
+  }
+  const next = params.toString();
+  return next ? `${base}?${next}` : base;
+}
 
 async function requireHunterOperator(organizationId: string | null) {
   const user = await requireUser(organizationId ? "/client/hunter" : "/lions-den/sales");
@@ -102,13 +118,17 @@ export async function searchHunterProspects(
     };
   }
 
-  return executeHunterPlacesSearch({
+  const result = await executeHunterPlacesSearch({
     organizationId,
     userId: user.id,
     textQuery: parsed.textQuery,
     radiusMiles: radiusMilesRaw ? radiusMiles : null,
     filters,
   });
+  if (isClientViewFlag(formData.get("clientView")) && isSuperAdminEmail(user.email)) {
+    return forClientView(true, result);
+  }
+  return result;
 }
 
 async function requireHunterAcceptContext(formData: FormData) {
@@ -116,7 +136,7 @@ async function requireHunterAcceptContext(formData: FormData) {
   await requireHunterOperator(organizationId);
 
   if (!organizationId || !uuidPattern.test(organizationId)) {
-    redirect("/client/hunter?hunter=invalid");
+    redirect(hunterDeskPath("/client/hunter?hunter=invalid", formData));
   }
 
   const supabase = await createClient();
@@ -136,7 +156,7 @@ async function requireHunterAcceptContext(formData: FormData) {
       profile: formData.get("profile") ?? undefined,
     });
   } catch {
-    redirect("/client/hunter?hunter=protected");
+    redirect(hunterDeskPath("/client/hunter?hunter=protected", formData));
   }
 
   return { organizationId, supabase };
@@ -147,37 +167,37 @@ export async function acceptHunterReviewItem(formData: FormData) {
   const reviewItemId = String(formData.get("reviewItemId") ?? "").trim();
 
   if (!uuidPattern.test(reviewItemId)) {
-    redirect("/client/hunter?hunter=invalid");
+    redirect(hunterDeskPath("/client/hunter?hunter=invalid", formData));
   }
 
   const item = await loadHunterReviewItemById(supabase, organizationId, reviewItemId);
 
   if (!item) {
-    redirect("/client/hunter?hunter=missing");
+    redirect(hunterDeskPath("/client/hunter?hunter=missing", formData));
   }
 
   const result = await acceptPendingHunterReviewItem(supabase, organizationId, item);
   if (!result.ok) {
     if (result.reason === "already_accepted") {
-      redirect("/client/hunter?hunter=already_accepted");
+      redirect(hunterDeskPath("/client/hunter?hunter=already_accepted", formData));
     }
     if (result.reason === "duplicate") {
-      redirect("/client/hunter?hunter=duplicate");
+      redirect(hunterDeskPath("/client/hunter?hunter=duplicate", formData));
     }
     if (result.reason === "missing") {
-      redirect("/client/hunter?hunter=missing");
+      redirect(hunterDeskPath("/client/hunter?hunter=missing", formData));
     }
-    redirect("/client/hunter?hunter=accept_failed");
+    redirect(hunterDeskPath("/client/hunter?hunter=accept_failed", formData));
   }
 
   revalidatePath("/client");
   revalidatePath("/client/hunter");
   revalidatePath("/client/prospects");
   revalidatePath(`/client/prospects/${result.opportunityId}`);
-  redirect("/client/hunter?hunter=accepted");
+  redirect(hunterDeskPath("/client/hunter?hunter=accepted", formData));
 }
 
-function hunterBulkRedirect(results: HunterAcceptOneResult[]) {
+function hunterBulkRedirect(results: HunterAcceptOneResult[], formData: FormData) {
   const accepted = results.filter((result) => result.ok).length;
   const failed = results.filter(
     (result) => !result.ok && result.reason !== "already_accepted",
@@ -200,29 +220,29 @@ function hunterBulkRedirect(results: HunterAcceptOneResult[]) {
   revalidatePath("/client");
   revalidatePath("/client/hunter");
   revalidatePath("/client/prospects");
-  redirect(`/client/hunter?${params.toString()}`);
+  redirect(hunterDeskPath(`/client/hunter?${params.toString()}`, formData));
 }
 
 export async function acceptSelectedHunterReviewItems(formData: FormData) {
   const { organizationId, supabase } = await requireHunterAcceptContext(formData);
   const reviewItemIds = parseHunterReviewItemIds(formData.getAll("reviewItemId"));
   if (reviewItemIds.length === 0) {
-    redirect("/client/hunter?hunter=none_selected");
+    redirect(hunterDeskPath("/client/hunter?hunter=none_selected", formData));
   }
 
   const items = await loadPendingHunterReviewItemsForOrg(supabase, organizationId, reviewItemIds);
   const results = await acceptHunterReviewItemsForOrg(supabase, organizationId, items);
-  hunterBulkRedirect(results);
+  hunterBulkRedirect(results, formData);
 }
 
 export async function acceptAllHunterReviewItems(formData: FormData) {
   const { organizationId, supabase } = await requireHunterAcceptContext(formData);
   const items = await loadPendingHunterReviewItemsForOrg(supabase, organizationId);
   if (items.length === 0) {
-    redirect("/client/hunter?hunter=none_selected");
+    redirect(hunterDeskPath("/client/hunter?hunter=none_selected", formData));
   }
   const results = await acceptHunterReviewItemsForOrg(supabase, organizationId, items);
-  hunterBulkRedirect(results);
+  hunterBulkRedirect(results, formData);
 }
 
 export async function dismissHunterReviewItem(formData: FormData) {
@@ -231,7 +251,7 @@ export async function dismissHunterReviewItem(formData: FormData) {
   await requireHunterOperator(organizationId);
 
   if (!uuidPattern.test(reviewItemId) || !organizationId) {
-    redirect("/client/hunter?hunter=invalid");
+    redirect(hunterDeskPath("/client/hunter?hunter=invalid", formData));
   }
 
   const supabase = await createClient();
@@ -243,9 +263,9 @@ export async function dismissHunterReviewItem(formData: FormData) {
     .eq("status", "pending");
 
   if (error) {
-    redirect("/client/hunter?hunter=dismiss_failed");
+    redirect(hunterDeskPath("/client/hunter?hunter=dismiss_failed", formData));
   }
 
   revalidatePath("/client/hunter");
-  redirect("/client/hunter?hunter=dismissed");
+  redirect(hunterDeskPath("/client/hunter?hunter=dismissed", formData));
 }

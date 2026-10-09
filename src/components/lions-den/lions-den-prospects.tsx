@@ -17,6 +17,7 @@ type LionsDenProspectsBoardProps = {
   organizationId?: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   notice?: string;
   spanish: boolean;
   readOnly?: boolean;
@@ -27,11 +28,12 @@ export function LionsDenProspectsBoard({
   organizationId,
   previewOrgSlug,
   workspaceSlug,
+  clientView = false,
   notice,
   spanish,
   readOnly = false,
 }: LionsDenProspectsBoardProps) {
-  const listHref = lionsDenHref("/client/prospects", previewOrgSlug, workspaceSlug);
+  const listHref = lionsDenHref("/client/prospects", previewOrgSlug, workspaceSlug, clientView);
   const canEdit = Boolean(organizationId) && !readOnly;
   const active = prospects.filter((item) => item.stage !== "won" && item.stage !== "lost");
   const closed = prospects.filter((item) => item.stage === "won" || item.stage === "lost");
@@ -64,6 +66,7 @@ export function LionsDenProspectsBoard({
           </p>
           <div className="mt-3">
             <ProspectEditorForm
+              clientView={clientView}
               organizationId={organizationId}
               previewOrgSlug={previewOrgSlug}
               spanish={spanish}
@@ -83,7 +86,7 @@ export function LionsDenProspectsBoard({
           </p>
           <Link
             className="mt-4 inline-flex rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white"
-            href={lionsDenHref("/client/hunter", previewOrgSlug, workspaceSlug)}
+            href={lionsDenHref("/client/hunter", previewOrgSlug, workspaceSlug, clientView)}
           >
             HUNTER
           </Link>
@@ -91,6 +94,7 @@ export function LionsDenProspectsBoard({
       ) : (
         <>
           <ProspectList
+            clientView={clientView}
             listHref={listHref}
             organizationId={organizationId}
             previewOrgSlug={previewOrgSlug}
@@ -105,6 +109,7 @@ export function LionsDenProspectsBoard({
                 {spanish ? `Ganados y perdidos (${closed.length})` : `Won and lost (${closed.length})`}
               </summary>
               <ProspectList
+                clientView={clientView}
                 listHref={listHref}
                 organizationId={organizationId}
                 previewOrgSlug={previewOrgSlug}
@@ -127,6 +132,7 @@ function ProspectList({
   organizationId,
   previewOrgSlug,
   workspaceSlug,
+  clientView = false,
   spanish,
   readOnly = false,
 }: {
@@ -135,6 +141,7 @@ function ProspectList({
   organizationId?: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   spanish: boolean;
   readOnly?: boolean;
 }) {
@@ -203,6 +210,7 @@ function ProspectList({
                             fromEmail: "",
                             organizationId,
                             opportunityId: prospect.id,
+                            clientView,
                             previewOrgSlug,
                             workspaceSlug,
                           }

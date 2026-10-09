@@ -1,4 +1,5 @@
 import { isSisOrganization } from "../../lib/client-portal/identity.ts";
+import { isClientViewFlag, rememberClientView } from "../../lib/lions-den/client-view.ts";
 import { safeRedirectPath } from "../../lib/paths.ts";
 import { isMicahBrandDraft } from "../../lib/lions-den/micah-starter-week.ts";
 import { buildMicahGalleryCaptionUpdate } from "./gallery-art.ts";
@@ -34,6 +35,7 @@ export type MicahGalleryCaptionWriter = (input: {
 export function micahGalleryCaptionReturnTo(input: {
   previewOrg?: string | null;
   workspace?: string | null;
+  clientView?: boolean;
 }) {
   const next = new URLSearchParams();
   const previewOrg = String(input.previewOrg ?? "").trim();
@@ -48,6 +50,7 @@ export function micahGalleryCaptionReturnTo(input: {
   if (workspace && WORKSPACE_SLUG.test(workspace)) {
     next.set("workspace", workspace);
   }
+  if (input.clientView && next.has("previewOrg")) next.set("clientView", "1");
   const query = next.toString();
   return query ? `/client/micah?${query}` : "/client/micah";
 }
@@ -76,6 +79,9 @@ export function micahGalleryCaptionReturnPath(
   }
   if (workspace && WORKSPACE_SLUG.test(workspace)) {
     next.set("workspace", workspace);
+  }
+  if (isClientViewFlag(params.get("clientView")) || isClientViewFlag(formData.get("clientView"))) {
+    rememberClientView(next, { get: () => "1" });
   }
   next.set("content", status);
   return `${destination}?${next.toString()}`;

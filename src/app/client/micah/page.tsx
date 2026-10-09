@@ -10,6 +10,7 @@ import {
 } from "@/lib/client-portal/identity";
 import { micahGalleryCaptionReturnTo } from "@/server/content-studio/gallery-caption-save";
 import { canShowMicahGalleryEdit } from "@/server/content-studio/gallery-art";
+import { forClientView } from "@/lib/lions-den/client-view";
 import { presentLiveDeskDraft } from "@/lib/lions-den/live-desk";
 import {
   clientWorkspaceHref,
@@ -77,10 +78,13 @@ export default async function MicahPage({ searchParams }: MicahPageProps) {
           returnTo={micahGalleryCaptionReturnTo({
             previewOrg: previewOrgSlug,
             workspace: workspace.selectedWorkspaceSlug,
+            clientView: workspace.clientView,
           })}
           studio={{
             ...studio.data,
-            drafts: studio.data.drafts.map((draft) => presentLiveDeskDraft(primaryOrganization, draft)),
+            drafts: studio.data.drafts.map((draft) =>
+              forClientView(workspace.clientView, presentLiveDeskDraft(primaryOrganization, draft)),
+            ),
           }}
         />
       ) : null}

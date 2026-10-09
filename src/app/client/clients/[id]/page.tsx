@@ -16,6 +16,7 @@ import {
   nextMessageOwnerFromBusiness,
 } from "@/lib/lions-den/next-message-engine";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
+import { forClientView } from "@/lib/lions-den/client-view";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
@@ -72,6 +73,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
     "/client/clients",
     workspace.previewOrgSlug || undefined,
     workspace.selectedWorkspaceSlug || undefined,
+    workspace.clientView,
   );
 
   if (isSisOrganization(organization)) {
@@ -80,7 +82,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
       throw new Error(result.error ?? "Clients are not available yet.");
     }
     if (!result.data) notFound();
-    const customer = result.data;
+    const customer = forClientView(workspace.clientView, result.data);
     const activity = sisDeskActivityLines(customer.notes);
     const linkedNotes = await getOrganizationNotes(organization.id, { recordId: customer.id, limit: 50 });
     const engine = workspace.readOnly
@@ -135,6 +137,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
                       customerId: customer.id,
                       fromEmail: workspace.user.email ?? "",
                       organizationId: organization.id,
+                      clientView: workspace.clientView,
                       previewOrgSlug: workspace.previewOrgSlug || undefined,
                       returnTo: `/client/clients/${customer.id}`,
                       workspaceSlug: workspace.selectedWorkspaceSlug || undefined,
@@ -157,6 +160,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
             <form action={updateSisCustomer} className="mt-6 grid gap-3 sm:grid-cols-2" data-client-editor>
               <input name="customerId" type="hidden" value={customer.id} />
               {workspace.previewOrgSlug ? <input name="previewOrg" type="hidden" value={workspace.previewOrgSlug} /> : null}
+              {workspace.clientView ? <input name="clientView" type="hidden" value="1" /> : null}
               {workspace.selectedWorkspaceSlug ? (
                 <input name="workspace" type="hidden" value={workspace.selectedWorkspaceSlug} />
               ) : null}
@@ -190,7 +194,8 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
           )}
 
           <ClientProfileForm
-            metadata={customer.metadata}
+            clientView={workspace.clientView}
+            metadata={forClientView(workspace.clientView, customer.metadata)}
             organizationId={organization.id}
             previewOrgSlug={workspace.previewOrgSlug || undefined}
             recordId={customer.id}
@@ -261,6 +266,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
                 <input name="organizationId" type="hidden" value={organization.id} />
                 <input name="customerId" type="hidden" value={customer.id} />
                 {workspace.previewOrgSlug ? <input name="previewOrg" type="hidden" value={workspace.previewOrgSlug} /> : null}
+              {workspace.clientView ? <input name="clientView" type="hidden" value="1" /> : null}
                 {workspace.selectedWorkspaceSlug ? (
                   <input name="workspace" type="hidden" value={workspace.selectedWorkspaceSlug} />
                 ) : null}
@@ -282,7 +288,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
   if (!result.data) notFound();
   if (result.data.stage !== "won") {
     redirect(
-      lionsDenHref(`/client/prospects/${id}`, workspace.previewOrgSlug, workspace.selectedWorkspaceSlug),
+      lionsDenHref(`/client/prospects/${id}`, workspace.previewOrgSlug, workspace.selectedWorkspaceSlug, workspace.clientView),
     );
   }
 
@@ -291,10 +297,13 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
     getDeskPayLink(organization.id),
     getOrganizationNotes(organization.id, { recordId: result.data.id, limit: 50 }),
   ]);
-  const prospect = presentLiveDeskOpportunity(organization, {
-    ...result.data,
-    contactEmail: filled.email ?? result.data.contactEmail,
-  });
+  const prospect = forClientView(
+    workspace.clientView,
+    presentLiveDeskOpportunity(organization, {
+      ...result.data,
+      contactEmail: workspace.clientView ? null : filled.email ?? result.data.contactEmail,
+    }),
+  );
 
   return (
     <LionsDenBoardScreen board="clients" workspace={workspace}>
@@ -304,27 +313,30 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
         notice={query?.prospect}
         businessName={organization.name}
         openQuoteId={query?.quote}
-        payLink={payLink}
+        clientView={workspace.clientView}
+        payLink={workspace.clientView ? null : payLink}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospect={prospect}
         readOnly={workspace.readOnly}
         engineOwner={engineOwner}
-        linkedNotes={linkedNotes && !linkedNotes.setupRequired ? linkedNotes.data : []}
+        linkedNotes={forClientView(workspace.clientView, linkedNotes && !linkedNotes.setupRequired ? linkedNotes.data : [])}
         spanish={spanish}
         variant="client"
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
       <WonReviewCard
         businessName={organization.name ?? ""}
+        clientView={workspace.clientView}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
-        prospect={result.data}
+        prospect={forClientView(workspace.clientView, result.data)}
         spanish={spanish}
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
       <ClientProfileForm
-        metadata={result.data.metadata}
+        clientView={workspace.clientView}
+        metadata={forClientView(workspace.clientView, result.data.metadata)}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         recordId={result.data.id}
@@ -335,6 +347,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
       />
       <CrmRecordFiles
         canWrite={!workspace.readOnly}
+        clientView={workspace.clientView}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         recordId={result.data.id}
@@ -344,6 +357,7 @@ export default async function ClientDetailPage({ params, searchParams }: ClientD
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
       <LinkedNotesPanel
+        clientView={workspace.clientView}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         record={{ kind: "client", id: result.data.id }}

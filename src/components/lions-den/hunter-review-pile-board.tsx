@@ -21,8 +21,25 @@ type HunterReviewPileBoardProps = {
   organizationId: string;
   items: HunterReviewItem[];
   pendingCount?: number;
+  previewOrgSlug?: string;
+  workspaceSlug?: string;
+  clientView?: boolean;
   spanish: boolean;
 };
+
+function DeskFlags({
+  previewOrgSlug,
+  workspaceSlug,
+  clientView,
+}: Pick<HunterReviewPileBoardProps, "previewOrgSlug" | "workspaceSlug" | "clientView">) {
+  return (
+    <>
+      {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+      {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+      {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
+    </>
+  );
+}
 
 function itemHasPublishedPhone(item: HunterReviewItem) {
   return Boolean(prospectTelHref(item.phone));
@@ -56,6 +73,9 @@ export function HunterReviewPileBoard({
   organizationId,
   items,
   pendingCount,
+  previewOrgSlug,
+  workspaceSlug,
+  clientView = false,
   spanish,
 }: HunterReviewPileBoardProps) {
   const [selected, setSelected] = useState<string[]>([]);
@@ -114,6 +134,7 @@ export function HunterReviewPileBoard({
         <div className="flex flex-wrap gap-2">
           <form action={acceptSelectedHunterReviewItems}>
             <input name="organizationId" type="hidden" value={organizationId} />
+            <DeskFlags clientView={clientView} previewOrgSlug={previewOrgSlug} workspaceSlug={workspaceSlug} />
             {selectedVisible.map((id) => (
               <input key={id} name="reviewItemId" type="hidden" value={id} />
             ))}
@@ -137,6 +158,7 @@ export function HunterReviewPileBoard({
           </form>
           <form action={acceptAllHunterReviewItems}>
             <input name="organizationId" type="hidden" value={organizationId} />
+            <DeskFlags clientView={clientView} previewOrgSlug={previewOrgSlug} workspaceSlug={workspaceSlug} />
             <ConfirmSubmitButton
               className={LD_CHIP}
               confirmMessage={bulkConfirmMessage({
@@ -242,6 +264,7 @@ export function HunterReviewPileBoard({
                 <div className="flex flex-wrap gap-2">
                   <form action={acceptHunterReviewItem}>
                     <input name="organizationId" type="hidden" value={organizationId} />
+            <DeskFlags clientView={clientView} previewOrgSlug={previewOrgSlug} workspaceSlug={workspaceSlug} />
                     <input name="reviewItemId" type="hidden" value={item.id} />
                     <button className="rounded-full bg-[#071b42] px-4 py-2 text-sm font-semibold text-white" type="submit">
                       {spanish ? "Aceptar a Prospectos" : "Accept into Prospects"}
@@ -249,6 +272,7 @@ export function HunterReviewPileBoard({
                   </form>
                   <form action={dismissHunterReviewItem}>
                     <input name="organizationId" type="hidden" value={organizationId} />
+            <DeskFlags clientView={clientView} previewOrgSlug={previewOrgSlug} workspaceSlug={workspaceSlug} />
                     <input name="reviewItemId" type="hidden" value={item.id} />
                     <button className={LD_CHIP} type="submit">
                       {spanish ? "Omitir" : "Skip"}
