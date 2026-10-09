@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { rememberClientView } from "@/lib/lions-den/client-view";
 import { validateReviewLink } from "@/lib/lions-den/won-follow-through";
 import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
 
@@ -22,6 +23,7 @@ function recordPath(formData: FormData, status: string) {
   const workspace = text(formData, "workspace", 80);
   if (previewOrg && slugPattern.test(previewOrg)) params.set("previewOrg", previewOrg);
   if (workspace && slugPattern.test(workspace)) params.set("workspace", workspace);
+  rememberClientView(params, formData);
   params.set("prospect", status);
   return `${base}?${params.toString()}`;
 }

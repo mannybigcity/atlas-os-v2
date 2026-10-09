@@ -7,6 +7,7 @@ import { CrmRecordFiles } from "@/components/lions-den/crm-record-files";
 import { LinkedNotesPanel } from "@/components/lions-den/linked-notes-panel";
 import { noteRecordKindForStage } from "@/lib/lions-den/note-links";
 import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
+import { forClientView } from "@/lib/lions-den/client-view";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
@@ -70,10 +71,13 @@ export default async function ProspectDetailPage({
       userMetadata: workspace.user.user_metadata as Record<string, unknown>,
     }),
   );
-  const prospect = presentLiveDeskOpportunity(organization, {
-    ...result.data,
-    contactEmail: filled.email ?? result.data.contactEmail,
-  });
+  const prospect = forClientView(
+    workspace.clientView,
+    presentLiveDeskOpportunity(organization, {
+      ...result.data,
+      contactEmail: workspace.clientView ? null : filled.email ?? result.data.contactEmail,
+    }),
+  );
 
   return (
     <LionsDenBoardScreen board="prospects" workspace={workspace}>
@@ -82,23 +86,29 @@ export default async function ProspectDetailPage({
           "/client/prospects",
           workspace.previewOrgSlug || undefined,
           workspace.selectedWorkspaceSlug || undefined,
+          workspace.clientView,
         )}
         fromEmail={workspace.user.email ?? ""}
         notice={query?.prospect}
         businessName={organization.name}
         openQuoteId={query?.quote}
-        payLink={payLink}
+        payLink={workspace.clientView ? null : payLink}
         organizationId={organization.id}
+        clientView={workspace.clientView}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospect={prospect}
         readOnly={workspace.readOnly}
         engineOwner={engineOwner}
-        linkedNotes={linkedNotes && !linkedNotes.setupRequired ? linkedNotes.data : []}
+        linkedNotes={forClientView(
+          workspace.clientView,
+          linkedNotes && !linkedNotes.setupRequired ? linkedNotes.data : [],
+        )}
         spanish={language === "es"}
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
       <ClientProfileForm
-        metadata={result.data.metadata}
+        clientView={workspace.clientView}
+        metadata={forClientView(workspace.clientView, result.data.metadata)}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         recordId={result.data.id}
@@ -109,6 +119,7 @@ export default async function ProspectDetailPage({
       />
       <CrmRecordFiles
         canWrite={!workspace.readOnly}
+        clientView={workspace.clientView}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         recordId={result.data.id}
@@ -118,6 +129,7 @@ export default async function ProspectDetailPage({
         workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
       <LinkedNotesPanel
+        clientView={workspace.clientView}
         organizationId={organization.id}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         record={{ kind: noteRecordKindForStage(result.data.stage), id: result.data.id }}

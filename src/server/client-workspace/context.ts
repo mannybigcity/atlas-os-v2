@@ -19,6 +19,7 @@ import {
   shouldOpenAfeOperatorDesk,
   shouldOpenSisWorkingDesk,
 } from "@/lib/client-portal/identity";
+import { isClientViewDesk, isClientViewFlag } from "@/lib/lions-den/client-view";
 import { describeDeskTrial, type DeskTrialStatus } from "@/lib/lions-den/trial-status";
 import { requireUser } from "@/server/auth/guards";
 import { getTrialProfile } from "@/server/trials/profile";
@@ -48,6 +49,7 @@ import {
 type ClientWorkspaceSearchParams = {
   previewOrg?: string;
   workspace?: string;
+  clientView?: string;
   error?: string;
   reason?: string;
 };
@@ -72,16 +74,24 @@ export type ClientWorkspaceContext = {
   trial: DeskTrialStatus | null;
   /** Expired AFE trial desk: readable, writes stay off. SIS is never read-only. */
   readOnly: boolean;
+  /**
+   * AFE admin is reviewing another client's desk. Structure stays visible.
+   * Contact, payment, credential, and PII message fields are withheld.
+   */
+  clientView: boolean;
 };
 
-export function clientWorkspaceHref(path: string, previewOrgSlug?: string) {
+export function clientWorkspaceHref(path: string, previewOrgSlug?: string, clientView = false) {
   const slug = String(previewOrgSlug ?? "").trim();
 
   if (!slug || isSampleDeskPreviewRequest(slug)) {
     return path;
   }
 
-  return `${path}?previewOrg=${encodeURIComponent(slug)}`;
+  const params = new URLSearchParams();
+  params.set("previewOrg", slug);
+  if (clientView) params.set("clientView", "1");
+  return `${path}?${params.toString()}`;
 }
 
 function membershipsForOrganizations(
@@ -286,6 +296,11 @@ export async function getClientWorkspaceContext(
         loadedPreviewOrganization?.slug?.trim() ||
         previewOrgSlug;
   const isClientPreview = isGuestClientPreview(primaryOrganization);
+  const clientView =
+    isSuperAdmin &&
+    isClientViewFlag(searchParams?.clientView) &&
+    isClientViewDesk(primaryOrganization) &&
+    !isSisOrganization(primaryOrganization);
   const shouldPinResolvedOrganization =
     Boolean(primaryOrganization) &&
     canUseOperatorDesk &&
@@ -347,5 +362,6 @@ export async function getClientWorkspaceContext(
     selectedWorkspaceSlug: primaryOrganization?.slug ?? "",
     trial,
     readOnly,
+    clientView,
   };
 }

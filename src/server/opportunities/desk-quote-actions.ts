@@ -16,6 +16,7 @@ import {
 } from "@/lib/lions-den/desk-quote";
 import { FOLLOW_UP_CHECK_IN_DAYS } from "@/lib/lions-den/follow-up-drafts";
 import { JOB_VALUE_METADATA_KEY } from "@/lib/lions-den/prospect-stages";
+import { rememberClientView } from "@/lib/lions-den/client-view";
 import { asOpportunityMetadata } from "@/server/opportunities/queries";
 import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
 
@@ -34,6 +35,7 @@ function scopedPath(base: string, formData: FormData, status?: string, extra?: R
   const workspace = text(formData, "workspace", 80);
   if (previewOrg && slugPattern.test(previewOrg)) params.set("previewOrg", previewOrg);
   if (workspace && slugPattern.test(workspace)) params.set("workspace", workspace);
+  rememberClientView(params, formData);
   if (status) params.set("prospect", status);
   for (const [key, value] of Object.entries(extra ?? {})) params.set(key, value);
   const query = params.toString();

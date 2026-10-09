@@ -16,7 +16,8 @@ export type LionsDenBoard =
   | "hunter"
   | "micah"
   | "settings"
-  | "trial-inbox";
+  | "trial-inbox"
+  | "client-view";
 
 export const LIONS_DEN_NAVY = "#071b42";
 export const LIONS_DEN_GOLD = "#f5b932";
@@ -60,6 +61,18 @@ export const lionsDenOperatorBoards: Array<{
   { id: "trial-inbox", href: "/client/trial-inbox", label: "7 Day Trial", labelEs: "Prueba 7 días" },
 ];
 
+export const lionsDenClientViewBoard: {
+  id: Extract<LionsDenBoard, "client-view">;
+  href: string;
+  label: string;
+  labelEs: string;
+} = {
+  id: "client-view",
+  href: "/client/client-view",
+  label: "Client View",
+  labelEs: "Vista de cliente",
+};
+
 export function visibleLionsDenBoards(
   organization?: { name?: string | null; slug?: string | null } | null,
 ) {
@@ -100,13 +113,21 @@ export function clientOverviewRendersLionsDen(
   return !isQTimeWorkspaceSlug(slug);
 }
 
-export function lionsDenHref(path: string, previewOrgSlug?: string, workspaceSlug?: string) {
+export function lionsDenHref(
+  path: string,
+  previewOrgSlug?: string,
+  workspaceSlug?: string,
+  clientView = false,
+) {
   const params = new URLSearchParams();
   if (previewOrgSlug && !isAfeCrmDemoOrganization({ slug: previewOrgSlug })) {
     params.set("previewOrg", previewOrgSlug);
   }
   if (workspaceSlug && !isAfeCrmDemoOrganization({ slug: workspaceSlug })) {
     params.set("workspace", workspaceSlug);
+  }
+  if (clientView && params.has("previewOrg")) {
+    params.set("clientView", "1");
   }
   const query = params.toString();
   return query ? `${path}?${query}` : path;

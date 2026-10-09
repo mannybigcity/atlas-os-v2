@@ -6,6 +6,7 @@ import { HunterReviewPile } from "@/components/lions-den/hunter-review-pile";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { isQTimeWorkspaceSlug } from "@/lib/client-portal/identity";
+import { forClientView } from "@/lib/lions-den/client-view";
 import { presentLiveDeskReviewItem } from "@/lib/lions-den/live-desk";
 import {
   clientWorkspaceHref,
@@ -101,12 +102,15 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
     accepted: Number.isFinite(acceptedCountParam) ? acceptedCountParam : 0,
     failed: Number.isFinite(failedCountParam) ? failedCountParam : 0,
   });
-  const prospectsHref = clientWorkspaceHref("/client/prospects", previewOrgSlug);
-  const hunterDefaults = hunterSearchDefaultsFromMarket(
-    inferTrialDeskMarket({
-      businessName: primaryOrganization?.name,
-      metadata: workspace.user.user_metadata,
-    }),
+  const prospectsHref = clientWorkspaceHref("/client/prospects", previewOrgSlug, workspace.clientView);
+  const hunterDefaults = forClientView(
+    workspace.clientView,
+    hunterSearchDefaultsFromMarket(
+      inferTrialDeskMarket({
+        businessName: primaryOrganization?.name,
+        metadata: workspace.user.user_metadata,
+      }),
+    ),
   );
   const acceptedCount = reviewPile?.acceptedCount ?? 0;
   const showProspectsLink =
@@ -132,18 +136,24 @@ export default async function HunterPage({ searchParams }: HunterPageProps) {
       ) : null}
 
       <HunterSearch
+        clientView={workspace.clientView}
         defaults={hunterDefaults}
         organizationId={primaryOrganization?.id}
+        previewOrgSlug={previewOrgSlug || undefined}
         prospectsHref={prospectsHref}
+        workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
       />
 
       {primaryOrganization ? (
         <HunterReviewPile
           acceptedCount={acceptedCount}
           pendingCount={reviewPile?.pendingCount ?? 0}
+          clientView={workspace.clientView}
           items={(reviewPile && !reviewPile.setupRequired ? reviewPile.data : []).map((item) =>
-            presentLiveDeskReviewItem(primaryOrganization, item),
+            forClientView(workspace.clientView, presentLiveDeskReviewItem(primaryOrganization, item)),
           )}
+          previewOrgSlug={previewOrgSlug || undefined}
+          workspaceSlug={workspace.selectedWorkspaceSlug || undefined}
           organizationId={primaryOrganization.id}
           prospectsHref={prospectsHref}
           setupRequired={Boolean(reviewPile?.setupRequired)}

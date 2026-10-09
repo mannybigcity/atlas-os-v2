@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { amandaSequenceSteps, canOfferAmandaSequence } from "@/lib/lions-den/amanda-outreach";
+import { rememberClientView } from "@/lib/lions-den/client-view";
 import { isSuperAdminEmail } from "@/lib/env";
 import { safeRedirectPath } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
@@ -27,6 +28,7 @@ function returnPath(formData: FormData, status: string) {
   const next = new URLSearchParams();
   const previewOrg = params.get("previewOrg");
   if (previewOrg && /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(previewOrg)) next.set("previewOrg", previewOrg);
+  rememberClientView(next, params);
   next.set("followup", status);
   return `${destination}?${next.toString()}`;
 }

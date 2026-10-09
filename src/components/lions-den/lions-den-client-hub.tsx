@@ -8,6 +8,7 @@ import { readRuntimeEnv } from "@/lib/env";
 import { atlasBridgeUiEnabled } from "@/lib/lions-den/atlas-bridge";
 import {
   lionsDenHref,
+  lionsDenClientViewBoard,
   lionsDenOperatorBoards,
   visibleLionsDenBoards,
   type LionsDenBoard,
@@ -31,6 +32,8 @@ type LionsDenClientHubProps = {
   aiUsage?: ClientAiDailyUsage | null;
   showSignScout?: boolean;
   showTrialInbox?: boolean;
+  showClientView?: boolean;
+  clientView?: boolean;
   signScoutUrl?: string | null;
   trialInboxCount?: number;
   trial?: DeskTrialStatus | null;
@@ -49,6 +52,8 @@ export async function LionsDenClientHub({
   aiUsage = null,
   showSignScout = false,
   showTrialInbox = false,
+  showClientView = false,
+  clientView = false,
   signScoutUrl = null,
   trialInboxCount = 0,
   trial = null,
@@ -57,7 +62,7 @@ export async function LionsDenClientHub({
   const language = await getSiteLanguage();
   const spanish = language === "es";
   const trialPill = trial ? trialPillCopy(trial, spanish) : null;
-  const settingsHref = lionsDenHref("/client/settings", previewOrgSlug, workspaceSlug);
+  const settingsHref = lionsDenHref("/client/settings", previewOrgSlug, workspaceSlug, clientView);
   const utilityLinks = [
     { id: "settings", href: settingsHref, label: spanish ? "Ajustes y plan" : "Settings & plan" },
     { id: "help", href: `${settingsHref}#help`, label: spanish ? "Ayuda" : "Help" },
@@ -150,13 +155,26 @@ export async function LionsDenClientHub({
                       ? "bg-[#f5b932] text-[#071b42]"
                       : "text-white/85 hover:bg-white/10 hover:text-white"
                   }`}
-                  href={lionsDenHref(item.href, previewOrgSlug, workspaceSlug)}
+                  href={lionsDenHref(item.href, previewOrgSlug, workspaceSlug, clientView)}
                   key={item.id}
                 >
                   {spanish ? item.labelEs : item.label}
                 </Link>
               );
             })}
+            {showClientView ? (
+              <Link
+                className={`block shrink-0 rounded-md px-2.5 py-1.5 text-sm font-semibold transition ${
+                  board === lionsDenClientViewBoard.id
+                    ? "bg-[#f5b932] text-[#071b42]"
+                    : "text-white/85 hover:bg-white/10 hover:text-white"
+                }`}
+                data-client-view-nav
+                href={lionsDenClientViewBoard.href}
+              >
+                {spanish ? lionsDenClientViewBoard.labelEs : lionsDenClientViewBoard.label}
+              </Link>
+            ) : null}
             {showTrialInbox
               ? lionsDenOperatorBoards.map((item) => {
                   const active = item.id === board;

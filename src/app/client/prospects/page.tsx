@@ -5,6 +5,7 @@ import { InboundLeadLinkCard } from "@/components/lions-den/inbound-lead-link-ca
 import { LionsDenProspectsBoard } from "@/components/lions-den/lions-den-prospects";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
 import { isInboundOpportunity, leadPageUrl } from "@/lib/lions-den/inbound-leads";
+import { forClientView } from "@/lib/lions-den/client-view";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
 import { leadPageBaseUrl } from "@/server/leads/queries";
@@ -55,9 +56,10 @@ export default async function ProspectsPage({ searchParams }: ProspectsPageProps
       <LionsDenProspectsBoard
         notice={params?.prospect}
         organizationId={workspace.primaryOrganization?.id}
+        clientView={workspace.clientView}
         previewOrgSlug={workspace.previewOrgSlug || undefined}
         prospects={prospects.map((item) =>
-          presentLiveDeskOpportunity(workspace.primaryOrganization, item),
+          forClientView(workspace.clientView, presentLiveDeskOpportunity(workspace.primaryOrganization, item)),
         )}
         readOnly={workspace.readOnly}
         spanish={language === "es"}

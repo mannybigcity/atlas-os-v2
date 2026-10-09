@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { LionsDenBoardScreen } from "@/components/lions-den/lions-den-board-screen";
 import { LionsDenClientsBoard } from "@/components/lions-den/lions-den-clients";
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
+import { forClientView } from "@/lib/lions-den/client-view";
 import { lionsDenHref } from "@/lib/lions-den/client-hub";
 import { wonOpportunityToDeskClient, type DeskClient } from "@/lib/lions-den/desk-clients";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
@@ -48,7 +49,9 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
       setupRequired = sisCustomers.setupRequired;
     } else {
       const won = await getWonOpportunities(organization.id);
-      customers = won.setupRequired ? [] : won.data.map(wonOpportunityToDeskClient);
+      customers = won.setupRequired
+        ? []
+        : won.data.map((row) => forClientView(workspace.clientView, wonOpportunityToDeskClient(row)));
       setupRequired = won.setupRequired;
     }
   }
@@ -61,9 +64,11 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             `/client/clients/${customer.id}`,
             workspace.previewOrgSlug || undefined,
             workspace.selectedWorkspaceSlug || undefined,
+            workspace.clientView,
           )
         }
-        customers={customers}
+        clientView={workspace.clientView}
+        customers={forClientView(workspace.clientView, customers)}
         fromEmail={workspace.user.email ?? ""}
         notice={params?.prospect}
         organizationId={organization?.id}

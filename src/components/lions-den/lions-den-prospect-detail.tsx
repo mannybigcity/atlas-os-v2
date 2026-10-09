@@ -32,6 +32,7 @@ type LionsDenProspectDetailProps = {
   organizationId?: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   notice?: string;
   spanish: boolean;
   fromEmail?: string;
@@ -53,6 +54,7 @@ export function LionsDenProspectDetail({
   organizationId,
   previewOrgSlug,
   workspaceSlug,
+  clientView = false,
   notice,
   spanish,
   fromEmail,
@@ -66,7 +68,7 @@ export function LionsDenProspectDetail({
 }: LionsDenProspectDetailProps) {
   const places = prospectPlacesCard(prospect);
   const clientRecord = variant === "client";
-  const scope = organizationId ? { organizationId, previewOrgSlug, workspaceSlug, clientRecord } : null;
+  const scope = organizationId ? { organizationId, previewOrgSlug, workspaceSlug, clientView, clientRecord } : null;
   const recordPath = clientRecord ? `/client/clients/${prospect.id}` : `/client/prospects/${prospect.id}`;
   const ownerNotes = typeof prospect.metadata?.owner_notes === "string" ? prospect.metadata.owner_notes : null;
   const history = [...prospect.events].reverse().slice(0, 20);
@@ -155,6 +157,7 @@ export function LionsDenProspectDetail({
                   fromEmail: fromEmail ?? "",
                   organizationId,
                   opportunityId: prospect.id,
+                  clientView,
                   previewOrgSlug,
                   returnTo: recordPath,
                   workspaceSlug,

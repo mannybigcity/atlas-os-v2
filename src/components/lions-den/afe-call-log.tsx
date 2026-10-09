@@ -16,8 +16,9 @@ function dayHref(
   spanish: boolean,
   previewOrgSlug?: string,
   workspaceSlug?: string,
+  clientView = false,
 ) {
-  const base = lionsDenHref("/client", previewOrgSlug, workspaceSlug);
+  const base = lionsDenHref("/client", previewOrgSlug, workspaceSlug, clientView);
   const params = new URLSearchParams(base.split("?")[1] ?? "");
   if (day !== today) params.set("callDay", day);
   else params.delete("callDay");
@@ -30,12 +31,14 @@ export function AfeCallLogDesk({
   callDesk,
   organizationId,
   previewOrgSlug,
+  clientView = false,
   spanish,
   workspaceSlug,
 }: {
   callDesk: AfeCallDesk;
   organizationId: string;
   previewOrgSlug?: string;
+  clientView?: boolean;
   spanish: boolean;
   workspaceSlug?: string;
 }) {
@@ -68,6 +71,7 @@ export function AfeCallLogDesk({
       <form action={setDailyCallGoal} className="mt-1.5 flex flex-wrap items-center gap-1">
         <input name="organizationId" type="hidden" value={organizationId} />
         {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+        {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
         {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
         {selectedDay !== today ? <input name="callDay" type="hidden" value={selectedDay} /> : null}
         {spanish ? <input name="lang" type="hidden" value="es" /> : null}
@@ -105,16 +109,16 @@ export function AfeCallLogDesk({
             {showingToday ? (spanish ? " · hoy" : " · today") : null}
           </p>
           <div className="flex items-center gap-2 text-[10px] font-semibold">
-            <a className="text-[#071b42] underline" href={dayHref(previousDay, today, spanish, previewOrgSlug, workspaceSlug)}>
+            <a className="text-[#071b42] underline" href={dayHref(previousDay, today, spanish, previewOrgSlug, workspaceSlug, clientView)}>
               {spanish ? "Anterior" : "Previous"}
             </a>
             {showingToday ? null : (
-              <a className="text-[#071b42] underline" href={dayHref(today, today, spanish, previewOrgSlug, workspaceSlug)}>
+              <a className="text-[#071b42] underline" href={dayHref(today, today, spanish, previewOrgSlug, workspaceSlug, clientView)}>
                 {spanish ? "Hoy" : "Today"}
               </a>
             )}
             {nextDay <= today ? (
-              <a className="text-[#071b42] underline" href={dayHref(nextDay, today, spanish, previewOrgSlug, workspaceSlug)}>
+              <a className="text-[#071b42] underline" href={dayHref(nextDay, today, spanish, previewOrgSlug, workspaceSlug, clientView)}>
                 {spanish ? "Siguiente" : "Next"}
               </a>
             ) : null}
@@ -122,6 +126,7 @@ export function AfeCallLogDesk({
         </div>
         <form action="/client" className="mt-1 flex flex-wrap items-center gap-1" method="get">
           {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+        {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
           {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
           {spanish ? <input name="lang" type="hidden" value="es" /> : null}
           <label className="text-[10px] font-semibold text-[#5c6578]">

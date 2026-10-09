@@ -5,6 +5,7 @@ import { LionsDenFollowUpBoard } from "@/components/lions-den/lions-den-follow-u
 import { isQTimeWorkspaceSlug, isSisOrganization } from "@/lib/client-portal/identity";
 import { canShowFollowUpDraftControls } from "@/lib/lions-den/follow-up-drafts";
 import { nextMessageOwnerFromBusiness } from "@/lib/lions-den/next-message-engine";
+import { forClientView } from "@/lib/lions-den/client-view";
 import { presentLiveDeskOpportunity } from "@/lib/lions-den/live-desk";
 import {
   clientWorkspaceHref,
@@ -81,11 +82,16 @@ export async function FollowUpDeskScreen({
       <LionsDenBoardScreen board={board} workspace={workspace}>
         <LionsDenFollowUpBoard
           allowDraftControls={allowDraftControls}
-          amanda={amanda}
+          amanda={forClientView(workspace.clientView, amanda)}
+          clientView={workspace.clientView}
           composeFromEmail={workspace.user.email ?? ""}
-          engineOwner={engineOwner}
-          inboxTasks={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.inboxTasks : []}
-          linkedNotes={
+          engineOwner={forClientView(workspace.clientView, engineOwner)}
+          inboxTasks={forClientView(
+            workspace.clientView,
+            sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.inboxTasks : [],
+          )}
+          linkedNotes={forClientView(
+            workspace.clientView,
             linkedNotes && !linkedNotes.setupRequired
               ? linkedNotes.data.map((note) => ({
                   recordId: note.recordId,
@@ -93,15 +99,15 @@ export async function FollowUpDeskScreen({
                   title: note.title,
                   body: note.body,
                 }))
-              : []
-          }
+              : [],
+          )}
           partyEvents={sisDashboard && !sisDashboard.setupRequired ? sisDashboard.data.partyEvents : []}
           previewOrgSlug={previewOrgSlug || undefined}
           prospects={(pipeline && !pipeline.setupRequired ? pipeline.data.opportunities : []).map((item) =>
-            presentLiveDeskOpportunity(primaryOrganization, item),
+            forClientView(workspace.clientView, presentLiveDeskOpportunity(primaryOrganization, item)),
           )}
           readOnly={workspace.readOnly}
-          returnTo={clientWorkspaceHref(workspacePath, previewOrgSlug)}
+          returnTo={clientWorkspaceHref(workspacePath, previewOrgSlug, workspace.clientView)}
           followupStatus={searchParams?.followup}
           spanish={spanish}
           workspaceSlug={workspace.selectedWorkspaceSlug || undefined}

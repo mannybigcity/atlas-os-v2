@@ -15,6 +15,7 @@ type DeskContactButtonProps = {
   customerId?: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   returnTo?: string;
 };
 
@@ -45,6 +46,7 @@ export function DeskContactButton({
   customerId,
   previewOrgSlug,
   workspaceSlug,
+  clientView = false,
   returnTo,
 }: DeskContactButtonProps) {
   return (
@@ -63,6 +65,7 @@ export function DeskContactButton({
       {customerId ? <input name="customerId" type="hidden" value={customerId} /> : null}
       {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
       {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+      {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
       {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
       <input name="channel" type="hidden" value={channel} />
       <input name="lang" type="hidden" value={spanish ? "es" : "en"} />

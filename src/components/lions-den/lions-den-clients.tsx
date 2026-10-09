@@ -17,6 +17,7 @@ type LionsDenClientsBoardProps = {
   fromEmail?: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   sisCustomers?: boolean;
   readOnly?: boolean;
   notice?: string;
@@ -58,6 +59,7 @@ export function LionsDenClientsBoard({
   fromEmail,
   previewOrgSlug,
   workspaceSlug,
+  clientView = false,
   sisCustomers,
   readOnly = false,
   notice,
@@ -166,6 +168,7 @@ export function LionsDenClientsBoard({
                                     fromEmail: fromEmail ?? "",
                                     opportunityId: sisCustomers ? undefined : customer.id,
                                     organizationId,
+                                    clientView,
                                     previewOrgSlug,
                                     returnTo: `/client/clients/${customer.id}`,
                                     workspaceSlug,
@@ -196,6 +199,7 @@ export function LionsDenClientsBoard({
                                   </>
                                 )}
                                 {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+                                {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
                                 {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
                                 <ConfirmSubmitButton
                                   className={deleteClass}

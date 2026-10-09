@@ -14,6 +14,7 @@ import {
   readLastDeskContact,
   type DeskContactChannel,
 } from "@/lib/lions-den/prospect-stages";
+import { rememberClientView } from "@/lib/lions-den/client-view";
 import { asOpportunityMetadata } from "@/server/opportunities/queries";
 import { appendDeskCallLog } from "@/server/opportunities/desk-call-log";
 import { requireProspectOwner } from "@/server/opportunities/prospect-actions";
@@ -44,6 +45,7 @@ function scopedPath(base: string, formData: FormData, status?: string) {
   const workspace = text(formData, "workspace", 80);
   if (previewOrg && slugPattern.test(previewOrg)) params.set("previewOrg", previewOrg);
   if (workspace && slugPattern.test(workspace)) params.set("workspace", workspace);
+  rememberClientView(params, formData);
   if (status) params.set("prospect", status);
   const query = params.toString();
   return query ? `${base}?${query}` : base;

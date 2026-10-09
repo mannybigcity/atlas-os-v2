@@ -22,6 +22,7 @@ type DeskEmailComposeProps = {
   website?: string | null;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   returnTo?: string;
   detailHref?: string;
   initialOpen?: boolean;
@@ -54,6 +55,7 @@ export function DeskEmailCompose({
   website,
   previewOrgSlug,
   workspaceSlug,
+  clientView = false,
   returnTo,
   detailHref,
   initialOpen = false,
@@ -255,6 +257,7 @@ export function DeskEmailCompose({
             {customerId ? <input name="customerId" type="hidden" value={customerId} /> : null}
             {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
             {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+            {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
             {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
             <input name="fromEmail" type="hidden" value={fromEmail} />
             <input name="lang" type="hidden" value={spanish ? "es" : "en"} />

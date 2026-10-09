@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isSuperAdminEmail } from "@/lib/env";
+import { rememberClientView } from "@/lib/lions-den/client-view";
 import {
   linkedNoteEventSummary,
   noteFollowUpPlan,
@@ -63,6 +64,7 @@ function notesReturnPath(formData: FormData, status: string) {
   if (workspace && /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(workspace)) {
     next.set("workspace", workspace);
   }
+  rememberClientView(next, params);
   next.set("note", status);
   return `${destination}?${next.toString()}`;
 }

@@ -9,6 +9,9 @@ type HunterReviewPileProps = {
   acceptedCount?: number;
   pendingCount?: number;
   prospectsHref?: string;
+  previewOrgSlug?: string;
+  workspaceSlug?: string;
+  clientView?: boolean;
   spanish: boolean;
 };
 
@@ -19,6 +22,9 @@ export function HunterReviewPile({
   acceptedCount = 0,
   pendingCount,
   prospectsHref = "/client/prospects",
+  previewOrgSlug,
+  workspaceSlug,
+  clientView = false,
   spanish,
 }: HunterReviewPileProps) {
   const pending = Math.max(pendingCount ?? items.length, items.length);
@@ -104,10 +110,13 @@ export function HunterReviewPile({
 
       {!setupRequired && items.length > 0 ? (
         <HunterReviewPileBoard
+          clientView={clientView}
           items={items}
           organizationId={organizationId}
           pendingCount={pending}
+          previewOrgSlug={previewOrgSlug}
           spanish={spanish}
+          workspaceSlug={workspaceSlug}
         />
       ) : null}
     </section>

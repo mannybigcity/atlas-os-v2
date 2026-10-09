@@ -19,6 +19,7 @@ type DeskQuoteCardProps = {
   payLink?: string | null;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   clientRecord?: boolean;
   returnTo: string;
   /** The quote the owner just wrote (from ?quote=), shown open with its send links. */
@@ -30,10 +31,11 @@ const fieldClass =
   "mt-1 block w-full rounded-md border border-[#d5d0c4] bg-white px-3 py-2 text-sm text-[#071b42] placeholder:text-[#8a93a3] focus:border-[#071b42] focus:outline-none";
 const pillClass = LD_CHIP;
 
-function Scope({ organizationId, previewOrgSlug, workspaceSlug, clientRecord, returnTo, spanish, prospectId }: {
+function Scope({ organizationId, previewOrgSlug, workspaceSlug, clientView, clientRecord, returnTo, spanish, prospectId }: {
   organizationId: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   clientRecord?: boolean;
   returnTo: string;
   spanish: boolean;
@@ -47,6 +49,7 @@ function Scope({ organizationId, previewOrgSlug, workspaceSlug, clientRecord, re
       <input name="lang" type="hidden" value={spanish ? "es" : "en"} />
       {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
       {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
+      {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
       {clientRecord ? <input name="clientRecord" type="hidden" value="1" /> : null}
     </>
   );
@@ -63,6 +66,7 @@ export function DeskQuoteCard(props: DeskQuoteCardProps) {
   const highlighted = (openQuoteId && quotes.find((item) => item.id === openQuoteId)) || quotes.find((item) => item.status !== "declined") || null;
   const scope = {
     organizationId: props.organizationId,
+    clientView: props.clientView,
     previewOrgSlug: props.previewOrgSlug,
     workspaceSlug: props.workspaceSlug,
     clientRecord: props.clientRecord,

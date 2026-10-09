@@ -45,6 +45,7 @@ type LionsDenOverviewProps = {
   organizationSlug?: string;
   previewOrgSlug?: string;
   workspaceSlug?: string;
+  clientView?: boolean;
   spanish: boolean;
   canCreateNotes: boolean;
   sisDashboard?: SisDashboardData | null;
@@ -67,6 +68,7 @@ export function LionsDenOverview({
   organizationSlug,
   previewOrgSlug,
   workspaceSlug,
+  clientView = false,
   spanish,
   canCreateNotes,
   sisDashboard,
@@ -80,7 +82,7 @@ export function LionsDenOverview({
   callDesk = null,
   todaysFive = null,
 }: LionsDenOverviewProps) {
-  const href = (path: string) => lionsDenHref(path, previewOrgSlug, workspaceSlug);
+  const href = (path: string) => lionsDenHref(path, previewOrgSlug, workspaceSlug, clientView);
   const sampleCopy = trialSampleCopy(spanish);
   const showSampleBanner =
     Boolean(organizationId) &&
@@ -298,6 +300,7 @@ export function LionsDenOverview({
               <AfeCallLogDesk
                 callDesk={callDesk}
                 organizationId={organizationId}
+                clientView={clientView}
                 previewOrgSlug={previewOrgSlug}
                 spanish={spanish}
                 workspaceSlug={workspaceSlug}
@@ -353,6 +356,7 @@ export function LionsDenOverview({
                       <ProspectNoteForm
                         compact
                         organizationId={organizationId}
+                        clientView={clientView}
                         previewOrgSlug={previewOrgSlug}
                         prospect={prospect}
                         returnTo="/client"
@@ -404,6 +408,7 @@ export function LionsDenOverview({
                       </select>
                     </label>
                     {previewOrgSlug ? <input name="previewOrg" type="hidden" value={previewOrgSlug} /> : null}
+                    {clientView ? <input name="clientView" type="hidden" value="1" /> : null}
                     {workspaceSlug ? <input name="workspace" type="hidden" value={workspaceSlug} /> : null}
                     <p className="text-[10px] leading-4 text-[#5c6578]">
                       {spanish
