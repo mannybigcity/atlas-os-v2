@@ -704,7 +704,7 @@ export function ClientQTimeDashboard({
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <RoleLink
             href={clientWorkspaceHref("/client/hunter", workspace.previewOrgSlug)}
             label="Growth research"
@@ -719,6 +719,11 @@ export function ClientQTimeDashboard({
             href={clientWorkspaceHref("/client/david", workspace.previewOrgSlug)}
             label="Follow-up desk"
             note="CRM, follow-up, and review status."
+          />
+          <RoleLink
+            href={clientWorkspaceHref("/client/bookkeeping", workspace.previewOrgSlug)}
+            label="Bookkeeping"
+            note="Read-only Stripe records, totals, and CSV export."
           />
         </div>
       </section>

@@ -17,7 +17,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       eyebrow="Website terms"
-      lastUpdated="July 16, 2026"
+      lastUpdated="October 20, 2026"
       summary="These terms govern use of the Atlas website, free assessment, and client workspace. A separate written service agreement governs paid work."
       title="Terms of Use"
     >
@@ -119,7 +119,24 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="7. Your information and responsibilities">
+      <LegalSection title="7. Stripe bookkeeping">
+        <p>
+          If a workspace connects Stripe, Atlas Bookkeeping copies read-only
+          payment records into that workspace for filtering, totals, and export.
+          Atlas never holds or moves funds through this feature and does not
+          create charges, refunds, or payouts. Disconnecting deletes that
+          workspace&apos;s copied Stripe data.
+        </p>
+        <p>This is record-keeping, not tax or accounting advice.</p>
+        <p>
+          You confirm that you are allowed to connect the Stripe account and to
+          store the customer details Stripe already keeps on those payments. The
+          Atlas Stripe App is separate from any other business&apos;s Stripe account,
+          including SIS Custom Creations.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="8. Your information and responsibilities">
         <p>You agree to:</p>
         <LegalList>
           <li>provide information that is reasonably accurate and current;</li>
@@ -138,7 +155,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="8. Acceptable use">
+      <LegalSection title="9. Acceptable use">
         <p>You may not use Atlas to:</p>
         <LegalList>
           <li>break the law, violate another person&apos;s rights, or facilitate harm;</li>
@@ -155,7 +172,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="9. Ownership and permission to provide the service">
+      <LegalSection title="10. Ownership and permission to provide the service">
         <p>
           You keep ownership of content and business information you submit. You
           grant Atlas a limited permission to host, copy, organize, transform, and
@@ -169,7 +186,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="10. Privacy and third-party services">
+      <LegalSection title="11. Privacy and third-party services">
         <p>
           Our{" "}
           <Link className={legalLinkClass} href="/privacy">
@@ -199,7 +216,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="11. Availability and disclaimers">
+      <LegalSection title="12. Availability and disclaimers">
         <p>
           Atlas is being developed in stages. Features may change, be limited, or be
           discontinued. We aim to keep the service useful and available but do not
@@ -213,7 +230,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="12. Limitation of liability">
+      <LegalSection title="13. Limitation of liability">
         <p>
           To the maximum extent permitted by law, Atlas will not be liable under
           these website terms for indirect, incidental, special, consequential, or
@@ -227,7 +244,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="13. Governing law, changes, and contact">
+      <LegalSection title="14. Governing law, changes, and contact">
         <p>
           These website terms are governed by applicable United States and Texas
           law, without limiting rights that cannot be waived under the law that

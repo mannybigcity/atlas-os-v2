@@ -1,0 +1,11 @@
+{
+  "extends": "stripe-app.json",
+  "allowed_redirect_uris": [
+    "http://localhost:3000/api/stripe/bookkeeping/callback",
+    "https://atlasforentrepreneurs.com/api/stripe/bookkeeping/callback"
+  ],
+  "post_install_action": {
+    "type": "external",
+    "url": "http://localhost:3000/client/bookkeeping"
+  }
+}

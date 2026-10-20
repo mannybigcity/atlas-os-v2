@@ -17,7 +17,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       eyebrow="Privacy & data"
-      lastUpdated="July 16, 2026"
+      lastUpdated="October 20, 2026"
       summary="This policy explains what Atlas collects, why it is needed, when it may be shared, and the choices available to assessment prospects and client workspace users."
       title="Privacy Policy"
     >
@@ -188,7 +188,48 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="7. Retention and security">
+      <LegalSection title="7. Stripe bookkeeping records">
+        <p>
+          A workspace owner or admin may choose to connect that workspace&apos;s own
+          Stripe account to Atlas Bookkeeping. The connection is off until Atlas
+          turns the feature on, and it uses a Stripe App with read-only access.
+          Atlas never holds or moves funds through this connection, and it does
+          not create charges, issue refunds, or send payouts.
+        </p>
+        <p>When a workspace connects Stripe, Atlas stores:</p>
+        <LegalList>
+          <li>the Stripe account id and whether the connection is live or test;</li>
+          <li>
+            OAuth access and refresh tokens, encrypted at rest and available only
+            to Atlas servers, never to the browser;
+          </li>
+          <li>
+            ledger rows copied from Stripe balance transactions: charges, refunds,
+            fees, and payouts, including date, amount, fee, net, currency, status,
+            and description;
+          </li>
+          <li>
+            invoice records and the customer name, email, and Stripe customer id
+            already attached to those payments or invoices; and
+          </li>
+          <li>category rules the workspace edits, such as sales, refunds, fees, and payouts.</li>
+        </LegalList>
+        <p>
+          Atlas does not copy full card numbers, bank account numbers, or government
+          identifiers from Stripe. Disconnecting Stripe revokes Atlas&apos;s token when
+          Stripe accepts the revocation and hard-deletes that workspace&apos;s copied
+          Stripe records, including tokens, transactions, invoices, customer details
+          on those rows, and category rules. {""}
+          This is record-keeping, not tax or accounting advice.
+        </p>
+        <p>
+          The Stripe App is operated for Atlas For Entrepreneurs. It is a separate
+          Stripe account from any other business, including SIS Custom Creations,
+          and those accounts&apos; keys are not used for this connection.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="8. Retention and security">
         <p>
           We retain prospect information for as long as reasonably necessary to
           respond, evaluate fit, maintain appropriate business records, prevent
@@ -206,7 +247,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="8. Your choices and privacy requests">
+      <LegalSection title="9. Your choices and privacy requests">
         <p>
           Depending on where you live and which law applies, you may have the right
           to request access to, correction of, deletion of, or a portable copy of
@@ -228,7 +269,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="9. Children, changes, and contact">
+      <LegalSection title="10. Children, changes, and contact">
         <p>
           Atlas is a business service and is not directed to children under 13. We
           do not knowingly collect personal information from children under 13. If

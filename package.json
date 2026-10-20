@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/server/stripe-bookkeeping/*.test.ts src/server/operations/*.test.ts src/server/sis-capture-card/*.test.ts src/lib/*.test.ts src/server/brain/*.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
@@ -23,6 +25,7 @@
     "eslint": "latest",
     "eslint-config-next": "latest",
     "tailwindcss": "latest",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3"
   }
 }
