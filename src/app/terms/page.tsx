@@ -28,7 +28,7 @@ export default async function TermsPage() {
     <LegalPage
       eyebrow={spanish ? "Términos del sitio web" : "Website terms"}
       language={language}
-      lastUpdated={spanish ? "16 de julio de 2026" : "July 16, 2026"}
+      lastUpdated={spanish ? "20 de octubre de 2026" : "October 20, 2026"}
       summary={spanish ? "Estos términos rigen el uso del sitio web de Atlas, la evaluación gratuita y el espacio de trabajo de clientes. Un acuerdo de servicio escrito independiente rige el trabajo pagado." : "These terms govern use of the Atlas website, free assessment, and client workspace. A separate written service agreement governs paid work."}
       title={spanish ? "Términos de uso" : "Terms of Use"}
     >
@@ -93,7 +93,25 @@ export default async function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title={spanish ? "7. Tu información y responsabilidades" : "7. Your information and responsibilities"}>
+      <LegalSection title={spanish ? "7. Contabilidad de Stripe" : "7. Stripe bookkeeping"}>
+        <p>
+          {spanish
+            ? "Si un espacio de trabajo conecta Stripe, Atlas Bookkeeping copia registros de pago de solo lectura en ese espacio para filtrarlos, ver totales y exportarlos. Atlas nunca retiene ni mueve fondos mediante esta función y no crea cargos, reembolsos ni pagos. Desconectar elimina los datos de Stripe copiados de ese espacio."
+            : "If a workspace connects Stripe, Atlas Bookkeeping copies read-only payment records into that workspace for filtering, totals, and export. Atlas never holds or moves funds through this feature and does not create charges, refunds, or payouts. Disconnecting deletes that workspace's copied Stripe data."}
+        </p>
+        <p>
+          {spanish
+            ? "Esto es un registro, no asesoría fiscal ni contable."
+            : "This is record-keeping, not tax or accounting advice."}
+        </p>
+        <p>
+          {spanish
+            ? "Confirmas que puedes conectar la cuenta de Stripe y almacenar los datos de clientes que Stripe ya conserva en esos pagos. La Stripe App de Atlas es independiente de la cuenta de Stripe de cualquier otro negocio."
+            : "You confirm that you are allowed to connect the Stripe account and to store the customer details Stripe already keeps on those payments. The Atlas Stripe App is separate from any other business's Stripe account."}
+        </p>
+      </LegalSection>
+
+      <LegalSection title={spanish ? "8. Tu información y responsabilidades" : "8. Your information and responsibilities"}>
         <p>{spanish ? "Aceptas:" : "You agree to:"}</p>
         <LegalList>
           {spanish ? <><li>proporcionar información razonablemente precisa y actualizada;</li><li>tener los derechos y permisos necesarios para enviar contenido empresarial, información de contacto y material de fuentes públicas;</li><li>proteger las credenciales de la cuenta e informar con prontitud sobre sospechas de uso indebido;</li><li>revisar el trabajo antes de aprobarlo o usarlo; y</li><li>cumplir las normas aplicables de privacidad, publicidad, contacto y de la industria.</li></> : <><li>provide information that is reasonably accurate and current;</li><li>have the rights and permissions needed to submit business content, contact information, and public-source material;</li><li>protect account credentials and promptly report suspected misuse;</li><li>review work before approving or using it; and</li><li>comply with applicable privacy, advertising, outreach, and industry rules.</li></>}
@@ -103,7 +121,7 @@ export default async function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title={spanish ? "8. Uso aceptable" : "8. Acceptable use"}>
+      <LegalSection title={spanish ? "9. Uso aceptable" : "9. Acceptable use"}>
         <p>{spanish ? "No puedes usar Atlas para:" : "You may not use Atlas to:"}</p>
         <LegalList>
           {spanish ? <><li>infringir la ley, violar los derechos de otra persona o facilitar daños;</li><li>enviar spam ilegal, contacto engañoso o mensajes automatizados no autorizados;</li><li>suplantar a otra persona o crear reseñas o testimonios falsos;</li><li>tomar decisiones automatizadas discriminatorias o de alto impacto prohibidas;</li><li>introducir malware, evadir controles de acceso o interrumpir el servicio;</li><li>extraer o recopilar datos en violación de términos o leyes aplicables; o</li><li>presentar un borrador de Atlas como asesoría profesional verificada.</li></> : <><li>break the law, violate another person&apos;s rights, or facilitate harm;</li><li>send unlawful spam, deceptive outreach, or unauthorized automated messages;</li><li>impersonate another person or create fake reviews or testimonials;</li><li>make prohibited discriminatory or high-impact automated decisions;</li><li>introduce malware, bypass access controls, or disrupt the service;</li><li>scrape or collect data in violation of applicable terms or law; or</li><li>misrepresent an Atlas draft as verified professional advice.</li></>}
@@ -113,7 +131,7 @@ export default async function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title={spanish ? "9. Propiedad y permiso para prestar el servicio" : "9. Ownership and permission to provide the service"}>
+      <LegalSection title={spanish ? "10. Propiedad y permiso para prestar el servicio" : "10. Ownership and permission to provide the service"}>
         <p>
           {spanish ? "Conservas la propiedad del contenido y la información empresarial que envías. Otorgas a Atlas un permiso limitado para alojar, copiar, organizar, transformar y procesar de otro modo ese material solo en la medida razonablemente necesaria para prestar, proteger y respaldar el servicio solicitado." : "You keep ownership of content and business information you submit. You grant Atlas a limited permission to host, copy, organize, transform, and otherwise process that material only as reasonably needed to provide, secure, and support the requested service."}
         </p>
@@ -122,7 +140,7 @@ export default async function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title={spanish ? "10. Privacidad y servicios de terceros" : "10. Privacy and third-party services"}>
+      <LegalSection title={spanish ? "11. Privacidad y servicios de terceros" : "11. Privacy and third-party services"}>
         <p>
           {spanish ? "Nuestra " : "Our "}
           <Link className={legalLinkClass} href="/privacy">
@@ -147,7 +165,7 @@ export default async function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title={spanish ? "11. Disponibilidad y exenciones" : "11. Availability and disclaimers"}>
+      <LegalSection title={spanish ? "12. Disponibilidad y exenciones" : "12. Availability and disclaimers"}>
         <p>
           {spanish ? "Atlas se está desarrollando por etapas. Las funciones pueden cambiar, limitarse o descontinuarse. Buscamos mantener el servicio útil y disponible, pero no prometemos un funcionamiento ininterrumpido o sin errores." : "Atlas is being developed in stages. Features may change, be limited, or be discontinued. We aim to keep the service useful and available but do not promise uninterrupted or error-free operation."}
         </p>
@@ -156,7 +174,7 @@ export default async function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title={spanish ? "12. Limitación de responsabilidad" : "12. Limitation of liability"}>
+      <LegalSection title={spanish ? "13. Limitación de responsabilidad" : "13. Limitation of liability"}>
         <p>
           {spanish ? "En la máxima medida permitida por la ley, Atlas no será responsable conforme a estos términos del sitio web por daños indirectos, incidentales, especiales, consecuentes o punitivos, ni por pérdida de ganancias, ingresos, datos, reputación u oportunidades comerciales derivadas del uso del sitio web o de la evaluación no pagada." : "To the maximum extent permitted by law, Atlas will not be liable under these website terms for indirect, incidental, special, consequential, or punitive damages, or for lost profits, revenue, data, goodwill, or business opportunities arising from use of the website or unpaid assessment."}
         </p>
@@ -165,7 +183,7 @@ export default async function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title={spanish ? "13. Ley aplicable, cambios y contacto" : "13. Governing law, changes, and contact"}>
+      <LegalSection title={spanish ? "14. Ley aplicable, cambios y contacto" : "14. Governing law, changes, and contact"}>
         <p>
           {spanish ? "Estos términos del sitio web se rigen por las leyes aplicables de Estados Unidos y Texas, sin limitar los derechos a los que no puedas renunciar conforme a la ley que te aplique. Un acuerdo de servicio pagado puede contener términos adicionales sobre disputas revisados y aceptados por ambas partes." : "These website terms are governed by applicable United States and Texas law, without limiting rights that cannot be waived under the law that applies to you. A paid service agreement may contain additional dispute terms reviewed and accepted by both parties."}
         </p>

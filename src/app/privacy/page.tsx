@@ -28,7 +28,7 @@ export default async function PrivacyPage() {
     <LegalPage
       eyebrow={spanish ? "Privacidad y datos" : "Privacy & data"}
       language={language}
-      lastUpdated={spanish ? "16 de julio de 2026" : "July 16, 2026"}
+      lastUpdated={spanish ? "20 de octubre de 2026" : "October 20, 2026"}
       summary={spanish ? "Esta política explica qué recopila Atlas, por qué lo necesita, cuándo puede compartirlo y qué opciones tienen los prospectos de evaluación y los usuarios del espacio de trabajo." : "This policy explains what Atlas collects, why it is needed, when it may be shared, and the choices available to assessment prospects and client workspace users."}
       title={spanish ? "Política de privacidad" : "Privacy Policy"}
     >
@@ -127,7 +127,53 @@ export default async function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title={spanish ? "7. Conservación y seguridad" : "7. Retention and security"}>
+      <LegalSection title={spanish ? "7. Registros de contabilidad de Stripe" : "7. Stripe bookkeeping records"}>
+        <p>
+          {spanish
+            ? "El dueño o un administrador de un espacio de trabajo puede elegir conectar la cuenta de Stripe de ese espacio a Atlas Bookkeeping. La conexión permanece apagada hasta que Atlas active la función, y usa una Stripe App con acceso de solo lectura. Atlas nunca retiene ni mueve fondos mediante esta conexión, y no crea cargos, emite reembolsos ni envía pagos."
+            : "A workspace owner or admin may choose to connect that workspace's own Stripe account to Atlas Bookkeeping. The connection is off until Atlas turns the feature on, and it uses a Stripe App with read-only access. Atlas never holds or moves funds through this connection, and it does not create charges, issue refunds, or send payouts."}
+        </p>
+        <p>{spanish ? "Cuando un espacio conecta Stripe, Atlas guarda:" : "When a workspace connects Stripe, Atlas stores:"}</p>
+        <LegalList>
+          <li>
+            {spanish
+              ? "el identificador de la cuenta de Stripe y si la conexión es en vivo o de prueba;"
+              : "the Stripe account id and whether the connection is live or test;"}
+          </li>
+          <li>
+            {spanish
+              ? "tokens de acceso y de actualización de OAuth, cifrados en reposo y disponibles solo para los servidores de Atlas, nunca para el navegador;"
+              : "OAuth access and refresh tokens, encrypted at rest and available only to Atlas servers, never to the browser;"}
+          </li>
+          <li>
+            {spanish
+              ? "filas del libro copiadas de las transacciones de saldo de Stripe: cargos, reembolsos, comisiones y pagos, incluidos fecha, importe, comisión, neto, moneda, estado y descripción;"
+              : "ledger rows copied from Stripe balance transactions: charges, refunds, fees, and payouts, including date, amount, fee, net, currency, status, and description;"}
+          </li>
+          <li>
+            {spanish
+              ? "registros de facturas y el nombre, el correo y el identificador de cliente de Stripe ya asociados a esos pagos o facturas; y"
+              : "invoice records and the customer name, email, and Stripe customer id already attached to those payments or invoices; and"}
+          </li>
+          <li>
+            {spanish
+              ? "reglas de categoría que edita el espacio, como ventas, reembolsos, comisiones y pagos."
+              : "category rules the workspace edits, such as sales, refunds, fees, and payouts."}
+          </li>
+        </LegalList>
+        <p>
+          {spanish
+            ? "Atlas no copia números completos de tarjeta, números de cuenta bancaria ni identificadores gubernamentales desde Stripe. Desconectar Stripe revoca el token de Atlas cuando Stripe acepta la revocación y elimina de forma permanente los registros de Stripe copiados de ese espacio, incluidos tokens, transacciones, facturas, datos de clientes en esas filas y reglas de categoría. Esto es un registro, no asesoría fiscal ni contable."
+            : "Atlas does not copy full card numbers, bank account numbers, or government identifiers from Stripe. Disconnecting Stripe revokes Atlas's token when Stripe accepts the revocation and hard-deletes that workspace's copied Stripe records, including tokens, transactions, invoices, customer details on those rows, and category rules. This is record-keeping, not tax or accounting advice."}
+        </p>
+        <p>
+          {spanish
+            ? "La Stripe App se opera para Atlas para emprendedores. Es una cuenta de Stripe distinta de la de cualquier otro negocio, y las claves de otras cuentas no se usan para esta conexión."
+            : "The Stripe App is operated for Atlas For Entrepreneurs. It is a separate Stripe account from any other business, and other businesses' keys are not used for this connection."}
+        </p>
+      </LegalSection>
+
+      <LegalSection title={spanish ? "8. Conservación y seguridad" : "8. Retention and security"}>
         <p>
           {spanish ? "Conservamos la información de prospectos durante el tiempo razonablemente necesario para responder, evaluar la compatibilidad, mantener registros comerciales adecuados, prevenir abusos y cumplir obligaciones legales. La información de clientes puede conservarse durante la relación y por un período razonable posterior. Los períodos de conservación varían según el registro y el propósito. Podemos eliminar o desidentificar la información cuando ya no sea razonablemente necesaria, sujeto a requisitos legales, de seguridad, copias de respaldo y resolución de disputas." : "We retain prospect information for as long as reasonably necessary to respond, evaluate fit, maintain appropriate business records, prevent abuse, and meet legal obligations. Client information may be retained for the duration of the relationship and for a reasonable period afterward. Retention periods vary with the record and purpose. We may delete or deidentify information when it is no longer reasonably needed, subject to legal, security, backup, and dispute-resolution requirements."}
         </p>
@@ -136,7 +182,7 @@ export default async function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title={spanish ? "8. Tus opciones y solicitudes de privacidad" : "8. Your choices and privacy requests"}>
+      <LegalSection title={spanish ? "9. Tus opciones y solicitudes de privacidad" : "9. Your choices and privacy requests"}>
         <p>
           {spanish ? "Según dónde vivas y qué ley aplique, puedes tener derecho a solicitar acceso, corrección, eliminación o una copia portátil de la información personal, y a apelar una decisión sobre una solicitud. También puedes pedir a Atlas que detenga las comunicaciones de marketing no esenciales en cualquier momento." : "Depending on where you live and which law applies, you may have the right to request access to, correction of, deletion of, or a portable copy of personal information, and to appeal a decision about a request. You may also ask Atlas to stop nonessential marketing communications at any time."}
         </p>
@@ -152,7 +198,7 @@ export default async function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title={spanish ? "9. Menores, cambios y contacto" : "9. Children, changes, and contact"}>
+      <LegalSection title={spanish ? "10. Menores, cambios y contacto" : "10. Children, changes, and contact"}>
         <p>
           {spanish ? "Atlas es un servicio empresarial y no está dirigido a menores de 13 años. No recopilamos deliberadamente información personal de menores de 13 años. Si crees que un menor envió información, contáctanos para revisarla y eliminarla según corresponda." : "Atlas is a business service and is not directed to children under 13. We do not knowingly collect personal information from children under 13. If you believe a child submitted information, contact us so it can be reviewed and removed as appropriate."}
         </p>
