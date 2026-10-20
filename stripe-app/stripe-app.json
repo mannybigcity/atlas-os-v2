@@ -1,0 +1,49 @@
+{
+  "id": "com.atlasforentrepreneurs.bookkeeping",
+  "version": "0.1.0",
+  "name": "Atlas Bookkeeping",
+  "icon": "./icon.png",
+  "distribution_type": "public",
+  "sandbox_install_compatible": true,
+  "stripe_api_access_type": "oauth",
+  "allowed_redirect_uris": [
+    "https://atlasforentrepreneurs.com/api/stripe/bookkeeping/callback"
+  ],
+  "permissions": [
+    {
+      "permission": "charge_read",
+      "purpose": "Read charges and refunds so Atlas can keep a record of sales and refunds. Atlas never creates or changes them."
+    },
+    {
+      "permission": "payout_read",
+      "purpose": "Read payouts so Atlas can record money Stripe sent to the bank. Atlas never creates or cancels payouts."
+    },
+    {
+      "permission": "invoice_read",
+      "purpose": "Read invoices so Atlas can show invoice records next to the payments they belong to. Atlas never sends or changes invoices."
+    },
+    {
+      "permission": "customer_read",
+      "purpose": "Read the customer name and email already attached to a payment so the workspace ledger can say who it was for."
+    },
+    {
+      "permission": "balance_read",
+      "purpose": "Read balance transactions, including charges, refunds, fees, and payouts. This is the ledger Atlas copies. The current permission id for GET /v1/balance_transactions is balance_read."
+    },
+    {
+      "permission": "balance_transaction_source_read",
+      "purpose": "Read the charge, refund, or payout that a balance transaction came from so the ledger can name it. Read only."
+    },
+    {
+      "permission": "event_read",
+      "purpose": "Receive webhook events for charges, refunds, payouts, invoices, customers, and app install or uninstall so the ledger stays current."
+    }
+  ],
+  "post_install_action": {
+    "type": "external",
+    "url": "https://atlasforentrepreneurs.com/client/bookkeeping"
+  },
+  "constants": {
+    "APP_DESCRIPTION": "Atlas Bookkeeping is a read-only reporting and record-keeping tool for an Atlas For Entrepreneurs workspace. It copies charges, refunds, fees, payouts, invoices, and the customer details already on those records. It never holds funds, never moves funds, and never creates charges, refunds, or payouts. This is record-keeping, not tax or accounting advice."
+  }
+}

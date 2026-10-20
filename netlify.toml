@@ -11,3 +11,7 @@
 
 [functions."overnight-engine"]
   schedule = "0 4 * * *"
+
+# stripe-bookkeeping-nightly schedules itself at 08:15 UTC from its function
+# config. It does nothing unless STRIPE_BOOKKEEPING_ENABLED=true.
+# stripe-bookkeeping-sync-background is the first-sync backfill and is not scheduled.
