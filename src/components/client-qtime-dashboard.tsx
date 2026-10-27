@@ -8,6 +8,7 @@ import { hasServerIntegrationSecret } from "@/server/integrations/server-env";
 import { QTimeAskAtlasCard } from "@/components/qtime-ask-atlas-card";
 import { getSiteLanguage } from "@/lib/site-language-server";
 import type { SiteLanguage } from "@/lib/site-language";
+import { isStripeBookkeepingEnabled } from "@/server/stripe-bookkeeping/config";
 
 type ClientQTimeDashboardProps = {
   workspace: ClientWorkspaceContext;
@@ -634,6 +635,13 @@ export async function ClientQTimeDashboard({
               [spanish ? "Calendario" : "Calendar", "#calendar", String(contentDraftCount + followUpCount)],
               [spanish ? "Actividad" : "Activity", "#activity", String(recentActivity.length)],
               [spanish ? "Notas" : "Notes", "#notes", String(notes.length)],
+              ...(isStripeBookkeepingEnabled()
+                ? [[
+                    spanish ? "Contabilidad" : "Bookkeeping",
+                    clientWorkspaceHref("/client/bookkeeping", workspace.previewOrgSlug, workspace.clientView),
+                    spanish ? "solo lectura" : "read only",
+                  ]]
+                : []),
             ].map(([label, href, value]) =>
               String(href).startsWith("#") ? (
                 <a
