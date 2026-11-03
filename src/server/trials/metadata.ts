@@ -17,6 +17,7 @@ export function extractTrialMetadata(metadata: Record<string, unknown>) {
     metadata.postal_code ?? metadata.postalCode ?? metadata.zip_code ?? metadata.zipCode,
     16,
   );
+  const website = cleanTrialMetadataValue(metadata.website ?? metadata.website_url ?? metadata.websiteUrl, 300);
 
   return {
     fullName,
@@ -27,6 +28,7 @@ export function extractTrialMetadata(metadata: Record<string, unknown>) {
     primaryGrowthGoal,
     city,
     postalCode,
+    website,
   };
 }
 

@@ -1,5 +1,4 @@
 import { inferTrialCityFromName, inferTrialDeskMarket } from "@/lib/lions-den/trial-desk-market";
-import { trialMicahBrandPrefill } from "@/lib/lions-den/trial-micah-week";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessProfile } from "@/server/business-profile/queries";
@@ -128,6 +127,10 @@ export async function writeMicahBrandKit(input: {
       instagram: kit.instagram,
       linkedin: kit.linkedin,
       tiktok: kit.tiktok,
+      website: kit.website,
+      phone: kit.phone,
+      services: kit.services,
+      card_source: kit.usesBusinessCards ? "business_facts" : null,
       no_live_post: true,
       no_scheduler: true,
       no_scrape: true,
@@ -168,6 +171,7 @@ export async function readMicahWorkspacePrefill(
     organizationName: organizationName ?? "",
   };
   let businessType = "";
+  let zipCode = "";
   try {
     const profile = await getBusinessProfile(organizationId);
     if (!profile.setupRequired && profile.data) {
@@ -181,11 +185,13 @@ export async function readMicahWorkspacePrefill(
     const supabase = await createClient();
     try {
       const { data: auth } = await supabase.auth.getUser();
-      const metaCity = String(auth.user?.user_metadata?.city ?? "").trim();
+      const metadata = auth.user?.user_metadata ?? {};
+      const metaCity = String(metadata.city ?? "").trim();
       if (metaCity) prefill.city = metaCity;
-      businessType = String(
-        auth.user?.user_metadata?.business_type ?? auth.user?.user_metadata?.businessType ?? "",
-      ).trim();
+      businessType = String(metadata.business_type ?? metadata.businessType ?? "").trim();
+      zipCode = String(metadata.postal_code ?? metadata.postalCode ?? metadata.zip_code ?? metadata.zipCode ?? "").trim();
+      prefill.website = String(metadata.website ?? metadata.website_url ?? "").trim();
+      prefill.phone = String(metadata.phone ?? "").trim();
     } catch {
       // Signup city is optional.
     }
@@ -207,14 +213,10 @@ export async function readMicahWorkspacePrefill(
     businessName: organizationName,
     businessType,
     city: prefill.city,
+    zipCode,
   });
   if (!prefill.city) {
     prefill.city = market.city || inferTrialCityFromName(organizationName ?? "");
-  }
-  if (prefill.city) {
-    const fromMarket = trialMicahBrandPrefill({ ...market, city: prefill.city });
-    prefill.audience = prefill.audience || fromMarket.audience;
-    prefill.weeklyOffer = prefill.weeklyOffer || fromMarket.weeklyOffer;
   }
   return prefill;
 }

@@ -460,8 +460,8 @@ export function todaysFiveNotes(input: {
       : "Sample records stay off Today’s 5. Clear them, or accept a real HUNTER find that has a phone.";
   } else if (input.rowCount === 0 && input.queueSize === 0) {
     situation = spanish
-      ? "Nadie por llamar con teléfono. Los 5 de hoy aparecen cuando Llamadas por hacer tenga a quién marcar."
-      : "No uncalled prospects with a phone yet. Today’s 5 appears when Calls to make has someone to dial.";
+      ? "Nadie por llamar con teléfono. Busca lugares reales en HUNTER y acepta uno que tenga teléfono."
+      : "No uncalled prospects with a phone yet. Run HUNTER for real places and accept one with a phone.";
   } else if (input.rowCount === 0) {
     situation = spanish
       ? "Los que faltan por llamar ya tienen sitio web. Los 5 de hoy esperan una ficha más delgada."

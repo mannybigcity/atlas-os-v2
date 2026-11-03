@@ -57,6 +57,8 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
         cityPlaceholder: "Ciudad de tu negocio",
         postalCode: "Código postal (opcional)",
         postalCodePlaceholder: "Código postal",
+        website: "Sitio web (opcional)",
+        websitePlaceholder: "https://tunegocio.com",
         growthGoal: "Meta principal de crecimiento",
         growthPlaceholder: "¿Qué te gustaría mejorar más en los próximos 90 días?",
         createPassword: "Crea una contraseña",
@@ -102,6 +104,8 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
         cityPlaceholder: "Your business city",
         postalCode: "ZIP code (optional)",
         postalCodePlaceholder: "ZIP code",
+        website: "Website (optional)",
+        websitePlaceholder: "https://yourbusiness.com",
         growthGoal: "Primary growth goal",
         growthPlaceholder: "What would you most like to improve in the next 90 days?",
         createPassword: "Create a password",
@@ -185,6 +189,10 @@ export default async function StartTrialPage({ searchParams }: { searchParams?: 
                 <input aria-label={copy.postalCode} className="assessment-field" name="postalCode" placeholder={copy.postalCodePlaceholder} type="text" />
               </label>
             </div>
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-slate-700">{copy.website}</span>
+              <input aria-label={copy.website} className="assessment-field" inputMode="url" name="website" placeholder={copy.websitePlaceholder} type="url" />
+            </label>
             <label className="block space-y-2">
               <span className="text-sm font-semibold text-slate-700">{copy.growthGoal}</span>
               <textarea aria-label={copy.growthGoal} className="assessment-field assessment-textarea" name="primaryGrowthGoal" placeholder={copy.growthPlaceholder} required />

@@ -154,7 +154,9 @@ export function activationChecklistCopy(input: {
         },
         micah: {
           label: "Abre MICAH",
-          detail: "Día 1 / galería: descarga la tarjeta del lunes y publícala tú mismo. MICAH no publica.",
+          detail: sampleWalkthrough
+            ? "Día 1 / galería: descarga la tarjeta del lunes y publícala tú mismo. MICAH no publica."
+            : "Arma las tarjetas con tu sitio o una lista corta de servicios, luego descárgalas y publícalas tú. MICAH no publica.",
           done: "Ya viste tus tarjetas de la semana.",
         },
       },
@@ -180,11 +182,13 @@ export function activationChecklistCopy(input: {
         detail: "Pick the business you would most like to work with and accept it. It moves to Prospects with its phone number, when Google lists one.",
         done: "Your first real prospect is on the list.",
       },
-      micah: {
-        label: "Open MICAH",
-        detail: "Day 1 / gallery: download Monday's card and post it yourself. MICAH does not post.",
-        done: "You have seen this week's cards.",
-      },
+        micah: {
+          label: "Open MICAH",
+          detail: sampleWalkthrough
+            ? "Day 1 / gallery: download Monday's card and post it yourself. MICAH does not post."
+            : "Build this week's cards from your website or a short list of services, then download and post them yourself. MICAH does not post.",
+          done: "You have seen this week's cards.",
+        },
     },
   };
 }

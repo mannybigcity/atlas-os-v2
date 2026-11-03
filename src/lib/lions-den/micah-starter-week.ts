@@ -198,6 +198,10 @@ export type MicahBrandKit = {
   instagram: string;
   linkedin: string;
   tiktok: string;
+  website: string;
+  phone: string;
+  services: string;
+  usesBusinessCards: boolean;
   setupSaved: boolean;
 };
 
@@ -210,6 +214,9 @@ export type MicahWorkspacePrefill = {
   instagram?: string | null;
   linkedin?: string | null;
   tiktok?: string | null;
+  website?: string | null;
+  phone?: string | null;
+  services?: string | null;
 };
 
 export function defaultMicahBrandKit(): MicahBrandKit {
@@ -229,6 +236,10 @@ export function defaultMicahBrandKit(): MicahBrandKit {
     instagram: "",
     linkedin: "",
     tiktok: "",
+    website: "",
+    phone: "",
+    services: "",
+    usesBusinessCards: false,
     setupSaved: false,
   };
 }
@@ -300,6 +311,9 @@ export function prefillMicahBrandKit(
     instagram: kit.instagram.trim() || parseSocialHandle(prefill.instagram),
     linkedin: kit.linkedin.trim() || parseSocialHandle(prefill.linkedin),
     tiktok: kit.tiktok.trim() || parseSocialHandle(prefill.tiktok),
+    website: kit.website.trim() || parsePlainBrandText(prefill.website, 300),
+    phone: kit.phone.trim() || parsePlainBrandText(prefill.phone, 40),
+    services: kit.services.trim() || parsePlainBrandText(prefill.services, 800),
   };
 }
 
@@ -455,6 +469,10 @@ export function brandKitFromMetadata(
     instagram: parseSocialHandle(metadata?.instagram),
     linkedin: parseSocialHandle(metadata?.linkedin),
     tiktok: parseSocialHandle(metadata?.tiktok),
+    website: parsePlainBrandText(metadata?.website, 300),
+    phone: parsePlainBrandText(metadata?.phone, 40),
+    services: parsePlainBrandText(metadata?.services, 800),
+    usesBusinessCards: metadata?.card_source === "business_facts",
     setupSaved: true,
   };
 }

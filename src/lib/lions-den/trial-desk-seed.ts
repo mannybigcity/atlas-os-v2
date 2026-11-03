@@ -241,6 +241,14 @@ function seedSearchQuery(market: TrialDeskMarket) {
   return `${market.serviceQuery} in ${area}`;
 }
 
+/** Avoid "local local business" when the trade label already starts with local. */
+function describedTrade(serviceQuery: string) {
+  const service = serviceQuery.replace(/\s+/g, " ").trim();
+  if (!service) return "local business";
+  if (/^local\b/i.test(service)) return service;
+  return `local ${service}`;
+}
+
 export function getTrialHunterSeedFinds(marketInput: TrialDeskMarketInput = {}): TrialHunterSeedFind[] {
   const market = inferTrialDeskMarket(marketInput);
   return HUNTER_CATALOG[market.vertical].slice(0, 7).map((row) => ({
@@ -271,10 +279,10 @@ export function getTrialProspectSeeds(marketInput: TrialDeskMarketInput = {}): T
       daysUntilDue,
       nextAction,
       researchSummary: [
-        `${row.name} looks like a local ${market.serviceQuery} shop in ${area}.`,
+        `${row.name} looks like a ${describedTrade(market.serviceQuery)} shop in ${area}.`,
         "Atlas has not called, emailed, or texted anyone. The owner approves any send.",
       ].join(" "),
-      fitReason: `Local ${market.serviceQuery} name for the Prospects board. Atlas has not contacted them.`,
+      fitReason: `${describedTrade(market.serviceQuery)} name for the Prospects board. Atlas has not contacted them.`,
       hunterPlaceId: `trial-seed-accepted-${row.seedKey}`,
       primaryType: row.primaryType,
     };
@@ -312,13 +320,15 @@ export function trialHunterSeedPlaceIds(marketInput: TrialDeskMarketInput = {}) 
 
 export function getTrialLionsDenSeed(marketInput: TrialDeskMarketInput = {}): TrialLionsDenSeed {
   const market = inferTrialDeskMarket(marketInput);
-  const prospects = getTrialProspectSeeds(market);
+  // New trials start with no example records. HUNTER finds, prospects, the
+  // closed win, and MICAH cards are built by the owner. Existing desks are
+  // left alone because apply writes nothing when these arrays are empty.
   return {
-    hunterFinds: getTrialHunterSeedFinds(market),
-    prospects,
-    followUps: prospects.filter((row) => row.daysUntilDue != null),
-    clients: getTrialClientSeeds(market),
-    micahSlots: getTrialMicahSeedSlots(market),
+    hunterFinds: [],
+    prospects: [],
+    followUps: [],
+    clients: [],
+    micahSlots: [],
     market,
   };
 }
@@ -334,22 +344,6 @@ export function trialDeskSeedWriteTables() {
 }
 
 export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
-  if (seed.hunterFinds.length < 5 || seed.hunterFinds.length > 8) {
-    throw new Error("Trial seed should be a denser HUNTER review pile (5–8 local business rows).");
-  }
-  if (seed.prospects.length < 2 || seed.prospects.length > 3) {
-    throw new Error("Trial seed should include 2–3 Accept-ready prospects.");
-  }
-  if (seed.followUps.length < 1 || seed.followUps.length > 2) {
-    throw new Error("Trial seed should include 1–2 follow-up drafts.");
-  }
-  if (seed.clients.length !== 1) {
-    throw new Error("Trial seed should include exactly one closed client win.");
-  }
-  if (seed.micahSlots.length !== 7) {
-    throw new Error("Trial seed must include one MICAH week card for each weekday.");
-  }
-
   const blob = JSON.stringify(seed);
   if (/\b(?:contact_)?phone|\(\s*555\s*\)|\+1[\s-]?\d/i.test(blob)) {
     throw new Error("Trial seed must not invent phone numbers.");
@@ -438,6 +432,16 @@ export function assertTrialDeskSeedIsSafe(seed = getTrialLionsDenSeed()) {
       throw new Error(`MICAH trial slot must not stamp the AFE lion or SIS chrome: ${slot.title}`);
     }
   }
+
+  if (
+    seed.hunterFinds.length !== 0 ||
+    seed.prospects.length !== 0 ||
+    seed.followUps.length !== 0 ||
+    seed.clients.length !== 0 ||
+    seed.micahSlots.length !== 0
+  ) {
+    throw new Error("New trial seed must start empty: no example HUNTER finds, prospects, closed wins, or MICAH cards.");
+  }
 }
 
 export function canSeedTrialLionsDenDesk(input: {
@@ -504,7 +508,7 @@ export async function applyTrialLionsDenSeed(
   assertTrialDeskSeedIsSafe(seed);
 
   const placeIds = seed.hunterFinds.map((find) => find.placeId);
-  const slots = trialMicahSeedSlots();
+  const slots = seed.micahSlots.map((item) => item.slot);
 
   const hunterRead = await client
     .from("organization_hunter_review_items")

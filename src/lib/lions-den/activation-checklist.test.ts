@@ -100,7 +100,13 @@ test("copy stays office-manager short and never invents DEMO or outreach", () =>
   assert.equal(en.steps.find10.label, "Find 10");
   assert.equal(en.steps.accept1.label, "Accept 1");
   assert.equal(en.steps.micah.label, "Open MICAH");
-  assert.match(en.steps.micah.detail, /Day 1 \/ gallery/);
+  assert.match(en.steps.micah.detail, /website or a short list of services/);
+  assert.match(en.steps.micah.detail, /does not post/);
+  assert.doesNotMatch(en.steps.micah.detail, /Monday's card/);
+  assert.match(sampleCopy.steps.micah.detail, /Day 1 \/ gallery/);
+  assert.match(sampleCopy.steps.micah.detail, /Monday's card/);
+  assert.match(es.steps.micah.detail, /sitio o una lista corta de servicios/);
+  assert.match(activationChecklistCopy({ spanish: true, sampleWalkthrough: true }).steps.micah.detail, /tarjeta del lunes/);
   assert.doesNotMatch(visible, /demo|auto-?send|auto-?post|email them|text them/i);
   assert.equal(sampleCopy.eyebrow, "SAMPLE walkthrough");
   assert.doesNotMatch(sampleCopy.eyebrow, /demo/i);

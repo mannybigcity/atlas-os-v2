@@ -55,7 +55,70 @@ const HOUSTON_METRO_CITIES: Array<{ name: string }> = [
   { name: "Bellaire" },
   { name: "Jersey Village" },
   { name: "Copperfield" },
+  { name: "Hockley" },
+  { name: "Fulshear" },
+  { name: "Waller" },
+  { name: "Brookshire" },
 ];
+
+/** Exact ZIPs for cities the Houston-area name list misses. Unknown ZIPs stay blank. */
+const POSTAL_CITIES: Record<string, { city: string; state: string }> = {
+  "77447": { city: "Hockley", state: "TX" },
+  "77449": { city: "Katy", state: "TX" },
+  "77450": { city: "Katy", state: "TX" },
+  "77493": { city: "Katy", state: "TX" },
+  "77494": { city: "Katy", state: "TX" },
+  "77429": { city: "Cypress", state: "TX" },
+  "77433": { city: "Cypress", state: "TX" },
+  "77375": { city: "Tomball", state: "TX" },
+  "77377": { city: "Tomball", state: "TX" },
+  "77373": { city: "Spring", state: "TX" },
+  "77379": { city: "Spring", state: "TX" },
+  "77388": { city: "Spring", state: "TX" },
+  "77389": { city: "Spring", state: "TX" },
+  "77338": { city: "Humble", state: "TX" },
+  "77346": { city: "Humble", state: "TX" },
+  "77354": { city: "Magnolia", state: "TX" },
+  "77355": { city: "Magnolia", state: "TX" },
+  "77380": { city: "The Woodlands", state: "TX" },
+  "77381": { city: "The Woodlands", state: "TX" },
+  "77382": { city: "The Woodlands", state: "TX" },
+  "77301": { city: "Conroe", state: "TX" },
+  "77302": { city: "Conroe", state: "TX" },
+  "77303": { city: "Conroe", state: "TX" },
+  "77304": { city: "Conroe", state: "TX" },
+  "77478": { city: "Sugar Land", state: "TX" },
+  "77479": { city: "Sugar Land", state: "TX" },
+  "77498": { city: "Sugar Land", state: "TX" },
+  "77581": { city: "Pearland", state: "TX" },
+  "77584": { city: "Pearland", state: "TX" },
+  "77502": { city: "Pasadena", state: "TX" },
+  "77503": { city: "Pasadena", state: "TX" },
+  "77504": { city: "Pasadena", state: "TX" },
+  "77505": { city: "Pasadena", state: "TX" },
+  "77506": { city: "Pasadena", state: "TX" },
+  "77520": { city: "Baytown", state: "TX" },
+  "77521": { city: "Baytown", state: "TX" },
+  "77522": { city: "Baytown", state: "TX" },
+  "77469": { city: "Richmond", state: "TX" },
+  "77471": { city: "Rosenberg", state: "TX" },
+  "77459": { city: "Missouri City", state: "TX" },
+  "77489": { city: "Missouri City", state: "TX" },
+  "77573": { city: "League City", state: "TX" },
+  "77574": { city: "League City", state: "TX" },
+  "77546": { city: "Friendswood", state: "TX" },
+  "77477": { city: "Stafford", state: "TX" },
+  "77401": { city: "Bellaire", state: "TX" },
+  "77441": { city: "Fulshear", state: "TX" },
+  "77423": { city: "Brookshire", state: "TX" },
+  "77484": { city: "Waller", state: "TX" },
+};
+
+export function cityFromPostalCode(zipCode: string | null | undefined) {
+  const digits = String(zipCode ?? "").replace(/\D/g, "").slice(0, 5);
+  if (digits.length !== 5) return null;
+  return POSTAL_CITIES[digits] ?? null;
+}
 
 const VERTICAL_KEYWORDS: Array<{ vertical: TrialDeskVertical; pattern: RegExp; service: string }> = [
   { vertical: "pest", pattern: /\b(pest|termite|mosquito|exterminat|rodent|wildlife)\b/i, service: "pest control" },
@@ -127,7 +190,8 @@ export function inferTrialDeskMarket(input: TrialDeskMarketInput = {}): TrialDes
   const explicitCity =
     cleanMarketText(input.city, 80) || metadataValue(metadata, "city");
   const inferredCity = inferTrialCityFromName(businessName);
-  const city = explicitCity || inferredCity;
+  const postalCity = cityFromPostalCode(zipCode);
+  const city = explicitCity || inferredCity || postalCity?.city || "";
   const explicitState =
     cleanMarketText(input.state, 2).toUpperCase() ||
     metadataValue(metadata, "state", "region").toUpperCase().slice(0, 2);
@@ -139,7 +203,7 @@ export function inferTrialDeskMarket(input: TrialDeskMarketInput = {}): TrialDes
     businessType,
     city,
     zipCode,
-    state: explicitState || (metro ? "TX" : ""),
+    state: explicitState || (metro ? "TX" : "") || postalCity?.state || "",
     vertical,
     serviceQuery,
   };
@@ -247,7 +311,9 @@ const REFERRAL_TARGETS: Record<TrialDeskVertical, ReferralTarget[]> = {
   contractor: [PROPERTY_MANAGER, APARTMENTS, REALTOR, GENERAL_CONTRACTOR, RESTAURANT, RESTORATION],
   professional: [GENERAL_CONTRACTOR, RESTAURANT, MEDICAL_OFFICE, SMALL_BUSINESS, SALON, REALTOR],
   retail: [EVENT_VENUE, SCHOOL, CHURCH, REALTOR, OFFICE_BUILDING, RESTAURANT],
-  other: [PROPERTY_MANAGER, REALTOR, GENERAL_CONTRACTOR, RESTAURANT, CHURCH, OFFICE_BUILDING],
+  // "Other small business" is not a trade. Property managers and realtors
+  // are the wrong first search for a party rental, a shop, or a studio.
+  other: [EVENT_VENUE, SCHOOL, CHURCH, DAYCARE, RESTAURANT, OFFICE_BUILDING],
 };
 
 export function referralTargetsForVertical(vertical: TrialDeskVertical): ReferralTarget[] {
@@ -279,8 +345,12 @@ export function hunterSearchDefaultsFromMarket(market: TrialDeskMarket) {
   };
 }
 
-export function trialMarketAreaLabel(market: Pick<TrialDeskMarket, "city" | "state">) {
+export function trialMarketAreaLabel(
+  market: Pick<TrialDeskMarket, "city" | "state" | "zipCode">,
+) {
   if (market.city && market.state) return `${market.city}, ${market.state}`;
   if (market.city) return market.city;
+  const zip = String(market.zipCode ?? "").replace(/\s+/g, "").trim();
+  if (zip) return zip;
   return "this area";
 }

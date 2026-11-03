@@ -316,6 +316,7 @@ export async function startTrial(formData: FormData) {
   const primaryGrowthGoal = trialValue(formData.get("primaryGrowthGoal"), 1000);
   const city = trialValue(formData.get("city"), 80);
   const postalCode = trialValue(formData.get("postalCode") ?? formData.get("zipCode"), 16);
+  const website = trialValue(formData.get("website"), 300);
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
   const consent = formData.get("consent") === "on";
@@ -349,6 +350,7 @@ export async function startTrial(formData: FormData) {
         primary_growth_goal: primaryGrowthGoal,
         city,
         postal_code: postalCode,
+        website,
         terms_accepted_at: consentAt,
         privacy_accepted_at: consentAt,
       },

@@ -11,6 +11,7 @@ import {
 } from "./trial-micah-week.ts";
 import { defaultMicahBrandKit, firstIncompleteMicahOnboardingIndex, prefillMicahBrandKit } from "./micah-starter-week.ts";
 import { gradeKingdomCaption } from "../../server/content-studio/kingdom-social.ts";
+import { micahSvgNeedsRefit } from "../../server/content-studio/gallery-art.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -61,6 +62,22 @@ test("SAMPLE MICAH week is seven paste-ready cards matched to pest work in Cypre
   }
   assert.match(slots[0]?.headline ?? "", /pest check/i);
   assert.match(slots[4]?.headline ?? "", /pest check/i);
+  for (const slot of slots) {
+    assert.equal(micahSvgNeedsRefit(slot.imageSvg), false, slot.headline);
+  }
+});
+
+test("other-vertical sample cards do not double the call-to-action", () => {
+  const slots = getTrialMicahSeedSlots({
+    businessName: "Good Times & Vibes Event Rentals LLC",
+    businessType: "Other small business",
+    city: "Hockley",
+    state: "TX",
+  });
+  for (const slot of slots) {
+    assert.doesNotMatch(`${slot.callToAction} ${slot.caption}`, /call to call/i);
+    assert.equal(micahSvgNeedsRefit(slot.imageSvg), false, slot.headline);
+  }
 });
 
 test("SAMPLE week copy follows HVAC vs retail instead of a generic placeholder", () => {
@@ -80,19 +97,19 @@ test("SAMPLE week copy follows HVAC vs retail instead of a generic placeholder",
   assert.notEqual(hvac[0]?.headline, retail[0]?.headline);
 });
 
-test("Brand Setup prefills audience and offer only when city exists", () => {
+test("Brand Setup prefills name and city and does not invent an offer", () => {
   const withCity = inferTrialDeskMarket({
     businessName: "Cypress Pest Pros",
     businessType: "Contractor or home service",
   });
   const filled = trialMicahBrandPrefill(withCity);
   assert.equal(filled.city, "Cypress");
-  assert.match(String(filled.audience), /pest control/);
-  assert.match(String(filled.weeklyOffer), /pest check/);
+  assert.equal(filled.audience, "");
+  assert.equal(filled.weeklyOffer, "");
   const kit = prefillMicahBrandKit(defaultMicahBrandKit(), filled);
   assert.equal(kit.businessName, "Cypress Pest Pros");
   assert.equal(kit.city, "Cypress");
-  assert.equal(firstIncompleteMicahOnboardingIndex(kit, false), 2);
+  assert.equal(firstIncompleteMicahOnboardingIndex(kit, false), 1);
 
   const noCity = trialMicahBrandPrefill(
     inferTrialDeskMarket({

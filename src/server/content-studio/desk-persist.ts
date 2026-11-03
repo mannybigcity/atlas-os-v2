@@ -13,6 +13,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { readMicahBrandKit, writeMicahBrandKit } from "./brand.ts";
 import { isMicahDemeanor, resolveMicahDemeanor } from "./gallery-art.ts";
+import { buildMicahBusinessCards } from "./business-cards.ts";
 import { createMicahGalleryDraft } from "./gallery-draft.ts";
 import {
   micahDeskActionResult,
@@ -80,6 +81,14 @@ function kitFromForm(formData: FormData, existing: MicahBrandKit, demoDesk: bool
     instagram: parseSocialHandle(formData.get("instagram")),
     linkedin: parseSocialHandle(formData.get("linkedin")),
     tiktok: parseSocialHandle(formData.get("tiktok")),
+    website: formData.has("website")
+      ? parsePlainBrandText(formData.get("website"), 300)
+      : existing.website,
+    phone: formData.has("phone") ? parsePlainBrandText(formData.get("phone"), 40) : existing.phone,
+    services: formData.has("services")
+      ? parsePlainBrandText(formData.get("services"), 800)
+      : existing.services,
+    usesBusinessCards: existing.usesBusinessCards,
     setupSaved: existing.setupSaved,
   };
 }
@@ -213,6 +222,29 @@ export async function persistMicahDesk(formData: FormData): Promise<MicahDeskAct
     }
 
     const organizationId = requiredText(formData, "organizationId");
+    if (
+      !saved.demoDesk &&
+      (saved.kit.usesBusinessCards || saved.kit.services.trim() || saved.kit.website.trim())
+    ) {
+      const built = await buildMicahBusinessCards({
+        organizationId,
+        userId: saved.userId,
+        kit: saved.kit,
+        businessName: saved.kit.businessName,
+        city: saved.kit.city,
+        phone: saved.kit.phone,
+        website: saved.kit.website,
+        services: saved.kit.services,
+        offer: saved.kit.weeklyOffer,
+      });
+      if (built.status === "success") {
+        return logDeskPersist(micahDeskActionResult("built", built.message), intent);
+      }
+      return logDeskPersist(
+        { status: "error", error: built.message, message: null },
+        intent,
+      );
+    }
     const picked = saved.kit.demeanor;
     if (!isMicahDemeanor(picked) || picked === "faith") {
       return logDeskPersist(micahDeskActionResult("no_voice"), intent);
