@@ -20,6 +20,7 @@ type BookkeepingDeskProps = {
   view: BookkeepingView | null;
   notice: string | null;
   exportHref: string;
+  organizationId?: string;
   previewOrgSlug?: string;
 };
 
@@ -31,6 +32,7 @@ export function BookkeepingDesk({
   view,
   notice,
   exportHref,
+  organizationId,
   previewOrgSlug,
 }: BookkeepingDeskProps) {
   const totals = summarizeCash(view?.transactions ?? []);
@@ -80,6 +82,7 @@ export function BookkeepingDesk({
           </p>
           {canManage ? (
             <form action={beginStripeConnect} className="mt-5">
+              <DeskOrganization organizationId={organizationId} />
               <button className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white" type="submit">
                 Connect Stripe
               </button>
@@ -120,11 +123,13 @@ export function BookkeepingDesk({
               {canManage ? (
                 <div className="flex flex-col gap-3">
                   <form action={syncStripeBookkeepingNow}>
+                    <DeskOrganization organizationId={organizationId} />
                     <button className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800" type="submit">
                       Sync now
                     </button>
                   </form>
                   <form action={disconnectStripeBookkeeping} className="space-y-2">
+                    <DeskOrganization organizationId={organizationId} />
                     <label className="flex items-start gap-2 text-sm text-slate-700">
                       <input className="mt-1" name="confirm" required type="checkbox" value="delete" />
                       <span>Delete this workspace&apos;s Stripe records and disconnect.</span>
@@ -215,11 +220,12 @@ export function BookkeepingDesk({
             </p>
             <ul className="mt-4 space-y-3">
               {view.rules.map((rule) => (
-                <RuleRow canManage={canManage} key={rule.id} rule={rule} />
+                <RuleRow canManage={canManage} key={rule.id} organizationId={organizationId} rule={rule} />
               ))}
             </ul>
             {canManage ? (
               <form action={saveCategoryRule} className="mt-5 grid gap-3 md:grid-cols-5">
+                <DeskOrganization organizationId={organizationId} />
                 <select className="rounded-xl border border-slate-300 px-3 py-2 text-sm" name="matchField">
                   <option value="stripe_type">Stripe type</option>
                   <option value="description">Description</option>
@@ -250,6 +256,11 @@ export function BookkeepingDesk({
   );
 }
 
+function DeskOrganization({ organizationId }: { organizationId?: string }) {
+  if (!organizationId) return null;
+  return <input name="organizationId" type="hidden" value={organizationId} />;
+}
+
 function Total({ label, value }: { label: string; value: string }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -274,7 +285,7 @@ function TransactionRow({ row }: { row: CsvTransaction }) {
   );
 }
 
-function RuleRow({ canManage, rule }: { canManage: boolean; rule: BookkeepingRuleView }) {
+function RuleRow({ canManage, organizationId, rule }: { canManage: boolean; organizationId?: string; rule: BookkeepingRuleView }) {
   return (
     <li className="flex flex-col gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm md:flex-row md:items-center md:justify-between">
       <p>
@@ -285,6 +296,7 @@ function RuleRow({ canManage, rule }: { canManage: boolean; rule: BookkeepingRul
       {canManage ? (
         <div className="flex gap-2">
           <form action={setCategoryRuleEnabled}>
+            <DeskOrganization organizationId={organizationId} />
             <input name="id" type="hidden" value={rule.id} />
             <input name="enabled" type="hidden" value={rule.enabled ? "false" : "true"} />
             <button className="rounded-full border border-slate-300 px-3 py-1.5 font-semibold" type="submit">
@@ -292,6 +304,7 @@ function RuleRow({ canManage, rule }: { canManage: boolean; rule: BookkeepingRul
             </button>
           </form>
           <form action={deleteCategoryRule}>
+            <DeskOrganization organizationId={organizationId} />
             <input name="id" type="hidden" value={rule.id} />
             <button className="rounded-full border border-slate-300 px-3 py-1.5 font-semibold" type="submit">
               Delete

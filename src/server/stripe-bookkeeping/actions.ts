@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getSiteUrl } from "@/lib/env";
 import { getClientWorkspaceContext } from "@/server/client-workspace/context";
+import { bookkeepingStripeAccess } from "./access";
 import {
   isBookkeepingCategory,
   type CategoryMatchField,
@@ -34,20 +35,30 @@ function bookkeepingPath(previewOrg: string, status: string) {
   return query ? `/client/bookkeeping?${query}` : "/client/bookkeeping";
 }
 
-async function managedWorkspace() {
-  const workspace = await getClientWorkspaceContext("/client/bookkeeping");
-  const organization = workspace.primaryOrganization;
-  const role = workspace.primaryMembership?.role;
-  const canManage =
-    !workspace.isClientPreview &&
-    Boolean(organization) &&
-    (role === "owner" || role === "admin");
-
-  return { workspace, organization, canManage };
+function postedValue(formData: FormData | undefined, name: string) {
+  return String(formData?.get(name) ?? "").trim();
 }
 
-export async function beginStripeConnect() {
-  const { workspace, organization, canManage } = await managedWorkspace();
+async function managedWorkspace(formData?: FormData) {
+  // Resolve the signed-in user's own desk. previewOrg is not forwarded, so a
+  // Client View visit cannot attach Stripe to that other organization or to Lion's Den.
+  const workspace = await getClientWorkspaceContext("/client/bookkeeping");
+  const organization = workspace.primaryOrganization;
+  const access = bookkeepingStripeAccess({
+    enabled: isStripeBookkeepingEnabled(),
+    organization,
+    memberships: workspace.memberships.data,
+    clientView: workspace.clientView || postedValue(formData, "clientView") === "1",
+    readOnly: workspace.readOnly,
+    requestedPreviewOrgSlug: postedValue(formData, "previewOrg"),
+    postedOrganizationId: postedValue(formData, "organizationId"),
+  });
+
+  return { workspace, organization, canManage: access.canManage };
+}
+
+export async function beginStripeConnect(formData: FormData) {
+  const { workspace, organization, canManage } = await managedWorkspace(formData);
 
   if (!isStripeBookkeepingEnabled()) {
     redirect(bookkeepingPath(workspace.previewOrgSlug, "disabled"));
@@ -77,8 +88,8 @@ export async function beginStripeConnect() {
   );
 }
 
-export async function syncStripeBookkeepingNow() {
-  const { workspace, organization, canManage } = await managedWorkspace();
+export async function syncStripeBookkeepingNow(formData: FormData) {
+  const { workspace, organization, canManage } = await managedWorkspace(formData);
 
   if (!isStripeBookkeepingEnabled() || !canManage || !organization) {
     redirect(bookkeepingPath(workspace.previewOrgSlug, "forbidden"));
@@ -94,7 +105,7 @@ export async function syncStripeBookkeepingNow() {
 }
 
 export async function disconnectStripeBookkeeping(formData: FormData) {
-  const { workspace, organization, canManage } = await managedWorkspace();
+  const { workspace, organization, canManage } = await managedWorkspace(formData);
 
   if (!isStripeBookkeepingEnabled() || !canManage || !organization) {
     redirect(bookkeepingPath(workspace.previewOrgSlug, "forbidden"));
@@ -128,7 +139,7 @@ export async function disconnectStripeBookkeeping(formData: FormData) {
 }
 
 export async function saveCategoryRule(formData: FormData) {
-  const { workspace, organization, canManage } = await managedWorkspace();
+  const { workspace, organization, canManage } = await managedWorkspace(formData);
 
   if (!canManage || !organization || !isStripeBookkeepingEnabled()) {
     redirect(bookkeepingPath(workspace.previewOrgSlug, "forbidden"));
@@ -170,7 +181,7 @@ export async function saveCategoryRule(formData: FormData) {
 }
 
 export async function setCategoryRuleEnabled(formData: FormData) {
-  const { workspace, organization, canManage } = await managedWorkspace();
+  const { workspace, organization, canManage } = await managedWorkspace(formData);
 
   if (!canManage || !organization) {
     redirect(bookkeepingPath(workspace.previewOrgSlug, "forbidden"));
@@ -194,7 +205,7 @@ export async function setCategoryRuleEnabled(formData: FormData) {
 }
 
 export async function deleteCategoryRule(formData: FormData) {
-  const { workspace, organization, canManage } = await managedWorkspace();
+  const { workspace, organization, canManage } = await managedWorkspace(formData);
 
   if (!canManage || !organization) {
     redirect(bookkeepingPath(workspace.previewOrgSlug, "forbidden"));
