@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClientWorkspaceScreen } from "@/components/client-workspace-screen";
 import { BookkeepingDesk } from "@/components/bookkeeping-desk";
 import { clientWorkspaceHref, getClientWorkspaceContext } from "@/server/client-workspace/context";
+import { bookkeepingRequestedPreviewSlug, bookkeepingStripeAccess } from "@/server/stripe-bookkeeping/access";
 import { RECORD_KEEPING_DISCLAIMER } from "@/server/stripe-bookkeeping/compliance";
 import { isStripeBookkeepingEnabled } from "@/server/stripe-bookkeeping/config";
 import { getBookkeepingView, parseBookkeepingFilters } from "@/server/stripe-bookkeeping/queries";
@@ -48,10 +49,18 @@ export default async function BookkeepingPage({ searchParams }: BookkeepingPageP
   const enabled = isStripeBookkeepingEnabled();
   const filters = parseBookkeepingFilters(params ?? {});
   const organization = workspace.primaryOrganization;
-  const canManage =
-    enabled &&
-    !workspace.isClientPreview &&
-    (workspace.primaryMembership?.role === "owner" || workspace.primaryMembership?.role === "admin");
+  const access = bookkeepingStripeAccess({
+    enabled,
+    organization,
+    memberships: workspace.memberships.data,
+    clientView: workspace.clientView,
+    readOnly: workspace.readOnly,
+    requestedPreviewOrgSlug: bookkeepingRequestedPreviewSlug({
+      isSuperAdmin: workspace.isSuperAdmin,
+      previewOrg: params?.previewOrg,
+    }),
+  });
+  const canManage = access.canManage;
   const view = enabled && organization ? await getBookkeepingView(organization.id, filters) : null;
   const exportParams = new URLSearchParams();
 
@@ -68,7 +77,7 @@ export default async function BookkeepingPage({ searchParams }: BookkeepingPageP
       description="A read-only copy of Stripe charges, refunds, fees, payouts, and invoices for this workspace."
       eyebrow="Bookkeeping"
       organizationName={organization?.name}
-      previewMode={workspace.isClientPreview}
+      previewMode={access.viewerMode}
     >
       <BookkeepingDesk
         canManage={canManage}
@@ -76,7 +85,8 @@ export default async function BookkeepingPage({ searchParams }: BookkeepingPageP
         exportHref={exportQuery ? `/api/stripe/bookkeeping/export?${exportQuery}` : "/api/stripe/bookkeeping/export"}
         filters={filters}
         notice={params?.stripe ? NOTICES[params.stripe] ?? null : null}
-        previewMode={workspace.isClientPreview}
+        organizationId={access.organizationId ?? undefined}
+        previewMode={access.viewerMode}
         previewOrgSlug={workspace.previewOrgSlug}
         view={view}
       />
